@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-v="23">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -34,15 +34,32 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .card-mgr   {background:#FFF0F8;box-shadow:0 2px 14px rgba(122,0,85,.11)}
 .card-mgr:hover{box-shadow:0 8px 32px rgba(122,0,85,.22)}
 
-/* ── Tabs — two-row Excel style ───────────────────────────────── */
-.tabs-wrap{margin-bottom:14px}
-.tab-row-1,.tab-row-2,.tab-row-3{display:flex;flex-wrap:wrap;border-bottom:1.5px solid var(--border)}
-.tab-row-2,.tab-row-3{border-top:none;margin-top:0}
-.tab{padding:7px 12px;font-size:11.5px;font-weight:500;cursor:pointer;border:none;background:none;
-  color:var(--text2);border-bottom:2.5px solid transparent;margin-bottom:-1.5px;
-  font-family:var(--font);white-space:nowrap;transition:color .15s;user-select:none;
-  min-width:88px;text-align:center}
-.tab:hover{color:var(--text)}.tab.active{color:var(--purple);border-bottom-color:var(--purple);background:rgba(60,52,137,.05)}
+/* ── Tabs — aligned grid style ───────────────────────────────── */
+.tabs-wrap{margin-bottom:14px;position:relative;padding-top:24px}
+.tab-btn-group{position:absolute;right:0;top:0;display:flex;gap:6px}
+.tab-edit-btn{font-size:10.5px;padding:3px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
+.tab-edit-btn:hover{color:var(--text);border-color:var(--text2)}
+.tab-edit-btn.active{color:var(--purple);border-color:var(--purple);background:rgba(60,52,137,.06)}
+.tab-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px 6px;border-bottom:1.5px solid var(--border);padding-bottom:4px}
+.tab{padding:7px 6px 7px 10px;font-size:11.5px;font-weight:500;cursor:pointer;
+  border:1px solid var(--border2);border-bottom:none;background:var(--surface);
+  color:var(--text2);border-radius:8px 8px 0 0;margin-bottom:-1.5px;
+  font-family:var(--font);white-space:nowrap;transition:color .15s,background .15s;user-select:none;
+  min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.tab:hover{color:var(--text);background:var(--border2)}
+.tab.active{color:var(--purple);font-weight:700;background:var(--card);border-color:var(--border);border-bottom:1.5px solid var(--card);position:relative;z-index:1}
+.tab-filler{box-sizing:border-box;min-height:33px;padding:7px 6px;border:1px solid transparent;border-bottom:1.5px solid var(--border);margin-bottom:-1.5px;visibility:hidden}
+.tabs-wrap.edit-mode .tab-filler{border:1px dashed var(--border2);border-radius:8px;margin-bottom:0;visibility:visible}
+/* ── Tab edit mode — binder/活頁 style, even grid, draggable in any direction ─ */
+.tabs-wrap.edit-mode .tab-grid{
+  display:grid;grid-template-columns:repeat(8,1fr);gap:5px;border-bottom:none;margin-bottom:5px}
+.tabs-wrap.edit-mode .tab{
+  border:1px solid var(--border);border-radius:8px 8px 0 0;background:var(--card);
+  min-width:0;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;
+  gap:3px;cursor:grab;margin-bottom:0;border-bottom:1px solid var(--border);white-space:nowrap}
+.tabs-wrap.edit-mode .tab.active{color:var(--purple);background:rgba(60,52,137,.08);border-color:var(--purple)}
+.tabs-wrap.edit-mode .tab.tab-drag-over{border-color:var(--amber);border-width:2px}
+.tab-grip{font-size:10px;color:var(--text3);line-height:1}
 
 /* ── Alert / Event tables ─────────────────────────── */
 .ae-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
@@ -127,6 +144,7 @@ td{padding:4px 4px;vertical-align:top;overflow:hidden}
 td.td-txt{white-space:pre-wrap;word-break:break-all;min-width:90px;max-width:220px}
 td.td-issue{white-space:pre-wrap;word-break:break-all;min-width:100px;max-width:240px}
 td input[type=text],td textarea,td select{font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:var(--card);color:var(--text);font-family:var(--font);width:100%;outline:none}
+td input[type=text],td select{height:36px;box-sizing:border-box}
 td input[type=text]:focus,td select:focus,td textarea:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(60,52,137,.08)}
 td input[type=date]{font-size:10px;padding:2px 3px;border:1px solid var(--border);border-radius:3px;width:auto;background:var(--card);color:var(--text);min-width:0}
 td input[type=date]:focus{border-color:var(--purple)}
@@ -341,7 +359,13 @@ document.dispatchEvent(new Event('firebase-ready'));
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
   </div>
   <div class="card card-main" id="mainCard">
-    <div class="tabs-wrap" id="tab-bar"></div>
+    <div class="tabs-wrap" id="tab-bar-wrap">
+      <div class="tab-btn-group">
+        <button class="tab-edit-btn" id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button>
+        <button class="tab-edit-btn" id="tab-edit-btn" onclick="toggleTabEditMode()">🔓 編輯排序</button>
+      </div>
+      <div id="tab-bar"></div>
+    </div>
     <div id="pane-main"></div>
     <div id="pane-vendor" style="display:none"></div>
     <div id="pane-warn"   style="display:none"></div>
@@ -409,7 +433,7 @@ let S={
   }
 };
 let activeTab='main',activeZone='indoor',selVendor=null,selMgr=null,calOffset=0,mainPage=0;
-const PAGE_SIZE=80;
+const PAGE_SIZE=50;
 let zoneSelVendor={};
 let selectedIds=new Set();
 let lastSelIdx=null;
@@ -950,7 +974,15 @@ function changeZoneColor(id,color){const z=S.zones.find(x=>x.id===id);if(z){z.co
 function addManager(){
   const inp=document.getElementById('nmInp');const v=(inp.value||'').trim();if(!v)return;
   if(S.managers.includes(v)){toast('管理人已存在','⚠️');return;}
-  S.managers.push(v);inp.value='';toast(`已新增管理人：${v}`,'👤');save();renderMgr();
+  S.managers.push(v);
+  const titleInp=document.getElementById('nmTitleInp');
+  const dutyInp=document.getElementById('nmDutyInp');
+  const title=((titleInp&&titleInp.value)||'').trim();
+  const duty=((dutyInp&&dutyInp.value)||'').trim();
+  if(!S.managerDetails)S.managerDetails={};
+  if(title||duty)S.managerDetails[v]={title,duty};
+  inp.value='';if(titleInp)titleInp.value='';if(dutyInp)dutyInp.value='';
+  toast(`已新增管理人：${v}`,'👤');save();renderMgr();
 }
 function editManagerModal(i){
   const oldName=S.managers[i];
@@ -991,20 +1023,22 @@ function dsDrop(e,toIdx,listKey,rerender){
 // tab drag-sort
 let tabDragSrc=null;
 function tabDragStart(e,id){tabDragSrc=id;e.dataTransfer.effectAllowed='move';}
-function tabDragOver(e,id){
+function tabDragOver(e,target){
   e.preventDefault();
   document.querySelectorAll('.tab').forEach(t=>{
-    t.classList.toggle('tab-drag-over',t.dataset.id===id&&id!==tabDragSrc);
+    t.classList.toggle('tab-drag-over',typeof target==='string'&&t.dataset.id===target&&target!==tabDragSrc);
   });
 }
-function tabDrop(e,id){
+function tabDrop(e,target){
   e.preventDefault();
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-drag-over'));
-  if(!tabDragSrc||tabDragSrc===id)return;
-  const from=S.tabOrder.indexOf(tabDragSrc),to=S.tabOrder.indexOf(id);
-  if(from<0||to<0)return;
-  S.tabOrder.splice(from,1);S.tabOrder.splice(to,0,tabDragSrc);
-  tabDragSrc=null;save();renderTabBar();
+  if(!tabDragSrc||!_editSlots)return;
+  const from=_editSlots.indexOf(tabDragSrc);
+  const to=typeof target==='number'?(-target-1):_editSlots.indexOf(target);
+  if(from<0||to<0||from===to){tabDragSrc=null;return;}
+  _editSlots[from]=null;
+  _editSlots[to]=tabDragSrc;
+  tabDragSrc=null;renderTabBar();
 }
 
 // ── Excel import ──────────────────────────────────────────────────────────
@@ -1167,10 +1201,11 @@ function exportCSV(){
 }
 
 // ── PDF ────────────────────────────────────────────────────────────────────
-function printSection(title,bodyHtml){
+function printSection(title,bodyHtml,fileName){
   const w=window.open('','_blank','width=1200,height=760');
   w.document.write(`<!DOCTYPE html><html lang="zh-TW"><head>
     <meta charset="UTF-8">
+    <title>${esc(fileName||title)}</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -1294,8 +1329,8 @@ function rowHTML(r,showZone,visIds){
     <td style="width:72px"><input type="text" value="${esc(r.unit)}" onblur="upd(${r.id},'unit',this.value)" onclick="event.stopPropagation()"></td>
     <td style="width:44px"><input type="text" value="${esc(r.floor)}" onblur="upd(${r.id},'floor',this.value)" onclick="event.stopPropagation()"></td>
     <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()">${vOpts(r.vendor)}</select></td>
-    <td class="td-issue"><textarea onblur="upd(${r.id},'issue',this.value)" onclick="event.stopPropagation()" style="min-height:36px;width:100%">${esc(r.issue)}</textarea></td>
-    <td class="td-txt"><textarea onblur="upd(${r.id},'note',this.value)" onclick="event.stopPropagation()" style="min-height:36px;width:100%">${esc(r.note)}</textarea></td>
+    <td class="td-issue" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'issue',this.value)" onclick="event.stopPropagation()" placeholder="缺失內容" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.issue||'').replace(/^\s+/,''))}</textarea></td>
+    <td class="td-txt" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'note',this.value)" onclick="event.stopPropagation()" placeholder="備註說明" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.note||'').replace(/^\s+/,''))}</textarea></td>
     ${dateCell(r.id,'planIn',r.planIn,'actualIn',r.actualIn)}
     ${dateCell(r.id,'planDone',r.planDone,'actualDone',r.actualDone)}
     <td style="width:30px;text-align:center;vertical-align:top;padding-top:6px" onclick="event.stopPropagation()" title="${st==='done'?'勾選後點批次列移至已完成看板':''}">${st==='done'?`<input type="checkbox" ${isSel?'checked':''} onchange="toggleCheck(${r.id},this.checked,[${visIds}]);event.stopPropagation()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--green)" title="勾選後點批次列移至已完成看板">`:'<span style="display:inline-block;width:15px;height:15px"></span>'}</td>
@@ -1481,10 +1516,10 @@ function alertsHTML(){
     <button class="btn btn-sm" onclick="_alertSelIds.clear();renderMain()">✕ 取消</button>
   </div>`:'';
 
-  return '<div class="ae-sec">'
-    +'<div class="ae-sec-hdr">'
+  return '<div class="ae-sec" style="background:#FFF6E0;border:2px solid #F0B429;border-radius:var(--r);box-shadow:0 1px 4px rgba(240,180,41,.25)">'
+    +'<div class="ae-sec-hdr" style="background:#FCE8B0;border-radius:var(--r) var(--r) 0 0;margin:-12px -14px 10px;padding:10px 14px">'
     +'<span style="font-size:16px">🚨</span>'
-    +'<span class="ae-sec-title">重點提示事項</span>'
+    +'<span class="ae-sec-title" style="color:#8A5A00">重點提示事項</span>'
     +'<button class="btn btn-p btn-sm no-print" onclick="addAlert()">＋ 新增</button>'
     +'<button class="btn btn-pdf-import btn-sm no-print" onclick="document.getElementById(\'alertImportInp\').click()" title="匯入 PDF 會議記錄或 Excel 檔案">📂 匯入檔案</button>'
     +'<input type="file" id="alertImportInp" accept=".pdf,.xlsx,.xls,.csv" style="display:none" onchange="handleAlertImport(this.files[0]);this.value=\'\'">'
@@ -1887,8 +1922,8 @@ function toggleSelMgr(name){
       if(nameEl)nameEl.style.fontWeight=isSel?'600':'400';
     });
   }
-  // 3. 重建 detail 和 detail-editor 區塊（只有這兩塊變）
-  _patchMgrDetail(_buildMgrStats());
+  // 3. 重建 detail 和 detail-editor 區塊（只有這兩塊變）－延後執行，先讓卡片選取效果立即反應，避免點擊卡頓
+  setTimeout(()=>_patchMgrDetail(_buildMgrStats()),0);
 }
 let _mgrDetailCache={mgr:null,zone:null};
 function _patchMgrDetail(statsMap){
@@ -1927,27 +1962,19 @@ function _patchMgrDetail(statsMap){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','title',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelTitle===''?' selected':''}>— 未設定 —</option>
-          <option value="副理"${_mSelTitle==='副理'?' selected':''}>副理</option>
-          <option value="所長"${_mSelTitle==='所長'?' selected':''}>所長</option>
-          <option value="主任"${_mSelTitle==='主任'?' selected':''}>主任</option>
-          <option value="組長"${_mSelTitle==='組長'?' selected':''}>組長</option>
-          <option value="工程師"${_mSelTitle==='工程師'?' selected':''}>工程師</option>
-          <option value="其他"${_mSelTitle==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
+        </div>
       </div>
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','duty',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelDuty===''?' selected':''}>— 未設定 —</option>
-          <option value="全區"${_mSelDuty==='全區'?' selected':''}>全區</option>
-          <option value="A棟"${_mSelDuty==='A棟'?' selected':''}>A棟</option>
-          <option value="B棟"${_mSelDuty==='B棟'?' selected':''}>B棟</option>
-          <option value="A棟+B棟"${_mSelDuty==='A棟+B棟'?' selected':''}>A棟+B棟</option>
-          <option value="公設"${_mSelDuty==='公設'?' selected':''}>公設</option>
-          <option value="其他"${_mSelDuty==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -1978,27 +2005,19 @@ function _patchMgrDetail(statsMap){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','title',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelTitle===''?' selected':''}>— 未設定 —</option>
-          <option value="副理"${_mSelTitle==='副理'?' selected':''}>副理</option>
-          <option value="所長"${_mSelTitle==='所長'?' selected':''}>所長</option>
-          <option value="主任"${_mSelTitle==='主任'?' selected':''}>主任</option>
-          <option value="組長"${_mSelTitle==='組長'?' selected':''}>組長</option>
-          <option value="工程師"${_mSelTitle==='工程師'?' selected':''}>工程師</option>
-          <option value="其他"${_mSelTitle==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
+        </div>
       </div>
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','duty',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelDuty===''?' selected':''}>— 未設定 —</option>
-          <option value="全區"${_mSelDuty==='全區'?' selected':''}>全區</option>
-          <option value="A棟"${_mSelDuty==='A棟'?' selected':''}>A棟</option>
-          <option value="B棟"${_mSelDuty==='B棟'?' selected':''}>B棟</option>
-          <option value="A棟+B棟"${_mSelDuty==='A棟+B棟'?' selected':''}>A棟+B棟</option>
-          <option value="公設"${_mSelDuty==='公設'?' selected':''}>公設</option>
-          <option value="其他"${_mSelDuty==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
+        </div>
       </div>
     </div>
   </div>`:'';
@@ -2150,8 +2169,10 @@ function mgrEditorHTML(statsMap){
     </div>
     <div style="max-height:420px;overflow-y:auto;padding-right:2px">${pills||'<div style="font-size:12px;color:var(--text3)">尚無管理人員</div>'}</div>
   </div>
-  <div style="display:flex;gap:6px;margin-top:8px">
-    <input id="nmInp" type="text" placeholder="新增管理人" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+    <input id="nmInp" type="text" placeholder="新增管理人姓名" style="flex:2;min-width:90px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+    <input id="nmTitleInp" type="text" list="dl-mgr-title" placeholder="職位（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+    <input id="nmDutyInp" type="text" list="dl-mgr-duty" placeholder="擔當（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
     <button class="btn btn-p" onclick="addManager()">＋</button>
   </div>`;
 }
@@ -2317,11 +2338,19 @@ function renderCal(){
     const iso=cd.toISOString().slice(0,10),isToday=iso===todayISO(),isWknd=(i%7)>=5;
     const dn=isToday?`<div class="cal-dnum today-n">${cd.getDate()}</div>`:`<div class="cal-dnum">${fmtMD(iso)}</div>`;
     const evs=(dateMap[iso]||[]).sort((a,b)=>a.r.zone.localeCompare(b.r.zone)||a.r.vendor.localeCompare(b.r.vendor));
-    let lastZ='',lastV='',evH='';
+    let lastZ='',lastV='',evH='',grpOpen=false,gi=0;
     evs.forEach(ev=>{
       const zc=zColor(ev.r.zone),vc=vColor(ev.r.vendor);
-      if(ev.r.zone!==lastZ){evH+=`<div class="cal-ev" style="background:${zc}22;color:${zc};font-weight:600">${esc(zLabel(ev.r.zone))}</div>`;lastZ=ev.r.zone;lastV='';}
-      if(ev.r.vendor!==lastV){evH+=`<div class="cal-ev" style="background:${vc}22;color:${vc}">${esc(ev.r.vendor)}</div>`;lastV=ev.r.vendor;}
+      if(ev.r.zone!==lastZ){
+        if(grpOpen){evH+='</div>';grpOpen=false;}
+        evH+=`<div class="cal-ev" style="background:${zc}22;color:${zc};font-weight:600">${esc(zLabel(ev.r.zone))}</div>`;lastZ=ev.r.zone;lastV='';
+      }
+      if(ev.r.vendor!==lastV){
+        if(grpOpen){evH+='</div>';grpOpen=false;}
+        const gid=`cg_${iso.replace(/-/g,'')}_${gi++}`;
+        evH+=`<div class="cal-ev" onclick="const d=document.getElementById('${gid}');const a=this.querySelector('.cal-arrow');if(d.style.display==='none'){d.style.display='';a.style.transform='rotate(90deg)'}else{d.style.display='none';a.style.transform='rotate(0deg)'}" style="background:${vc}22;color:${vc};cursor:pointer;display:flex;align-items:center;gap:3px"><span class="cal-arrow" style="font-size:8px;display:inline-block;transition:transform .15s">▶</span>${esc(ev.r.vendor)}</div><div id="${gid}" style="display:none">`;
+        lastV=ev.r.vendor;grpOpen=true;
+      }
       const tc={in:'ev-in',done:'ev-done',ad:'ev-ad'}[ev.type]||'';
       const icon={in:'▶',done:'✔',ad:'★'}[ev.type]||'';
       // 摘要：圖示+戶別縮寫+工項前5字
@@ -2329,6 +2358,7 @@ function renderCal(){
       const sumIssue=esc(ev.r.issue).slice(0,5);
       evH+=`<div class="cal-ev ${tc}" title="${esc(ev.r.unit+' | '+ev.r.issue+' ['+{in:'預計進場',done:'預計完成',ad:'實際完成'}[ev.type]+']')}">${icon} ${sumUnit} ${sumIssue}</div>`;
     });
+    if(grpOpen)evH+='</div>';
     cal+=`<div class="cal-cell${isToday?' today-c':''}${isWknd?' wknd-c':''}">${dn}${evH}</div>`;
   });
   cal+='</div></div>';
@@ -2460,6 +2490,21 @@ function renderZones(){
 }
 
 // ── PANE: Manager ─────────────────────────────────────────────────────────
+const MGR_TITLE_PRESETS=['副理','所長','主任','組長','工程師','其他'];
+const MGR_DUTY_PRESETS=['全區','A棟','B棟','A棟+B棟','公設','其他'];
+function mgrTitleOptions(){
+  const set=new Set(MGR_TITLE_PRESETS);
+  Object.values(S.managerDetails||{}).forEach(d=>{if(d&&d.title)set.add(d.title);});
+  return[...set];
+}
+function mgrDutyOptions(){
+  const set=new Set(MGR_DUTY_PRESETS);
+  Object.values(S.managerDetails||{}).forEach(d=>{if(d&&d.duty)set.add(d.duty);});
+  return[...set];
+}
+function mgrDatalistsHTML(){
+  return'<datalist id="dl-mgr-title">'+mgrTitleOptions().map(o=>'<option value="'+esc(o)+'">').join('')+'</datalist><datalist id="dl-mgr-duty">'+mgrDutyOptions().map(o=>'<option value="'+esc(o)+'">').join('')+'</datalist>';
+}
 function updMgrDetail(name,field,val){
   if(!S.managerDetails[name])S.managerDetails[name]={title:'',duty:''};
   S.managerDetails[name][field]=val;save();
@@ -2553,27 +2598,19 @@ function renderMgr(){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','title',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelTitle===''?' selected':''}>— 未設定 —</option>
-          <option value="副理"${_mSelTitle==='副理'?' selected':''}>副理</option>
-          <option value="所長"${_mSelTitle==='所長'?' selected':''}>所長</option>
-          <option value="主任"${_mSelTitle==='主任'?' selected':''}>主任</option>
-          <option value="組長"${_mSelTitle==='組長'?' selected':''}>組長</option>
-          <option value="工程師"${_mSelTitle==='工程師'?' selected':''}>工程師</option>
-          <option value="其他"${_mSelTitle==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
+        </div>
       </div>
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
-        <select onchange="updMgrDetail('${esc(selMgr)}','duty',this.value)" style="width:100%;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)">
-          <option value=""${_mSelDuty===''?' selected':''}>— 未設定 —</option>
-          <option value="全區"${_mSelDuty==='全區'?' selected':''}>全區</option>
-          <option value="A棟"${_mSelDuty==='A棟'?' selected':''}>A棟</option>
-          <option value="B棟"${_mSelDuty==='B棟'?' selected':''}>B棟</option>
-          <option value="A棟+B棟"${_mSelDuty==='A棟+B棟'?' selected':''}>A棟+B棟</option>
-          <option value="公設"${_mSelDuty==='公設'?' selected':''}>公設</option>
-          <option value="其他"${_mSelDuty==='其他'?' selected':''}>其他</option>
-        </select>
+        <div style="display:flex;gap:4px">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
+          <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
+        </div>
       </div>
     </div>
   </div>`:'';
@@ -2599,7 +2636,8 @@ function renderMgr(){
       </div>
     </div>
     ${mDetailEditor?`<div id="mgr-detail-editor" style="margin-top:12px">${mDetailEditor}</div>`:''}
-    ${detail?`<div id="mgr-detail" style="margin-top:12px">${detail}</div>`:''}`;
+    ${detail?`<div id="mgr-detail" style="margin-top:12px">${detail}</div>`:''}
+    ${mgrDatalistsHTML()}`;
 }
 
 
@@ -3180,6 +3218,56 @@ function renderHandover(){
     }).join('');
   })();
 
+  // ── 批次匯出驗屋缺失PDF（依驗屋日期/時段）──
+  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false};
+  const _be=window._batchExport;
+  const _beDates=[...new Set(Object.values(S.handoverUnits).map(h=>h&&h.planDate).filter(Boolean))].sort();
+  if(_be.date&&!_beDates.includes(_be.date)){_be.date='';_be.selected=new Set();}
+  const _beUnits=_be.date?Object.keys(S.handoverUnits).filter(k=>{
+    const h=S.handoverUnits[k];
+    return h&&h.planDate===_be.date&&(!_be.slot||h.slot===_be.slot);
+  }).sort():[];
+  const batchExportPanel=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+    <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);${_be.open?'border-bottom:1px solid var(--border);':''}gap:10px;flex-wrap:wrap;cursor:pointer" onclick="window._batchExport.open=!window._batchExport.open;renderHandover()">
+      <span style="font-size:12px;font-weight:700">📦 批次匯出驗屋缺失PDF</span>
+      <span style="font-size:11px;color:var(--text2);margin-left:auto">${_be.open?'▲ 收合':'▼ 展開'}</span>
+    </div>
+    ${_be.open?`<div style="padding:10px 12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--text2)">驗屋日期：</span>
+        <select onchange="window._batchExport.date=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+          <option value="">請選擇</option>
+          ${_beDates.map(d=>`<option value="${esc(d)}" ${_be.date===d?'selected':''}>${esc(d)}</option>`).join('')}
+        </select>
+        <span style="font-size:11px;color:var(--text2);margin-left:8px">時段：</span>
+        <select onchange="window._batchExport.slot=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+          <option value="">全部時段</option>
+          ${HCAL_SLOTS.map((s,i)=>`<option value="${esc(s)}" ${_be.slot===s?'selected':''}>第${i+1}時段 ${esc(s)}</option>`).join('')}
+        </select>
+      </div>
+      ${!_be.date?`<div style="font-size:11px;color:var(--text3)">請先選擇驗屋日期</div>`:
+        !_beUnits.length?`<div style="font-size:11px;color:var(--text3)">此日期（與時段）無符合的驗屋戶別</div>`:
+        `<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="window._batchExport.selected=new Set(JSON.parse('${esc(JSON.stringify(_beUnits))}'));renderHandover()">全選</button>
+          <button class="btn btn-sm" onclick="window._batchExport.selected=new Set();renderHandover()">取消全選</button>
+          <button class="btn btn-p btn-sm" onclick="startBatchExport()" ${_be.selected.size?'':'disabled'}>⬇ 開始匯出（已選 ${_be.selected.size} 戶）</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${_beUnits.map(k=>{
+            const h=S.handoverUnits[k];
+            const slotIdx=HCAL_SLOTS.indexOf(h.slot)+1;
+            const checked=_be.selected.has(k);
+            return`<label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;border:1px solid ${checked?'var(--purple)':'var(--border)'};border-radius:var(--rs);background:${checked?'#F0EEFF':'var(--card)'};cursor:pointer">
+              <input type="checkbox" ${checked?'checked':''} onchange="toggleBatchExportUnit('${esc(k)}',this.checked)">
+              ${esc(unitDisplayName(k))}${slotIdx?`<span style="color:var(--text3)">第${slotIdx}時段</span>`:''}
+              <span class="no-print" title="移除此筆驗屋排程資料" onclick="event.preventDefault();event.stopPropagation();removeHandoverUnitEntry('${esc(k)}')" style="color:var(--text3);cursor:pointer;margin-left:2px">✕</span>
+            </label>`;
+          }).join('')}
+        </div>`}
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">💡 匯出時會開啟單一視窗，所有勾選戶別合併為一份PDF（各戶自動分頁），於列印對話框選擇「另存為PDF」即可。若清單中出現異常戶別（無對應資料），可點選後方的 ✕ 移除該筆驗屋排程。</div>
+    </div>`:''}
+  </div>`;
+
   document.getElementById('pane-handover').innerHTML=`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
       <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap">
@@ -3203,6 +3291,7 @@ function renderHandover(){
         </table>
       </div>
     </div>
+    ${batchExportPanel}
     <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap;padding:7px 8px;background:var(--surface);border-radius:var(--rs)">
       <span style="font-size:11px;color:var(--text2);flex-shrink:0">篩選：</span>
       <select onchange="window._hovFilter.planDate=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
@@ -3903,10 +3992,11 @@ function toggleUnitDefects(key){
   if(!el)return;
   el.style.display=el.style.display==='none'?'block':'none';
 }
-function printUnitDefects(unitKey){
+function unitDefectsBody(unitKey){
   const rows=getDefectRows(unitKey);
   const hu=(S.handoverUnits&&S.handoverUnits[unitKey])||{};
   const cl=(S.clientData&&S.clientData[unitKey])||{};
+  const displayName=unitDisplayName(unitKey);
   const grade=hoGrade(hoUnitPct(displayName)||hoUnitPct(unitKey));
   const pct=hoUnitPct(displayName)||hoUnitPct(unitKey);
   const info=`<div style="margin-bottom:10px;font-size:11px;color:#555">
@@ -3919,7 +4009,42 @@ function printUnitDefects(unitKey){
   const thead=`<tr><th>廠商</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr>`;
   const tbody=rows.map(r=>{const st=getStatus(r);const stLabel={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'}[st]||'';return`<tr class="r-${st}"><td>${esc(r.vendor)}</td><td>${esc(r.issue)}</td><td>${esc(r.note)}</td><td>${fmtMD(r.planIn)}</td><td>${fmtMD(r.planDone)}</td><td>${r.actualDone?fmtMD(r.actualDone):'—'}</td><td>${stLabel}</td></tr>`;}).join('');
   const empty=!rows.length?'<p style="color:#888;font-size:11px">此戶目前無缺失項目記錄</p>':'';
-  printSection(`缺失清單 — ${unitKey}`,info+(rows.length?`<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`:empty));
+  return info+(rows.length?`<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`:empty);
+}
+function printUnitDefects(unitKey,fileName){
+  printSection(`缺失清單 — ${unitKey}`,unitDefectsBody(unitKey),fileName);
+}
+// ── 批次匯出驗屋缺失PDF ──
+function toggleBatchExportUnit(key,checked){
+  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false};
+  if(checked)window._batchExport.selected.add(key);else window._batchExport.selected.delete(key);
+  renderHandover();
+}
+function removeHandoverUnitEntry(key){
+  if(!S.handoverUnits||!S.handoverUnits[key])return;
+  if(!confirm(`確定要移除「${key}」這筆驗屋排程資料嗎？此操作無法復原。`))return;
+  delete S.handoverUnits[key];
+  if(window._batchExport&&window._batchExport.selected)window._batchExport.selected.delete(key);
+  save();
+  toast(`已移除「${key}」的驗屋排程資料`,'🗑');
+  renderHandover();
+}
+function printBatchDefects(units,fileName){
+  const body=units.map((k,i)=>`<div style="${i>0?'page-break-before:always;':''}padding-top:${i>0?'14px':'0'}">
+    <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc(unitDisplayName(k))}</h3>
+    ${unitDefectsBody(k)}
+  </div>`).join('');
+  printSection(`批次缺失清單（共${units.length}戶）`,body,fileName);
+}
+function startBatchExport(){
+  const be=window._batchExport||{};
+  const units=[...(be.selected||[])];
+  if(!units.length)return;
+  const md=(be.date||'').replace(/-/g,'').slice(4);
+  const slotIdx=HCAL_SLOTS.indexOf(be.slot)+1;
+  const fname=`批次缺失清單${md?'-'+md:''}${slotIdx?'-'+slotIdx:''}`;
+  printBatchDefects(units,fname);
+  toast(`已開啟 ${units.length} 戶缺失清單PDF（單一視窗，列印時各戶會自動分頁）`,'📦');
 }
 
 
@@ -4722,6 +4847,11 @@ let _clSelected=new Set(); // 多選 keys
 
 function renderClients(){
   if(!S.clientData)S.clientData={};
+  // 記錄目前焦點與游標位置，避免重繪後輸入框失焦造成無法連續輸入
+  const _activeEl=document.activeElement;
+  const _activeId=_activeEl&&_activeEl.id;
+  const _selStart=(_activeId==='cl-search')?_activeEl.selectionStart:null;
+  const _selEnd=(_activeId==='cl-search')?_activeEl.selectionEnd:null;
   // ── 頂部統計卡片：以 S.clientData[key].type 為準，未設定才用 key 前綴推斷 ──
   function getUnitType(k){
     const cd=S.clientData&&S.clientData[k];
@@ -4780,10 +4910,13 @@ function renderClients(){
     const pctBar=pct!=null?`<div style="margin-top:2px;height:3px;background:rgba(0,0,0,.1);border-radius:2px"><div style="height:3px;width:${pct}%;background:${pct===100?'#3B6D11':pct>=80?'#EF9F27':'#A32D2D'};border-radius:2px"></div></div>`:'';
     const selRing=isSel?'outline:2px solid #185FA5;':'';
     const expRing=isExp?'outline:2.5px solid var(--purple);':'';
-    return`<span onclick="clientCellClick('${esc(key)}',event)" title="${esc(key)}${cl.name?' - '+esc(cl.name):''}" style="display:block;padding:5px 3px;border-radius:4px;cursor:pointer;border:0.5px solid transparent;${cellBg(key)};${selRing||expRing}font-size:11px;text-align:center;line-height:1.3;position:relative">
+    const allPark=[...new Set([...(G95_PARKING[key]||[]),...(cl.parkings||[])])];
+    const parkLabel=`<div style="font-size:8px;color:#0C447C;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8;min-height:11px;display:flex;align-items:center;gap:2px">${allPark.length?`🚗 ${esc(allPark[0])}`+(allPark.length>1?` <span onclick="event.stopPropagation();showParkList('${esc(key)}')" style="font-size:7px;cursor:pointer">▼</span>`:''):''}</div>`;
+    return`<span onclick="clientCellClick('${esc(key)}',event)" title="${esc(key)}${cl.name?' - '+esc(cl.name):''}${allPark.length?' - 🚗'+esc(allPark.join('、')):''}" style="display:block;padding:5px 3px;border-radius:4px;cursor:pointer;border:0.5px solid transparent;${cellBg(key)};${selRing||expRing}font-size:11px;text-align:center;line-height:1.3;position:relative">
       ${isSel?`<span style="position:absolute;top:0;left:0;font-size:8px;color:#185FA5">✓</span>`:''}
       <div style="font-size:11px;font-weight:500">${unitDisplayName(key)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:10px"> ★</span>':''}</div>
       ${cl.name?`<div style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75">${esc(cl.name)}</div>`:''}
+      ${parkLabel}
       ${pctBar}
     </span>`;
   }
@@ -4808,7 +4941,8 @@ function renderClients(){
   document.getElementById('pane-clients').innerHTML=`
     ${statsBar}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-      <input id="cl-search" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" oninput="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:200px">
+      <input id="cl-search" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:200px">
+      <button class="btn btn-sm" onclick="renderClients()">確認</button>
       <select id="cl-type" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="">全部類型</option><option value="地主戶">地主戶</option><option value="業主戶">業主戶</option><option value="自購戶">自購戶</option>
       </select>
@@ -4832,10 +4966,41 @@ function renderClients(){
     </div>
     ${buildClientShop()}`;
   setTimeout(()=>{
-    const s=document.getElementById('cl-search');if(s)s.value=search;
+    const s=document.getElementById('cl-search');
+    if(s){
+      s.value=search;
+      if(_activeId==='cl-search'){
+        s.focus();
+        if(_selStart!=null)s.setSelectionRange(_selStart,_selEnd);
+      }
+    }
     const t=document.getElementById('cl-type');if(t)t.value=fType;
     const b=document.getElementById('cl-block');if(b)b.value=fBlock;
   },0);
+}
+
+// ── 顯示某戶的全部車位（卡片僅顯示第一筆） ────────────────────────────
+function showParkList(key){
+  const cl=S.clientData[key]||{};
+  const allPark=[...new Set([...(G95_PARKING[key]||[]),...(cl.parkings||[])])];
+  alert(unitDisplayName(key)+' 車位：\n'+allPark.join('\n'));
+}
+
+// ── 同姓名戶別：跳轉到指定戶別的展開卡片 ──────────────────────────────
+function jumpToClient(key){
+  _clSelected.clear();
+  _clientExpanded=key;
+  const cl=S.clientData[key]||{};
+  _clEditBuf[key]={
+    name:cl.name||'',tel:cl.tel||'',
+    type:cl.type||(isOwnerUnit(key)?'地主戶':isBizUnit(key)?'業主戶':'自購戶'),
+    note:cl.note||'',parkings:[...(cl.parkings||[])]
+  };
+  renderClients();
+  requestAnimationFrame(()=>{
+    const el=document.getElementById('cl-detail-'+key);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
 }
 
 // ── 格子點擊：長按或 Ctrl 多選，單擊展開 ──────────────────────────────
@@ -4900,7 +5065,20 @@ function buildClientDetailInline(key){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
       <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br>
-        <input class="cl-inp-name" value="${esc(name)}" placeholder="姓名" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
+        <input class="cl-inp-name" value="${esc(name)}" placeholder="姓名" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
+        ${(()=>{
+          const sameKeys=(cl.name||'')?Object.keys(S.clientData).filter(k=>k!==key&&(S.clientData[k].name||'')===cl.name):[];
+          if(!sameKeys.length)return'';
+          const groups={};
+          sameKeys.forEach(k=>{const b=k.match(/^(地|業)?([AB])/)?.[2]||'其他';(groups[b]=groups[b]||[]).push(k);});
+          const order=['A','B','其他'];
+          const blocks=order.filter(b=>groups[b]&&groups[b].length).map(b=>{
+            const chips=groups[b].map(k=>`<span onclick="event.stopPropagation();jumpToClient('${esc(k)}')" style="padding:2px 8px;background:#EEF2FF;color:#3C3489;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid #C7D2FE;text-align:center;white-space:nowrap">${esc(unitDisplayName(k))}</span>`).join('');
+            return`<div style="margin-top:4px"><span style="font-size:9px;color:var(--text3)">${b==='其他'?'其他':b+'棟'}</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:3px">${chips}</div></div>`;
+          }).join('');
+          return`<div style="margin-top:4px"><span style="font-size:9px;color:var(--text3)">同姓名其他戶別：</span>${blocks}</div>`;
+        })()}
+      </div>
       <div><span style="font-size:10px;color:var(--text2)">聯絡電話</span><br>
         <input class="cl-inp-tel" value="${esc(tel)}" placeholder="電話" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
       <div><span style="font-size:10px;color:var(--text2)">戶別類型</span><br>
@@ -5297,22 +5475,85 @@ const TAB_DEFS={
   changelog: {label:'📝 更新紀錄',         row:3},
   dupes:     {label:'🔁 重複作業',         row:3},
 };
+let _tabEditMode=false;
+let _tabOrderBackup=null;
+let _editSlots=null;
 function renderTabBar(){
-  const order=S.tabOrder.filter(id=>TAB_DEFS[id]);
-  const row1=order.filter(id=>TAB_DEFS[id].row===1);
-  const row2=order.filter(id=>TAB_DEFS[id].row===2);
-  const row3=order.filter(id=>TAB_DEFS[id].row===3);
+  let cells;
+  if(_tabEditMode){
+    if(!_editSlots)_editSlots=S.tabOrder.map(id=>(id&&TAB_DEFS[id])?id:null);
+    while(_editSlots.length<24)_editSlots.push(null);
+    cells=_editSlots;
+  }else{
+    cells=S.tabOrder.map(id=>(id&&TAB_DEFS[id])?id:null);
+    while(cells.length<24)cells.push(null);
+  }
+  const grip=_tabEditMode?'<span class="tab-grip">⠿</span>':'';
   const makeTab=id=>`<button class="tab${id===activeTab?' active':''}" data-id="${id}"
-    draggable="true"
+    draggable="${_tabEditMode?'true':'false'}"
     ondragstart="tabDragStart(event,'${id}')"
     ondragover="tabDragOver(event,'${id}')"
     ondrop="tabDrop(event,'${id}')"
     ondragleave="document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-drag-over'))"
-    onclick="switchTab('${id}')">${TAB_DEFS[id].label}</button>`;
-  document.getElementById('tab-bar').innerHTML=
-    `<div class="tab-row-1">${row1.map(makeTab).join('')}</div>`+
-    `<div class="tab-row-2">${row2.map(makeTab).join('')}</div>`+
-    `<div class="tab-row-3">${row3.map(makeTab).join('')}</div>`;
+    onclick="switchTab('${id}')">${grip}${TAB_DEFS[id].label}</button>`;
+  const makeFiller=i=>`<div class="tab-filler" ondragover="tabDragOver(event,${-1-i})" ondrop="tabDrop(event,${-1-i})"></div>`;
+  const html=cells.map((id,i)=>(id&&TAB_DEFS[id])?makeTab(id):makeFiller(i)).join('');
+  document.getElementById('tab-bar').innerHTML=`<div class="tab-grid">${html}</div>`;
+  const wrap=document.getElementById('tab-bar-wrap');
+  const btn=document.getElementById('tab-edit-btn');
+  const cancelBtn=document.getElementById('tab-cancel-btn');
+  if(wrap)wrap.classList.toggle('edit-mode',_tabEditMode);
+  if(btn){
+    btn.classList.toggle('active',_tabEditMode);
+    btn.innerHTML=_tabEditMode?'🔒 完成排序':'🔓 編輯排序';
+  }
+  if(cancelBtn)cancelBtn.style.display=_tabEditMode?'':'none';
+}
+function toggleTabEditMode(){
+  if(_tabEditMode){
+    const arr=_editSlots.slice();
+    while(arr.length&&arr[arr.length-1]==null)arr.pop();
+    S.tabOrder=arr;
+    _editSlots=null;_tabEditMode=false;_tabOrderBackup=null;save();renderTabBar();return;
+  }
+  tabEditAuthModal();
+}
+function cancelTabEditMode(){
+  _editSlots=null;
+  if(_tabOrderBackup)S.tabOrder=_tabOrderBackup;
+  _tabEditMode=false;_tabOrderBackup=null;renderTabBar();
+}
+function tabEditAuthModal(){
+  const existing=document.getElementById('tab-auth-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='tab-auth-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;min-width:280px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">🔒 需要認證</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">請輸入認證碼以編輯選單標籤排序：</div>
+    <input type="password" id="tab-auth-code-inp" placeholder="認證碼" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-bottom:6px;outline:none;color:var(--text);background:var(--card)" onkeydown="if(event.key==='Enter')confirmTabEditAuth()">
+    <div id="tab-auth-error" style="font-size:11px;color:var(--red);margin-bottom:10px;min-height:16px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="document.getElementById('tab-auth-modal').remove()">取消</button>
+      <button class="btn btn-sm btn-p" onclick="confirmTabEditAuth()">確認</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('tab-auth-code-inp').focus(),50);
+}
+function confirmTabEditAuth(){
+  const inp=document.getElementById('tab-auth-code-inp');
+  const code=inp?inp.value.trim():'';
+  if(code!=='MONGA'){
+    const err=document.getElementById('tab-auth-error');
+    if(err)err.textContent='認證碼錯誤，請重新輸入。';
+    if(inp){inp.value='';inp.focus();}
+    return;
+  }
+  document.getElementById('tab-auth-modal').remove();
+  _tabOrderBackup=[...S.tabOrder];
+  _tabEditMode=true;renderTabBar();
+  toast('已進入排序模式，拖曳卡片調整順序','🔓');
 }
 function switchTab(id){
   activeTab=id;
@@ -5552,29 +5793,20 @@ async function init(){
     if(el&&t!=='main')el.style.display='none';
   });
   window._hovFloors=new Set();
-  renderTabBar();renderMain();   // 先用 localStorage 畫出 UI
-  await load();                  // 再從 Firebase 更新（async）
-  renderTabBar();renderAll();
-  startFirebaseListen();
-}
-
-// 若 Firebase module 已分派 ready 事件，直接啟動；否則等最多 3 秒
-if(window._fbReady){
-  init();
-} else {
-  const _initTimer=setTimeout(()=>{
-    setSyncStatus('offline');
-    init();
-  }, 3000);
-  document.addEventListener('firebase-ready',()=>{
-    clearTimeout(_initTimer);
-    init();
-  },{once:true});
-  // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
+  renderTabBar();renderMain();   // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
   Object.keys(TAB_DEFS).forEach(t=>{if(t!=='main')document.getElementById('pane-'+t).style.display='none';});
   try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.rows)S=migrateState(d);}}catch(e){}
   renderTabBar();renderMain();
 }
+
+// ── 啟動 ──────────────────────────────────────────────────────────────────
+function bootstrap(){
+  load().then(init);
+}
+bootstrap();
+document.addEventListener('firebase-ready',()=>{
+  if(!_fbListening)bootstrap();
+});
 </script>
 </body>
 </html>
