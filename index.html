@@ -294,7 +294,12 @@ window._fbLoad = async function(){
 window.exportHandoverExport = async function(days){
   days = days || 14;
   try{
-    if(typeof S==='undefined' || !S.handoverUnits) return {error:'S not ready'};
+    if(typeof S==='undefined') return {error:'S not ready'};
+    if(!S.handoverUnits || !Object.keys(S.handoverUnits).length){
+      const fb = await window._fbLoad();
+      if(!fb || !fb.handoverUnits) return {error:'no data from _fbLoad'};
+      Object.assign(S, fb);
+    }
     const today = new Date(); today.setHours(0,0,0,0);
     const end = new Date(today); end.setDate(end.getDate()+days);
     const fmt = d => d.toISOString().slice(0,10);
@@ -5776,8 +5781,4 @@ function mergeDupes(){
   // 執行合併：每組按 createdAt 排序，保留最早，刪除其餘
   const toDelete=new Set();
   mergeGroups.forEach(g=>{
-    const sorted=g.slice().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-    sorted.slice(1).forEach(r=>toDelete.add(r.id));
-  });
-  S.rows=S.rows.filter(r=>!toDelete.has(r.id));
-  logChange('🔀 合併重複',`刪除 ${
+    const sorted=g.slice().s
