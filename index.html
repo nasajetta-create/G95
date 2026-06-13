@@ -294,27 +294,26 @@ window._fbLoad = async function(){
 window.exportHandoverExport = async function(days){
   days = days || 14;
   try{
-    if(typeof S==='undefined') return {error:'S not ready'};
-    if(!S.handoverUnits || !Object.keys(S.handoverUnits).length){
-      const fb = await window._fbLoad();
-      if(!fb || !fb.handoverUnits) return {error:'no data from _fbLoad'};
-      Object.assign(S, fb);
-    }
+    const esc2=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const fb = await window._fbLoad();
+    if(!fb || !fb.handoverUnits) return {error:'no data from _fbLoad'};
+    const hu = fb.handoverUnits;
+    if(typeof unitDisplayName==='undefined' || typeof unitDefectsBody==='undefined') return {error:'render fns not ready'};
     const today = new Date(); today.setHours(0,0,0,0);
     const end = new Date(today); end.setDate(end.getDate()+days);
     const fmt = d => d.toISOString().slice(0,10);
-    const keys = Object.keys(S.handoverUnits).filter(k=>{
-      const p = S.handoverUnits[k].planDate;
+    const keys = Object.keys(hu).filter(k=>{
+      const p = hu[k].planDate;
       if(!p) return false;
       const d = new Date(p);
       return d>=today && d<=end;
-    }).sort((a,b)=> (S.handoverUnits[a].planDate||'').localeCompare(S.handoverUnits[b].planDate||''));
+    }).sort((a,b)=> (hu[a].planDate||'').localeCompare(hu[b].planDate||''));
     const col = collection(db,'projects/main/handover_export');
     const old = await getDocs(col);
     for(const d of old.docs){ await deleteDoc(d.ref); }
     for(const k of keys){
-      const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc(unitDisplayName(k))}（預定交屋：${S.handoverUnits[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
-      await setDoc(doc(col, k.replace(/[\/\.]/g,'_')), { html, planDate: S.handoverUnits[k].planDate||'', disp: unitDisplayName(k), origKey: k });
+      const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc2(unitDisplayName(k))}（預定交屋：${hu[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
+      await setDoc(doc(col, k.replace(/[\/\.]/g,'_')), { html, planDate: hu[k].planDate||'', disp: unitDisplayName(k), origKey: k });
     }
     // 同時寫入分頁合併 HTML，供排程任務以固定路徑（無 pageToken）讀取
     const pageCol = collection(db,'projects/main/export_pages');
@@ -326,7 +325,7 @@ window.exportHandoverExport = async function(days){
       const chunk = keys.slice(i,i+CHUNK);
       let body='';
       chunk.forEach((k,idx)=>{
-        const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc(unitDisplayName(k))}（預定交屋：${S.handoverUnits[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
+        const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc2(unitDisplayName(k))}（預定交屋：${hu[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
         body += `<div style="${(i+idx)>0?'page-break-before:always;':''}padding-top:${(i+idx)>0?'14px':'0'}">${html}</div>`;
       });
       await setDoc(doc(pageCol, 'page'+pageCount), { body, from: i, to: Math.min(i+CHUNK,keys.length) });
@@ -5781,4 +5780,4 @@ function mergeDupes(){
   // 執行合併：每組按 createdAt 排序，保留最早，刪除其餘
   const toDelete=new Set();
   mergeGroups.forEach(g=>{
-    const sorted=g.slice().s
+    c
