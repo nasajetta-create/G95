@@ -291,14 +291,94 @@ window._fbLoad = async function(){
 };
 
 // ── 匯出未來N天交屋戶別缺失清單（供排程任務讀取，拆成多筆小文件避免單筆過大）──
+// 完全獨立實作，不依賴 classic script 內的全域函式/變數（module scope 無法存取）
 window.exportHandoverExport = async function(days){
   days = days || 14;
   try{
     const esc2=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const DOW2=['日','一','二','三','四','五','六'];
+    const pd2=s=>{if(!s)return null;const d=new Date(s);d.setHours(0,0,0,0);return isNaN(d)?null:d};
+    const fmtMD2=s=>{const d=pd2(s);if(!d)return'';return`${d.getMonth()+1}/${d.getDate()}(${DOW2[d.getDay()]})`};
+    const TODAY2=new Date();TODAY2.setHours(0,0,0,0);
+    const du2=s=>{const d=pd2(s);if(!d)return null;return Math.ceil((d-TODAY2)/86400000)};
+    const getStatus2=r=>{
+      if(r.actualDone)return'done';
+      const d=du2(r.planDone);
+      if(d!==null&&d<0)return'overdue';
+      if(r.actualIn)return'ongoing';
+      return'pending';
+    };
+    const unitDisplayName2=key=>!key?'':String(key).replace(/^(地|業)/,'');
+
     const fb = await window._fbLoad();
     if(!fb || !fb.handoverUnits) return {error:'no data from _fbLoad'};
     const hu = fb.handoverUnits;
-    if(typeof unitDisplayName==='undefined' || typeof unitDefectsBody==='undefined') return {error:'render fns not ready'};
+    const allRows=[...(fb.completed||[]),...(fb.rows||[])];
+    const defectCache=new Map();
+    allRows.forEach(r=>{
+      if(!r.unit)return;
+      const k=String(r.unit).trim();
+      if(!defectCache.has(k))defectCache.set(k,[]);
+      defectCache.get(k).push(r);
+    });
+    const getDefectRows2=unitKey=>{
+      if(!unitKey)return[];
+      const displayName=unitDisplayName2(unitKey);
+      const m=displayName.match(/^([A-Za-z]+\d*)-(\d+)$/);
+      const col=m?m[1].toUpperCase():'';
+      const flr=m?m[2]:'';
+      const seen=new Set();const result=[];
+      const addRows=rows=>{if(!rows)return;rows.forEach(r=>{if(!seen.has(r.id)){seen.add(r.id);result.push(r);}});};
+      addRows(defectCache.get(unitKey));addRows(defectCache.get(displayName));
+      addRows(defectCache.get(String(unitKey).toUpperCase()));addRows(defectCache.get(displayName.toUpperCase()));
+      if(col&&flr&&result.length===0){
+        defectCache.forEach((rows,ru)=>{
+          if(!rows.length)return;
+          const clean=ru.replace(/^(地|業)/,'').trim();
+          if(clean.toUpperCase()===displayName.toUpperCase()){addRows(rows);return;}
+          const ruCol=clean.replace(/[(（][^)）]*[)）]/g,'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+          if(ruCol===col){
+            const matched=rows.filter(r=>String(r.floor||'').replace(/[^0-9]/g,'')===flr);
+            if(matched.length)addRows(matched);
+          }
+        });
+      }
+      return result;
+    };
+    const hoUnitPct2=unit=>{
+      const rows=getDefectRows2(unit);
+      if(!rows.length)return null;
+      const completedCnt=rows.filter(r=>r.compId!=null).length;
+      return Math.round(completedCnt/rows.length*100);
+    };
+    const hoGrade2=pct=>{
+      if(pct===null)return{label:'無資料',color:'#B4B2A9'};
+      if(pct===100)return{label:'✅ 可交屋',color:'#3B6D11'};
+      if(pct>=90) return{label:'🔵 接近完成',color:'#185FA5'};
+      if(pct>=80) return{label:'🟡 進行中',color:'#854F0B'};
+      if(pct>=60) return{label:'🟠 待加強',color:'#BA7517'};
+      return{label:'🔴 未完成',color:'#A32D2D'};
+    };
+    const unitDefectsBody2=unitKey=>{
+      const rows=getDefectRows2(unitKey);
+      const huu=hu[unitKey]||{};
+      const cl=(fb.clientData&&fb.clientData[unitKey])||{};
+      const displayName=unitDisplayName2(unitKey);
+      const pct=hoUnitPct2(displayName)??hoUnitPct2(unitKey);
+      const grade=hoGrade2(pct);
+      const info=`<div style="margin-bottom:10px;font-size:11px;color:#555">
+        <span>戶別：<strong>${esc2(unitKey)}</strong></span>
+        ${cl.name?`<span style="margin-left:12px">客戶：${esc2(cl.name)}</span>`:''}
+        ${cl.tel?`<span style="margin-left:12px">電話：${esc2(cl.tel)}</span>`:''}
+        <span style="margin-left:12px">完成度：<strong style="color:${grade.color}">${pct??'—'}%</strong></span>
+        ${huu.planDate?`<span style="margin-left:12px">預定驗收：${huu.planDate}</span>`:''}
+      </div>`;
+      const thead=`<tr><th>廠商</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr>`;
+      const tbody=rows.map(r=>{const st=getStatus2(r);const stLabel={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'}[st]||'';return`<tr class="r-${st}"><td>${esc2(r.vendor)}</td><td>${esc2(r.issue)}</td><td>${esc2(r.note)}</td><td>${fmtMD2(r.planIn)}</td><td>${fmtMD2(r.planDone)}</td><td>${r.actualDone?fmtMD2(r.actualDone):'—'}</td><td>${stLabel}</td></tr>`;}).join('');
+      const empty=!rows.length?'<p style="color:#888;font-size:11px">此戶目前無缺失項目記錄</p>':'';
+      return info+(rows.length?`<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`:empty);
+    };
+
     const today = new Date(); today.setHours(0,0,0,0);
     const end = new Date(today); end.setDate(end.getDate()+days);
     const fmt = d => d.toISOString().slice(0,10);
@@ -308,13 +388,7 @@ window.exportHandoverExport = async function(days){
       const d = new Date(p);
       return d>=today && d<=end;
     }).sort((a,b)=> (hu[a].planDate||'').localeCompare(hu[b].planDate||''));
-    const col = collection(db,'projects/main/handover_export');
-    const old = await getDocs(col);
-    for(const d of old.docs){ await deleteDoc(d.ref); }
-    for(const k of keys){
-      const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc2(unitDisplayName(k))}（預定交屋：${hu[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
-      await setDoc(doc(col, k.replace(/[\/\.]/g,'_')), { html, planDate: hu[k].planDate||'', disp: unitDisplayName(k), origKey: k });
-    }
+
     // 同時寫入分頁合併 HTML，供排程任務以固定路徑（無 pageToken）讀取
     const pageCol = collection(db,'projects/main/export_pages');
     const oldPages = await getDocs(pageCol);
@@ -325,7 +399,7 @@ window.exportHandoverExport = async function(days){
       const chunk = keys.slice(i,i+CHUNK);
       let body='';
       chunk.forEach((k,idx)=>{
-        const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc2(unitDisplayName(k))}（預定交屋：${hu[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
+        const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc2(unitDisplayName2(k))}（預定交屋：${hu[k].planDate||''}）</h3>${unitDefectsBody2(k)}`;
         body += `<div style="${(i+idx)>0?'page-break-before:always;':''}padding-top:${(i+idx)>0?'14px':'0'}">${html}</div>`;
       });
       await setDoc(doc(pageCol, 'page'+pageCount), { body, from: i, to: Math.min(i+CHUNK,keys.length) });
@@ -5701,83 +5775,4 @@ function renderDupes(){
   }).join('');
 
   const selCount=_sel.size;
-  const allIds=dupGroups.flatMap(g=>g.rows.map(r=>r.id));
-  const allChecked=allIds.length>0&&allIds.every(id=>_sel.has(id));
-
-  el.innerHTML=`<div style="padding:18px 20px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-      <input type="checkbox" id="dupe-all-chk" ${allChecked?'checked':''} onclick="dupeToggleAll()" style="accent-color:var(--purple);cursor:pointer;width:15px;height:15px">
-      <span style="font-size:14px;font-weight:700;color:var(--text)">🔁 重複作業</span>
-      <button class="btn btn-p btn-sm" onclick="mergeDupes()" ${selCount<2?'disabled':''} style="padding:4px 12px;font-size:11px;opacity:${selCount<2?'.4':'1'}">🔀 合併選取${selCount>=2?` (${selCount}筆→按組保留1筆)`:''}</button>
-      ${selCount>0?`<span style="font-size:11px;color:var(--purple);font-weight:500;background:#EEEDFE;padding:2px 8px;border-radius:20px">已選 ${selCount} 筆</span>`:''}
-      <span style="font-size:11px;color:var(--text2);margin-left:auto">共 ${dupGroups.length} 組，${totalRows} 筆</span>
-    </div>
-    ${groupsHtml}
-  </div>`;
-}
-
-function dupeToggleRow(id){
-  if(!window._dupeSel)window._dupeSel=new Set();
-  if(_dupeSel.has(id))_dupeSel.delete(id);else _dupeSel.add(id);
-  renderDupes();
-}
-
-function dupeToggleGroup(groupKey){
-  if(!window._dupeSel)window._dupeSel=new Set();
-  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
-  const [u,f,is]=groupKey.split('|||');
-  const ids=S.rows.filter(r=>!isDoneDup(r.id)&&(r.unit||'').trim()===u&&(r.floor||'').trim()===f&&(r.issue||'').trim()===is).map(r=>r.id);
-  const allChk=ids.every(id=>_dupeSel.has(id));
-  ids.forEach(id=>allChk?_dupeSel.delete(id):_dupeSel.add(id));
-  renderDupes();
-}
-
-function dupeToggleAll(){
-  if(!window._dupeSel)window._dupeSel=new Set();
-  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
-  const allIds=S.rows.filter(r=>{
-    if(isDoneDup(r.id))return false;
-    const u=(r.unit||'').trim(),f=(r.floor||'').trim(),is=(r.issue||'').trim();
-    if(!u&&!f&&!is)return false;
-    return true;
-  }).map(r=>r.id);
-  // only toggle ids that are in dup groups
-  const groups={};
-  S.rows.forEach(r=>{
-    if(isDoneDup(r.id))return;
-    const u=(r.unit||'').trim(),f=(r.floor||'').trim(),is=(r.issue||'').trim();
-    if(!u&&!f&&!is)return;
-    const k=`${u}|||${f}|||${is}`;
-    if(!groups[k])groups[k]=[];
-    groups[k].push(r.id);
-  });
-  const dupIds=Object.values(groups).filter(arr=>arr.length>=2).flatMap(arr=>arr);
-  const allChk=dupIds.every(id=>_dupeSel.has(id));
-  dupIds.forEach(id=>allChk?_dupeSel.delete(id):_dupeSel.add(id));
-  renderDupes();
-}
-
-function mergeDupes(){
-  if(!window._dupeSel||_dupeSel.size<2){toast('請先勾選要合併的筆數（至少2筆）','⚠️');return;}
-  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
-  // 按組分類勾選的 ids
-  const byGroup={};
-  S.rows.forEach(r=>{
-    if(!_dupeSel.has(r.id))return;
-    const k=`${(r.unit||'').trim()}|||${(r.floor||'').trim()}|||${(r.issue||'').trim()}`;
-    if(!byGroup[k])byGroup[k]=[];
-    byGroup[k].push(r);
-  });
-  const groups=Object.values(byGroup);
-  // 每組至少要有2筆才合併
-  const mergeGroups=groups.filter(g=>g.length>=2);
-  if(!mergeGroups.length){toast('勾選的筆屬於不同組且各組不足2筆，無法合併','⚠️');return;}
-  // 統計要刪除的筆數
-  let delCount=0;
-  mergeGroups.forEach(g=>delCount+=g.length-1);
-  const msg=`合併確認\n\n共 ${mergeGroups.length} 組，每組保留最早一筆，刪除 ${delCount} 筆重複記錄。\n\n確定執行？`;
-  if(!confirm(msg))return;
-  // 執行合併：每組按 createdAt 排序，保留最早，刪除其餘
-  const toDelete=new Set();
-  mergeGroups.forEach(g=>{
-    c
+  const al
