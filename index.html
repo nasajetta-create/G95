@@ -311,11 +311,27 @@ window.exportHandoverExport = async function(days){
       const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc(unitDisplayName(k))}（預定交屋：${S.handoverUnits[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
       await setDoc(doc(col, k.replace(/[\/\.]/g,'_')), { html, planDate: S.handoverUnits[k].planDate||'', disp: unitDisplayName(k), origKey: k });
     }
+    // 同時寫入分頁合併 HTML，供排程任務以固定路徑（無 pageToken）讀取
+    const pageCol = collection(db,'projects/main/export_pages');
+    const oldPages = await getDocs(pageCol);
+    for(const d of oldPages.docs){ await deleteDoc(d.ref); }
+    const CHUNK = 8;
+    let pageCount = 0;
+    for(let i=0;i<keys.length;i+=CHUNK){
+      const chunk = keys.slice(i,i+CHUNK);
+      let body='';
+      chunk.forEach((k,idx)=>{
+        const html = `<h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">${esc(unitDisplayName(k))}（預定交屋：${S.handoverUnits[k].planDate||''}）</h3>${unitDefectsBody(k)}`;
+        body += `<div style="${(i+idx)>0?'page-break-before:always;':''}padding-top:${(i+idx)>0?'14px':'0'}">${html}</div>`;
+      });
+      await setDoc(doc(pageCol, 'page'+pageCount), { body, from: i, to: Math.min(i+CHUNK,keys.length) });
+      pageCount++;
+    }
     await setDoc(doc(db,'projects/main/meta','handover_export'), {
       generatedAt: Date.now(), dateFrom: fmt(today), dateTo: fmt(end),
-      order: keys.map(k=>k.replace(/[\/\.]/g,'_')), count: keys.length
+      order: keys.map(k=>k.replace(/[\/\.]/g,'_')), count: keys.length, pageCount
     });
-    return { ok:true, count: keys.length, dateFrom: fmt(today), dateTo: fmt(end) };
+    return { ok:true, count: keys.length, pageCount, dateFrom: fmt(today), dateTo: fmt(end) };
   } catch(e){ return { error: String(e) }; }
 };
 
@@ -5764,78 +5780,4 @@ function mergeDupes(){
     sorted.slice(1).forEach(r=>toDelete.add(r.id));
   });
   S.rows=S.rows.filter(r=>!toDelete.has(r.id));
-  logChange('🔀 合併重複',`刪除 ${toDelete.size} 筆重複記錄，共 ${mergeGroups.length} 組`);
-  window._dupeSel=new Set();
-  save();renderAll();
-  toast(`已合併，刪除 ${toDelete.size} 筆重複記錄 ✓`,'🔀');
-}
-function renderAll(){renderPane(activeTab);}
-
-// ── 使用人數偵測（BroadcastChannel 補強本地分頁；Firebase presence 優先）────
-(function(){
-  const CH='tracker_presence';
-  const ID=Math.random().toString(36).slice(2);
-  let peers={};
-  peers[ID]=Date.now();
-
-  function updateCount(){
-    // 若 Firebase presence 已有值，優先使用
-    if(typeof window._onlineCount==='number'){
-      const el=document.getElementById('user-count');
-      if(el){el.style.display='';el.textContent='👤 '+window._onlineCount+' 人';}
-      return;
-    }
-    // fallback：BroadcastChannel 本地計數
-    const now=Date.now();
-    Object.keys(peers).forEach(k=>{if(now-peers[k]>12000)delete peers[k];});
-    const n=Object.keys(peers).length;
-    const el=document.getElementById('user-count');
-    if(el){el.style.display='';el.textContent='👤 '+n+' 人';}
-  }
-
-  let bc=null;
-  try{
-    bc=new BroadcastChannel(CH);
-    bc.onmessage=e=>{
-      if(e.data&&e.data.id&&!e.data.leave){peers[e.data.id]=Date.now();updateCount();}
-      if(e.data&&e.data.leave&&e.data.id){delete peers[e.data.id];updateCount();}
-    };
-  }catch(ex){}
-
-  setInterval(()=>{
-    peers[ID]=Date.now();
-    if(bc)bc.postMessage({id:ID});
-    updateCount();
-  },5000);
-
-  window.addEventListener('beforeunload',()=>{
-    if(bc)bc.postMessage({id:ID,leave:true});
-  });
-
-  setTimeout(()=>{if(bc)bc.postMessage({id:ID});updateCount();},800);
-})();
-
-
-async function init(){
-  Object.keys(TAB_DEFS).forEach(t=>{
-    const el=document.getElementById('pane-'+t);
-    if(el&&t!=='main')el.style.display='none';
-  });
-  window._hovFloors=new Set();
-  renderTabBar();renderMain();   // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
-  Object.keys(TAB_DEFS).forEach(t=>{if(t!=='main')document.getElementById('pane-'+t).style.display='none';});
-  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.rows)S=migrateState(d);}}catch(e){}
-  renderTabBar();renderMain();
-}
-
-// ── 啟動 ──────────────────────────────────────────────────────────────────
-function bootstrap(){
-  load().then(init);
-}
-bootstrap();
-document.addEventListener('firebase-ready',()=>{
-  if(!_fbListening)bootstrap();
-});
-</script>
-</body>
-</html>
+  logChange('🔀 合併重複',`刪除 ${
