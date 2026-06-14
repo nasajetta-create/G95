@@ -640,9 +640,18 @@ async function load(){
   // 2. 若 Firebase 已就緒，從雲端載入
   if(window._fbLoad){
     setSyncStatus('connecting');
+    // 第一次連線時 Firestore 通道有時尚未就緒，可能長時間 pending；
+    // 加上逾時保護，逾時就重試一次，避免畫面卡在「連線中…」
+    const withTimeout=(ms)=>new Promise((resolve)=>{
+      let done=false;
+      const timer=setTimeout(()=>{if(!done){done=true;resolve('__TIMEOUT__');}},ms);
+      window._fbLoad().then(v=>{if(!done){done=true;clearTimeout(timer);resolve(v);}})
+        .catch(e=>{if(!done){done=true;clearTimeout(timer);resolve('__TIMEOUT__');}});
+    });
     try{
-      const remote=await window._fbLoad();
-      if(remote&&remote.rows){
+      let remote=await withTimeout(7000);
+      if(remote==='__TIMEOUT__')remote=await withTimeout(12000);
+      if(remote&&remote!=='__TIMEOUT__'&&remote.rows){
         S=migrateState(remote);
         try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
         setSyncStatus('online');
@@ -5765,14 +5774,4 @@ function renderDupes(){
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FFF8E6;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="dupeToggleGroup('${esc(groupKey)}')">
         <input type="checkbox" ${allChecked?'checked':''} onclick="event.stopPropagation();dupeToggleGroup('${esc(groupKey)}')" style="accent-color:var(--purple);cursor:pointer;width:14px;height:14px">
         <span style="font-size:12px;font-weight:600;color:#6B4D00">${esc(g.unit||'—')} · ${esc(g.floor||'—')} · ${esc(g.issue||'—')}</span>
-        <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${g.rows.length} 筆重複</span>
-      </div>
-      <div style="display:grid;grid-template-columns:32px 90px 55px 1fr 100px 70px;gap:6px;padding:5px 12px;font-size:10px;font-weight:500;color:var(--text3);background:var(--surface);border-bottom:0.5px solid var(--border2)">
-        <span></span><span>戶別</span><span>樓層</span><span>缺失內容</span><span>負責廠商</span><span>建立日期</span>
-      </div>
-      ${rowsHtml}
-    </div>`;
-  }).join('');
-
-  const selCount=_sel.size;
-  const al
+        <span style
