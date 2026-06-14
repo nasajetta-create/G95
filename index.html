@@ -5774,4 +5774,171 @@ function renderDupes(){
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FFF8E6;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="dupeToggleGroup('${esc(groupKey)}')">
         <input type="checkbox" ${allChecked?'checked':''} onclick="event.stopPropagation();dupeToggleGroup('${esc(groupKey)}')" style="accent-color:var(--purple);cursor:pointer;width:14px;height:14px">
         <span style="font-size:12px;font-weight:600;color:#6B4D00">${esc(g.unit||'—')} · ${esc(g.floor||'—')} · ${esc(g.issue||'—')}</span>
-        <span style
+        <span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${g.rows.length} 筆重複</span>
+      </div>
+      <div style="display:grid;grid-template-columns:32px 90px 55px 1fr 100px 70px;gap:6px;padding:5px 12px;font-size:10px;font-weight:500;color:var(--text3);background:var(--surface);border-bottom:0.5px solid var(--border2)">
+        <span></span><span>戶別</span><span>樓層</span><span>缺失內容</span><span>負責廠商</span><span>建立日期</span>
+      </div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+
+  const selCount=_sel.size;
+  const allIds=dupGroups.flatMap(g=>g.rows.map(r=>r.id));
+  const allChecked=allIds.length>0&&allIds.every(id=>_sel.has(id));
+
+  el.innerHTML=`<div style="padding:18px 20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <input type="checkbox" id="dupe-all-chk" ${allChecked?'checked':''} onclick="dupeToggleAll()" style="accent-color:var(--purple);cursor:pointer;width:15px;height:15px">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">🔁 重複作業</span>
+      <button class="btn btn-p btn-sm" onclick="mergeDupes()" ${selCount<2?'disabled':''} style="padding:4px 12px;font-size:11px;opacity:${selCount<2?'.4':'1'}">🔀 合併選取${selCount>=2?` (${selCount}筆→按組保留1筆)`:''}</button>
+      ${selCount>0?`<span style="font-size:11px;color:var(--purple);font-weight:500;background:#EEEDFE;padding:2px 8px;border-radius:20px">已選 ${selCount} 筆</span>`:''}
+      <span style="font-size:11px;color:var(--text2);margin-left:auto">共 ${dupGroups.length} 組，${totalRows} 筆</span>
+    </div>
+    ${groupsHtml}
+  </div>`;
+}
+
+function dupeToggleRow(id){
+  if(!window._dupeSel)window._dupeSel=new Set();
+  if(_dupeSel.has(id))_dupeSel.delete(id);else _dupeSel.add(id);
+  renderDupes();
+}
+
+function dupeToggleGroup(groupKey){
+  if(!window._dupeSel)window._dupeSel=new Set();
+  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
+  const [u,f,is]=groupKey.split('|||');
+  const ids=S.rows.filter(r=>!isDoneDup(r.id)&&(r.unit||'').trim()===u&&(r.floor||'').trim()===f&&(r.issue||'').trim()===is).map(r=>r.id);
+  const allChk=ids.every(id=>_dupeSel.has(id));
+  ids.forEach(id=>allChk?_dupeSel.delete(id):_dupeSel.add(id));
+  renderDupes();
+}
+
+function dupeToggleAll(){
+  if(!window._dupeSel)window._dupeSel=new Set();
+  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
+  const allIds=S.rows.filter(r=>{
+    if(isDoneDup(r.id))return false;
+    const u=(r.unit||'').trim(),f=(r.floor||'').trim(),is=(r.issue||'').trim();
+    if(!u&&!f&&!is)return false;
+    return true;
+  }).map(r=>r.id);
+  // only toggle ids that are in dup groups
+  const groups={};
+  S.rows.forEach(r=>{
+    if(isDoneDup(r.id))return;
+    const u=(r.unit||'').trim(),f=(r.floor||'').trim(),is=(r.issue||'').trim();
+    if(!u&&!f&&!is)return;
+    const k=`${u}|||${f}|||${is}`;
+    if(!groups[k])groups[k]=[];
+    groups[k].push(r.id);
+  });
+  const dupIds=Object.values(groups).filter(arr=>arr.length>=2).flatMap(arr=>arr);
+  const allChk=dupIds.every(id=>_dupeSel.has(id));
+  dupIds.forEach(id=>allChk?_dupeSel.delete(id):_dupeSel.add(id));
+  renderDupes();
+}
+
+function mergeDupes(){
+  if(!window._dupeSel||_dupeSel.size<2){toast('請先勾選要合併的筆數（至少2筆）','⚠️');return;}
+  const isDoneDup=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
+  // 按組分類勾選的 ids
+  const byGroup={};
+  S.rows.forEach(r=>{
+    if(!_dupeSel.has(r.id))return;
+    const k=`${(r.unit||'').trim()}|||${(r.floor||'').trim()}|||${(r.issue||'').trim()}`;
+    if(!byGroup[k])byGroup[k]=[];
+    byGroup[k].push(r);
+  });
+  const groups=Object.values(byGroup);
+  // 每組至少要有2筆才合併
+  const mergeGroups=groups.filter(g=>g.length>=2);
+  if(!mergeGroups.length){toast('勾選的筆屬於不同組且各組不足2筆，無法合併','⚠️');return;}
+  // 統計要刪除的筆數
+  let delCount=0;
+  mergeGroups.forEach(g=>delCount+=g.length-1);
+  const msg=`合併確認\n\n共 ${mergeGroups.length} 組，每組保留最早一筆，刪除 ${delCount} 筆重複記錄。\n\n確定執行？`;
+  if(!confirm(msg))return;
+  // 執行合併：每組按 createdAt 排序，保留最早，刪除其餘
+  const toDelete=new Set();
+  mergeGroups.forEach(g=>{
+    const sorted=g.slice().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    sorted.slice(1).forEach(r=>toDelete.add(r.id));
+  });
+  S.rows=S.rows.filter(r=>!toDelete.has(r.id));
+  logChange('🔀 合併重複',`刪除 ${toDelete.size} 筆重複記錄，共 ${mergeGroups.length} 組`);
+  window._dupeSel=new Set();
+  save();renderAll();
+  toast(`已合併，刪除 ${toDelete.size} 筆重複記錄 ✓`,'🔀');
+}
+function renderAll(){renderPane(activeTab);}
+
+// ── 使用人數偵測（BroadcastChannel 補強本地分頁；Firebase presence 優先）────
+(function(){
+  const CH='tracker_presence';
+  const ID=Math.random().toString(36).slice(2);
+  let peers={};
+  peers[ID]=Date.now();
+
+  function updateCount(){
+    // 若 Firebase presence 已有值，優先使用
+    if(typeof window._onlineCount==='number'){
+      const el=document.getElementById('user-count');
+      if(el){el.style.display='';el.textContent='👤 '+window._onlineCount+' 人';}
+      return;
+    }
+    // fallback：BroadcastChannel 本地計數
+    const now=Date.now();
+    Object.keys(peers).forEach(k=>{if(now-peers[k]>12000)delete peers[k];});
+    const n=Object.keys(peers).length;
+    const el=document.getElementById('user-count');
+    if(el){el.style.display='';el.textContent='👤 '+n+' 人';}
+  }
+
+  let bc=null;
+  try{
+    bc=new BroadcastChannel(CH);
+    bc.onmessage=e=>{
+      if(e.data&&e.data.id&&!e.data.leave){peers[e.data.id]=Date.now();updateCount();}
+      if(e.data&&e.data.leave&&e.data.id){delete peers[e.data.id];updateCount();}
+    };
+  }catch(ex){}
+
+  setInterval(()=>{
+    peers[ID]=Date.now();
+    if(bc)bc.postMessage({id:ID});
+    updateCount();
+  },5000);
+
+  window.addEventListener('beforeunload',()=>{
+    if(bc)bc.postMessage({id:ID,leave:true});
+  });
+
+  setTimeout(()=>{if(bc)bc.postMessage({id:ID});updateCount();},800);
+})();
+
+
+async function init(){
+  Object.keys(TAB_DEFS).forEach(t=>{
+    const el=document.getElementById('pane-'+t);
+    if(el&&t!=='main')el.style.display='none';
+  });
+  window._hovFloors=new Set();
+  renderTabBar();renderMain();   // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
+  Object.keys(TAB_DEFS).forEach(t=>{if(t!=='main')document.getElementById('pane-'+t).style.display='none';});
+  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.rows)S=migrateState(d);}}catch(e){}
+  renderTabBar();renderMain();
+}
+
+// ── 啟動 ──────────────────────────────────────────────────────────────────
+function bootstrap(){
+  load().then(init);
+}
+bootstrap();
+document.addEventListener('firebase-ready',()=>{
+  if(!_fbListening)bootstrap();
+});
+</script>
+</body>
+</html>
