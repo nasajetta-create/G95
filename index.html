@@ -4373,15 +4373,16 @@ function _hpendItemCompare(a,b){
 }
 function printHPendBatch(){
   const{byVendor}=_hpendGather();
-  const vendorNames=Object.keys(byVendor).sort((a,b)=>a.localeCompare(b,'zh-Hant')).filter(v=>_hpendState.vendors.has(v));
+  let vendorNames=Object.keys(byVendor).sort((a,b)=>a.localeCompare(b,'zh-Hant')).filter(v=>_hpendState.vendors.has(v));
   if(!vendorNames.length){toast('請至少選擇一家廠商','⚠️');return;}
+  vendorNames=vendorNames.filter(v=>byVendor[v].some(it=>_hpendState.showDone||it.st!=='done'));
+  if(!vendorNames.length){toast('所選廠商目前皆無未完成項目','⚠️');return;}
   const body=vendorNames.map((v,i)=>{
     const items=byVendor[v].filter(it=>_hpendState.showDone||it.st!=='done').sort(_hpendItemCompare);
     const rows=items.map(it=>`<tr class="r-${it.st}"><td>${esc(it.planDate.slice(5))}</td><td>${esc(it.unit)}</td><td>${esc(it.row.issue)}</td><td>${esc(it.row.note||'')}</td><td>${fmtMD(it.row.planIn)}</td><td>${fmtMD(it.row.planDone)}</td><td>${it.row.actualDone?fmtMD(it.row.actualDone):'—'}</td><td>${HPEND_ST_LABEL[it.st]||''}</td></tr>`).join('');
-    const empty=!items.length?'<p style="color:#888;font-size:18px">此廠商目前無未完成項目</p>':'';
     return`<div style="${i>0?'page-break-before:always;':''}padding-top:${i>0?'14px':'0'}">
-      <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">🏢 ${esc(v)}</h3>
-      ${items.length?`<table><thead><tr><th>交屋日</th><th>戶別</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>`:empty}
+      <h3 style="font-size:26px;font-weight:700;margin:0 0 8px;color:#3C3489">🏢 ${esc(v)}</h3>
+      <table><thead><tr><th>交屋日</th><th>戶別</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>
     </div>`;
   }).join('');
   printSection(`交屋前缺失彙整（共${vendorNames.length}家廠商）`,body,'交屋前缺失彙整');
