@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-v="23">
+<html lang="zh-TW" data-v="26">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -500,6 +500,7 @@ document.dispatchEvent(new Event('firebase-ready'));
     <div id="pane-changelog" style="display:none"></div>
     <div id="pane-dupes" style="display:none"></div>
     <div id="pane-handover"  style="display:none"></div>
+    <div id="pane-hpend"     style="display:none"></div>
     <div id="pane-hstats"    style="display:none"></div>
     <div id="pane-clients"   style="display:none"></div>
     <div id="pane-hcal"      style="display:none"></div>
@@ -510,7 +511,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 const SK='tracker_v5';
 const DOW=['日','一','二','三','四','五','六'];
 const V_COLORS=['#534AB7','#0F6E56','#993C1D','#185FA5','#3B6D11','#854F0B','#7A0055','#5F5E5A','#9C6B00','#1A6B6B'];
-const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones'};
+const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones',hpend:'card-warn'};
 
 let S={
   rows:[
@@ -669,7 +670,8 @@ async function load(){
 function migrateState(d){
   if(!d.zones)d.zones=[{id:'indoor',label:'室內缺失',color:'#534AB7'},{id:'pub_ab',label:'公設 梯廳/樓梯間',color:'#0F6E56'},{id:'pub_cd',label:'公設 RF/2F/1F/店鋪',color:'#993C1D'},{id:'basement',label:'地下室',color:'#185FA5'}];
   if(!d.managers)d.managers=[];
-  if(!d.tabOrder)d.tabOrder=['events','main','zones','vendor','warn','cal','mgr','done','handover','hstats','hcal','pubarea','clients','changelog'];
+  if(!d.tabOrder)d.tabOrder=['events','main','zones','vendor','warn','cal','mgr','done','handover','hpend','hstats','hcal','pubarea','clients','changelog'];
+  if(!d.tabOrder.includes('hpend'))d.tabOrder.push('hpend');
   else if(!d.tabOrder.includes('events'))d.tabOrder.push('events');
   if(!d.alerts)d.alerts=[];
   if(!d.completed)d.completed=[];
@@ -738,7 +740,25 @@ function mOpts(sel){return['', ...S.managers].map(m=>`<option value="${esc(m)}"$
 function zLabel(id){return(S.zones.find(z=>z.id===id)||{label:id}).label}
 function zColor(id){return(S.zones.find(z=>z.id===id)||{color:'#888'}).color}
 function vColor(v){const i=S.vendors.indexOf(v);return V_COLORS[i>=0?i%V_COLORS.length:7]}
-function uniqueUnits(){return[...new Set(S.rows.map(r=>r.unit).filter(Boolean))].sort()}
+function _unitSortKey(u){
+  const m=String(u).match(/^([A-Za-z\u4e00-\u9fff]+)(\d+)(.*)$/);
+  if(!m)return[String(u),0,''];
+  return[m[1],parseInt(m[2],10),m[3]||''];
+}
+function uniqueUnits(){return[...new Set(S.rows.map(r=>r.unit).filter(Boolean))].sort((a,b)=>{
+  const ka=_unitSortKey(a),kb=_unitSortKey(b);
+  if(ka[0]!==kb[0])return ka[0].localeCompare(kb[0],'zh-TW');
+  if(ka[1]!==kb[1])return ka[1]-kb[1];
+  return String(ka[2]).localeCompare(String(kb[2]),'zh-TW');
+})}
+// 樓層排序：RF樓層(高到低) > 一般樓層(高到低) > 地下室(B1F到B5F低到高)
+function _floorRank(f){
+  const s=String(f||'').trim();
+  let m=s.match(/^R(\d+)F?$/i);if(m)return 1000-(+m[1]);
+  m=s.match(/^B(\d+)F?$/i);if(m)return 3000+(+m[1]);
+  m=s.match(/^(\d+)F?$/i);if(m)return 2000-(+m[1]);
+  return 9000;
+}
 function dowStr(iso){const d=pd(iso);if(!d)return'';return`(${DOW[d.getDay()]})`}
 
 // ── toast ─────────────────────────────────────────────────────────────────
@@ -1341,30 +1361,31 @@ function printSection(title,bodyHtml,fileName){
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Noto Sans TC',sans-serif;background:#fff;color:#1E1D1B;padding:18px}
-    h2{font-size:15px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #3C3489;color:#3C3489}
-    .info{font-size:10px;color:#888;margin-bottom:10px}
-    table{width:100%;border-collapse:collapse;font-size:10px}
-    th{background:#ECEAE6;font-size:9px;font-weight:600;color:#5F5E5A;padding:5px 4px;text-align:left;border:1px solid #C8C5C0}
-    td{padding:4px 4px;border:1px solid #D0CEC9;vertical-align:top;word-break:break-all}
+    body{font-family:'Noto Sans TC',sans-serif;background:#fff;color:#1E1D1B;padding:12px;font-size:24px}
+    h2{font-size:30px;font-weight:700;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #3C3489;color:#3C3489}
+    .info{font-size:20px;color:#888;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;font-size:20px}
+    th{background:#ECEAE6;font-size:18px;font-weight:600;color:#5F5E5A;padding:10px 8px;text-align:left;border:1px solid #C8C5C0}
+    td{padding:8px 8px;border:1px solid #D0CEC9;vertical-align:top;word-break:break-all}
     tr:last-child td{border-bottom:1px solid #D0CEC9}
     .r-over td{background:#FFF0F0!important}.r-w3 td{background:#FFF4E0!important}
     .r-w7 td{background:#EBF4FF!important}.r-done td{background:#EAF6E7!important}
-    .badge{display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600}
+    .badge{display:inline-block;padding:2px 10px;border-radius:16px;font-size:18px;font-weight:600}
     .bdone{background:#EAF6E7;color:#2E6B26}.bover{background:#FFF0F0;color:#A32D2D}
     .b3{background:#FFF4E0;color:#7A4200}.b7{background:#EBF4FF;color:#185FA5}
-    .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-    .dg{font-size:9px;line-height:1.5}.dl{color:#888}
+    .dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+    .dg{font-size:18px;line-height:1.5}.dl{color:#888}
     .sec{border:1px solid #D0CEC9;border-radius:6px;overflow:hidden;margin-bottom:8px}
-    .sec-hdr{padding:5px 10px;font-size:11px;font-weight:600}
-    @media print{button{display:none}body{padding:6px}}
+    .sec-hdr{padding:10px 20px;font-size:22px;font-weight:600}
+    @media print{button{display:none}body{padding:4px}}
     </style></head><body>
     <h2>🏗 工程缺失追蹤系統 — ${title}</h2>
-    <div class="info">列印時間：${new Date().toLocaleString('zh-TW')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px">
+      <div class="info" style="margin-bottom:0">列印時間：${new Date().toLocaleString('zh-TW')}</div>
+      <button onclick="window.print()" style="padding:14px 32px;background:#3C3489;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:24px;font-family:inherit;flex-shrink:0">🖨 列印 / 儲存PDF</button>
+    </div>
     ${bodyHtml}
-    <div style="margin-top:14px;text-align:right">
-      <button onclick="window.print()" style="padding:7px 16px;background:#3C3489;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-family:inherit">🖨 列印 / 儲存PDF</button>
-    </div></body></html>`);
+    </body></html>`);
   w.document.close();
 }
 function pdfRows(data,showZone){
@@ -1967,7 +1988,7 @@ function renderMain(){
   const over=S.rows.filter(r=>getStatus(r)==='overdue').length;
   const w3=S.rows.filter(r=>{const d=du(r.planDone);return d!==null&&d>=0&&d<=3&&!r.actualDone}).length;
   const units=uniqueUnits();
-  const floors=[...new Set(S.rows.map(r=>r.floor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-TW',{numeric:true}));
+  const floors=[...new Set(S.rows.map(r=>r.floor).filter(Boolean))].sort((a,b)=>_floorRank(a)-_floorRank(b));
   const unitBtnLabel=fUnitSet.size===0?'全部戶別':fUnitSet.size===1?[...fUnitSet][0]:`戶別（${fUnitSet.size}）`;
   const uCheckboxes=units.map(u=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;cursor:pointer;white-space:nowrap" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.has(u)?'checked':''} onclick="event.stopPropagation()" onchange="window._fUnitSet=window._fUnitSet||new Set();this.checked?window._fUnitSet.add('${esc(u).replace(/'/g,"\\'")}'):window._fUnitSet.delete('${esc(u).replace(/'/g,"\\'")}');mainPage=0;renderMain()"> ${esc(u)}</label>`).join('');
   const uDropdown=`<div style="position:relative;display:inline-block">
@@ -1978,8 +1999,8 @@ function renderMain(){
     </div>
   </div>`;
   const flOp=floors.map(f=>`<option value="${esc(f)}"${f===fFloor?' selected':''}>${esc(f)}</option>`).join('');
-  const vOp=S.vendors.map(v=>`<option value="${esc(v)}"${v===fVendor?' selected':''}>${esc(v)}</option>`).join('');
-  const zOp=S.zones.map(z=>`<option value="${z.id}"${z.id===fZone?' selected':''}>${esc(z.label)}</option>`).join('');
+  const vOp=[...S.vendors].sort((a,b)=>a.localeCompare(b,'zh-TW-u-co-stroke')).map(v=>`<option value="${esc(v)}"${v===fVendor?' selected':''}>${esc(v)}</option>`).join('');
+  const zOp=[...S.zones].sort((a,b)=>a.label.localeCompare(b.label,'zh-TW-u-co-stroke')).map(z=>`<option value="${z.id}"${z.id===fZone?' selected':''}>${esc(z.label)}</option>`).join('');
   const mOp=['', ...S.managers].map(m=>`<option value="${esc(m)}"${m===fMgr?' selected':''}>${m?esc(m):'— 管理人 —'}</option>`).join('');
   const totalFiltered=data.length;
   const totalPages=Math.max(1,Math.ceil(totalFiltered/PAGE_SIZE));
@@ -3351,14 +3372,29 @@ function renderHandover(){
   })();
 
   // ── 批次匯出驗屋缺失PDF（依驗屋日期/時段）──
-  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false};
+  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false,sortBy:'',statusFilter:''};
+  if(window._batchExport.sortBy===undefined)window._batchExport.sortBy='';
+  if(window._batchExport.statusFilter===undefined)window._batchExport.statusFilter='';
   const _be=window._batchExport;
-  const _beDates=[...new Set(Object.values(S.handoverUnits).map(h=>h&&h.planDate).filter(Boolean))].sort();
+  const _beDates=[...new Set(Object.entries(S.handoverUnits).filter(([k,h])=>h&&h.planDate&&_hpendIsValidUnitKey(k)).map(([k,h])=>h.planDate))].sort();
   if(_be.date&&!_beDates.includes(_be.date)){_be.date='';_be.selected=new Set();}
-  const _beUnits=_be.date?Object.keys(S.handoverUnits).filter(k=>{
+  function _beUnitPct(k){const dn=unitDisplayName(k);const p=hoUnitPct(dn);return p!=null?p:(hoUnitPct(k)!=null?hoUnitPct(k):0);}
+  function _beUnitAllDone(k){const rows=getDefectRows(k);return rows.length>0&&rows.every(r=>getStatus(r)==='done');}
+  function _beUnitFloor(k){const rows=getDefectRows(k);return rows.length?rows[0].floor:'';}
+  let _beUnits=_be.date?Object.keys(S.handoverUnits).filter(k=>{
     const h=S.handoverUnits[k];
     return h&&h.planDate===_be.date&&(!_be.slot||h.slot===_be.slot);
   }).sort():[];
+  if(_be.statusFilter){
+    _beUnits=_beUnits.filter(k=>{
+      const allDone=_beUnitAllDone(k);
+      return _be.statusFilter==='done'?allDone:!allDone;
+    });
+  }
+  if(_be.sortBy==='pctAsc')_beUnits=[..._beUnits].sort((a,b)=>_beUnitPct(a)-_beUnitPct(b));
+  else if(_be.sortBy==='pctDesc')_beUnits=[..._beUnits].sort((a,b)=>_beUnitPct(b)-_beUnitPct(a));
+  else if(_be.sortBy==='floorAsc')_beUnits=[..._beUnits].sort((a,b)=>_floorRank(_beUnitFloor(a))-_floorRank(_beUnitFloor(b)));
+  else if(_be.sortBy==='floorDesc')_beUnits=[..._beUnits].sort((a,b)=>_floorRank(_beUnitFloor(b))-_floorRank(_beUnitFloor(a)));
   const batchExportPanel=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
     <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);${_be.open?'border-bottom:1px solid var(--border);':''}gap:10px;flex-wrap:wrap;cursor:pointer" onclick="window._batchExport.open=!window._batchExport.open;renderHandover()">
       <span style="font-size:12px;font-weight:700">📦 批次匯出驗屋缺失PDF</span>
@@ -3375,6 +3411,20 @@ function renderHandover(){
         <select onchange="window._batchExport.slot=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="">全部時段</option>
           ${HCAL_SLOTS.map((s,i)=>`<option value="${esc(s)}" ${_be.slot===s?'selected':''}>第${i+1}時段 ${esc(s)}</option>`).join('')}
+        </select>
+        <span style="font-size:11px;color:var(--text2);margin-left:8px">排序：</span>
+        <select onchange="window._batchExport.sortBy=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+          <option value="" ${_be.sortBy===''?'selected':''}>預設</option>
+          <option value="pctAsc" ${_be.sortBy==='pctAsc'?'selected':''}>完成度 A-Z</option>
+          <option value="pctDesc" ${_be.sortBy==='pctDesc'?'selected':''}>完成度 Z-A</option>
+          <option value="floorAsc" ${_be.sortBy==='floorAsc'?'selected':''}>樓層 A-Z</option>
+          <option value="floorDesc" ${_be.sortBy==='floorDesc'?'selected':''}>樓層 Z-A</option>
+        </select>
+        <span style="font-size:11px;color:var(--text2);margin-left:8px">狀態：</span>
+        <select onchange="window._batchExport.statusFilter=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+          <option value="" ${_be.statusFilter===''?'selected':''}>全部</option>
+          <option value="pending" ${_be.statusFilter==='pending'?'selected':''}>未完成</option>
+          <option value="done" ${_be.statusFilter==='done'?'selected':''}>已完成</option>
         </select>
       </div>
       ${!_be.date?`<div style="font-size:11px;color:var(--text3)">請先選擇驗屋日期</div>`:
@@ -3511,6 +3561,7 @@ function reRenderActivePane(){
   if(activeTab==='pubarea')renderPubArea();
   else if(activeTab==='hstats')renderHStats();
   else if(activeTab==='handover')renderHandover();
+  else if(activeTab==='hpend')renderHPend();
 }
 
 function toggleHovUnitMenu(btn){const m=document.getElementById('hov-u-menu');if(!m)return;const show=m.style.display==='none';m.style.display=show?'block':'none';if(show)setTimeout(()=>document.addEventListener('click',function h(e){if(!m.contains(e.target)&&e.target!==btn){m.style.display='none';document.removeEventListener('click',h);}},{once:true}),0);}
@@ -4131,7 +4182,7 @@ function unitDefectsBody(unitKey){
   const displayName=unitDisplayName(unitKey);
   const grade=hoGrade(hoUnitPct(displayName)||hoUnitPct(unitKey));
   const pct=hoUnitPct(displayName)||hoUnitPct(unitKey);
-  const info=`<div style="margin-bottom:10px;font-size:11px;color:#555">
+  const info=`<div style="margin-bottom:10px;font-size:22px;color:#555">
     <span>戶別：<strong>${esc(unitKey)}</strong></span>
     ${cl.name?`<span style="margin-left:12px">客戶：${esc(cl.name)}</span>`:''}
     ${cl.tel?`<span style="margin-left:12px">電話：${esc(cl.tel)}</span>`:''}
@@ -4139,16 +4190,208 @@ function unitDefectsBody(unitKey){
     ${hu.planDate?`<span style="margin-left:12px">預定驗收：${hu.planDate}</span>`:''}
   </div>`;
   const thead=`<tr><th>廠商</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr>`;
-  const tbody=rows.map(r=>{const st=getStatus(r);const stLabel={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'}[st]||'';return`<tr class="r-${st}"><td>${esc(r.vendor)}</td><td>${esc(r.issue)}</td><td>${esc(r.note)}</td><td>${fmtMD(r.planIn)}</td><td>${fmtMD(r.planDone)}</td><td>${r.actualDone?fmtMD(r.actualDone):'—'}</td><td>${stLabel}</td></tr>`;}).join('');
+  const STATUS_RANK={overdue:0,ongoing:0,pending:0,done:1};
+  const sortedRows=[...rows].sort((a,b)=>(STATUS_RANK[getStatus(a)]??0)-(STATUS_RANK[getStatus(b)]??0));
+  const tbody=sortedRows.map(r=>{const st=getStatus(r);const stLabel={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'}[st]||'';return`<tr class="r-${st}"><td>${esc(r.vendor)}</td><td>${esc(r.issue)}</td><td>${esc(r.note)}</td><td>${fmtMD(r.planIn)}</td><td>${fmtMD(r.planDone)}</td><td>${r.actualDone?fmtMD(r.actualDone):'—'}</td><td>${stLabel}</td></tr>`;}).join('');
   const empty=!rows.length?'<p style="color:#888;font-size:11px">此戶目前無缺失項目記錄</p>':'';
   return info+(rows.length?`<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`:empty);
 }
 function printUnitDefects(unitKey,fileName){
   printSection(`缺失清單 — ${unitKey}`,unitDefectsBody(unitKey),fileName);
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  交屋前缺失彙整 — 依交屋日期 × 廠商分組的未完成缺失看板
+// ══════════════════════════════════════════════════════════════════════════
+let _hpendState={dates:null,showDone:false,vendors:null,openMonths:null};
+const HPEND_ST_LABEL={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'};
+const HPEND_ST_COLOR={done:'var(--green)',ongoing:'var(--blue)',overdue:'var(--red)',pending:'var(--text3)'};
+function _hpendIsValidUnitKey(key){
+  const displayName=unitDisplayName(key);
+  const m=displayName.match(/^([A-Za-z]+\d*)-(\d+)$/);
+  if(!m)return false;
+  const units=uniqueUnits();
+  return units.includes(m[1].toUpperCase())||units.includes(m[1]);
+}
+function _hpendAllDates(){
+  const s=new Set();
+  Object.entries(S.handoverUnits||{}).forEach(([key,hu])=>{if(hu&&hu.planDate&&_hpendIsValidUnitKey(key))s.add(hu.planDate);});
+  return[...s].sort();
+}
+function _hpendGather(){
+  const hu=S.handoverUnits||{};
+  const dates=_hpendState.dates||new Set();
+  const byVendor={};
+  let totalUnits=0;
+  Object.keys(hu).forEach(key=>{
+    const h=hu[key];
+    if(!h||!h.planDate||!dates.has(h.planDate))return;
+    if(!_hpendIsValidUnitKey(key))return;
+    totalUnits++;
+    getDefectRows(key).forEach(r=>{
+      const st=getStatus(r);
+      const vendor=r.vendor||'（未指定）';
+      if(!byVendor[vendor])byVendor[vendor]=[];
+      byVendor[vendor].push({row:r,st,unit:unitDisplayName(key),planDate:h.planDate});
+    });
+  });
+  return{byVendor,totalUnits};
+}
+function renderHPend(){
+  if(!S.handoverUnits)S.handoverUnits={};
+  const allDates=_hpendAllDates();
+  if(_hpendState.dates===null)_hpendState.dates=new Set(allDates);
+  const{byVendor,totalUnits}=_hpendGather();
+  const allVendorNames=Object.keys(byVendor).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  if(_hpendState.vendors===null)_hpendState.vendors=new Set(allVendorNames);
+  let totalItems=0,overdueItems=0;
+  allVendorNames.forEach(v=>byVendor[v].forEach(it=>{if(it.st!=='done'){totalItems++;if(it.st==='overdue')overdueItems++;}}));
+  const visibleVendorNames=allVendorNames.filter(v=>_hpendState.showDone||byVendor[v].some(it=>it.st!=='done'));
+  const selectedCount=visibleVendorNames.filter(v=>_hpendState.vendors.has(v)).length;
+
+  if(_hpendState.openMonths===null||_hpendState.openMonths===undefined){
+    const todayYm=new Date().toISOString().slice(0,7);
+    const nearestYm=allDates.map(d=>d.slice(0,7)).find(ym=>ym>=todayYm)||(allDates.length?allDates[allDates.length-1].slice(0,7):todayYm);
+    _hpendState.openMonths=new Set([nearestYm]);
+  }
+  const dateChips=allDates.length?(()=>{
+    const groups={};
+    allDates.forEach(d=>{const ym=d.slice(0,7);(groups[ym]=groups[ym]||[]).push(d);});
+    return Object.keys(groups).sort().map(ym=>{
+      const dates=groups[ym];
+      const monthCnt=dates.reduce((s,d)=>s+Object.values(S.handoverUnits).filter(h=>h&&h.planDate===d).length,0);
+      const checkedCnt=dates.filter(d=>_hpendState.dates.has(d)).length;
+      const allChecked=checkedCnt===dates.length;
+      const open=_hpendState.openMonths.has(ym);
+      const [yy,mm]=ym.split('-');
+      const chips=dates.map(d=>{
+        const cnt=Object.values(S.handoverUnits).filter(h=>h&&h.planDate===d).length;
+        const checked=_hpendState.dates.has(d);
+        return`<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" ${checked?'checked':''} onchange="toggleHPendDate('${d}',this.checked)">${esc(d.slice(5))}（${cnt}戶）</label>`;
+      }).join('');
+      return`<div style="border:1px solid var(--border2);border-radius:var(--rs);padding:6px 10px;${open?'':'padding-bottom:6px'}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" ${allChecked?'checked':''} onchange="toggleHPendMonthDates('${ym}',this.checked)">
+          <span style="font-size:12px;font-weight:600;cursor:pointer;flex:1" onclick="toggleHPendMonth('${ym}')">${yy}年${mm}月（共${monthCnt}戶，已選${checkedCnt}/${dates.length}天）</span>
+          <a href="javascript:void(0)" onclick="toggleHPendMonth('${ym}')" style="font-size:12px">${open?'收合 ▾':'展開 ▸'}</a>
+        </div>
+        ${open?`<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;padding-left:24px">${chips}</div>`:''}
+      </div>`;
+    }).join('');
+  })():'<span style="font-size:12px;color:var(--text3)">尚未設定任何戶別的預定驗收日</span>';
+
+  const vendorCards=visibleVendorNames.length?visibleVendorNames.map(v=>{
+    const items=byVendor[v];
+    const undone=items.filter(it=>it.st!=='done');
+    const done=items.filter(it=>it.st==='done');
+    const checked=_hpendState.vendors.has(v);
+    const tagColor=undone.some(it=>it.st==='overdue')?'red':(undone.length?'amber':'green');
+    const tagBgVar={red:'var(--red-lt)',amber:'var(--amber-lt)',green:'var(--green-lt)'}[tagColor];
+    const tagFgVar={red:'var(--red)',amber:'var(--amber)',green:'var(--green)'}[tagColor];
+    let tagLabel=`${undone.length} 項未完成`;
+    if(done.length)tagLabel+=_hpendState.showDone?`・${done.length} 項已完成`:`・${done.length} 項已完成（隱藏）`;
+    const shown=(_hpendState.showDone?items:undone).slice().sort(_hpendItemCompare);
+    const rowsHtml=shown.map(it=>`<tr><td style="white-space:nowrap">${esc(it.planDate.slice(5))}</td><td style="white-space:nowrap">${esc(it.unit)}</td><td>${esc(it.row.issue)}</td><td style="text-align:right;color:${HPEND_ST_COLOR[it.st]};white-space:nowrap">${HPEND_ST_LABEL[it.st]||''}</td></tr>`).join('');
+    return`<div class="ae-sec" style="margin-bottom:12px;${checked?'':'opacity:.55'}">
+      <div class="ae-sec-hdr">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;margin:0">
+          <input type="checkbox" ${checked?'checked':''} onchange="toggleHPendVendor('${esc(v)}',this.checked)">
+          <span class="ae-sec-title" style="margin:0">🏢 ${esc(v)}</span>
+        </label>
+        <span class="badge" style="background:${tagBgVar};color:${tagFgVar}">${tagLabel}</span>
+      </div>
+      <table class="ae-tbl">
+        <thead><tr><th style="width:60px">交屋日</th><th style="width:90px">戶別</th><th>缺失內容</th><th style="width:70px;text-align:right">狀態</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+  }).join(''):'<p style="color:var(--text3);font-size:12px;padding:8px 0">所選交屋日期內目前沒有缺失項目</p>';
+
+  document.getElementById('pane-hpend').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:700">📦 交屋前缺失彙整</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <a href="javascript:void(0)" onclick="hpendSelectAllVendors()" style="font-size:12px">全選</a>
+        <a href="javascript:void(0)" onclick="hpendClearAllVendors()" style="font-size:12px">取消全選</a>
+        <button class="btn btn-pdf no-print" onclick="printHPendBatch()">🖨 列印已選廠商（${selectedCount}）</button>
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:6px">交屋日期（可複選）</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">${dateChips}</div>
+      <div style="border-top:1px solid var(--border2);padding-top:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" ${_hpendState.showDone?'checked':''} onchange="toggleHPendShowDone(this.checked)">顯示已完成項目</label>
+        <span style="font-size:11px;color:var(--text3)">未勾選時，已完成項目自動隱藏，只列出尚需廠商處理的項目</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px">
+      <div style="background:var(--surface);border-radius:var(--rs);padding:10px"><div style="font-size:11px;color:var(--text2)">已選交屋戶數</div><div style="font-size:20px;font-weight:700">${totalUnits} 戶</div></div>
+      <div style="background:var(--surface);border-radius:var(--rs);padding:10px"><div style="font-size:11px;color:var(--text2)">未完成項目</div><div style="font-size:20px;font-weight:700">${totalItems} 項</div></div>
+      <div style="background:var(--surface);border-radius:var(--rs);padding:10px"><div style="font-size:11px;color:var(--text2)">涉及廠商</div><div style="font-size:20px;font-weight:700">${visibleVendorNames.length} 家</div></div>
+      <div style="background:var(--surface);border-radius:var(--rs);padding:10px"><div style="font-size:11px;color:var(--text2)">逾期項目</div><div style="font-size:20px;font-weight:700;color:var(--red)">${overdueItems} 項</div></div>
+    </div>
+    ${vendorCards}
+  `;
+}
+function toggleHPendDate(date,checked){
+  if(checked)_hpendState.dates.add(date);else _hpendState.dates.delete(date);
+  renderHPend();
+}
+function toggleHPendMonth(ym){
+  if(_hpendState.openMonths.has(ym))_hpendState.openMonths.delete(ym);else _hpendState.openMonths.add(ym);
+  renderHPend();
+}
+function toggleHPendMonthDates(ym,checked){
+  _hpendAllDates().filter(d=>d.slice(0,7)===ym).forEach(d=>{
+    if(checked)_hpendState.dates.add(d);else _hpendState.dates.delete(d);
+  });
+  renderHPend();
+}
+function toggleHPendShowDone(checked){_hpendState.showDone=checked;renderHPend();}
+function toggleHPendVendor(vendor,checked){
+  if(checked)_hpendState.vendors.add(vendor);else _hpendState.vendors.delete(vendor);
+  renderHPend();
+}
+function hpendSelectAllVendors(){
+  const{byVendor}=_hpendGather();
+  _hpendState.vendors=new Set(Object.keys(byVendor));
+  renderHPend();
+}
+function hpendClearAllVendors(){_hpendState.vendors=new Set();renderHPend();}
+function _hpendUnitSortKey(name){
+  const m=String(name).match(/^(.*)-(\d+)$/);
+  if(!m)return{unit:String(name),floor:0};
+  return{unit:m[1],floor:parseInt(m[2],10)};
+}
+function _hpendItemCompare(a,b){
+  const aDone=a.st==='done'?1:0,bDone=b.st==='done'?1:0;
+  if(aDone!==bDone)return aDone-bDone;
+  if(a.planDate!==b.planDate)return a.planDate<b.planDate?-1:1;
+  const ka=_hpendUnitSortKey(a.unit),kb=_hpendUnitSortKey(b.unit);
+  if(ka.floor!==kb.floor)return kb.floor-ka.floor;
+  return ka.unit.localeCompare(kb.unit,'zh-Hant',{numeric:true});
+}
+function printHPendBatch(){
+  const{byVendor}=_hpendGather();
+  const vendorNames=Object.keys(byVendor).sort((a,b)=>a.localeCompare(b,'zh-Hant')).filter(v=>_hpendState.vendors.has(v));
+  if(!vendorNames.length){toast('請至少選擇一家廠商','⚠️');return;}
+  const body=vendorNames.map((v,i)=>{
+    const items=byVendor[v].filter(it=>_hpendState.showDone||it.st!=='done').sort(_hpendItemCompare);
+    const rows=items.map(it=>`<tr class="r-${it.st}"><td>${esc(it.planDate.slice(5))}</td><td>${esc(it.unit)}</td><td>${esc(it.row.issue)}</td><td>${esc(it.row.note||'')}</td><td>${fmtMD(it.row.planIn)}</td><td>${fmtMD(it.row.planDone)}</td><td>${it.row.actualDone?fmtMD(it.row.actualDone):'—'}</td><td>${HPEND_ST_LABEL[it.st]||''}</td></tr>`).join('');
+    const empty=!items.length?'<p style="color:#888;font-size:18px">此廠商目前無未完成項目</p>':'';
+    return`<div style="${i>0?'page-break-before:always;':''}padding-top:${i>0?'14px':'0'}">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#3C3489">🏢 ${esc(v)}</h3>
+      ${items.length?`<table><thead><tr><th>交屋日</th><th>戶別</th><th>缺失內容</th><th>備註</th><th>預計進場</th><th>預計完成</th><th>實際完成</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>`:empty}
+    </div>`;
+  }).join('');
+  printSection(`交屋前缺失彙整（共${vendorNames.length}家廠商）`,body,'交屋前缺失彙整');
+}
+
 // ── 批次匯出驗屋缺失PDF ──
 function toggleBatchExportUnit(key,checked){
-  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false};
+  if(!window._batchExport)window._batchExport={date:'',slot:'',selected:new Set(),open:false,sortBy:'',statusFilter:''};
+  if(window._batchExport.sortBy===undefined)window._batchExport.sortBy='';
+  if(window._batchExport.statusFilter===undefined)window._batchExport.statusFilter='';
   if(checked)window._batchExport.selected.add(key);else window._batchExport.selected.delete(key);
   renderHandover();
 }
@@ -5600,6 +5843,7 @@ const TAB_DEFS={
   mgr:       {label:'👤 管理人員',         row:2},
   done:      {label:'✅ 已完成工作',       row:2},
   handover:  {label:'🏠 交屋狀態表',      row:3},
+  hpend:     {label:'📦 交屋前缺失彙整',  row:3},
   hstats:    {label:'📊 客戶交屋狀態表',  row:3},
   hcal:      {label:'📆 交屋行事曆',      row:3},
   pubarea:   {label:'🏛 公設狀態表',      row:3},
@@ -5719,6 +5963,7 @@ function renderPane(id){
   else if(id==='clients')renderClients();
   else if(id==='hcal')renderHCal();
   else if(id==='pubarea')renderPubArea();
+  else if(id==='hpend')renderHPend();
 }
 
 function renderDupes(){
