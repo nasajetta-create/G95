@@ -1053,6 +1053,14 @@ function applyMissingDateFilter(){
   renderMain();
   toast(`已篩出 ${missIds.length} 筆已完成但日期未填的記錄`,'⚠️');
 }
+function applyMissingVendorFilter(){
+  window._fMissingVendor=true;
+  const missIds=S.rows.filter(r=>!r.vendor).map(r=>r.id);
+  selectedIds=new Set(missIds);
+  mainPage=0;
+  renderMain();
+  toast(`已篩出 ${missIds.length} 筆廠商未填的記錄`,'⚠️');
+}
 function wireBulk(){
   const sel=document.getElementById('bField');if(!sel)return;
   const showEl=(id,show)=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none';};
@@ -1631,11 +1639,29 @@ function alertsMgrOpts(sel){
   }).join('');
 }
 let _alertSelIds=new Set();
+let _alertHighlightIds=new Set();
+function highlightAlerts(type){
+  const ids=S.alerts.filter(a=>{
+    if(a.doneDate||!a.limitDate)return false;
+    const d=du(a.limitDate);
+    return type==='overdue'?d<0:(d>=0&&d<=3);
+  }).map(a=>a.id);
+  if(!ids.length){toast(type==='overdue'?'目前沒有逾期項目':'目前沒有3天內到期項目','✅');return;}
+  _alertHighlightIds=new Set(ids);
+  renderMain();
+  setTimeout(()=>{
+    const el=document.getElementById('alert-row-'+ids[0]);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },50);
+  setTimeout(()=>{_alertHighlightIds.clear();renderMain();},3000);
+}
 function alertsHTML(){
   const selIds=_alertSelIds;
   const allIds=S.alerts.map(a=>a.id);
   const allSel=allIds.length>0&&allIds.every(id=>selIds.has(id));
   const selCount=selIds.size;
+  const overdueCnt=S.alerts.filter(a=>{if(a.doneDate||!a.limitDate)return false;return du(a.limitDate)<0;}).length;
+  const soonCnt=S.alerts.filter(a=>{if(a.doneDate||!a.limitDate)return false;const d=du(a.limitDate);return d>=0&&d<=3;}).length;
 
   const rows=S.alerts.map(function(a){
     var isOverdue=a.limitDate&&!a.doneDate&&a.limitDate<todayISO();
@@ -1643,7 +1669,8 @@ function alertsHTML(){
     var limitStyle=isOverdue?'color:var(--red);border-color:var(--red);font-weight:600':'';
     var doneStyle=isDone?'color:var(--green);font-weight:600':'';
     const isSel=selIds.has(a.id);
-    return '<tr style="'+(isSel?'background:#F0EEFF;':'')+'">'
+    const isHl=_alertHighlightIds.has(a.id);
+    return '<tr id="alert-row-'+a.id+'" style="'+(isHl?'background:#FFE2E2;transition:background 0.3s;':(isSel?'background:#F0EEFF;':''))+'">'
       +'<td style="width:26px;text-align:center" onclick="event.stopPropagation()"><input type="checkbox" '+(isSel?'checked':'')+' onchange="_alertSelIds[this.checked?\'add\':\'delete\']('+a.id+');renderMain()"></td>'
       +'<td class="ae-id">'+a.id+'</td>'
       +'<td style="min-width:72px"><select onchange="updAlert('+a.id+',\'manager\',this.value)">'+alertsMgrOpts(a.manager)+'</select></td>'
@@ -1673,6 +1700,8 @@ function alertsHTML(){
     +'<div class="ae-sec-hdr" style="background:#FCE8B0;border-radius:var(--r) var(--r) 0 0;margin:-12px -14px 10px;padding:10px 14px">'
     +'<span style="font-size:16px">🚨</span>'
     +'<span class="ae-sec-title" style="color:#8A5A00">重點提示事項</span>'
+    +(overdueCnt?'<button class="btn btn-sm no-print" onclick="highlightAlerts(\'overdue\')" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 逾期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#E24B4A;color:#fff;font-weight:600">'+overdueCnt+'</span></button>':'')
+    +(soonCnt?'<button class="btn btn-sm no-print" onclick="highlightAlerts(\'soon\')" style="background:#FFF1E0;color:#8A4B00;border-color:#F0922B;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">🟠 3天內到期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#F0922B;color:#fff;font-weight:600">'+soonCnt+'</span></button>':'')
     +'<button class="btn btn-p btn-sm no-print" onclick="addAlert()">＋ 新增</button>'
     +'<button class="btn btn-pdf-import btn-sm no-print" onclick="document.getElementById(\'alertImportInp\').click()" title="匯入 PDF 會議記錄或 Excel 檔案">📂 匯入檔案</button>'
     +'<input type="file" id="alertImportInp" accept=".pdf,.xlsx,.xls,.csv" style="display:none" onchange="handleAlertImport(this.files[0]);this.value=\'\'">'
@@ -1949,6 +1978,9 @@ function renderMain(){
   if(window._fMissingDate){
     data=data.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);});
   }
+  if(window._fMissingVendor){
+    data=data.filter(r=>!r.vendor);
+  }
 
   // ── 自動排序：逾期頂置 > 非完成 > 已完成置底 ──────────────────────
   // 群組：0=逾期  1=進行中/未開始  2=已完成(done但仍在rows)
@@ -2016,7 +2048,7 @@ function renderMain(){
       <select id="fVendor" onchange="mainPage=0;renderMain()"><option value="">全部廠商</option>${vOp}</select>
       <select id="fZone" onchange="mainPage=0;renderMain()"><option value="">全部區域</option>${zOp}</select>
       <select id="fMgr" onchange="mainPage=0;renderMain()"><option value="">全部管理人</option>${mOp}</select>
-      <select id="fStatus" onchange="mainPage=0;window._fMissingDate=false;renderMain()">
+      <select id="fStatus" onchange="mainPage=0;window._fMissingDate=false;window._fMissingVendor=false;renderMain()">
         <option value="">全部狀態</option>
         <option value="pending"${fStatus==='pending'?' selected':''}>未開始</option>
         <option value="ongoing"${fStatus==='ongoing'?' selected':''}>進行中</option>
@@ -2024,6 +2056,7 @@ function renderMain(){
         <option value="overdue"${fStatus==='overdue'?' selected':''}>逾期</option>
       </select>
       ${(()=>{const missCnt=S.rows.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);}).length;return missCnt?`<button class="btn no-print" onclick="applyMissingDateFilter()" style="background:#FFF8E6;color:#6B4D00;border-color:#D4A900;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 已完成未填日期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${missCnt}</span></button>`:'';})()}
+      ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;return missVendorCnt?`<button class="btn no-print" onclick="applyMissingVendorFilter()" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 未填廠商 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#E24B4A;color:#fff;font-weight:600">${missVendorCnt}</span></button>`:'';})()}
       <button class="btn btn-p no-print" onclick="showInlineAdd()">＋ 新增</button>
       <button class="btn no-print" onclick="exportCSV()">↓ CSV</button>
       <button class="btn btn-pdf no-print" id="mainPdf">🖨 PDF</button>
