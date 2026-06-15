@@ -582,14 +582,14 @@ function setSyncStatus(status){
 }
 
 // ── 更新紀錄 ──────────────────────────────────────────────────────────────
-function logChange(type, detail){
+function logChange(type, detail, extra){
   if(!S.changelog)S.changelog=[];
-  S.changelog.unshift({
+  S.changelog.unshift(Object.assign({
     ts: new Date().toISOString(),
     type: type||'更新',
     detail: detail||'',
     rowCount: S.rows.length
-  });
+  }, extra||{}));
   // 最多保留 500 筆
   if(S.changelog.length>500)S.changelog=S.changelog.slice(0,500);
 }
@@ -692,6 +692,22 @@ function migrateState(d){
   if(!d.changelog)d.changelog=[];
   if(!d.handoverUnits)d.handoverUnits={};
   if(!d.clientData)d.clientData={};
+  if(!d.floorConfig)d.floorConfig={roof:3,top:31,basement:5};
+  if(!d.zoneUnits){
+    d.zoneUnits={};
+    (d.zones||[]).forEach(z=>{d.zoneUnits[z.id]=[...new Set(d.rows.filter(r=>r.zone===z.id&&r.unit).map(r=>r.unit))];});
+  }
+  if(!d.zoneFloors)d.zoneFloors={};
+  if(!d.unitFloorLock)d.unitFloorLock={};
+  if(!('店C1' in d.unitFloorLock))d.unitFloorLock['店C1']='2F';
+  if(!('店C2' in d.unitFloorLock))d.unitFloorLock['店C2']='1F';
+  (d.zones||[]).forEach(z=>{
+    if(/地下室/.test(z.label)&&!d.zoneFloors[z.id])d.zoneFloors[z.id]=['B1F','B2F','B3F','B4F','B5F'];
+    if(/店鋪/.test(z.label)){
+      if(!d.zoneFloors[z.id])d.zoneFloors[z.id]=['1F','2F'];
+      if(!d.zoneUnits[z.id]||!d.zoneUnits[z.id].length)d.zoneUnits[z.id]=['店A1','店A2','店A3','店A5','店A6','店A7','店A8','店A9','店A10','店A11','店A12','店A15','店A16','店A17','店A18','店A19','店A20','店A21','店A22','店A23','店A25','店A26','店A27','店A28','店A29','店A30','店C1','店C2'];
+    }
+  });
   if(!d.publicAreaList)d.publicAreaList={A:[
     {id:'PA-R3',label:'A棟 R3F 頂樓',floor:'R3F',zone:'A'},
     {id:'PA-R2',label:'A棟 R2F 頂樓',floor:'R2F',zone:'A'},
@@ -702,6 +718,11 @@ function migrateState(d){
     {id:'PB-R1',label:'B棟 R1F 頂樓',floor:'R1F',zone:'B'},
   ]};       // {unitKey:{name,tel,type,parkings:[],note}}
   d.rows.forEach(r=>{if(!('manager' in r))r.manager='';});
+  d.rows.forEach(r=>{
+    if(!('isOwner' in r))r.isOwner=false;
+    const m=String(r.unit||'').match(/^(.*?)\s*[\(（]地[\)）]\s*$/);
+    if(m){r.unit=m[1];r.isOwner=true;}
+  });
   return d;
 }
 
@@ -751,6 +772,196 @@ function uniqueUnits(){return[...new Set(S.rows.map(r=>r.unit).filter(Boolean))]
   if(ka[1]!==kb[1])return ka[1]-kb[1];
   return String(ka[2]).localeCompare(String(kb[2]),'zh-TW');
 })}
+function uniqueFloors(){return[...new Set(S.rows.map(r=>r.floor).filter(Boolean))].sort((a,b)=>_floorRank(a)-_floorRank(b))}
+function unitsOnFloor(f,zone){
+  const zs=Array.isArray(zone)?zone:(zone?[zone]:null);
+  return uniqueUnits().filter(u=>S.rows.some(r=>r.unit===u&&r.floor===f&&(!zs||zs.includes(r.zone))))
+}
+function uniqueZones(){return[...new Set(S.rows.map(r=>r.zone).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'zh-TW'))}
+function unitsInZone(z){return uniqueUnits().filter(u=>S.rows.some(r=>r.unit===u&&r.zone===z))}
+function unitsInZones(zones){return uniqueUnits().filter(u=>S.rows.some(r=>r.unit===u&&zones.includes(r.zone)))}
+function zoneUnitList(zone){
+  if(!S.zoneUnits)S.zoneUnits={};
+  const set=new Set(S.zoneUnits[zone]||[]);
+  S.rows.forEach(r=>{if(r.zone===zone&&r.unit)set.add(r.unit)});
+  return[...set].sort((a,b)=>{
+    const ka=_unitSortKey(a),kb=_unitSortKey(b);
+    if(ka[0]!==kb[0])return ka[0].localeCompare(kb[0],'zh-TW');
+    if(ka[1]!==kb[1])return ka[1]-kb[1];
+    return String(ka[2]).localeCompare(String(kb[2]),'zh-TW');
+  });
+}
+function refreshUnitSelect(){
+  const sel=document.getElementById('ia-unit');
+  if(!sel||!_pendingRow)return;
+  const units=zoneUnitList(_pendingRow.zone);
+  sel.innerHTML=`<option value="">戶別</option>${units.map(u=>`<option value="${esc(u)}" ${u===_pendingRow.unit?'selected':''}>${esc(u)}</option>`).join('')}`;
+  if(!units.includes(_pendingRow.unit))_pendingRow.unit='';
+}
+function addZoneUnit(){
+  if(!_pendingRow)return;
+  const n=prompt('新增戶別名稱（將加入「'+zLabel(_pendingRow.zone)+'」）');
+  if(!n||!n.trim())return;
+  const u=n.trim();
+  const conflict=unitZoneConflict(u,_pendingRow.zone);
+  if(conflict){
+    alert(`⚠️ 戶別 ${u} 已存在於『${zLabel(conflict)}』，無法加入『${zLabel(_pendingRow.zone)}』`);
+    return;
+  }
+  if(!S.zoneUnits)S.zoneUnits={};
+  if(!S.zoneUnits[_pendingRow.zone])S.zoneUnits[_pendingRow.zone]=[];
+  if(!S.zoneUnits[_pendingRow.zone].includes(u))S.zoneUnits[_pendingRow.zone].push(u);
+  _pendingRow.unit=u;
+  save();
+  refreshUnitSelect();
+  toast('已新增戶別：'+u,'➕');
+}
+function floorList(){
+  const fc=S.floorConfig||{roof:3,top:31,basement:5};
+  const out=[];
+  for(let i=fc.roof;i>=1;i--)out.push('R'+i+'F');
+  for(let i=fc.top;i>=1;i--)out.push(i+'F');
+  for(let i=1;i<=fc.basement;i++)out.push('B'+i+'F');
+  return out;
+}
+function openFloorConfigModal(){
+  const fc=S.floorConfig||{roof:3,top:31,basement:5};
+  const existing=document.getElementById('floor-cfg-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='floor-cfg-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px">⚙️ 樓層範圍設定</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">頂樓層數（R?F）<input id="fc-roof" type="number" min="0" max="9" value="${fc.roof}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地面層數（1F~?F）<input id="fc-top" type="number" min="1" max="99" value="${fc.top}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地下層數（B?F）<input id="fc-basement" type="number" min="0" max="9" value="${fc.basement}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
+      <div style="font-size:11px;color:var(--text2)">樓層順序：R${fc.roof}F...R1F → ${fc.top}F...1F → B1F...B${fc.basement}F</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="document.getElementById('floor-cfg-modal').remove()">取消</button>
+      <button class="btn btn-p btn-sm" onclick="saveFloorConfig()">儲存</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveFloorConfig(){
+  const roof=Math.max(0,Math.min(9,+document.getElementById('fc-roof').value||0));
+  const top=Math.max(1,Math.min(99,+document.getElementById('fc-top').value||1));
+  const basement=Math.max(0,Math.min(9,+document.getElementById('fc-basement').value||0));
+  S.floorConfig={roof,top,basement};
+  save();
+  const modal=document.getElementById('floor-cfg-modal');if(modal)modal.remove();
+  toast('樓層設定已儲存','⚙️');
+  if(_pendingRow){
+    refreshFloorSelect();
+  }
+}
+function zoneFloorList(zone){
+  if(S.zoneFloors&&S.zoneFloors[zone]&&S.zoneFloors[zone].length)return S.zoneFloors[zone];
+  return floorList();
+}
+function refreshFloorSelect(){
+  const sel=document.getElementById('ia-floor');
+  if(!sel||!_pendingRow)return;
+  const floors=zoneFloorList(_pendingRow.zone);
+  sel.innerHTML=`<option value="">樓層</option>${floors.map(f=>`<option value="${esc(f)}" ${f===_pendingRow.floor?'selected':''}>${esc(f)}</option>`).join('')}`;
+  if(!floors.includes(_pendingRow.floor))_pendingRow.floor='';
+  sel.disabled=false;
+}
+function applyUnitFloorLock(){
+  if(!_pendingRow)return;
+  const lock=(S.unitFloorLock||{})[_pendingRow.unit];
+  if(lock){
+    _pendingRow.floor=lock;
+    refreshFloorSelect();
+    const sel=document.getElementById('ia-floor');
+    if(sel){
+      if(![...sel.options].some(o=>o.value===lock)){
+        sel.insertAdjacentHTML('beforeend',`<option value="${esc(lock)}">${esc(lock)}</option>`);
+      }
+      sel.value=lock;
+      sel.disabled=true;
+    }
+  }else{
+    refreshFloorSelect();
+  }
+}
+function expandRangeToken(tok){
+  const m=tok.match(/^(\D*)(\d+)(\D*)~(\D*)(\d+)(\D*)$/);
+  if(m){
+    const p1=m[1],n1=m[2],s1=m[3],p2=m[4],n2=m[5],s2=m[6];
+    if(p1===p2&&s1===s2){
+      const out=[];
+      const a=+n1,b=+n2;
+      const pad=(n1.length===n2.length&&/^0/.test(n1))?n1.length:0;
+      for(let i=a;i<=b;i++){
+        const numStr=pad?String(i).padStart(pad,'0'):String(i);
+        out.push(p1+numStr+s1);
+      }
+      return out;
+    }
+  }
+  return[tok];
+}
+function expandRangeList(str){
+  const out=[];
+  String(str||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(tok=>{
+    expandRangeToken(tok).forEach(t=>out.push(t));
+  });
+  return out;
+}
+function openZoneConfigModal(){
+  const existing=document.getElementById('zone-cfg-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='zone-cfg-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center';
+  const zoneOptsHtml=[...S.zones].map(z=>`<option value="${z.id}">${esc(z.label)}</option>`).join('');
+  modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;max-width:380px;width:92%;max-height:85vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px">🏗 區域樓層／戶別設定</div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+      <span style="font-size:11px;color:var(--text2)">選擇區域</span>
+      <select id="zc-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)" onchange="loadZoneConfigFields()">${zoneOptsHtml}</select>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+      <span style="font-size:11px;color:var(--text2)">樓層清單（逗號分隔，可用~表示範圍，如B1F~B5F；留空表示不限制）</span>
+      <input id="zc-floors" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
+      <span style="font-size:11px;color:var(--text2)">戶別清單（逗號分隔，可用~表示範圍，如店A1~店A30；留空表示不限制）</span>
+      <input id="zc-units" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-sm" onclick="document.getElementById('zone-cfg-modal').remove()">取消</button>
+      <button class="btn btn-p btn-sm" onclick="saveZoneConfig()">儲存</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  loadZoneConfigFields();
+}
+function loadZoneConfigFields(){
+  const zone=document.getElementById('zc-zone').value;
+  document.getElementById('zc-floors').value=((S.zoneFloors&&S.zoneFloors[zone])||[]).join(',');
+  document.getElementById('zc-units').value=((S.zoneUnits&&S.zoneUnits[zone])||[]).join(',');
+}
+function saveZoneConfig(){
+  const zone=document.getElementById('zc-zone').value;
+  const floors=expandRangeList(document.getElementById('zc-floors').value);
+  const units=expandRangeList(document.getElementById('zc-units').value);
+  if(!S.zoneFloors)S.zoneFloors={};
+  if(!S.zoneUnits)S.zoneUnits={};
+  S.zoneFloors[zone]=floors;
+  S.zoneUnits[zone]=units;
+  save();
+  const modal=document.getElementById('zone-cfg-modal');if(modal)modal.remove();
+  toast('區域設定已儲存','🏗');
+  if(_pendingRow&&_pendingRow.zone===zone){refreshFloorSelect();refreshUnitSelect();}
+}
+function floorsInZone(z){return uniqueFloors().filter(f=>S.rows.some(r=>r.zone===z&&r.floor===f))}
+function _activeMultiZones(){
+  if(_pendingRow&&_pendingRow.multiZones&&_pendingRow.multiZones.size>0)return[..._pendingRow.multiZones];
+  return _pendingRow?[_pendingRow.zone]:[];
+}
 // 樓層排序：RF樓層(高到低) > 一般樓層(高到低) > 地下室(B1F到B5F低到高)
 function _floorRank(f){
   const s=String(f||'').trim();
@@ -844,19 +1055,52 @@ function renumberEvents(){
 // ── 新增行：先在匯入欄下方顯示快速編輯列，確認後再寫入 ──────────────────
 let _pendingRow=null;
 function showInlineAdd(){
-  const zoneOpts=S.zones.map(z=>`<option value="${z.id}">${esc(z.label)}</option>`).join('');
+  const zoneOpts=[...S.zones].sort((a,b)=>a.label.localeCompare(b.label,'zh-TW-u-co-stroke')).map(z=>`<option value="${z.id}">${esc(z.label)}</option>`).join('');
   const vendorOpts=S.vendors.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   const mgrOpts=['', ...S.managers].map(m=>`<option value="${esc(m)}">${m||'— 無 —'}</option>`).join('');
   const area=document.getElementById('inline-add-area');
   if(!area)return;
   if(area.querySelector('.inline-add-box')){area.innerHTML='';_pendingRow=null;return;}
-  _pendingRow={zone:S.zones[0]?S.zones[0].id:'indoor',manager:'',unit:'',floor:'',vendor:S.vendors[0]||'',issue:'',note:'',planIn:'',planDone:''};
+  _pendingRow={zone:S.zones[0]?S.zones[0].id:'indoor',manager:'',unit:'',floor:'',vendor:S.vendors[0]||'',issue:'',note:'',planIn:'',planDone:'',isOwner:false};
   area.innerHTML=`<div class="inline-add-box" style="background:#F0EEFF;border:1.5px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;animation:tIn .2s ease">
     <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:10px">➕ 新增缺失項目</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">套用到多筆（同一缺失內容套用到多筆記錄，各自獨立追蹤；以下三種方式可分別勾選，互不影響，選取結果會合併計算）</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+        <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="checkbox" id="ia-multi-zone-toggle" onchange="toggleMultiPanel('zone',this.checked)">套用到多區域
+        </label>
+        <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="checkbox" id="ia-multi-floor-toggle" onchange="toggleMultiPanel('floor',this.checked)">套用到多樓層
+        </label>
+        <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="checkbox" id="ia-multi-unit-toggle" onchange="toggleMultiPanel('unit',this.checked)">套用到多戶
+        </label>
+        <button class="btn btn-sm" onclick="resetMultiSelection()">🔄 重置套用選擇</button>
+        <button class="btn btn-sm" onclick="undoLastAction()">↩️ 還原上一步</button>
+      </div>
+      <div id="ia-multi-zone-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">勾選區域會自動加選/取消該區域所有戶別</div>
+        <div id="ia-multi-zones" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+      <div id="ia-multi-floor-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:4px">勾選樓層會自動加選/取消該樓層所有戶別</div>
+        <div id="ia-multi-floors" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+      <div id="ia-multi-unit-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="ia-multi-search" placeholder="搜尋戶別..." oninput="renderMultiUnitList()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <button class="btn btn-sm" onclick="multiUnitSelectAll(true)">全選</button>
+          <button class="btn btn-sm" onclick="multiUnitSelectAll(false)">取消全選</button>
+        </div>
+        <div id="ia-multi-list" style="display:flex;flex-wrap:wrap;gap:4px;max-height:140px;overflow-y:auto"></div>
+      </div>
+      <div id="ia-multi-summary" style="display:none;margin-top:6px;font-size:11px;color:var(--text2)"></div>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">區域</span>
-        <select id="ia-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.zone=this.value">${zoneOpts}</select>
+        <select id="ia-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.zone=this.value;refreshUnitSelect();refreshFloorSelect()">${zoneOpts}</select>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">管理人</span>
@@ -864,23 +1108,42 @@ function showInlineAdd(){
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">戶別</span>
-        <input id="ia-unit" type="text" placeholder="戶別" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:80px" oninput="_pendingRow.unit=this.value">
+        <div style="display:flex;align-items:center;gap:6px">
+          <select id="ia-unit" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:80px" onchange="_pendingRow.unit=this.value;applyUnitFloorLock()">
+            <option value="">戶別</option>
+            ${zoneUnitList(_pendingRow.zone).map(u=>`<option value="${esc(u)}" ${u===_pendingRow.unit?'selected':''}>${esc(u)}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm" onclick="addZoneUnit()" title="新增戶別" style="padding:3px 6px;font-size:11px;flex-shrink:0">＋</button>
+          <label style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap">
+            <input type="checkbox" id="ia-owner" onchange="_pendingRow.isOwner=this.checked" style="margin:0">🏠地主戶
+          </label>
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">樓層</span>
-        <input id="ia-floor" type="text" placeholder="樓層" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:60px" oninput="_pendingRow.floor=this.value">
+        <div style="display:flex;gap:3px;align-items:center">
+          <select id="ia-floor" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:75px" onchange="_pendingRow.floor=this.value">
+            <option value="">樓層</option>
+            ${zoneFloorList(_pendingRow.zone).map(f=>`<option value="${esc(f)}" ${f===_pendingRow.floor?'selected':''}>${esc(f)}</option>`).join('')}
+          </select>
+          <button class="btn btn-sm" onclick="openFloorConfigModal()" title="全域樓層設定" style="padding:3px 6px;font-size:11px;flex-shrink:0">⚙️</button>
+          <button class="btn btn-sm" onclick="openZoneConfigModal()" title="區域樓層/戶別設定" style="padding:3px 6px;font-size:11px;flex-shrink:0">🏗</button>
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">廠商</span>
         <div style="display:flex;gap:3px;align-items:center">
-          <select id="ia-vendor" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.vendor=this.value">${vendorOpts}</select>
-          <button class="btn btn-sm" onclick="(function(){const n=prompt('新廠商名稱');if(!n||!n.trim())return;S.vendors.push(n.trim());save();const sel=document.getElementById('ia-vendor');const opt=document.createElement('option');opt.value=n.trim();opt.textContent=n.trim();opt.selected=true;sel.appendChild(opt);_pendingRow.vendor=n.trim();toast('已新增廠商：'+n.trim())})()" style="padding:3px 7px;font-size:11px;flex-shrink:0">＋</button>
+          <input id="ia-vendor" type="text" list="ia-vendor-list" placeholder="輸入關鍵字搜尋廠商" value="${esc(S.vendors[0]||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:120px" oninput="_pendingRow.vendor=this.value">
+          <datalist id="ia-vendor-list">${vendorOpts}</datalist>
+          <button class="btn btn-sm" onclick="(function(){const n=prompt('新廠商名稱');if(!n||!n.trim())return;S.vendors.push(n.trim());save();const dl=document.getElementById('ia-vendor-list');const opt=document.createElement('option');opt.value=n.trim();dl.appendChild(opt);const inp=document.getElementById('ia-vendor');inp.value=n.trim();_pendingRow.vendor=n.trim();toast('已新增廠商：'+n.trim())})()" style="padding:3px 7px;font-size:11px;flex-shrink:0">＋</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px">
         <span style="font-size:10px;color:var(--text2)">缺失內容</span>
         <input id="ia-issue" type="text" placeholder="缺失內容（必填）" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:100%" oninput="_pendingRow.issue=this.value">
       </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:8px">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">預計進場</span>
         <input id="ia-planIn" type="date" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="(function(v){_pendingRow.planIn=v;if(!_pendingRow.planDone){_pendingRow.planDone=v;const d=document.getElementById('ia-planDone');if(d&&!d.value)d.value=v;}})(this.value)">
@@ -897,6 +1160,202 @@ function showInlineAdd(){
   </div>`;
   setTimeout(()=>{const el=document.getElementById('ia-issue');if(el)el.focus();},50);
 }
+function _ensureMultiSets(){
+  if(!_pendingRow.multiUnitsManual)_pendingRow.multiUnitsManual=new Set();
+  if(!_pendingRow.multiFloors)_pendingRow.multiFloors=new Set();
+  if(!_pendingRow.multiZones)_pendingRow.multiZones=new Set();
+}
+function resetMultiSelection(){
+  if(!_pendingRow)return;
+  _pendingRow.multiUnitsManual=new Set();
+  _pendingRow.multiFloors=new Set();
+  _pendingRow.multiZones=new Set();
+  _pendingRow.multiUnits=null;
+  _pendingRow.zone=S.zones[0]?S.zones[0].id:'indoor';
+  _pendingRow.manager='';
+  _pendingRow.unit='';
+  _pendingRow.floor='';
+  _pendingRow.vendor=S.vendors[0]||'';
+  _pendingRow.issue='';
+  _pendingRow.note='';
+  _pendingRow.planIn='';
+  _pendingRow.planDone='';
+  _pendingRow.isOwner=false;
+  ['zone','floor','unit'].forEach(k=>{
+    const cb=document.getElementById('ia-multi-'+k+'-toggle');if(cb)cb.checked=false;
+    const panel=document.getElementById('ia-multi-'+k+'-panel');if(panel)panel.style.display='none';
+  });
+  const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  setVal('ia-zone',_pendingRow.zone);
+  setVal('ia-mgr','');
+  setVal('ia-unit','');
+  setVal('ia-floor','');
+  setVal('ia-vendor',_pendingRow.vendor);
+  setVal('ia-issue','');
+  setVal('ia-planIn','');
+  setVal('ia-planDone','');
+  const owner=document.getElementById('ia-owner');if(owner)owner.checked=false;
+  updateMultiUnitCount();
+  toast('已重置','🔄');
+}
+function runDataHealthCheck(){
+  const badFloors=S.rows.filter(r=>r.floor&&_floorRank(r.floor)===9000);
+  const unitZones={};
+  S.rows.forEach(r=>{if(r.unit)(unitZones[r.unit]=unitZones[r.unit]||new Set()).add(r.zone)});
+  const crossZone=Object.entries(unitZones).filter(([u,zs])=>zs.size>1);
+  const existing=document.getElementById('health-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='health-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center';
+  let html=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;max-width:560px;width:92%;max-height:80vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px">🩺 資料健檢</div>
+    <div style="font-size:12px;font-weight:600;margin:10px 0 4px">樓層格式異常（${badFloors.length}筆）</div>`;
+  html+=badFloors.length?`<table class="ae-tbl" style="font-size:11px;width:100%"><thead><tr><th>#</th><th>區域</th><th>戶別</th><th>樓層</th><th>缺失內容</th></tr></thead><tbody>${badFloors.map(r=>`<tr><td>${r.id}</td><td>${esc(zLabel(r.zone))}</td><td>${esc(r.unit||'')}</td><td style="color:var(--red);font-weight:600">${esc(r.floor)}</td><td>${esc(r.issue||'')}</td></tr>`).join('')}</tbody></table>`:`<div style="font-size:11px;color:var(--text3)">沒有發現異常</div>`;
+  html+=`<div style="font-size:12px;font-weight:600;margin:14px 0 4px">同一戶別出現於多個區域（${crossZone.length}項）</div>`;
+  html+=crossZone.length?`<table class="ae-tbl" style="font-size:11px;width:100%"><thead><tr><th>戶別</th><th>出現區域</th></tr></thead><tbody>${crossZone.map(([u,zs])=>`<tr><td>${esc(u)}</td><td>${[...zs].map(z=>esc(zLabel(z))).join('、')}</td></tr>`).join('')}</tbody></table>`:`<div style="font-size:11px;color:var(--text3)">沒有發現異常</div>`;
+  html+=`<div style="margin-top:14px;text-align:right"><button class="btn btn-sm" onclick="document.getElementById('health-modal').remove()">關閉</button></div></div>`;
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
+}
+let _undoSnapshot=null;
+function _saveUndoSnapshot(){
+  _undoSnapshot={rows:JSON.parse(JSON.stringify(S.rows)),nextId:S.nextId,changelog:JSON.parse(JSON.stringify(S.changelog||[]))};
+}
+function undoLastAction(){
+  if(!_undoSnapshot){toast('沒有可還原的操作','⚠️');return;}
+  S.rows=_undoSnapshot.rows;
+  S.nextId=_undoSnapshot.nextId;
+  S.changelog=_undoSnapshot.changelog;
+  _undoSnapshot=null;
+  save();renderAll();
+  toast('已還原上一步','↩️');
+}
+function computeSelectedUnits(){
+  if(!_pendingRow)return new Set();
+  _ensureMultiSets();
+  const out=new Set(_pendingRow.multiUnitsManual);
+  const zs=_activeMultiZones();
+  _pendingRow.multiFloors.forEach(f=>unitsOnFloor(f,zs).forEach(u=>out.add(u)));
+  _pendingRow.multiZones.forEach(z=>unitsInZone(z).forEach(u=>out.add(u)));
+  return out;
+}
+function toggleMultiPanel(kind,checked){
+  if(!_pendingRow)return;
+  _ensureMultiSets();
+  const panel=document.getElementById('ia-multi-'+kind+'-panel');
+  if(panel)panel.style.display=checked?'block':'none';
+  if(checked){
+    if(kind==='unit')renderMultiUnitList();
+    if(kind==='floor')renderMultiFloorList();
+    if(kind==='zone')renderMultiZoneList();
+  }else{
+    // 取消勾選該方式時，清除該方式自身的選取，互不影響其他方式
+    if(kind==='unit')_pendingRow.multiUnitsManual=new Set();
+    if(kind==='floor')_pendingRow.multiFloors=new Set();
+    if(kind==='zone')_pendingRow.multiZones=new Set();
+  }
+  updateMultiUnitCount();
+}
+function refreshMultiPanels(){
+  if(document.getElementById('ia-multi-unit-panel')?.style.display==='block')renderMultiUnitList();
+  if(document.getElementById('ia-multi-floor-panel')?.style.display==='block')renderMultiFloorList();
+  if(document.getElementById('ia-multi-zone-panel')?.style.display==='block')renderMultiZoneList();
+  updateMultiUnitCount();
+}
+function renderMultiUnitList(){
+  const list=document.getElementById('ia-multi-list');
+  if(!list||!_pendingRow)return;
+  _ensureMultiSets();
+  const q=(document.getElementById('ia-multi-search')?.value||'').trim().toLowerCase();
+  const units=unitsInZones(_activeMultiZones()).filter(u=>!q||u.toLowerCase().includes(q));
+  list.innerHTML=units.map(u=>{
+    const checked=_pendingRow.multiUnitsManual.has(u);
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#F0EEFF':'#fff'}">`
+      +`<input type="checkbox" ${checked?'checked':''} onchange="toggleMultiUnit('${esc(u)}',this.checked)" style="margin:0">${esc(u)}</label>`;
+  }).join('');
+  updateMultiUnitCount();
+}
+function renderMultiFloorList(){
+  const wrap=document.getElementById('ia-multi-floors');
+  if(!wrap||!_pendingRow)return;
+  _ensureMultiSets();
+  const zs=_activeMultiZones();
+  const floors=uniqueFloors().map(f=>({f,fu:unitsOnFloor(f,zs)})).filter(x=>x.fu.length>0);
+  wrap.innerHTML=floors.map(({f,fu})=>{
+    const checked=_pendingRow.multiFloors.has(f);
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#E6F4EA':'#fff'}">`
+      +`<input type="checkbox" ${checked?'checked':''} onchange="toggleFloorSelect('${esc(f)}',this.checked)" style="margin:0">${esc(f)}（${fu.length}戶）</label>`;
+  }).join('');
+}
+function renderMultiZoneList(){
+  const wrap=document.getElementById('ia-multi-zones');
+  if(!wrap||!_pendingRow)return;
+  _ensureMultiSets();
+  const zones=uniqueZones();
+  wrap.innerHTML=zones.map(z=>{
+    const zu=unitsInZone(z);
+    const zf=floorsInZone(z);
+    const range=zf.length>1?`，${esc(zf[0])}-${esc(zf[zf.length-1])}`:(zf.length===1?`，${esc(zf[0])}`:'');
+    const checked=_pendingRow.multiZones.has(z);
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#FFF3E0':'#fff'}">`
+      +`<input type="checkbox" ${checked?'checked':''} onchange="toggleZoneSelect('${esc(z)}',this.checked)" style="margin:0">${esc(zLabel(z))}（${zu.length}戶${range}）</label>`;
+  }).join('');
+}
+function toggleFloorSelect(f,checked){
+  if(!_pendingRow)return;
+  _ensureMultiSets();
+  if(checked)_pendingRow.multiFloors.add(f);else _pendingRow.multiFloors.delete(f);
+  refreshMultiPanels();
+}
+function toggleZoneSelect(z,checked){
+  if(!_pendingRow)return;
+  _ensureMultiSets();
+  if(checked)_pendingRow.multiZones.add(z);else _pendingRow.multiZones.delete(z);
+  refreshMultiPanels();
+}
+function unitZoneConflict(unit,zone){
+  if(!unit)return null;
+  const r=S.rows.find(r=>r.unit===unit&&r.zone&&r.zone!==zone);
+  return r?r.zone:null;
+}
+function toggleMultiUnit(u,checked){
+  if(!_pendingRow)return;
+  _ensureMultiSets();
+  if(checked){
+    const zs=_activeMultiZones();
+    const bad=S.rows.find(r=>r.unit===u&&r.zone&&!zs.includes(r.zone));
+    if(bad){
+      alert(`⚠️ 戶別 ${u} 應屬於『${zLabel(bad.zone)}』，目前選擇『${zs.map(zLabel).join('、')}』，無法輸入`);
+      renderMultiUnitList();
+      return;
+    }
+    _pendingRow.multiUnitsManual.add(u);
+  }else _pendingRow.multiUnitsManual.delete(u);
+  refreshMultiPanels();
+}
+function multiUnitSelectAll(all){
+  if(!_pendingRow)return;
+  _ensureMultiSets();
+  const q=(document.getElementById('ia-multi-search')?.value||'').trim().toLowerCase();
+  const units=unitsInZones(_activeMultiZones()).filter(u=>!q||u.toLowerCase().includes(q));
+  units.forEach(u=>{if(all)_pendingRow.multiUnitsManual.add(u);else _pendingRow.multiUnitsManual.delete(u);});
+  refreshMultiPanels();
+}
+function updateMultiUnitCount(){
+  const summary=document.getElementById('ia-multi-summary');
+  if(!summary||!_pendingRow)return;
+  const sel=computeSelectedUnits();
+  _pendingRow.multiUnits=sel.size>0?sel:null;
+  const n=sel.size;
+  if(n>0){
+    const list=uniqueUnits().filter(u=>sel.has(u));
+    summary.style.display='block';
+    summary.textContent=`已選戶別：${list.join('、')}（共${n}戶）`;
+  }else{
+    summary.style.display='none';
+    summary.textContent='';
+  }
+}
 function checkDuplicate(unit,floor,issue){
   if(!unit&&!floor&&!issue)return null;
   const u=(unit||'').trim(),f=(floor||'').trim(),is=(issue||'').trim();
@@ -905,7 +1364,43 @@ function checkDuplicate(unit,floor,issue){
 }
 function confirmInlineAdd(){
   if(!_pendingRow){return;}
+  if(_pendingRow.multiUnits&&_pendingRow.multiUnits.size>0){
+    if(!_pendingRow.issue){toast('請填寫缺失內容','⚠️');return;}
+    _saveUndoSnapshot();
+    const units=uniqueUnits().filter(u=>_pendingRow.multiUnits.has(u));
+    const floors=(_pendingRow.multiFloors&&_pendingRow.multiFloors.size>0)?uniqueFloors().filter(f=>_pendingRow.multiFloors.has(f)):null;
+    let count=0;
+    units.forEach(u=>{
+      if(floors){
+        floors.forEach(floor=>{
+          const ref=S.rows.find(r=>r.unit===u&&r.floor===floor);
+          const isOwner=ref?!!ref.isOwner:!!_pendingRow.isOwner;
+          S.rows.push({id:S.nextId++,zone:_pendingRow.zone,manager:_pendingRow.manager,unit:u,floor:floor||'',vendor:_pendingRow.vendor,issue:_pendingRow.issue,note:_pendingRow.note||'',planIn:_pendingRow.planIn||'',planDone:_pendingRow.planDone||'',actualIn:'',actualDone:'',isOwner});
+          count++;
+        });
+      }else{
+        const ref=S.rows.find(r=>r.unit===u&&r.floor);
+        const floor=ref?ref.floor:_pendingRow.floor;
+        const isOwner=ref?!!ref.isOwner:!!_pendingRow.isOwner;
+        S.rows.push({id:S.nextId++,zone:_pendingRow.zone,manager:_pendingRow.manager,unit:u,floor:floor||'',vendor:_pendingRow.vendor,issue:_pendingRow.issue,note:_pendingRow.note||'',planIn:_pendingRow.planIn||'',planDone:_pendingRow.planDone||'',actualIn:'',actualDone:'',isOwner});
+        count++;
+      }
+    });
+    const floorNote=floors?` × ${floors.length} 樓層`:'';
+    logChange('➕ 批次新增項目',`缺失：${_pendingRow.issue} 套用至 ${units.length} 戶${floorNote}，共新增 ${count} 筆，目前共 ${S.rows.length} 筆`,{units});
+    _pendingRow=null;
+    const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
+    toast(`已新增 ${count} 筆`,'➕');save();renderAll();
+    return;
+  }
   if(!_pendingRow.issue&&!_pendingRow.unit){toast('請填寫缺失內容或戶別','⚠️');return;}
+  if(_pendingRow.unit){
+    const conflict=unitZoneConflict(_pendingRow.unit,_pendingRow.zone);
+    if(conflict){
+      alert(`⚠️ 戶別 ${_pendingRow.unit} 應屬於『${zLabel(conflict)}』，目前選擇『${zLabel(_pendingRow.zone)}』，無法輸入`);
+      return;
+    }
+  }
   if(_pendingRow.planIn&&!_pendingRow.planDone)_pendingRow.planDone=_pendingRow.planIn;
   const dup=checkDuplicate(_pendingRow.unit,_pendingRow.floor,_pendingRow.issue);
   if(dup){
@@ -917,7 +1412,8 @@ function confirmInlineAdd(){
 確定要繼續新增？`;
     if(!confirm(msg))return;
   }
-  S.rows.push({id:S.nextId++,..._pendingRow,actualIn:'',actualDone:'',note:''});
+  _saveUndoSnapshot();
+  S.rows.push({id:S.nextId++,zone:_pendingRow.zone,manager:_pendingRow.manager,unit:_pendingRow.unit,floor:_pendingRow.floor,vendor:_pendingRow.vendor,issue:_pendingRow.issue,note:'',planIn:_pendingRow.planIn||'',planDone:_pendingRow.planDone||'',actualIn:'',actualDone:'',isOwner:!!_pendingRow.isOwner});
   logChange('➕ 新增項目',`戶別：${_pendingRow.unit||'—'} 廠商：${_pendingRow.vendor||'—'}，目前共 ${S.rows.length} 筆`);
   _pendingRow=null;
   const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
@@ -1493,7 +1989,7 @@ function rowHTML(r,showZone,visIds){
     <td style="width:10px;text-align:center">${dot(st)}</td>
     <td style="width:80px"><select onchange="upd(${r.id},'manager',this.value)" onclick="event.stopPropagation()">${mOpts(r.manager)}</select></td>
     ${showZone?`<td style="width:96px"><select onchange="upd(${r.id},'zone',this.value)" onclick="event.stopPropagation()">${zOpts(r.zone)}</select></td>`:''}
-    <td style="width:72px"><input type="text" value="${esc(r.unit)}" onblur="upd(${r.id},'unit',this.value)" onclick="event.stopPropagation()"></td>
+    <td style="width:72px"><div style="display:flex;align-items:center;gap:1px"><input type="text" value="${esc(r.unit)}" onblur="upd(${r.id},'unit',this.value)" onclick="event.stopPropagation()" style="width:100%;min-width:0"><span title="${r.isOwner?'地主戶（點擊取消）':'設為地主戶'}" onclick="event.stopPropagation();upd(${r.id},'isOwner',!r.isOwner)" style="cursor:pointer;font-size:10px;flex-shrink:0;opacity:${r.isOwner?'1':'.18'}">🏠</span></div></td>
     <td style="width:44px"><input type="text" value="${esc(r.floor)}" onblur="upd(${r.id},'floor',this.value)" onclick="event.stopPropagation()"></td>
     <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()">${vOpts(r.vendor)}</select></td>
     <td class="td-issue" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'issue',this.value)" onclick="event.stopPropagation()" placeholder="缺失內容" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.issue||'').replace(/^\s+/,''))}</textarea></td>
@@ -1977,7 +2473,7 @@ function renderMain(){
   let data=[...S.rows];
   if(fUnitSet.size>0)data=data.filter(r=>fUnitSet.has(r.unit));
   if(fFloor)data=data.filter(r=>r.floor===fFloor);
-  if(fVendor)data=data.filter(r=>r.vendor===fVendor);
+  if(fVendor)data=data.filter(r=>(r.vendor||'').includes(fVendor));
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
   if(fMgr)data=data.filter(r=>r.manager===fMgr);
@@ -2038,6 +2534,7 @@ function renderMain(){
   </div>`;
   const flOp=floors.map(f=>`<option value="${esc(f)}"${f===fFloor?' selected':''}>${esc(f)}</option>`).join('');
   const vOp=[...S.vendors].sort((a,b)=>a.localeCompare(b,'zh-TW-u-co-stroke')).map(v=>`<option value="${esc(v)}"${v===fVendor?' selected':''}>${esc(v)}</option>`).join('');
+  const vOpDl=[...S.vendors].sort((a,b)=>a.localeCompare(b,'zh-TW-u-co-stroke')).map(v=>`<option value="${esc(v)}">`).join('');
   const zOp=[...S.zones].sort((a,b)=>a.label.localeCompare(b.label,'zh-TW-u-co-stroke')).map(z=>`<option value="${z.id}"${z.id===fZone?' selected':''}>${esc(z.label)}</option>`).join('');
   const mOp=['', ...S.managers].map(m=>`<option value="${esc(m)}"${m===fMgr?' selected':''}>${m?esc(m):'— 管理人 —'}</option>`).join('');
   const totalFiltered=data.length;
@@ -2051,7 +2548,8 @@ function renderMain(){
     <div class="bar">
       ${uDropdown}
       <select id="fFloor" onchange="mainPage=0;renderMain()"><option value="">全部樓層</option>${flOp}</select>
-      <select id="fVendor" onchange="mainPage=0;renderMain()"><option value="">全部廠商</option>${vOp}</select>
+      <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
+      <datalist id="fVendor-list">${vOpDl}</datalist>
       <select id="fZone" onchange="mainPage=0;renderMain()"><option value="">全部區域</option>${zOp}</select>
       <select id="fMgr" onchange="mainPage=0;renderMain()"><option value="">全部管理人</option>${mOp}</select>
       <select id="fStatus" onchange="mainPage=0;window._fMissingDate=false;window._fMissingVendor=false;renderMain()">
@@ -5805,21 +6303,25 @@ function renderChangelog(){
     '📂 提示事項匯入':'#0F6E56','✏️ 欄位更新':'var(--text2)',
     '🔢 重新編號':'var(--blue)','✅ 移至完成':'var(--green)'
   };
-  const rows=log.map(c=>{
+  const rows=log.map((c,i)=>{
     const col=typeColor[c.type]||'var(--text2)';
+    const hasUnits=Array.isArray(c.units)&&c.units.length>0;
+    const arrow=hasUnits?`<span class="no-print" style="cursor:pointer;display:inline-block;width:14px;color:var(--text2)" onclick="toggleChangelogDetail(${i})" id="cl-arrow-${i}">▸</span>`:`<span style="display:inline-block;width:14px"></span>`;
+    const detailRow=hasUnits?`<tr id="cl-d-${i}" style="display:none"><td></td><td colspan="3" style="font-size:11px;color:var(--text2);background:var(--bg2,rgba(0,0,0,.03))">明細：${c.units.map(esc).join('、')}</td></tr>`:'';
     return`<tr>
       <td style="white-space:nowrap;color:var(--text2);font-size:11px">${fmtTs(c.ts)}</td>
       <td><span style="font-size:11px;font-weight:600;color:${col}">${esc(c.type)}</span></td>
-      <td style="font-size:11px">${esc(c.detail)}</td>
+      <td style="font-size:11px">${arrow}${esc(c.detail)}</td>
       <td style="text-align:center;font-size:11px;color:var(--text3)">${c.rowCount??'—'}</td>
-    </tr>`;
+    </tr>${detailRow}`;
   }).join('');
   const empty=!log.length?'<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">尚無更新紀錄</td></tr>':'';
   document.getElementById('pane-changelog').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <span style="font-size:14px;font-weight:700">📝 更新紀錄</span>
       <span style="font-size:12px;color:var(--text2)">共 ${log.length} 筆</span>
-      <button class="btn btn-sm no-print" onclick="clearChangelogWithAuth()" style="margin-left:auto;color:var(--red)">🗑 清除紀錄</button>
+      <button class="btn btn-sm no-print" onclick="runDataHealthCheck()" style="margin-left:auto">🩺 資料健檢</button>
+      <button class="btn btn-sm no-print" onclick="clearChangelogWithAuth()" style="color:var(--red)">🗑 清除紀錄</button>
       <button class="btn btn-pdf btn-sm no-print" onclick="printChangelogTable()">🖨 PDF</button>
     </div>
     <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--card)">
@@ -5833,6 +6335,14 @@ function renderChangelog(){
         <tbody>${rows}${empty}</tbody>
       </table>
     </div>`;
+}
+function toggleChangelogDetail(i){
+  const tr=document.getElementById('cl-d-'+i);
+  const arrow=document.getElementById('cl-arrow-'+i);
+  if(!tr)return;
+  const show=tr.style.display==='none';
+  tr.style.display=show?'':'none';
+  if(arrow)arrow.textContent=show?'▾':'▸';
 }
 function clearChangelogWithAuth(){
   const existing=document.getElementById('auth-modal');if(existing)existing.remove();
