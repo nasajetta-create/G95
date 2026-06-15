@@ -1390,7 +1390,13 @@ function printSection(title,bodyHtml,fileName){
     <h2>🏗 工程缺失追蹤系統 — ${title}</h2>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px">
       <div class="info" style="margin-bottom:0">列印時間：${new Date().toLocaleString('zh-TW')}</div>
-      <button onclick="window.print()" style="padding:14px 32px;background:#3C3489;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:24px;font-family:inherit;flex-shrink:0">🖨 列印 / 儲存PDF</button>
+      <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
+        <label style="font-size:18px;display:flex;align-items:center;gap:6px;cursor:pointer;color:#5F5E5A">
+          <input type="checkbox" id="hideDoneChk" onchange="document.querySelectorAll('tr.r-done').forEach(tr=>tr.style.display=this.checked?'none':'')" style="width:18px;height:18px">
+          隱藏已完成項目
+        </label>
+        <button onclick="window.print()" style="padding:14px 32px;background:#3C3489;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:24px;font-family:inherit;flex-shrink:0">🖨 列印 / 儲存PDF</button>
+      </div>
     </div>
     ${bodyHtml}
     </body></html>`);
