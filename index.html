@@ -3783,11 +3783,14 @@ function renderHandover(){
         const raw=rawData[col];
         return cellHTML(raw?raw[fl]:null,fl,col);
       }).join('');
+      const expandKey=cols.map(col=>{const raw=rawData[col];return raw?raw[fl]:null;}).find(k=>k&&_hovExpanded===k);
+      const expandDiv=expandKey?`<div style="grid-column:1/-1;margin:2px 0" id="hov-expand-${esc(expandKey)}">${buildExpandCard()}</div>`:'';
       return`<div style="display:contents">
         <div style="font-size:12px;color:var(--text3);text-align:right;padding-right:4px;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:4px;font-weight:500">${fl}</div>
         ${cells}
       </div>
-      ${addSep?`<div style="grid-column:1/-1;height:0;border-bottom:2.5px solid #C8C5C0;margin:2px 0"></div>`:''}`;
+      ${addSep?`<div style="grid-column:1/-1;height:0;border-bottom:2.5px solid #C8C5C0;margin:2px 0"></div>`:''}
+      ${expandDiv}`;
     }).join('');
     return`<div>
       <div style="display:grid;grid-template-columns:${gridCols};gap:4px;margin-bottom:4px">
@@ -3841,8 +3844,10 @@ function renderHandover(){
           <div style="width:100%;height:3px;background:rgba(0,0,0,.1);border-radius:1px;margin-top:auto"><div style="height:3px;width:${pct}%;background:${grade.color};border-radius:1px"></div></div>
         </div>`;
       }).join('');
+      const expandKey=chunk.find(({key})=>_hovExpanded===key);
+      const expandDiv=expandKey?`<div style="grid-column:1/-1;margin:2px 0" id="hov-expand-${esc(expandKey.key)}">${buildExpandCard()}</div>`:'';
       rows.push(`<div style="display:grid;grid-template-columns:repeat(${chunk.length},1fr);gap:4px;margin-bottom:3px">${hdr}</div>
-        <div style="display:grid;grid-template-columns:repeat(${chunk.length},1fr);gap:4px;margin-bottom:10px">${cells}</div>`);
+        <div style="display:grid;grid-template-columns:repeat(${chunk.length},1fr);gap:4px;margin-bottom:10px">${cells}${expandDiv}</div>`);
     }
     return rows.join('');
   }
@@ -3859,42 +3864,42 @@ function renderHandover(){
     const inspCols=insps.map((ins,i)=>{
       const isDone=!!ins.date;
       return`<div style="display:flex;flex-direction:column;gap:2px">
-        <span style="font-size:10px;color:var(--text2)">${esc(ins.label)}</span>
+        <span style="font-size:11px;color:var(--text2)">${esc(ins.label)}</span>
         <div style="display:flex;align-items:center;gap:3px">
-          <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
+          <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:13px;padding:4px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
           <button class="btn btn-sm btn-d" onclick="delHuInspH2('${esc(key)}',${i})" style="padding:2px 4px;font-size:10px">—</button>
         </div>
       </div>`;
     }).join('');
     return`<div style="background:#F7F5FF;border:2px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;animation:tIn .15s ease">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:600">${esc(key)}</span>
-        <span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:${grade.bg};color:${grade.color}">${pct??'—'}%</span>
-        ${hu.delivered?`<span style="padding:1px 8px;border-radius:20px;font-size:10px;background:#EAF3DE;color:#3B6D11">🏠 已交屋</span>`:''}
+        <span style="font-size:15px;font-weight:600">${esc(key)}</span>
+        <span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${grade.bg};color:${grade.color}">${pct??'—'}%</span>
+        ${hu.delivered?`<span style="padding:1px 8px;border-radius:20px;font-size:11px;background:#EAF3DE;color:#3B6D11">🏠 已交屋</span>`:''}
         <button class="btn btn-sm" onclick="_hovExpanded=null;renderHandover()">✕</button>
         <button class="btn btn-sm btn-g" onclick="toggleDeliveredH('${esc(key)}')">${hu.delivered?'取消交屋':'🏠 已交屋'}</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
-        <div><span style="font-size:10px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+        <div><span style="font-size:11px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+        <div><span style="font-size:11px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap">
-        <span style="font-size:10px;color:var(--text2)">驗屋方式：</span>
-        <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" ${(hu.inspTypes||[]).includes('自驗')?'checked':''} onchange="setHuInspType('${esc(key)}','自驗',this.checked)"> 自驗</label>
-        <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" ${(hu.inspTypes||[]).includes('委外代驗')?'checked':''} onchange="setHuInspType('${esc(key)}','委外代驗',this.checked)"> 委外代驗 ★</label>
+        <span style="font-size:11px;color:var(--text2)">驗屋方式：</span>
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" ${(hu.inspTypes||[]).includes('自驗')?'checked':''} onchange="setHuInspType('${esc(key)}','自驗',this.checked)"> 自驗</label>
+        <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" ${(hu.inspTypes||[]).includes('委外代驗')?'checked':''} onchange="setHuInspType('${esc(key)}','委外代驗',this.checked)"> 委外代驗 ★</label>
       </div>
       <div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
         <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:10px;color:var(--text2)">預定驗收</span>
-          <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <span style="font-size:11px;color:var(--text2)">預定驗收</span>
+          <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
         </div>
         ${inspCols}
         <button class="btn btn-sm" onclick="addHuInspH2('${esc(key)}')" style="padding:3px 8px;align-self:flex-end">＋</button>
       </div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="font-size:11px;font-weight:600">📋 缺失清單</span>
-          ${(()=>{const dr=getDefectRows(key);const dt=dr.length;const dp=dr.filter(r=>r.compId==null).length;return dt?`<span style="padding:1px 8px;border-radius:20px;font-size:10px;background:${dp>0?'#FCEBEB':'#EAF3DE'};color:${dp>0?'#791F1F':'#3B6D11'};font-weight:600">未完成 ${dp}／總缺失 ${dt}</span>`:''})()}
+          <span style="font-size:12px;font-weight:600">📋 缺失清單</span>
+          ${(()=>{const dr=getDefectRows(key);const dt=dr.length;const dp=dr.filter(r=>r.compId==null).length;return dt?`<span style="padding:1px 8px;border-radius:20px;font-size:11px;background:${dp>0?'#FCEBEB':'#EAF3DE'};color:${dp>0?'#791F1F':'#3B6D11'};font-weight:600">未完成 ${dp}／總缺失 ${dt}</span>`:''})()}
           <button class="btn btn-sm btn-pdf no-print" onclick="printUnitDefects('${esc(key)}')" style="margin-left:auto;font-size:10px">🖨 PDF</button>
         </div>
         ${buildUnitDefectTable(key)}
@@ -4105,8 +4110,7 @@ function renderHandover(){
       ${(hf.planDate||hf.dateExact||hf.type||(hf.block&&hf.block!=='all')||hf.tier)?`<button class="btn btn-sm" onclick="window._hovFilter={planDate:'',dateExact:'',type:'',floors:new Set(),cols:new Set(),block:'all',tier:''};renderHandover()" style="font-size:11px;color:var(--red)">✕ 清除篩選</button>`:''}
     </div>
     ${batchBar}
-    ${buildExpandCard()}
-    <div style="display:grid;grid-template-columns:${showA&&showB?'1fr 1fr':(showA||showB)?'1fr':''} ${showShop?'auto':''};gap:14px;align-items:start">
+    <div style="display:grid;grid-template-columns:${_hovExpanded?'1fr':(showA&&showB?'1fr 1fr':(showA||showB)?'1fr':'')} ${_hovExpanded?'':(showShop?'auto':'')};gap:14px;align-items:start">
       ${showA?`<div><div style="font-size:12px;font-weight:600;color:#3C3489;padding:5px 8px;background:#EEEDFE;border-radius:var(--rs);margin-bottom:6px">🏢 A 棟</div>${buildGrid(G95_RAW_A,G95_A_COLS,'A')}</div>`:''}
       ${showB?`<div><div style="font-size:12px;font-weight:600;color:#085041;padding:5px 8px;background:#E1F5EE;border-radius:var(--rs);margin-bottom:6px">🏢 B 棟</div>${buildGrid(G95_RAW_B,G95_B_COLS,'B')}</div>`:''}
       ${showShop?`<div style="min-width:200px;max-width:320px"><div style="font-size:12px;font-weight:600;color:var(--text2);padding:5px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:6px">🏪 店鋪</div>${buildShopGrid()}</div>`:''}
@@ -4125,9 +4129,19 @@ function hovCellClick(key){
     renderHandover();return;
   }
   _hovExpanded=(_hovExpanded===key)?null:key;renderHandover();
+  scrollToHovExpand();
+}
+function scrollToHovExpand(){
+  if(!_hovExpanded)return;
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      const el=document.getElementById('hov-expand-'+_hovExpanded);
+      if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  });
 }
 
-function hovToggleExpand(u){_hovExpanded=(_hovExpanded===u)?null:u;renderHandover();}
+function hovToggleExpand(u){_hovExpanded=(_hovExpanded===u)?null:u;renderHandover();scrollToHovExpand();}
 function toggleHovSel(u,v){v?_hstatsSelected.add(u):_hstatsSelected.delete(u);renderHandover();}
 function addPaItem(zone){
   if(!S.publicAreaList)S.publicAreaList={A:[],B:[]};
@@ -4509,7 +4523,7 @@ function renderHStats(){
         return makeGridCell(key,fl,col,blockId,'height:100%');
       }).join('');
       const expandKey=cols.map(col=>{const raw=rawData[col];return raw?raw[fl]:null;}).find(k=>k&&_expandedUnit===k);
-      const expandDiv=expandKey?`<div style="margin:2px 0">${buildExpandedUnit(expandKey)}</div>`:'';
+      const expandDiv=expandKey?`<div style="margin:2px 0" id="hu-expand-${esc(expandKey)}">${buildExpandedUnit(expandKey)}</div>`:'';
       const sepStyle=addSep?'padding-bottom:4px;border-bottom:2.5px solid #C8C5C0;margin-bottom:4px;':'';
       const flCell=showFloorCol?`<div style="font-size:12px;color:var(--text3);text-align:right;padding-right:4px;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:4px;font-weight:500">${fl}</div>`:'';
       return`<div style="display:grid;grid-template-columns:${gridCols};gap:4px;align-items:stretch;${sepStyle}">
@@ -4547,7 +4561,7 @@ function renderHStats(){
       const hdr=chunk.map(({col})=>`<div style="font-size:13px;text-align:center;color:var(--text2);font-weight:600;padding:3px 0">${col}</div>`).join('');
       const cells=chunk.map(({key,col})=>makeGridCell(key,1,col,'shop','')).join('');
       const expandKey=chunk.find(({key})=>_expandedUnit===key);
-      const expandDiv=expandKey?`<div style="grid-column:1/-1;margin:2px 0">${buildExpandedUnit(expandKey.key)}</div>`:'';
+      const expandDiv=expandKey?`<div style="grid-column:1/-1;margin:2px 0" id="hu-expand-${esc(expandKey.key)}">${buildExpandedUnit(expandKey.key)}</div>`:'';
       rows.push(`<div style="display:grid;grid-template-columns:repeat(${chunk.length},1fr);gap:4px;margin-bottom:3px">${hdr}</div>
         <div style="display:grid;grid-template-columns:repeat(${chunk.length},1fr);gap:4px;margin-bottom:8px">${cells}${expandDiv}</div>`);
     }
@@ -4690,6 +4704,15 @@ function renderHStats(){
       ${shopCards||'<div class="empty" style="padding:12px">無資料</div>'}
     </div>`;
 }
+function quickCompleteDefect(id){
+  const r=S.rows.find(x=>x.id===id);
+  if(!r)return;
+  if(!r.actualDone)r.actualDone=todayISO();
+  if(!r.actualIn)r.actualIn=r.planIn||todayISO();
+  S.completed.push({...r,compId:S.nextCompId++,completedAt:todayISO()});
+  S.rows=S.rows.filter(x=>x.id!==id);
+  save();renderAll();
+}
 function buildUnitDefectTable(unitKey){
   if(!unitKey)return`<div style="font-size:11px;color:var(--text3);padding:4px 0">此戶目前無缺失項目記錄</div>`;
   const allRows=getDefectRows(unitKey);
@@ -4702,14 +4725,14 @@ function buildUnitDefectTable(unitKey){
     ...allRows.filter(r=>!isComp(r)).sort(sortByVendor),
     ...allRows.filter(r=>isComp(r)).sort(sortByVendor),
   ];
-  const thead=`<tr style="background:#ECEAE6"><th style="padding:4px 6px;font-size:10px;font-weight:600;width:24px">#</th><th style="padding:4px 6px;font-size:10px;font-weight:600">廠商</th><th style="padding:4px 6px;font-size:10px;font-weight:600">缺失內容</th><th style="padding:4px 6px;font-size:10px;font-weight:600">預計完成</th><th style="padding:4px 6px;font-size:10px;font-weight:600">狀態</th></tr>`;
+  const thead=`<tr style="background:#ECEAE6"><th style="padding:5px 6px;font-size:11px;font-weight:600;width:36px">完成</th><th style="padding:5px 6px;font-size:11px;font-weight:600;width:24px">#</th><th style="padding:5px 6px;font-size:11px;font-weight:600">廠商</th><th style="padding:5px 6px;font-size:11px;font-weight:600">缺失內容</th><th style="padding:5px 6px;font-size:11px;font-weight:600">預計完成</th><th style="padding:5px 6px;font-size:11px;font-weight:600">狀態</th></tr>`;
   const tbody=rows.map((r,idx)=>{
     const done=isComp(r);
     const st=done?'done':getStatus(r);
     const stLabel={done:'已完成',ongoing:'進行中',overdue:'逾期',pending:'未開始'}[st]||'';
     const stColor={done:var_green,ongoing:var_blue,overdue:var_red,pending:'var(--text3)'}[st]||'';
     const rowBg=done?'background:rgba(59,109,17,.04);':st==='overdue'?'background:rgba(163,45,45,.04);':'';
-    return`<tr style="border-bottom:1px solid var(--border2);${rowBg}"><td style="padding:3px 6px;font-size:10px;color:var(--text3);text-align:right;width:24px">${idx+1}</td><td style="padding:3px 6px;font-size:10px">${esc(r.vendor)}</td><td style="padding:3px 6px;font-size:10px;max-width:180px;word-break:break-all">${esc(r.issue)}</td><td style="padding:3px 6px;font-size:10px;white-space:nowrap">${r.planDone||'—'}</td><td style="padding:3px 6px;font-size:10px;color:${stColor}">${stLabel}</td></tr>`;
+    return`<tr style="border-bottom:1px solid var(--border2);${rowBg}"><td style="padding:5px 6px;text-align:center"><input type="checkbox" ${done?'checked disabled':''} onchange="quickCompleteDefect(${r.id})" style="width:15px;height:15px;cursor:${done?'default':'pointer'}" title="${done?'已完成':'勾選標記為完成'}"></td><td style="padding:5px 6px;font-size:12px;color:var(--text3);text-align:right;width:24px">${idx+1}</td><td style="padding:5px 6px;font-size:12px">${esc(r.vendor)}</td><td style="padding:5px 6px;font-size:12px;max-width:180px;word-break:break-word">${esc(r.issue)}</td><td style="padding:5px 6px;font-size:12px;white-space:nowrap">${r.planDone||'—'}</td><td style="padding:5px 6px;font-size:12px;color:${stColor}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stColor||'var(--text3)'};margin-right:4px;vertical-align:middle"></span>${stLabel}</td></tr>`;
   }).join('');
   return`<div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--rs)"><table style="width:100%;border-collapse:collapse"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 }
@@ -5149,6 +5172,14 @@ function toggleHUnit(key){
     renderHStats();return;
   }
   _expandedUnit=(_expandedUnit===key)?null:key;renderHStats();
+  if(_expandedUnit){
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        const el=document.getElementById('hu-expand-'+_expandedUnit);
+        if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+      });
+    });
+  }
 }
 function setHu(key,field,val){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key][field]=val;save();}
 function setCl(key,field,val){if(!S.clientData)S.clientData={};if(!S.clientData[key])S.clientData[key]={name:'',tel:'',type:'自購戶',parkings:[],note:''};S.clientData[key][field]=val;save();}
