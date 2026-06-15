@@ -608,12 +608,21 @@ function save(){
   }
 }
 
+let _pendingRemote=null;
 function applyRemote(d){
   // 若使用者正在操作（saveTimer 或 renderTimer 還在跑），略過遠端更新
   if(_saveTimer||_renderTimer)return;
+  // 若新增缺失表單開啟中，先暫存遠端資料，等表單關閉再套用
+  if(_pendingRow){_pendingRemote=d;return;}
   S=migrateState(d);
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   renderAll();
+}
+function applyPendingRemoteIfAny(){
+  if(_pendingRemote&&!_saveTimer&&!_renderTimer&&!_pendingRow){
+    const d=_pendingRemote;_pendingRemote=null;
+    applyRemote(d);
+  }
 }
 
 function startFirebaseListen(){
@@ -1154,8 +1163,9 @@ function showInlineAdd(){
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-p" onclick="confirmInlineAdd()">✓ 確認新增</button>
-      <button class="btn" onclick="document.getElementById('inline-add-area').innerHTML='';_pendingRow=null">取消</button>
+      <button class="btn btn-p" onclick="confirmInlineAdd(true)">✓ 新增並繼續同戶</button>
+      <button class="btn btn-p" onclick="confirmInlineAdd(false)">✓ 確認新增並關閉</button>
+      <button class="btn" onclick="document.getElementById('inline-add-area').innerHTML='';_pendingRow=null;applyPendingRemoteIfAny()">取消</button>
     </div>
   </div>`;
   setTimeout(()=>{const el=document.getElementById('ia-issue');if(el)el.focus();},50);
@@ -1362,7 +1372,7 @@ function checkDuplicate(unit,floor,issue){
   const isDone=id=>(S.completed instanceof Set)?S.completed.has(id):Array.isArray(S.completed)&&S.completed.includes(id);
   return S.rows.find(r=>!isDone(r.id)&&(r.unit||'').trim()===u&&(r.floor||'').trim()===f&&(r.issue||'').trim()===is)||null;
 }
-function confirmInlineAdd(){
+function confirmInlineAdd(keepOpen){
   if(!_pendingRow){return;}
   if(_pendingRow.multiUnits&&_pendingRow.multiUnits.size>0){
     if(!_pendingRow.issue){toast('請填寫缺失內容','⚠️');return;}
@@ -1388,9 +1398,15 @@ function confirmInlineAdd(){
     });
     const floorNote=floors?` × ${floors.length} 樓層`:'';
     logChange('➕ 批次新增項目',`缺失：${_pendingRow.issue} 套用至 ${units.length} 戶${floorNote}，共新增 ${count} 筆，目前共 ${S.rows.length} 筆`,{units});
-    _pendingRow=null;
-    const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
-    toast(`已新增 ${count} 筆`,'➕');save();renderAll();
+    if(keepOpen){
+      _pendingRow.issue='';
+      const issueEl=document.getElementById('ia-issue');if(issueEl){issueEl.value='';issueEl.focus();}
+      toast(`已新增 ${count} 筆，可繼續輸入`,'➕');save();
+    }else{
+      _pendingRow=null;
+      const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
+      toast(`已新增 ${count} 筆`,'➕');save();renderAll();applyPendingRemoteIfAny();
+    }
     return;
   }
   if(!_pendingRow.issue&&!_pendingRow.unit){toast('請填寫缺失內容或戶別','⚠️');return;}
@@ -1415,9 +1431,15 @@ function confirmInlineAdd(){
   _saveUndoSnapshot();
   S.rows.push({id:S.nextId++,zone:_pendingRow.zone,manager:_pendingRow.manager,unit:_pendingRow.unit,floor:_pendingRow.floor,vendor:_pendingRow.vendor,issue:_pendingRow.issue,note:'',planIn:_pendingRow.planIn||'',planDone:_pendingRow.planDone||'',actualIn:'',actualDone:'',isOwner:!!_pendingRow.isOwner});
   logChange('➕ 新增項目',`戶別：${_pendingRow.unit||'—'} 廠商：${_pendingRow.vendor||'—'}，目前共 ${S.rows.length} 筆`);
-  _pendingRow=null;
-  const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
-  toast('已新增一筆項目','➕');save();renderAll();
+  if(keepOpen){
+    _pendingRow.issue='';
+    const issueEl=document.getElementById('ia-issue');if(issueEl){issueEl.value='';issueEl.focus();}
+    toast('已新增，可繼續輸入同戶下一筆','➕');save();
+  }else{
+    _pendingRow=null;
+    const area=document.getElementById('inline-add-area');if(area)area.innerHTML='';
+    toast('已新增一筆項目','➕');save();renderAll();applyPendingRemoteIfAny();
+  }
 }
 
 // ── multi-select / bulk ───────────────────────────────────────────────────
@@ -4420,7 +4442,7 @@ function renderHStats(){
     const isExp=_expandedUnit===key;
     const isSel=_hstatsSelected.has(key);
     const outlineStyle=isExp?'outline:2.5px solid var(--purple);':isSel?'outline:2px solid #185FA5;':'';
-    const dispName=col||unitDisplayName(key);
+    const dispName=(col&&(blockId==='A'||blockId==='B'))?`${col}-${fl}`:(col||unitDisplayName(key));
     const isCom=(S.handoverUnits[key]||{}).inspTypes&&(S.handoverUnits[key].inspTypes||[]).includes('委外代驗');
     const pct=hoUnitPct(unitDisplayName(key))||hoUnitPct(key)||0;
     const grade=hoGrade(pct);
@@ -4434,7 +4456,7 @@ function renderHStats(){
     const allPark2=[...new Set([...(G95_PARKING[key]||[]),...(cl2.parkings||[])])];
     const parkTag=allPark2.length?allPark2.map(p=>`<div style="font-size:8px;color:#0C447C;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🚗${esc(p)}</div>`).join(''):'';
     return`<div onclick="toggleHUnit('${esc(key)}')" style="position:relative;background:${bg};color:${color};${outlineStyle}border-radius:3px;border:1px solid rgba(0,0,0,.07);padding:4px 3px 3px;cursor:pointer;text-align:center;line-height:1.2;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;${extraStyle||''}">
-      <div style="font-size:11px;font-weight:600">${esc(dispName)}${isCom?' <span style="color:#D4A900;font-size:10px">★</span>':''}</div>
+      <div style="font-size:11px;font-weight:600;white-space:nowrap">${esc(dispName)}${isCom?' <span style="color:#D4A900;font-size:10px">★</span>':''}</div>
       ${parkTag}
       <div style="font-size:10px;font-weight:500;color:${grade.color}">${pct}%</div>
       ${dateTag}${slotTag}${delivTick}
@@ -4446,9 +4468,10 @@ function renderHStats(){
   // MILESTONE_BELOW = 樓層下方要加分隔線的樓層（例如 5F 下方→5和4之間加線）
   const MILESTONE_BELOW=new Set([5,10,15,20,25,31]);
 
-  function buildCol2(rawData,cols,title,blockId){
-    const colHdrs=`<div></div>`+cols.map(c=>`<div style="font-size:13px;text-align:center;color:var(--text2);font-weight:600;padding:3px 0">${c}</div>`).join('');
-    const gridCols=`28px repeat(${cols.length},1fr)`;
+  function buildCol2(rawData,cols,title,blockId,showFloorCol){
+    if(showFloorCol===undefined)showFloorCol=true;
+    const colHdrs=(showFloorCol?`<div></div>`:'')+cols.map(c=>`<div style="font-size:13px;text-align:center;color:var(--text2);font-weight:600;padding:3px 0">${c}</div>`).join('');
+    const gridCols=showFloorCol?`28px repeat(${cols.length},1fr)`:`repeat(${cols.length},1fr)`;
     const rows=G95_FLOORS.map(fl=>{
       const flNum=Number(fl);
       const addSep=MILESTONE_BELOW.has(flNum);
@@ -4459,8 +4482,9 @@ function renderHStats(){
       const expandKey=cols.map(col=>{const raw=rawData[col];return raw?raw[fl]:null;}).find(k=>k&&_expandedUnit===k);
       const expandDiv=expandKey?`<div style="margin:2px 0">${buildExpandedUnit(expandKey)}</div>`:'';
       const sepStyle=addSep?'padding-bottom:4px;border-bottom:2.5px solid #C8C5C0;margin-bottom:4px;':'';
+      const flCell=showFloorCol?`<div style="font-size:12px;color:var(--text3);text-align:right;padding-right:4px;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:4px;font-weight:500">${fl}</div>`:'';
       return`<div style="display:grid;grid-template-columns:${gridCols};gap:4px;align-items:stretch;${sepStyle}">
-        <div style="font-size:12px;color:var(--text3);text-align:right;padding-right:4px;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:4px;font-weight:500">${fl}</div>
+        ${flCell}
         ${cells}
       </div>
       ${expandDiv}`;
@@ -4629,8 +4653,8 @@ function renderHStats(){
     ${summaryTable}
     ${batchBar}
     <div style="display:flex;gap:10px;align-items:flex-start">
-      ${buildCol2(G95_RAW_A,G95_A_COLS,'🏢 A 棟','A')}
-      ${buildCol2(G95_RAW_B,G95_B_COLS,'🏢 B 棟','B')}
+      ${buildCol2(G95_RAW_A,G95_A_COLS,'🏢 A 棟','A',true)}
+      ${buildCol2(G95_RAW_B,G95_B_COLS,'🏢 B 棟','B',false)}
     </div>
     <div style="margin-top:12px">
       <div style="font-size:13px;font-weight:700;color:var(--text2);padding:5px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:6px">🏪 店鋪清單</div>
@@ -4774,6 +4798,10 @@ function _hpendGather(){
   });
   return{byVendor,totalUnits};
 }
+function hpendUpdateActual(id,field,value){
+  upd(id,field,value);
+  renderHPend();
+}
 function renderHPend(){
   if(!S.handoverUnits)S.handoverUnits={};
   const allDates=_hpendAllDates();
@@ -4828,7 +4856,12 @@ function renderHPend(){
     let tagLabel=`${undone.length} 項未完成`;
     if(done.length)tagLabel+=_hpendState.showDone?`・${done.length} 項已完成`:`・${done.length} 項已完成（隱藏）`;
     const shown=(_hpendState.showDone?items:undone).slice().sort(_hpendItemCompare);
-    const rowsHtml=shown.map(it=>`<tr><td style="white-space:nowrap">${esc(it.planDate.slice(5))}</td><td style="white-space:nowrap">${esc(it.unit)}</td><td>${esc(it.row.issue)}</td><td style="text-align:right;color:${HPEND_ST_COLOR[it.st]};white-space:nowrap">${HPEND_ST_LABEL[it.st]||''}</td></tr>`).join('');
+    const rowsHtml=shown.map(it=>{
+      const r=it.row;
+      const inCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planIn)}</div><input type="date" value="${r.actualIn||''}" style="font-size:10px;width:100%;border:1px solid var(--border);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualIn',this.value)">`;
+      const doneCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planDone)}</div><input type="date" value="${r.actualDone||''}" style="font-size:10px;width:100%;border:1px solid var(--border);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualDone',this.value)">`;
+      return`<tr><td style="white-space:nowrap">${esc(it.planDate.slice(5))}</td><td style="white-space:nowrap">${esc(it.unit)}</td><td>${esc(it.row.issue)}</td><td>${inCell}</td><td>${doneCell}</td><td style="text-align:right;color:${HPEND_ST_COLOR[it.st]};white-space:nowrap">${HPEND_ST_LABEL[it.st]||''}</td></tr>`;
+    }).join('');
     return`<div class="ae-sec" style="margin-bottom:12px;${checked?'':'opacity:.55'}">
       <div class="ae-sec-hdr">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;margin:0">
@@ -4838,7 +4871,7 @@ function renderHPend(){
         <span class="badge" style="background:${tagBgVar};color:${tagFgVar}">${tagLabel}</span>
       </div>
       <table class="ae-tbl">
-        <thead><tr><th style="width:60px">交屋日</th><th style="width:90px">戶別</th><th>缺失內容</th><th style="width:70px;text-align:right">狀態</th></tr></thead>
+        <thead><tr><th style="width:60px">交屋日</th><th style="width:80px">戶別</th><th>缺失內容</th><th style="width:115px">進場</th><th style="width:115px">完成</th><th style="width:60px;text-align:right">狀態</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>`;
