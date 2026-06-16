@@ -555,6 +555,7 @@ document.dispatchEvent(new Event('firebase-ready'));
     <div id="pane-done"   style="display:none"></div>
     <div id="pane-changelog" style="display:none"></div>
     <div id="pane-dupes" style="display:none"></div>
+    <div id="pane-trash" style="display:none"></div>
     <div id="pane-handover"  style="display:none"></div>
     <div id="pane-hpend"     style="display:none"></div>
     <div id="pane-hstats"    style="display:none"></div>
@@ -568,7 +569,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 const SK='tracker_v5';
 const DOW=['日','一','二','三','四','五','六'];
 const V_COLORS=['#534AB7','#0F6E56','#993C1D','#185FA5','#3B6D11','#854F0B','#7A0055','#5F5E5A','#9C6B00','#1A6B6B'];
-const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones',hpend:'card-warn'};
+const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones',hpend:'card-warn',trash:'card-warn'};
 
 let S={
   rows:[
@@ -588,6 +589,7 @@ let S={
     {id:'basement',label:'地下室',             color:'#185FA5'},
   ],
   managers:[],
+  trash:[],
   managerDetails:{},
   completed:[],
   nextCompId:1,
@@ -1104,11 +1106,49 @@ function addRow(zone){
   logChange('➕ 新增項目',`新增一筆，目前共 ${S.rows.length} 筆`);
   toast('已新增一筆項目','➕');save();renderAll();
 }
+let _undoTimer=null,_undoRow=null,_undoIdx=-1;
 function delRow(id){
-  const r=S.rows.find(x=>x.id===id);
-  S.rows=S.rows.filter(x=>x.id!==id);selectedIds.delete(id);
-  if(r){toast(`已刪除 #${id} ${r.unit} ${r.issue||''}`,'🗑');logChange('🗑 刪除項目',`#${id} ${r.unit||''} ${r.issue||''}`);}
+  // 清除前一個 undo
+  if(_undoTimer){clearTimeout(_undoTimer);_commitDelete();};
+  const idx=S.rows.findIndex(x=>x.id===id);
+  const r=S.rows[idx];if(!r)return;
+  _undoRow={...r};_undoIdx=idx;
+  S.rows.splice(idx,1);selectedIds.delete(id);
+  renderAll();
+  // 顯示 undo toast
+  const w=document.getElementById('toast-wrap');
+  const d=document.createElement('div');d.className='toast';d.id='undo-toast';
+  d.style.cssText='display:flex;align-items:center;gap:8px;';
+  d.innerHTML=`<span>🗑</span><span>${esc(r.unit||'')} ${esc(r.issue||'')} 已刪除</span>`
+    +`<button onclick="_undoDelete()" style="margin-left:8px;padding:2px 10px;border-radius:4px;border:1px solid #a78bfa;background:#ede9fe;color:#6d28d9;font-size:12px;font-weight:600;cursor:pointer">復原</button>`
+    +`<span id="undo-cd" style="font-size:11px;color:var(--text3);min-width:18px">5</span>`;
+  w.appendChild(d);
+  let sec=5;
+  const cdEl=()=>document.getElementById('undo-cd');
+  const tick=()=>{sec--;const el=cdEl();if(el)el.textContent=sec;if(sec<=0){_commitDelete();const t=document.getElementById('undo-toast');if(t){t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),300);}}};
+  const iv=setInterval(tick,1000);
+  _undoTimer=setTimeout(()=>{clearInterval(iv);_commitDelete();const t=document.getElementById('undo-toast');if(t)t.remove();},5500);
+  // 存 interval 以便復原時清除
+  window._undoIv=iv;
+}
+function _undoDelete(){
+  if(!_undoRow)return;
+  clearTimeout(_undoTimer);clearInterval(window._undoIv);
+  S.rows.splice(_undoIdx,0,_undoRow);
+  toast(`已復原 ${_undoRow.unit||''} ${_undoRow.issue||''}`,'↩️');
+  _undoRow=null;_undoTimer=null;
   save();renderAll();
+  const t=document.getElementById('undo-toast');if(t)t.remove();
+}
+function _commitDelete(){
+  if(!_undoRow)return;
+  // 移到垃圾桶
+  if(!S.trash)S.trash=[];
+  _undoRow._deletedAt=new Date().toISOString();
+  S.trash.unshift(_undoRow);
+  logChange('🗑 刪除項目',`#${_undoRow.id} ${_undoRow.unit||''} ${_undoRow.issue||''}`);
+  _undoRow=null;_undoTimer=null;
+  save();
 }
 function renumber(){
   S.rows.forEach((r,i)=>r.id=i+1);S.nextId=S.rows.length+1;
@@ -1557,10 +1597,14 @@ function showSelectMenu(btn,visIds,allFilteredIds){
 }
 function deleteSelected(){
   if(!selectedIds.size)return;
-  if(!confirm(`確定刪除選取的 ${selectedIds.size} 筆？`))return;
+  if(!confirm(`確定刪除選取的 ${selectedIds.size} 筆？（可從垃圾桶還原）`))return;
+  if(!S.trash)S.trash=[];
+  const now=new Date().toISOString();
+  const deleted=S.rows.filter(r=>selectedIds.has(r.id));
+  deleted.forEach(r=>{r._deletedAt=now;S.trash.unshift(r);});
   S.rows=S.rows.filter(r=>!selectedIds.has(r.id));
-  logChange('🗑 批次刪除',`刪除 ${selectedIds.size} 筆，剩餘 ${S.rows.length} 筆`);
-  toast(`已刪除 ${selectedIds.size} 筆`,'🗑');selectedIds.clear();save();renderAll();
+  logChange('🗑 批次刪除',`刪除 ${deleted.length} 筆，剩餘 ${S.rows.length} 筆（已移至垃圾桶）`);
+  toast(`已刪除 ${deleted.length} 筆（可從垃圾桶還原）`,'🗑');selectedIds.clear();save();renderAll();
 }
 function applyBulkDates(){
   const fields=[
@@ -3586,9 +3630,12 @@ function restoreRow(compId){
   save();renderAll();toast('已移回追蹤總表');
 }
 function delCompleted(compId){
-  if(!confirm('確定永久刪除此完成記錄？'))return;
+  if(!confirm('確定刪除此完成記錄？（可從垃圾桶還原）'))return;
+  if(!S.trash)S.trash=[];
+  const r=S.completed.find(x=>x.compId===compId);
+  if(r){r._deletedAt=new Date().toISOString();r._fromCompleted=true;S.trash.unshift(r);}
   S.completed=S.completed.filter(x=>x.compId!==compId);
-  save();renderDone();toast('已刪除','🗑');
+  save();renderDone();toast('已刪除（可從垃圾桶還原）','🗑');
 }
 
 function doneRowHTML(r){
@@ -6759,6 +6806,7 @@ const TAB_DEFS={
   changelog: {label:'📝 更新紀錄',         row:3},
   units:     {label:'🏠 戶別管理',        row:3},
   dupes:     {label:'🔁 重複作業',         row:3},
+  trash:     {label:'🗑 垃圾桶',            row:3},
 };
 let _tabEditMode=false;
 let _tabOrderBackup=null;
@@ -6874,6 +6922,87 @@ function renderPane(id){
   else if(id==='pubarea')renderPubArea()
   else if(id==='units')renderUnits();
   else if(id==='hpend')renderHPend();
+  else if(id==='trash')renderTrash();
+}
+
+
+// ── 垃圾桶 ──────────────────────────────────────────────────────────
+function cleanTrash(){
+  if(!S.trash||!S.trash.length)return;
+  const cutoff=Date.now()-30*24*60*60*1000;
+  const before=S.trash.length;
+  S.trash=S.trash.filter(r=>{
+    const t=r._deletedAt?new Date(r._deletedAt).getTime():0;
+    return t>cutoff;
+  });
+  if(S.trash.length<before)save();
+}
+function restoreTrashItem(i){
+  if(!S.trash||!S.trash[i])return;
+  const r=S.trash.splice(i,1)[0];
+  const wasCompleted=r._fromCompleted;
+  delete r._deletedAt;delete r._fromCompleted;
+  if(wasCompleted){
+    if(!S.completed)S.completed=[];
+    S.completed.push(r);
+    toast(`已還原至「已完成工作」：${r.unit||''} ${r.issue||''}`,'↩️');
+  } else {
+    S.rows.push(r);
+    toast(`已還原至追蹤總表：${r.unit||''} ${r.issue||''}`,'↩️');
+  }
+  logChange('↩️ 從垃圾桶還原',`${r.unit||''} ${r.issue||''}`);
+  save();renderAll();
+}
+function permDeleteTrash(i){
+  if(!confirm('確定永久刪除？此操作無法復原。'))return;
+  const r=S.trash.splice(i,1)[0];
+  logChange('🗑 永久刪除',`${r.unit||''} ${r.issue||''}`);
+  save();renderTrash();toast('已永久刪除','🗑');
+}
+function emptyTrash(){
+  if(!S.trash||!S.trash.length)return;
+  if(!confirm(`確定清空垃圾桶（${S.trash.length} 筆）？此操作無法復原。`))return;
+  logChange('🗑 清空垃圾桶',`永久刪除 ${S.trash.length} 筆`);
+  S.trash=[];save();renderTrash();toast('垃圾桶已清空','🗑');
+}
+function renderTrash(){
+  cleanTrash();
+  const el=document.getElementById('pane-trash');if(!el)return;
+  const items=S.trash||[];
+  if(!items.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <div style="font-size:36px;margin-bottom:12px">🗑</div>
+      <div style="font-size:13px">垃圾桶是空的</div>
+      <div style="font-size:11px;margin-top:6px;color:var(--text3)">刪除的項目會保留 30 天</div>
+    </div>`;
+    return;
+  }
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--text2)">共 ${items.length} 筆已刪除項目（30 天後自動清除）</div>
+    <button class="btn btn-sm btn-d" onclick="emptyTrash()" style="font-size:11px">🗑 清空垃圾桶</button>
+  </div>`;
+  html+=`<table class="tbl" style="font-size:11px"><thead><tr>
+    <th style="width:30px">#</th><th>戶別</th><th>樓層</th><th>廠商</th><th>缺失說明</th><th>刪除時間</th><th style="width:110px">操作</th>
+  </tr></thead><tbody>`;
+  items.forEach((r,i)=>{
+    const delDate=r._deletedAt?new Date(r._deletedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const daysLeft=r._deletedAt?Math.max(0,Math.ceil((new Date(r._deletedAt).getTime()+30*24*3600000-Date.now())/(24*3600000))):'—';
+    const src=r._fromCompleted?'<span style="font-size:9px;background:#d1fae5;color:#065f46;padding:1px 4px;border-radius:3px;margin-left:3px">完成區</span>':'';
+    html+=`<tr style="opacity:0.85">
+      <td style="text-align:center;color:var(--text3)">${r.id||'—'}</td>
+      <td>${esc(r.unit||'—')}${src}</td>
+      <td style="text-align:center">${esc(r.floor||'—')}</td>
+      <td>${esc(r.vendor||'—')}</td>
+      <td>${esc(r.issue||'—')}</td>
+      <td style="font-size:10px;color:var(--text3)">${delDate}<br><span style="font-size:9px">剩 ${daysLeft} 天</span></td>
+      <td>
+        <button class="btn btn-sm" onclick="restoreTrashItem(${i})" style="font-size:10px;padding:2px 6px">↩️ 還原</button>
+        <button class="btn btn-sm btn-d" onclick="permDeleteTrash(${i})" style="font-size:10px;padding:2px 6px">✕</button>
+      </td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  el.innerHTML=html;
 }
 
 function renderDupes(){
@@ -7347,7 +7476,7 @@ async function init(){
 
 // ── 啟動 ──────────────────────────────────────────────────────────────────
 function bootstrap(){
-  load().then(init);
+  load().then(()=>{init();if(typeof cleanTrash==="function")cleanTrash();});
 }
 bootstrap();
 document.addEventListener('firebase-ready',()=>{
@@ -7406,6 +7535,9 @@ document.addEventListener('firebase-ready',()=>{
     button[onclick*="editClient"],
     button[onclick*="delEvent"],
     button[onclick*="saveNote"],
+    button[onclick*="restoreTrashItem"],
+    button[onclick*="permDeleteTrash"],
+    button[onclick*="emptyTrash"],
     .row-action-btn,
     #inline-add-area,
     #modalBg,
