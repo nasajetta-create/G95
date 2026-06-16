@@ -7363,5 +7363,112 @@ document.addEventListener('firebase-ready',()=>{
   window.addEventListener('scroll',chk,{passive:true});
 })();
 </script>
+
+<script>
+// ── 唯讀模式（?mode=view）──────────────────────────────────
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('mode') !== 'view') return;
+
+  window._VIEW_ONLY = true;
+  document.title = document.title + '（唯讀）';
+
+  // 1) 攔截 save — 不做任何寫入
+  const _origSave = window.save;
+  window.save = function(){ console.log('[VIEW] save blocked'); };
+
+  // 2) 注入 CSS：隱藏所有編輯操作元素
+  const style = document.createElement('style');
+  style.textContent = `
+    /* 隱藏新增/編輯/刪除按鈕 */
+    button[onclick*="showInlineAdd"],
+    button[onclick*="addRow"],
+    button[onclick*="deleteRow"],
+    button[onclick*="editVendorModal"],
+    button[onclick*="editManagerModal"],
+    button[onclick*="openModal"],
+    button[onclick*="confirmInlineAdd"],
+    button[onclick*="addZoneUnit"],
+    button[onclick*="openFloorConfigModal"],
+    button[onclick*="openZoneConfigModal"],
+    button[onclick*="toggleTabEditMode"],
+    button[onclick*="importClientExcel"],
+    button[onclick*="addEvent"],
+    button[onclick*="clearAllData"],
+    button[onclick*="completeRow"],
+    button[onclick*="undoComplete"],
+    button[onclick*="rowMenu"],
+    button[onclick*="batchComplete"],
+    button[onclick*="exportExcel"],
+    button[onclick*="addHandoverUnit"],
+    button[onclick*="addPubArea"],
+    button[onclick*="removeClient"],
+    button[onclick*="editClient"],
+    button[onclick*="delEvent"],
+    button[onclick*="saveNote"],
+    .row-action-btn,
+    #inline-add-area,
+    #modalBg,
+    #tab-edit-btn { display:none!important; }
+
+    /* 讓 input/select/textarea 看起來是純文字 */
+    input:not([type="checkbox"]):not(.view-allow),
+    select:not(.view-allow),
+    textarea:not(.view-allow) {
+      pointer-events:none!important;
+      opacity:0.85;
+      background:transparent!important;
+      border-color:transparent!important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 3) 等 DOM ready 後處理
+  function applyReadonly(){
+    // 設定所有 input/textarea 為 readonly
+    document.querySelectorAll('input,textarea').forEach(el=>{
+      el.setAttribute('readonly','');
+      el.removeAttribute('contenteditable');
+    });
+    // 停用所有 select
+    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
+    // 停用所有 checkbox
+    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
+      el.setAttribute('disabled','');
+      el.style.pointerEvents='none';
+    });
+
+    // 移除行的右鍵選單 / 點擊編輯
+    document.querySelectorAll('[oncontextmenu]').forEach(el=>el.removeAttribute('oncontextmenu'));
+
+    // 頂部顯示唯讀提示條
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FEF3C7;color:#92400E;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F59E0B;';
+    bar.textContent = '🔒 唯讀模式 — 僅供檢視，無法編輯或修改';
+    document.body.prepend(bar);
+    document.body.style.paddingTop = '34px';
+  }
+
+  // 4) 攔截動態渲染後新出現的元素
+  const _origRenderAll = window.renderAll;
+  if(_origRenderAll){
+    window.renderAll = function(){
+      _origRenderAll.apply(this, arguments);
+      setTimeout(applyReadonly, 50);
+    };
+  }
+
+  // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
+  window.prompt = function(){ return null; };
+  window.confirm = function(){ return false; };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
+  } else {
+    setTimeout(applyReadonly, 100);
+  }
+})();
+</script>
+
 </body>
 </html>
