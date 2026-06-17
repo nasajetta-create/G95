@@ -740,19 +740,55 @@ function save(){
     clearTimeout(_saveTimer);
     // 防抖 1500ms：使用者停止操作後才上傳，避免每個字都觸發 Firestore
     _saveTimer=setTimeout(async()=>{
-      await window._fbSave(S);
-      // 儲存成功後更新快照
-      _savedSnapshot=_takeSnapshot();
-      _saveTimer=null;
-      setSyncStatus('online');
+      // ── 指數退避重試（最多 3 次）──
+      let retries=0, maxRetries=3, delay=1000;
+      while(retries<=maxRetries){
+        try{
+          await window._fbSave(S);
+          _savedSnapshot=_takeSnapshot();
+          _saveTimer=null;
+          setSyncStatus('online');
+          // save 完成，處理排隊中的遠端更新
+          if(_pendingRemote&&!_pendingRow){
+            const d=_pendingRemote;_pendingRemote=null;
+            setTimeout(()=>applyRemote(d),50);
+          }
+          return;
+        }catch(err){
+          retries++;
+          if(retries>maxRetries){
+            console.error('[Save] 寫入失敗（已重試'+maxRetries+'次）:',err);
+            _saveTimer=null;
+            setSyncStatus('error');
+            toast('⚠️ 資料儲存失敗，請稍後再試','⚠️');
+            return;
+          }
+          console.warn('[Save] 寫入失敗，'+delay+'ms 後重試 ('+retries+'/'+maxRetries+')');
+          await new Promise(r=>setTimeout(r,delay));
+          delay*=2; // 指數退避：1s → 2s → 4s
+        }
+      }
     },1500);
   }
 }
 
 let _pendingRemote=null;
+// ── renderAll 節流：500ms 內最多渲染一次 ──
+let _renderThrottleTimer=null;
+let _renderPending=false;
+function throttledRenderAll(){
+  if(_renderThrottleTimer){_renderPending=true;return;}
+  renderAll();
+  _renderThrottleTimer=setTimeout(()=>{
+    _renderThrottleTimer=null;
+    if(_renderPending){_renderPending=false;renderAll();}
+  },500);
+}
+
 function applyRemote(d){
-  // 若使用者正在操作（saveTimer 或 renderTimer 還在跑），略過遠端更新
-  if(_saveTimer||_renderTimer)return;
+  // 若 save 正在進行，排隊等完成後處理（不丟棄）
+  if(_saveTimer){_pendingRemote=d;return;}
+  if(_renderTimer){_pendingRemote=d;return;}
   // 若新增缺失表單開啟中，先暫存遠端資料，等表單關閉再套用
   if(_pendingRow){_pendingRemote=d;return;}
   _defectCache=null;
@@ -786,7 +822,7 @@ function applyRemote(d){
   }
   _savedSnapshot=_takeSnapshot(); // 更新快照
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
-  renderAll();
+  throttledRenderAll();
 }
 function applyPendingRemoteIfAny(){
   if(_pendingRemote&&!_saveTimer&&!_renderTimer&&!_pendingRow){
