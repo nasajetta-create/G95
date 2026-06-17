@@ -2717,7 +2717,7 @@ function renderMain(){
       ${(()=>{const missCnt=S.rows.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);}).length;return missCnt?`<button class="btn no-print" onclick="applyMissingDateFilter()" style="background:#FFF8E6;color:#6B4D00;border-color:#D4A900;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 已完成未填日期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${missCnt}</span></button>`:'';})()}
       ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;return missVendorCnt?`<button class="btn no-print" onclick="applyMissingVendorFilter()" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 未填廠商 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#E24B4A;color:#fff;font-weight:600">${missVendorCnt}</span></button>`:'';})()}
       <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
-      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:140px" oninput="window._fKeyword=this.value;mainPage=0;renderMain()">
+      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:140px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;renderMain()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;renderMain()">
       <button class="btn btn-p no-print" onclick="showInlineAdd()">＋ 新增</button>
       <button class="btn no-print" onclick="exportCSV()">↓ CSV</button>
       <button class="btn btn-pdf no-print" id="mainPdf">🖨 PDF</button>
@@ -7611,7 +7611,3 @@ document.addEventListener('firebase-ready',()=>{
 
   // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
   window.prompt = function(){ return null; };
-  window.confirm = function(){ return false; };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100)
