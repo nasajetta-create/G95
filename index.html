@@ -757,6 +757,8 @@ function migrateState(d){
   if(!d.tabOrder.includes('pubarea'))d.tabOrder.push('pubarea');
   if(!d.tabOrder.includes('dupes'))d.tabOrder.push('dupes');
   if(!d.tabOrder.includes('units'))d.tabOrder.push('units');
+  if(!d.tabOrder.includes('trash'))d.tabOrder.push('trash');
+  if(!d.trash)d.trash=[];
   d.alerts.forEach(a=>{if(!('remark' in a))a.remark='';});
   if(!d.events)d.events=[];
   if(!d.nextAlertId)d.nextAlertId=(d.alerts.length?Math.max(...d.alerts.map(a=>a.id))+1:1);
@@ -7595,12 +7597,4 @@ document.addEventListener('firebase-ready',()=>{
   window.confirm = function(){ return false; };
 
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
-  } else {
-    setTimeout(applyReadonly, 100);
-  }
-})();
-</script>
-
-</body>
-</html>
+    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100)
