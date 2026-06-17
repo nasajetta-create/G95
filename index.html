@@ -5247,9 +5247,6 @@ function renderHPend(){
   const allVendorNames=Object.keys(byVendor).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
   if(_hpendState.vendors===null){
     _hpendState.vendors=new Set(allVendorNames);
-  }else{
-    // 自動補入新出現的廠商（vendor 被改名後新名稱也自動勾選）
-    allVendorNames.forEach(v=>_hpendState.vendors.add(v));
   }
   let totalItems=0,overdueItems=0;
   allVendorNames.forEach(v=>byVendor[v].forEach(it=>{if(it.st!=='done'){totalItems++;if(it.st==='overdue')overdueItems++;}}));
