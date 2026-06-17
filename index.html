@@ -627,6 +627,85 @@ let modalCtx={};
 let _saveTimer=null;
 let _fbListening=false;
 
+// ── Row-level merge 多人同步 ─────────────────────────────────────────────
+// 使用快照比對自動偵測本地修改，不需要在每個修改點手動標記
+let _savedSnapshot=null; // 上次成功儲存到 Firestore 後的快照
+
+function _takeSnapshot(){
+  try{ return JSON.parse(JSON.stringify(S)); }catch(e){ return null; }
+}
+
+// 比對兩個列陣列，找出 local 中與 snapshot 不同的列 ID
+function _findDirtyIds(localRows, snapRows, idKey){
+  idKey=idKey||'id';
+  const dirty=new Set();
+  const snapMap=new Map();
+  (snapRows||[]).forEach(r=>snapMap.set(r[idKey],JSON.stringify(r)));
+  (localRows||[]).forEach(r=>{
+    const rid=r[idKey];
+    const snapJson=snapMap.get(rid);
+    if(!snapJson || snapJson!==JSON.stringify(r)){
+      dirty.add(rid); // 新增或修改的列
+    }
+  });
+  // 找出被刪除的列（在 snapshot 中有，local 中沒有）
+  const localIds=new Set((localRows||[]).map(r=>r[idKey]));
+  (snapRows||[]).forEach(r=>{
+    if(!localIds.has(r[idKey])) dirty.add(r[idKey]);
+  });
+  return dirty;
+}
+
+// 逐列合併：dirty 列保留本地版本，其餘採用遠端版本
+function mergeRows(localRows, remoteRows, dirtyIds, idKey){
+  idKey=idKey||'id';
+  const localMap=new Map();
+  localRows.forEach(r=>localMap.set(r[idKey],r));
+  const merged=[];
+  const seen=new Set();
+  // 1. 以 remote 為基底
+  remoteRows.forEach(r=>{
+    const rid=r[idKey];
+    seen.add(rid);
+    const local=localMap.get(rid);
+    if(!local){
+      merged.push(r); // 遠端新增
+    } else if(dirtyIds.has(rid)){
+      merged.push(local); // 本地修改 → 保留本地
+    } else {
+      merged.push(r); // 本地未改 → 採用遠端
+    }
+  });
+  // 2. 本地有但遠端沒有（本地新增或本地刪除已在 remote 反映）
+  localRows.forEach(r=>{
+    if(!seen.has(r[idKey]) && dirtyIds.has(r[idKey])){
+      merged.push(r); // 本地新增的保留
+    }
+  });
+  return merged;
+}
+
+// 合併 changelog（取聯集，按 ts 去重，最新在前）
+function mergeChangelog(localLog, remoteLog){
+  const map=new Map();
+  (remoteLog||[]).forEach(c=>map.set(c.ts+'|'+c.detail, c));
+  (localLog||[]).forEach(c=>map.set(c.ts+'|'+c.detail, c));
+  return [...map.values()].sort((a,b)=>b.ts.localeCompare(a.ts)).slice(0,500);
+}
+
+// 合併 trash（取聯集）
+function mergeTrash(localTrash, remoteTrash){
+  const map=new Map();
+  (remoteTrash||[]).forEach(t=>map.set(t.id+'_'+(t.compId||''), t));
+  (localTrash||[]).forEach(t=>map.set(t.id+'_'+(t.compId||''), t));
+  return [...map.values()];
+}
+
+// 合併 vendors/managers 清單（取聯集）
+function mergeList(a, b){
+  return [...new Set([...(a||[]),...(b||[])])];
+}
+
 function setSyncStatus(status){
   const el=document.getElementById('sync-indicator');
   if(!el)return;
@@ -662,6 +741,8 @@ function save(){
     // 防抖 1500ms：使用者停止操作後才上傳，避免每個字都觸發 Firestore
     _saveTimer=setTimeout(async()=>{
       await window._fbSave(S);
+      // 儲存成功後更新快照
+      _savedSnapshot=_takeSnapshot();
       _saveTimer=null;
       setSyncStatus('online');
     },1500);
@@ -675,7 +756,35 @@ function applyRemote(d){
   // 若新增缺失表單開啟中，先暫存遠端資料，等表單關閉再套用
   if(_pendingRow){_pendingRemote=d;return;}
   _defectCache=null;
-  S=migrateState(d);
+  const remote=migrateState(d);
+  // ── Row-level merge ──
+  const snap=_savedSnapshot;
+  const dirtyRowIds=snap?_findDirtyIds(S.rows, snap.rows, 'id'):new Set();
+  const dirtyCompIds=snap?_findDirtyIds(S.completed, snap.completed, 'compId'):new Set();
+  const hasDirty=dirtyRowIds.size>0||dirtyCompIds.size>0;
+  if(hasDirty){
+    // 有本地未儲存的修改 → 逐列合併
+    S.rows=mergeRows(S.rows, remote.rows, dirtyRowIds, 'id');
+    S.completed=mergeRows(S.completed, remote.completed, dirtyCompIds, 'compId');
+    S.changelog=mergeChangelog(S.changelog, remote.changelog);
+    S.trash=mergeTrash(S.trash, remote.trash);
+    S.vendors=mergeList(S.vendors, remote.vendors);
+    S.managers=mergeList(S.managers, remote.managers);
+    S.alerts=remote.alerts||S.alerts;
+    S.events=remote.events||S.events;
+    // 其他 meta 採用遠端
+    ['zones','zoneUnits','zoneFloors','handoverUnits','clientData','floorConfig',
+     'unitConfig','publicAreaList','unitFloorLock','managerDetails','tabOrder'].forEach(k=>{
+      if(k in remote) S[k]=remote[k];
+    });
+    S.nextId=Math.max(S.nextId||0, remote.nextId||0);
+    S.nextCompId=Math.max(S.nextCompId||0, remote.nextCompId||0);
+    console.log('[Merge] row-level merge: dirty rows='+dirtyRowIds.size+', dirty comp='+dirtyCompIds.size);
+  } else {
+    // 沒有本地修改 → 直接採用遠端（原行為）
+    S=remote;
+  }
+  _savedSnapshot=_takeSnapshot(); // 更新快照
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   renderAll();
 }
@@ -724,6 +833,7 @@ async function load(){
       if(remote==='__TIMEOUT__')remote=await withTimeout(12000);
       if(remote&&remote!=='__TIMEOUT__'&&remote.rows){
         S=migrateState(remote);applyUnitConfig();
+        _savedSnapshot=_takeSnapshot(); // 初始快照
         try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
         setSyncStatus('online');
         startFirebaseListen();
@@ -735,6 +845,7 @@ async function load(){
   // 3. 備援：localStorage
   try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d.rows)S=migrateState(d);}}catch(e){}
   applyUnitConfig();
+  _savedSnapshot=_takeSnapshot();
   setSyncStatus(window._fbReady?'online':'offline');
   if(window._fbReady)startFirebaseListen();
 }
@@ -1103,8 +1214,9 @@ function upd(id,f,v,skipCheck){
   }
 }
 function addRow(zone){
-  S.rows.push({id:S.nextId++,zone:zone||activeZone,manager:'',unit:'',floor:'',
-    vendor:S.vendors[0]||'',issue:'',note:'',planIn:'',planDone:'',actualIn:'',actualDone:''});
+  const nr={id:S.nextId++,zone:zone||activeZone,manager:'',unit:'',floor:'',
+    vendor:S.vendors[0]||'',issue:'',note:'',planIn:'',planDone:'',actualIn:'',actualDone:''};
+  S.rows.push(nr);
   logChange('➕ 新增項目',`新增一筆，目前共 ${S.rows.length} 筆`);
   toast('已新增一筆項目','➕');save();renderAll();
 }
@@ -7463,116 +7575,4 @@ function runUnitMigration(){
   if(!confirm(`即將遷移以下戶別名稱：\n${preview}\n\n確定執行？`))return;
   let done=0,skip=0;
   function migrate(r){
-    const newU=MAP[r.unit]||(r.unit==='梯廳'?(()=>{const l=zoneLbl(r.zone);return l.includes('A')?'梯廳A':l.includes('B')?'梯廳B':null;})():null);
-    if(newU){r.unit=newU;done++;}else skip++;
-  }
-  S.rows.forEach(migrate);(S.completed||[]).forEach(migrate);
-  save();renderAll();
-  toast(`已遷移 ${done} 筆${skip?'，跳過 '+skip+' 筆':''}，請至戶別管理更新戶別清單`,'✅');
-}
-let _gotoRowId=null;
-function gotoMainRow(rowId){
-  _gotoRowId=rowId;
-  mainPage=0;
-  switchTab('main');
-}
-function renderAll(){renderPane(activeTab);}
-
-// ── 使用人數偵測（BroadcastChannel 補強本地分頁；Firebase presence 優先）────
-(function(){
-  const CH='tracker_presence';
-  const ID=Math.random().toString(36).slice(2);
-  let peers={};
-  peers[ID]=Date.now();
-
-  function updateCount(){
-    // 若 Firebase presence 已有值，優先使用
-    if(typeof window._onlineCount==='number'){
-      const el=document.getElementById('user-count');
-      if(el){el.style.display='';el.textContent='👤 '+window._onlineCount+' 人';}
-      return;
-    }
-    // fallback：BroadcastChannel 本地計數
-    const now=Date.now();
-    Object.keys(peers).forEach(k=>{if(now-peers[k]>12000)delete peers[k];});
-    const n=Object.keys(peers).length;
-    const el=document.getElementById('user-count');
-    if(el){el.style.display='';el.textContent='👤 '+n+' 人';}
-  }
-
-  let bc=null;
-  try{
-    bc=new BroadcastChannel(CH);
-    bc.onmessage=e=>{
-      if(e.data&&e.data.id&&!e.data.leave){peers[e.data.id]=Date.now();updateCount();}
-      if(e.data&&e.data.leave&&e.data.id){delete peers[e.data.id];updateCount();}
-    };
-  }catch(ex){}
-
-  setInterval(()=>{
-    peers[ID]=Date.now();
-    if(bc)bc.postMessage({id:ID});
-    updateCount();
-  },5000);
-
-  window.addEventListener('beforeunload',()=>{
-    if(bc)bc.postMessage({id:ID,leave:true});
-  });
-
-  setTimeout(()=>{if(bc)bc.postMessage({id:ID});updateCount();},800);
-})();
-
-
-async function init(){
-  Object.keys(TAB_DEFS).forEach(t=>{
-    const el=document.getElementById('pane-'+t);
-    if(el&&t!=='main')el.style.display='none';
-  });
-  window._hovFloors=new Set();
-  renderTabBar();renderMain();   // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
-  Object.keys(TAB_DEFS).forEach(t=>{if(t!=='main')document.getElementById('pane-'+t).style.display='none';});
-  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.rows)S=migrateState(d);}}catch(e){}
-  renderTabBar();renderMain();
-}
-
-// ── 啟動 ──────────────────────────────────────────────────────────────────
-function bootstrap(){
-  load().then(()=>{init();if(typeof cleanTrash==="function")cleanTrash();});
-}
-bootstrap();
-document.addEventListener('firebase-ready',()=>{
-  if(!_fbListening)bootstrap();
-});
-</script>
-
-<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到頂部" style="display:none;position:fixed;bottom:24px;right:20px;z-index:9000;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);align-items:center;justify-content:center;padding:0" class="no-print">↑</button>
-<script>
-(function(){
-  var b=document.getElementById('scrollTopBtn');
-  function chk(){b.style.display=window.scrollY>300?'flex':'none';}
-  window.addEventListener('scroll',chk,{passive:true});
-})();
-</script>
-
-<script>
-// ── 唯讀模式（?mode=view）──────────────────────────────────
-(function(){
-  const params = new URLSearchParams(window.location.search);
-  if(params.get('mode') !== 'view') return;
-
-  window._VIEW_ONLY = true;
-  document.title = document.title + '（唯讀）';
-
-  // 1) 攔截 save — 不做任何寫入
-  const _origSave = window.save;
-  window.save = function(){ console.log('[VIEW] save blocked'); };
-
-  // 2) 注入 CSS：隱藏所有編輯操作元素
-  const style = document.createElement('style');
-  style.textContent = `
-    /* 隱藏新增/編輯/刪除按鈕 */
-    button[onclick*="showInlineAdd"],
-    button[onclick*="addRow"],
-    button[onclick*="deleteRow"],
-    button[onclick*="editVendorModal"],
-    button[onclick*="editManager
+    const newU=MAP[r.unit]||(r.unit==='梯廳'?(()=>{con
