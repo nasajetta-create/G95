@@ -7575,4 +7575,205 @@ function runUnitMigration(){
   if(!confirm(`即將遷移以下戶別名稱：\n${preview}\n\n確定執行？`))return;
   let done=0,skip=0;
   function migrate(r){
-    const newU=MAP[r.unit]||(r.unit==='梯廳'?(()=>{con
+    const newU=MAP[r.unit]||(r.unit==='梯廳'?(()=>{const l=zoneLbl(r.zone);return l.includes('A')?'梯廳A':l.includes('B')?'梯廳B':null;})():null);
+    if(newU){r.unit=newU;done++;}else skip++;
+  }
+  S.rows.forEach(migrate);(S.completed||[]).forEach(migrate);
+  save();renderAll();
+  toast(`已遷移 ${done} 筆${skip?'，跳過 '+skip+' 筆':''}，請至戶別管理更新戶別清單`,'✅');
+}
+let _gotoRowId=null;
+function gotoMainRow(rowId){
+  _gotoRowId=rowId;
+  mainPage=0;
+  switchTab('main');
+}
+function renderAll(){renderPane(activeTab);}
+
+// ── 使用人數偵測（BroadcastChannel 補強本地分頁；Firebase presence 優先）────
+(function(){
+  const CH='tracker_presence';
+  const ID=Math.random().toString(36).slice(2);
+  let peers={};
+  peers[ID]=Date.now();
+
+  function updateCount(){
+    // 若 Firebase presence 已有值，優先使用
+    if(typeof window._onlineCount==='number'){
+      const el=document.getElementById('user-count');
+      if(el){el.style.display='';el.textContent='👤 '+window._onlineCount+' 人';}
+      return;
+    }
+    // fallback：BroadcastChannel 本地計數
+    const now=Date.now();
+    Object.keys(peers).forEach(k=>{if(now-peers[k]>12000)delete peers[k];});
+    const n=Object.keys(peers).length;
+    const el=document.getElementById('user-count');
+    if(el){el.style.display='';el.textContent='👤 '+n+' 人';}
+  }
+
+  let bc=null;
+  try{
+    bc=new BroadcastChannel(CH);
+    bc.onmessage=e=>{
+      if(e.data&&e.data.id&&!e.data.leave){peers[e.data.id]=Date.now();updateCount();}
+      if(e.data&&e.data.leave&&e.data.id){delete peers[e.data.id];updateCount();}
+    };
+  }catch(ex){}
+
+  setInterval(()=>{
+    peers[ID]=Date.now();
+    if(bc)bc.postMessage({id:ID});
+    updateCount();
+  },5000);
+
+  window.addEventListener('beforeunload',()=>{
+    if(bc)bc.postMessage({id:ID,leave:true});
+  });
+
+  setTimeout(()=>{if(bc)bc.postMessage({id:ID});updateCount();},800);
+})();
+
+
+async function init(){
+  Object.keys(TAB_DEFS).forEach(t=>{
+    const el=document.getElementById('pane-'+t);
+    if(el&&t!=='main')el.style.display='none';
+  });
+  window._hovFloors=new Set();
+  renderTabBar();renderMain();   // 先用 localStorage 畫出初始畫面，不讓使用者等白畫面
+  Object.keys(TAB_DEFS).forEach(t=>{if(t!=='main')document.getElementById('pane-'+t).style.display='none';});
+  try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d&&d.rows)S=migrateState(d);}}catch(e){}
+  renderTabBar();renderMain();
+}
+
+// ── 啟動 ──────────────────────────────────────────────────────────────────
+function bootstrap(){
+  load().then(()=>{init();if(typeof cleanTrash==="function")cleanTrash();});
+}
+bootstrap();
+document.addEventListener('firebase-ready',()=>{
+  if(!_fbListening)bootstrap();
+});
+</script>
+
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到頂部" style="display:none;position:fixed;bottom:24px;right:20px;z-index:9000;width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);align-items:center;justify-content:center;padding:0" class="no-print">↑</button>
+<script>
+(function(){
+  var b=document.getElementById('scrollTopBtn');
+  function chk(){b.style.display=window.scrollY>300?'flex':'none';}
+  window.addEventListener('scroll',chk,{passive:true});
+})();
+</script>
+
+<script>
+// ── 唯讀模式（?mode=view）──────────────────────────────────
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('mode') !== 'view') return;
+
+  window._VIEW_ONLY = true;
+  document.title = document.title + '（唯讀）';
+
+  // 1) 攔截 save — 不做任何寫入
+  const _origSave = window.save;
+  window.save = function(){ console.log('[VIEW] save blocked'); };
+
+  // 2) 注入 CSS：隱藏所有編輯操作元素
+  const style = document.createElement('style');
+  style.textContent = `
+    /* 隱藏新增/編輯/刪除按鈕 */
+    button[onclick*="showInlineAdd"],
+    button[onclick*="addRow"],
+    button[onclick*="deleteRow"],
+    button[onclick*="editVendorModal"],
+    button[onclick*="editManagerModal"],
+    button[onclick*="openModal"],
+    button[onclick*="confirmInlineAdd"],
+    button[onclick*="addZoneUnit"],
+    button[onclick*="openFloorConfigModal"],
+    button[onclick*="openZoneConfigModal"],
+    button[onclick*="toggleTabEditMode"],
+    button[onclick*="importClientExcel"],
+    button[onclick*="addEvent"],
+    button[onclick*="clearAllData"],
+    button[onclick*="completeRow"],
+    button[onclick*="undoComplete"],
+    button[onclick*="rowMenu"],
+    button[onclick*="batchComplete"],
+    button[onclick*="exportExcel"],
+    button[onclick*="addHandoverUnit"],
+    button[onclick*="addPubArea"],
+    button[onclick*="removeClient"],
+    button[onclick*="editClient"],
+    button[onclick*="delEvent"],
+    button[onclick*="saveNote"],
+    button[onclick*="restoreTrashItem"],
+    button[onclick*="permDeleteTrash"],
+    button[onclick*="emptyTrash"],
+    button[onclick*="showInlineAdd"],
+    .row-action-btn,
+    #inline-add-area,
+    #modalBg,
+    #tab-edit-btn { display:none!important; }
+
+    /* 讓 input/select/textarea 看起來是純文字 */
+    input:not([type="checkbox"]):not(.view-allow),
+    select:not(.view-allow),
+    textarea:not(.view-allow) {
+      pointer-events:none!important;
+      opacity:0.85;
+      background:transparent!important;
+      border-color:transparent!important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 3) 等 DOM ready 後處理
+  function applyReadonly(){
+    // 設定所有 input/textarea 為 readonly
+    document.querySelectorAll('input,textarea').forEach(el=>{
+      el.setAttribute('readonly','');
+      el.removeAttribute('contenteditable');
+    });
+    // 停用所有 select
+    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
+    // 停用所有 checkbox
+    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
+      el.setAttribute('disabled','');
+      el.style.pointerEvents='none';
+    });
+
+    // 移除行的右鍵選單 / 點擊編輯
+    document.querySelectorAll('[oncontextmenu]').forEach(el=>el.removeAttribute('oncontextmenu'));
+
+    // 頂部顯示唯讀提示條
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FEF3C7;color:#92400E;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F59E0B;';
+    bar.textContent = '🔒 唯讀模式 — 僅供檢視，無法編輯或修改';
+    document.body.prepend(bar);
+    document.body.style.paddingTop = '34px';
+  }
+
+  // 4) 攔截動態渲染後新出現的元素
+  const _origRenderAll = window.renderAll;
+  if(_origRenderAll){
+    window.renderAll = function(){
+      _origRenderAll.apply(this, arguments);
+      setTimeout(applyReadonly, 50);
+    };
+  }
+
+  // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
+  window.prompt = function(){ return null; };
+  window.confirm = function(){ return false; };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
+  } else {
+    setTimeout(applyReadonly,100);
+  }
+})();
+</script>
+</body>
+</html>
