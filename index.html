@@ -1739,10 +1739,17 @@ function editVendorModal(i){
   const oldName=S.vendors[i];
   openModal('編輯廠商',oldName,
     newName=>{
-      // 同步更新追蹤總表及已完成看板中所有使用舊名稱的廠商欄位
       if(oldName!==newName){
-        S.rows.forEach(r=>{if(r.vendor===oldName)r.vendor=newName;});
-        (S.completed||[]).forEach(r=>{if(r.vendor===oldName)r.vendor=newName;});
+        const affected=S.rows.filter(r=>r.vendor===oldName);
+        const affComp=(S.completed||[]).filter(r=>r.vendor===oldName);
+        const totalAffected=affected.length+affComp.length;
+        if(totalAffected>10){
+          if(!confirm(`⚠️ 大量修改警告\n\n即將把 ${totalAffected} 筆資料的廠商\n從「${oldName}」改為「${newName}」\n\n影響範圍：\n• 追蹤總表：${affected.length} 筆\n• 已完成區：${affComp.length} 筆\n\n確定要繼續嗎？`))return;
+        }
+        const details=affected.slice(0,20).map(r=>`#${r.id} ${r.unit||''}`);
+        affected.forEach(r=>{r.vendor=newName;});
+        affComp.forEach(r=>{r.vendor=newName;});
+        logChange('✏️ 廠商更名',`「${oldName}」→「${newName}」，共 ${totalAffected} 筆`,{changes:details,oldValue:oldName,newValue:newName,field:'vendor',count:totalAffected});
       }
       S.vendors[i]=newName;save();renderVendor();
       toast(`廠商已更名為：${newName}，追蹤總表已同步更新 ✅`);
@@ -2619,6 +2626,8 @@ function renderMain(){
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
   if(fMgr)data=data.filter(r=>r.manager===fMgr);
+  const fKeyword=window._fKeyword||'';
+  if(fKeyword)data=data.filter(r=>(r.issue||'').includes(fKeyword)||(r.note||'').includes(fKeyword)||(r.unit||'').includes(fKeyword)||(r.vendor||'').includes(fKeyword)||(r.manager||'').includes(fKeyword));
   if(window._fMissingDate){
     data=data.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);});
   }
@@ -2708,6 +2717,7 @@ function renderMain(){
       ${(()=>{const missCnt=S.rows.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);}).length;return missCnt?`<button class="btn no-print" onclick="applyMissingDateFilter()" style="background:#FFF8E6;color:#6B4D00;border-color:#D4A900;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 已完成未填日期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${missCnt}</span></button>`:'';})()}
       ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;return missVendorCnt?`<button class="btn no-print" onclick="applyMissingVendorFilter()" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 未填廠商 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#E24B4A;color:#fff;font-weight:600">${missVendorCnt}</span></button>`:'';})()}
       <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
+      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:140px" oninput="window._fKeyword=this.value;mainPage=0;renderMain()">
       <button class="btn btn-p no-print" onclick="showInlineAdd()">＋ 新增</button>
       <button class="btn no-print" onclick="exportCSV()">↓ CSV</button>
       <button class="btn btn-pdf no-print" id="mainPdf">🖨 PDF</button>
@@ -6713,8 +6723,14 @@ function renderChangelog(){
   const rows=log.map((c,i)=>{
     const col=typeColor[c.type]||'var(--text2)';
     const hasUnits=Array.isArray(c.units)&&c.units.length>0;
-    const arrow=hasUnits?`<span class="no-print" style="cursor:pointer;display:inline-block;width:14px;color:var(--text2)" onclick="toggleChangelogDetail(${i})" id="cl-arrow-${i}">▸</span>`:`<span style="display:inline-block;width:14px"></span>`;
-    const detailRow=hasUnits?`<tr id="cl-d-${i}" style="display:none"><td></td><td colspan="3" style="font-size:11px;color:var(--text2);background:var(--bg2,rgba(0,0,0,.03))">明細：${c.units.map(esc).join('、')}</td></tr>`:'';
+    const hasChanges=Array.isArray(c.changes)&&c.changes.length>0;
+    const hasDetail=hasUnits||hasChanges||c.oldValue;
+    const arrow=hasDetail?`<span class="no-print" style="cursor:pointer;display:inline-block;width:14px;color:var(--text2)" onclick="toggleChangelogDetail(${i})" id="cl-arrow-${i}">▸</span>`:`<span style="display:inline-block;width:14px"></span>`;
+    let detailContent='';
+    if(c.oldValue!==undefined){detailContent+=`<div style="margin-bottom:4px"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px;font-size:10px">修改前</span> ${esc(String(c.oldValue))} → <span style="background:#DCFCE7;color:#166534;padding:1px 5px;border-radius:3px;font-size:10px">修改後</span> ${esc(String(c.newValue||''))}</div>`;}
+    if(hasChanges){const shown=c.changes.slice(0,20);detailContent+=`<div>影響項目：${shown.map(esc).join('、')}${c.changes.length>20?`…等共 ${c.changes.length} 筆`:''}</div>`;}
+    if(hasUnits){detailContent+=`<div>明細：${c.units.map(esc).join('、')}</div>`;}
+    const detailRow=hasDetail?`<tr id="cl-d-${i}" style="display:none"><td></td><td colspan="3" style="font-size:11px;color:var(--text2);background:var(--bg2,rgba(0,0,0,.03));padding:6px 10px">${detailContent}</td></tr>`:'';
     return`<tr>
       <td style="white-space:nowrap;color:var(--text2);font-size:11px">${fmtTs(c.ts)}</td>
       <td><span style="font-size:11px;font-weight:600;color:${col}">${esc(c.type)}</span></td>
@@ -7540,6 +7556,7 @@ document.addEventListener('firebase-ready',()=>{
     button[onclick*="restoreTrashItem"],
     button[onclick*="permDeleteTrash"],
     button[onclick*="emptyTrash"],
+    button[onclick*="showInlineAdd"],
     .row-action-btn,
     #inline-add-area,
     #modalBg,
