@@ -272,17 +272,20 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 36;  // ← 每次部署新版時遞增
+const CODE_VERSION = 37;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 const db   = getFirestore(app);
 const ref  = doc(db, DB_DOC);
 const metaRef = doc(db, 'projects/meta');
 
-// ── Firestore 分段儲存：自動切割超過 900KB 的資料到子文件 ──
+// ── Firestore 差異儲存：拆成獨立子文件，只寫入變動欄位 ──
 const CHUNK_LIMIT = 900000;
 const chunksCol = collection(ref, '_chunks');
+const fieldsCol = collection(ref, '_fields');
+const SAVE_FIELDS = ['rows', 'completed', 'trash', 'changelog', 'meta'];
 
+// 向後相容：讀取舊格式（payload / chunks）
 async function _readChunkedPayload(snapData){
   if(snapData._chunks && snapData._chunks > 0){
     const parts = [];
@@ -295,31 +298,57 @@ async function _readChunkedPayload(snapData){
   return snapData.payload || null;
 }
 
-window._fbSave = async function(data){
-  try{
-    if(data.changelog && data.changelog.length > 200) data.changelog = data.changelog.slice(0, 200);
-    const json = JSON.stringify(data);
-
-    if(json.length <= CHUNK_LIMIT){
-      await setDoc(ref, { payload: json, _chunks: 0 }, { merge: true });
-      const oldChunks = await getDocs(chunksCol);
-      for(const d of oldChunks.docs) await deleteDoc(d.ref);
-    } else {
-      const n = Math.ceil(json.length / CHUNK_LIMIT);
-      for(let i = 0; i < n; i++){
-        await setDoc(doc(chunksCol, String(i)), { d: json.slice(i * CHUNK_LIMIT, (i+1) * CHUNK_LIMIT) });
-      }
-      const oldChunks = await getDocs(chunksCol);
-      for(const d of oldChunks.docs){
-        if(parseInt(d.id) >= n) await deleteDoc(d.ref);
-      }
-      await setDoc(ref, { payload: '', _chunks: n, _ts: Date.now() }, { merge: true });
-      console.log('[Firebase] saved in ' + n + ' chunks (' + (json.length/1024).toFixed(0) + 'KB)');
-    }
-  } catch(e){
-    console.error('[Firebase] save error', e);
-    if(typeof toast==='function') toast('\u2757 \u96f2\u7aef\u5132\u5b58\u5931\u6557\uff1a' + (e.message||'\u672a\u77e5\u932f\u8aa4') + '\u3002\u8cc7\u6599\u5df2\u5b58\u5728\u672c\u6a5f\uff0c\u8acb\u91cd\u65b0\u6574\u7406\u5f8c\u518d\u8a66\u3002','\u274c');
+// 將 state 拆成 5 個欄位
+function _splitState(data){
+  const meta = {};
+  for(const k of Object.keys(data)){
+    if(!['rows','completed','trash','changelog'].includes(k)) meta[k]=data[k];
   }
+  return {
+    rows: data.rows||[],
+    completed: data.completed||[],
+    trash: data.trash||[],
+    changelog: (data.changelog||[]).slice(0,200),
+    meta: meta
+  };
+}
+
+// 從 5 個欄位還原 state
+function _mergeFieldsToState(fields){
+  const state = Object.assign({}, fields.meta||{});
+  state.rows = fields.rows||[];
+  state.completed = fields.completed||[];
+  state.trash = fields.trash||[];
+  state.changelog = fields.changelog||[];
+  return state;
+}
+
+// 從 _fields 子集合讀取完整 state
+async function _readFieldDocs(){
+  const fieldDocs = await getDocs(fieldsCol);
+  const fields = {};
+  fieldDocs.forEach(d=>{
+    try{ fields[d.id]=JSON.parse(d.data().d); }catch(e){}
+  });
+  return _mergeFieldsToState(fields);
+}
+
+window._fbSave = async function(data, dirtyKeys){
+  if(data.changelog && data.changelog.length > 200) data.changelog = data.changelog.slice(0,200);
+  const fields = _splitState(data);
+  const keysToWrite = (dirtyKeys && dirtyKeys.size > 0) ? [...dirtyKeys] : SAVE_FIELDS;
+
+  // 並行寫入變動欄位
+  const writes = keysToWrite.map(key=>
+    setDoc(doc(fieldsCol, key), { d: JSON.stringify(fields[key]) })
+  );
+  await Promise.all(writes);
+
+  // 更新主文件時間戳（觸發其他用戶端的 onSnapshot）
+  await setDoc(ref, { _format:2, _ts:Date.now(), _chunks:0, payload:'' }, { merge:true });
+
+  const totalKB = keysToWrite.reduce((sum,k)=>sum+JSON.stringify(fields[k]).length, 0)/1024;
+  console.log('[Firebase] 差異儲存: ['+keysToWrite.join(', ')+'] ('+totalKB.toFixed(0)+'KB / 全量'+(JSON.stringify(data).length/1024).toFixed(0)+'KB)');
 };
 
 window._fbListen = function(onChange){
@@ -329,10 +358,16 @@ window._fbListen = function(onChange){
     clearTimeout(_snapTimer);
     _snapTimer=setTimeout(async()=>{
       try{
-        const json = await _readChunkedPayload(snap.data());
-        if(!json) return;
-        const d = JSON.parse(json);
-        if(d && d.rows) onChange(d);
+        const data = snap.data();
+        let state;
+        if(data._format === 2){
+          state = await _readFieldDocs();
+        } else {
+          const json = await _readChunkedPayload(data);
+          if(!json) return;
+          state = JSON.parse(json);
+        }
+        if(state && state.rows) onChange(state);
       } catch(e){ console.error('[Firebase] parse error', e); }
     },500);
   });
@@ -342,7 +377,11 @@ window._fbLoad = async function(){
   try{
     const snap = await getDoc(ref);
     if(!snap.exists()) return null;
-    const json = await _readChunkedPayload(snap.data());
+    const data = snap.data();
+    if(data._format === 2){
+      return await _readFieldDocs();
+    }
+    const json = await _readChunkedPayload(data);
     if(!json) return null;
     return JSON.parse(json);
   } catch(e){ console.error('[Firebase] load error', e); return null; }
@@ -792,16 +831,51 @@ function logChange(type, detail, extra){
   if(S.changelog.length>500)S.changelog=S.changelog.slice(0,500);
 }
 
-// ── 實際寫入 Firestore（含指數退避重試 + 併發鎖）──
+// ── 比對 state 變動欄位（供差異儲存用）──
+function _computeDirtyFields(){
+  if(!_savedSnapshot) return new Set(SAVE_FIELDS);
+  const dirty = new Set();
+  // rows: 用長度+抽樣快速判斷
+  if(S.rows.length !== _savedSnapshot.rows.length) dirty.add('rows');
+  else if(S.rows.length > 0 && JSON.stringify(S.rows) !== JSON.stringify(_savedSnapshot.rows)) dirty.add('rows');
+  // completed
+  if(S.completed.length !== (_savedSnapshot.completed||[]).length) dirty.add('completed');
+  else if(S.completed.length > 0 && JSON.stringify(S.completed) !== JSON.stringify(_savedSnapshot.completed)) dirty.add('completed');
+  // trash（通常很小）
+  if(JSON.stringify(S.trash||[]) !== JSON.stringify(_savedSnapshot.trash||[])) dirty.add('trash');
+  // changelog
+  if((S.changelog||[]).length !== (_savedSnapshot.changelog||[]).length) dirty.add('changelog');
+  else if(JSON.stringify((S.changelog||[]).slice(0,5)) !== JSON.stringify((_savedSnapshot.changelog||[]).slice(0,5))) dirty.add('changelog');
+  // meta: 其餘欄位
+  const metaKeys = ['zones','zoneUnits','zoneFloors','handoverUnits','clientData','floorConfig',
+    'unitConfig','publicAreaList','unitFloorLock','managerDetails','tabOrder',
+    'vendors','managers','alerts','events','nextId','nextCompId'];
+  for(const k of metaKeys){
+    if(JSON.stringify(S[k]) !== JSON.stringify(_savedSnapshot[k])){ dirty.add('meta'); break; }
+  }
+  return dirty;
+}
+
+// ── 實際寫入 Firestore（含指數退避重試 + 併發鎖 + 差異儲存）──
 async function _doSave(){
   // 防止併發：若已在寫入中，標記需要再存一次
   if(_saving){ _saveQueued=true; return; }
   _saving=true;
+
+  // 計算變動欄位
+  const dirtyKeys = _computeDirtyFields();
+  if(dirtyKeys.size === 0){
+    _saving=false; _saveTimer=null;
+    setSyncStatus('online');
+    console.log('[Save] 無變動，跳過儲存');
+    return;
+  }
+
   setSyncStatus('saving');
   let retries=0, maxRetries=3, delay=1000;
   while(retries<=maxRetries){
     try{
-      await window._fbSave(S);
+      await window._fbSave(S, dirtyKeys);
       _savedSnapshot=_takeSnapshot();
       _saveTimer=null;
       _saving=false;
@@ -7859,49 +7933,4 @@ document.addEventListener('firebase-ready',()=>{
 
   // 3) 等 DOM ready 後處理
   function applyReadonly(){
-    // 設定所有 input/textarea 為 readonly
-    document.querySelectorAll('input,textarea').forEach(el=>{
-      el.setAttribute('readonly','');
-      el.removeAttribute('contenteditable');
-    });
-    // 停用所有 select
-    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
-    // 停用所有 checkbox
-    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
-      el.setAttribute('disabled','');
-      el.style.pointerEvents='none';
-    });
-
-    // 移除行的右鍵選單 / 點擊編輯
-    document.querySelectorAll('[oncontextmenu]').forEach(el=>el.removeAttribute('oncontextmenu'));
-
-    // 頂部顯示唯讀提示條
-    const bar = document.createElement('div');
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FEF3C7;color:#92400E;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F59E0B;';
-    bar.textContent = '🔒 唯讀模式 — 僅供檢視，無法編輯或修改';
-    document.body.prepend(bar);
-    document.body.style.paddingTop = '34px';
-  }
-
-  // 4) 攔截動態渲染後新出現的元素
-  const _origRenderAll = window.renderAll;
-  if(_origRenderAll){
-    window.renderAll = function(){
-      _origRenderAll.apply(this, arguments);
-      setTimeout(applyReadonly, 50);
-    };
-  }
-
-  // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
-  window.prompt = function(){ return null; };
-  window.confirm = function(){ return false; };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
-  } else {
-    setTimeout(applyReadonly,100);
-  }
-})();
-</script>
-</body>
-</html>
+    // 設定所有 input/textar
