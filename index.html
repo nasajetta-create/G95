@@ -272,10 +272,12 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
+const CODE_VERSION = 34;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 const db   = getFirestore(app);
 const ref  = doc(db, DB_DOC);
+const metaRef = doc(db, 'projects/meta');
 
 // ── Firestore 分段儲存：自動切割超過 900KB 的資料到子文件 ──
 const CHUNK_LIMIT = 900000;
@@ -468,6 +470,41 @@ window.exportHandoverExport = async function(days){
     return { ok:true, count: keys.length, pageCount, dateFrom: fmt(today), dateTo: fmt(end) };
   } catch(e){ return { error: String(e) }; }
 };
+
+// ── 版本閘門：偵測新版部署，阻止舊版寫入 ──────────────────────
+window._versionBlocked = false;
+window._codeVersion = CODE_VERSION;
+
+// 首次上線時寫入版本（若 meta 不存在或版本較舊才更新）
+(async function initVersionGate(){
+  try{
+    const metaSnap = await getDoc(metaRef);
+    const remote = metaSnap.exists() ? (metaSnap.data().codeVersion || 0) : 0;
+    if(CODE_VERSION > remote){
+      await setDoc(metaRef, { codeVersion: CODE_VERSION, deployedAt: Date.now() }, { merge: true });
+      console.log('[Version] 更新遠端版本號：' + remote + ' → ' + CODE_VERSION);
+    }
+  }catch(e){ console.warn('[Version] init error', e); }
+
+  // 持續監聽版本變化
+  onSnapshot(metaRef, snap => {
+    if(!snap.exists()) return;
+    const remote = snap.data().codeVersion || 0;
+    if(remote > CODE_VERSION && !window._versionBlocked){
+      window._versionBlocked = true;
+      console.warn('[Version] 偵測到新版本 v' + remote + '，本機為 v' + CODE_VERSION + '，禁止寫入');
+      // 顯示醒目橫幅
+      const banner = document.createElement('div');
+      banner.id = 'version-banner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#A32D2D,#C0392B);color:#fff;padding:12px 20px;text-align:center;font-size:14px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:12px';
+      banner.innerHTML = '⚠️ 偵測到新版本（v' + remote + '），您目前執行的是舊版（v' + CODE_VERSION + '）。資料儲存已暫停，請重新整理頁面。'
+        + '<button onclick="location.reload(true)" style="background:#fff;color:#A32D2D;border:none;padding:6px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">立即重新整理</button>';
+      document.body.prepend(banner);
+      // 更新同步狀態
+      if(typeof setSyncStatus === 'function') setSyncStatus('error');
+    }
+  });
+})();
 
 // ── Presence（跨裝置在線人數）────────────────────────────────
 (async function setupPresence(){
@@ -734,6 +771,11 @@ function logChange(type, detail, extra){
 }
 
 function save(){
+  // ── 版本閘門：舊版禁止寫入 ──
+  if(window._versionBlocked){
+    toast('⛔ 偵測到新版本，請重新整理頁面後再操作','⚠️');
+    return;
+  }
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   if(window._fbSave){
     setSyncStatus('saving');
