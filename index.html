@@ -272,7 +272,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 35;  // ← 每次部署新版時遞增
+const CODE_VERSION = 36;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 const db   = getFirestore(app);
@@ -487,17 +487,34 @@ window._codeVersion = CODE_VERSION;
   }catch(e){ console.warn('[Version] init error', e); }
 
   // 持續監聽版本變化
-  onSnapshot(metaRef, snap => {
+  onSnapshot(metaRef, async snap => {
     if(!snap.exists()) return;
     const remote = snap.data().codeVersion || 0;
     if(remote > CODE_VERSION && !window._versionBlocked){
+      console.warn('[Version] 偵測到新版本 v' + remote + '，本機為 v' + CODE_VERSION);
+      // ★ 先把待存資料存完，再封鎖
+      try{
+        if(_saveTimer || _saving){
+          console.log('[Version] 偵測到未儲存資料，先自動存檔…');
+          clearTimeout(_saveTimer); _saveTimer=null;
+          // 等待進行中的寫入完成
+          if(_saving){ for(let i=0;i<30&&_saving;i++) await new Promise(r=>setTimeout(r,200)); }
+          // 再做一次最終存檔
+          if(window._fbSave && typeof _takeSnapshot==='function'){
+            setSyncStatus('saving');
+            try{ await window._fbSave(S); _savedSnapshot=_takeSnapshot(); console.log('[Version] 自動存檔完成 ✅'); }
+            catch(e){ console.error('[Version] 自動存檔失敗',e); }
+          }
+        }
+      }catch(e){ console.error('[Version] 自動存檔流程錯誤',e); }
+      // 封鎖寫入
       window._versionBlocked = true;
-      console.warn('[Version] 偵測到新版本 v' + remote + '，本機為 v' + CODE_VERSION + '，禁止寫入');
+      _saving=false; _saveQueued=false;
       // 顯示醒目橫幅
       const banner = document.createElement('div');
       banner.id = 'version-banner';
       banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#A32D2D,#C0392B);color:#fff;padding:12px 20px;text-align:center;font-size:14px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:12px';
-      banner.innerHTML = '⚠️ 偵測到新版本（v' + remote + '），您目前執行的是舊版（v' + CODE_VERSION + '）。資料儲存已暫停，請重新整理頁面。'
+      banner.innerHTML = '⚠️ 偵測到新版本（v' + remote + '），您目前執行的是舊版（v' + CODE_VERSION + '）。資料已自動儲存，請重新整理頁面。'
         + '<button onclick="location.reload(true)" style="background:#fff;color:#A32D2D;border:none;padding:6px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">立即重新整理</button>';
       document.body.prepend(banner);
       // 更新同步狀態
@@ -662,6 +679,8 @@ let modalCtx={};
 
 // ── persist ───────────────────────────────────────────────────────────────
 let _saveTimer=null;
+let _saving=false;   // 防止併發寫入
+let _saveQueued=false; // 寫入期間有新變更需要再存一次
 let _fbListening=false;
 
 // ── Row-level merge 多人同步 ─────────────────────────────────────────────
@@ -773,8 +792,11 @@ function logChange(type, detail, extra){
   if(S.changelog.length>500)S.changelog=S.changelog.slice(0,500);
 }
 
-// ── 實際寫入 Firestore（含指數退避重試）──
+// ── 實際寫入 Firestore（含指數退避重試 + 併發鎖）──
 async function _doSave(){
+  // 防止併發：若已在寫入中，標記需要再存一次
+  if(_saving){ _saveQueued=true; return; }
+  _saving=true;
   setSyncStatus('saving');
   let retries=0, maxRetries=3, delay=1000;
   while(retries<=maxRetries){
@@ -782,9 +804,17 @@ async function _doSave(){
       await window._fbSave(S);
       _savedSnapshot=_takeSnapshot();
       _saveTimer=null;
-      setSyncStatus('online');
+      _saving=false;
+      // 寫入期間有新變更？立即再存一次
+      if(_saveQueued){
+        _saveQueued=false;
+        setTimeout(()=>_doSave(),100);
+        setSyncStatus('pending');
+      } else {
+        setSyncStatus('online');
+      }
       // save 完成，處理排隊中的遠端更新
-      if(_pendingRemote&&!_pendingRow){
+      if(_pendingRemote&&!_pendingRow&&!_saveQueued){
         const d=_pendingRemote;_pendingRemote=null;
         setTimeout(()=>applyRemote(d),50);
       }
@@ -794,6 +824,8 @@ async function _doSave(){
       if(retries>maxRetries){
         console.error('[Save] 寫入失敗（已重試'+maxRetries+'次）:',err);
         _saveTimer=null;
+        _saving=false;
+        _saveQueued=false;
         setSyncStatus('error');
         toast('⚠️ 資料儲存失敗，請稍後再試','⚠️');
         return;
@@ -813,6 +845,8 @@ function save(){
   }
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   if(window._fbSave){
+    // 若正在寫入中，標記需要再存一次（不設新 timer）
+    if(_saving){ _saveQueued=true; setSyncStatus('pending'); return; }
     setSyncStatus('pending');
     clearTimeout(_saveTimer);
     // 防抖 1500ms：使用者停止操作後才上傳，避免每個字都觸發 Firestore
@@ -829,6 +863,7 @@ function manualSave(){
   if(!window._fbSave)return;
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   clearTimeout(_saveTimer);
+  _saveTimer=null;
   _doSave();
 }
 
@@ -895,8 +930,8 @@ function startFirebaseListen(){
   if(_fbListening||!window._fbListen)return;
   _fbListening=true;
   window._fbListen(remote=>{
-    // 忽略自己剛寫的（saveTimer 還在跑時）
-    if(_saveTimer)return;
+    // 忽略自己剛寫的（saveTimer 還在跑時或正在寫入中）
+    if(_saveTimer||_saving)return;
     applyRemote(remote);
     setSyncStatus('online');
   });
