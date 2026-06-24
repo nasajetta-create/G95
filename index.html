@@ -272,7 +272,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 59;  // ← 每次部署新版時遞增
+const CODE_VERSION = 61;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 const db   = getFirestore(app);
@@ -625,7 +625,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0623-21</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0623-23</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -6186,9 +6186,10 @@ function renderHCal(){
       const ds=isoDate(d);const isToday=ds===todayStr;
       const diff=Math.ceil((d-today)/86400000);
       const diffLabel=isToday?'今天':diff>0?`${diff}天後`:`${Math.abs(diff)}天前`;
-      const bg=isToday?'#F0EEFF':isWeekend(d)?'#F5F3EE':'var(--surface)';
+      const isPastH=ds<todayStr;
+      const bg=isToday?'#F0EEFF':isPastH?'#ECEAE6':isWeekend(d)?'#F5F3EE':'var(--surface)';
       const color=isToday?'var(--purple)':diff<0?'var(--text3)':diff<=3?'var(--red)':'var(--text2)';
-      return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);font-size:12px;min-width:100px;background:${bg}">
+      return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px solid var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
         ${fmtDate(d)}&nbsp;<span style="font-size:10px;color:var(--text3)">週${fmtDay(d)}</span><br>
         <span style="font-size:10px;color:${color}">${diffLabel}</span>
       </th>`;
@@ -6198,7 +6199,8 @@ function renderHCal(){
       const cells=days.map(d=>{
         const dateStr=isoDate(d);
         const units=getUnitsForDateSlot(dateStr,slot);
-        if(!units.length)return`<td style="border:1px solid var(--border);padding:4px;vertical-align:top;height:50px"></td>`;
+        const _isPast=dateStr<todayStr;const _isTodayCol=dateStr===todayStr;
+        if(!units.length)return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;height:50px;background:${_isPast?'#EFEDE9':'transparent'}"></td>`;
         // A棟/B棟/店鋪色塊
         function chipStyle(key){
           const k=String(key);
@@ -6220,7 +6222,7 @@ function renderHCal(){
           const isExp=_hcalExpanded===key;
           return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="font-size:12px;padding:3px 6px;margin-bottom:4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};white-space:nowrap;display:flex;align-items:center;gap:4px;cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}${gap}"><span style="font-size:8px;padding:0 3px;background:${cs.border};color:#fff;border-radius:2px;flex-shrink:0">${cs.label}</span>${esc(unitDisplayName(key))}${isComH?' <span style="color:#D4A900;font-size:9px">★</span>':''}${inspStageBadgeCal(key)}${dateStr>=todayStr?`<span style="opacity:.7;font-size:9px;color:${statusColor}"> ${pct??'—'}%</span>`:''}${pendingBadge}</div>`;
         }).join('');
-        return`<td style="border:1px solid var(--border);padding:4px;vertical-align:top;background:#FAFAFA"><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${chips}</td>`;
+        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${chips}</div></td>`;
       }).join('');
       // 檢查此時段是否有展開的戶別
       let expandRow='';
