@@ -274,7 +274,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 74;  // ← 每次部署新版時遞增
+const CODE_VERSION = 75;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -634,7 +634,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-12</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-13</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -8078,11 +8078,11 @@ function renderInspStat(){
   if(window._vstatMonth&&!months.includes(window._vstatMonth))window._vstatMonth='';
   const dates=window._vstatMonth?allDates.filter(d=>d.slice(0,7)===window._vstatMonth):allDates;
   const colColor={'初':'#185FA5','複':'#854F0B','交':'#3B6D11'};
-  const blk=arr=>{let A=0,B=0,sh=0;arr.forEach(o=>{const b=_unitBlock(o.unit);if(b==='A')A++;else if(b==='B')B++;else sh++;});return 'A'+A+' / B'+B+' / 店'+sh;};
+  const blk=arr=>{let A=0,B=0,sh=0;arr.forEach(o=>{const b=_unitBlock(o.unit);if(b==='A')A++;else if(b==='B')B++;else sh++;});return 'A棟 '+A+' / B棟 '+B+' / 店 '+sh;};
   const dow=d=>['日','一','二','三','四','五','六'][new Date(d).getDay()];
   const cell=(d,round)=>{const arr=(map[d]&&map[d][round])||[];const open=window._vstatOpen===d+'|'+round;
     if(!arr.length)return '<td style="padding:8px;text-align:center;color:#C0BEB9">0</td>';
-    return '<td onclick="vstatToggle(\''+d+'\',\''+round+'\')" style="padding:8px;text-align:center;cursor:pointer;'+(open&&!window._vstatPrintAll?'outline:2px solid '+colColor[round]+';outline-offset:-2px;border-radius:4px;background:var(--surface)':'')+'"><span style="font-size:17px;font-weight:600;color:'+colColor[round]+'">'+arr.length+'</span> 戶<div style="font-size:10px;color:#9A9896">'+blk(arr)+'</div></td>';};
+    return '<td onclick="vstatToggle(\''+d+'\',\''+round+'\')" style="padding:8px;text-align:center;cursor:pointer;'+(open&&!window._vstatPrintAll?'outline:2px solid '+colColor[round]+';outline-offset:-2px;border-radius:4px;background:var(--surface)':'')+'"><span style="font-size:20px;font-weight:700;color:'+colColor[round]+'">'+arr.length+'</span> 戶<span style="font-size:13px;color:#7A7876;margin-left:8px;white-space:nowrap">'+blk(arr)+'</span></td>';};
   const expandRow=(d,round)=>{const arr=(map[d]&&map[d][round])||[];const rn={'初':'初驗','複':'複驗','交':'交屋'}[round];
     const list=arr.slice().sort((x,y)=>String(x.unit).localeCompare(String(y.unit),'zh-TW')).map(o=>{const cl=(S.clientData&&S.clientData[o.unit])||{};const tlbl=round==='複'?o.type:rn;
       return '<div style="display:flex;align-items:center;gap:8px;background:#fff;border:0.5px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:12px;flex-wrap:wrap"><span style="font-weight:500;min-width:60px">'+esc(o.unit)+'</span><span style="font-size:9px;color:'+colColor[round]+'">'+esc(tlbl)+'</span><span style="color:var(--text2);flex:1">'+esc(cl.name||'')+'</span><span class="no-print" style="font-size:10px;color:#9A9896">完成日</span><input class="no-print" type="date" value="'+d+'" onchange="vstatEditDate(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;font-family:var(--font)"><button class="no-print" onclick="vstatRemove(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\')" style="font-size:11px;padding:2px 8px;border:1px solid #E24B4A;color:#A32D2D;background:#FCEBEB;border-radius:4px;cursor:pointer">✕ 移除</button></div>';
@@ -8090,7 +8090,7 @@ function renderInspStat(){
     return '<tr style="background:#FBFAFF;border-bottom:1px solid var(--border2)"><td colspan="4" style="padding:6px 12px 10px"><div style="font-size:11px;color:'+colColor[round]+';font-weight:500;margin-bottom:6px">'+d+' '+rn+'完成 '+arr.length+' 戶</div><div style="display:flex;flex-direction:column;gap:5px">'+(list||'<span style="color:var(--text3)">無</span>')+'</div></td></tr>';};
   const rows=dates.map(d=>{
     const isOpenDay=window._vstatOpen&&window._vstatOpen.split('|')[0]===d;
-    let tr='<tr style="border-bottom:1px solid var(--border2)'+(isOpenDay&&!window._vstatPrintAll?';background:#F7F5FF':'')+'"><td style="padding:8px;font-weight:500">'+d.slice(5)+' ('+dow(d)+')</td>'+cell(d,'初')+cell(d,'複')+cell(d,'交')+'</tr>';
+    let tr='<tr style="border-bottom:1px solid var(--border2)'+(isOpenDay&&!window._vstatPrintAll?';background:#F7F5FF':'')+'"><td style="padding:8px;font-weight:500;text-align:center;font-size:14px">'+d.slice(5)+' ('+dow(d)+')</td>'+cell(d,'初')+cell(d,'複')+cell(d,'交')+'</tr>';
     if(window._vstatPrintAll){['初','複','交'].forEach(round=>{if(((map[d]&&map[d][round])||[]).length)tr+=expandRow(d,round);});}
     else if(isOpenDay){tr+=expandRow(d,window._vstatOpen.split('|')[1]);}
     return tr;
@@ -8105,13 +8105,15 @@ function renderInspStat(){
         +'<select onchange="vstatSetMonth(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+monthOpts+'</select>'
         +'<label style="font-size:11px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="vstat-expand-print" '+(window._vstatPrintAll?'checked':'')+'> 轉出含戶別清單</label>'
         +'<button class="btn btn-sm btn-p" onclick="vstatPrint()" style="font-size:11px">🖨 轉出 PDF</button>'
+        +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'vstat-cap\'),\'驗收統計.png\')" style="font-size:11px">📷 截圖</button>'
+        +'<button class="btn btn-sm" onclick="capCustom()" style="font-size:11px">✂️ 自訂範圍</button>'
         +'<span style="font-size:11px;color:var(--text3)">點任一格 → 展開戶別清單可修訂</span>'
       +'</span>'
     +'</div>'
-    +'<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:12px;background:var(--card)">'
-    +'<thead><tr style="background:#ECEAE6;color:var(--text2);font-size:14px;font-weight:600"><th style="padding:9px 8px;text-align:left;width:96px">日期</th><th style="padding:9px 8px;text-align:center">初驗完成</th><th style="padding:9px 8px;text-align:center">複驗完成</th><th style="padding:9px 8px;text-align:center">交屋完成</th></tr></thead>'
+    +'<div id="vstat-cap" style="overflow-x:auto;background:#fff"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:13px;background:#fff">'
+    +'<thead><tr style="background:#ECEAE6;color:var(--text2);font-size:16px;font-weight:600"><th style="padding:9px 8px;text-align:center;width:110px">日期</th><th style="padding:9px 8px;text-align:center">初驗完成</th><th style="padding:9px 8px;text-align:center">複驗完成</th><th style="padding:9px 8px;text-align:center">交屋完成</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--text3)">尚無任何驗收完成記錄。請到交屋狀態表／行事曆／客戶清單用「快速標記」勾選初驗、複驗、交屋。</td></tr>')
-    +(dates.length?'<tr style="background:var(--surface);font-weight:700"><td style="padding:8px">'+(window._vstatMonth?'本月合計':'全部合計')+'</td><td style="padding:8px;text-align:center;color:#185FA5">'+sumCol('初')+' 戶</td><td style="padding:8px;text-align:center;color:#854F0B">'+sumCol('複')+' 戶</td><td style="padding:8px;text-align:center;color:#3B6D11">'+sumCol('交')+' 戶</td></tr>':'')
+    +(dates.length?'<tr style="background:var(--surface);font-weight:700;font-size:16px"><td style="padding:8px;text-align:center">'+(window._vstatMonth?'本月合計':'全部合計')+'</td><td style="padding:8px;text-align:center;color:#185FA5">'+sumCol('初')+' 戶</td><td style="padding:8px;text-align:center;color:#854F0B">'+sumCol('複')+' 戶</td><td style="padding:8px;text-align:center;color:#3B6D11">'+sumCol('交')+' 戶</td></tr>':'')
     +'</tbody></table></div>'
     +_vstatStageMapHTML()+'<div class="no-print" style="font-size:11px;color:var(--text3);margin-top:10px">說明：每格＝當日完成該輪次的戶數＋A/B/店分棟；點格展開戶別清單，可改「完成日」或「移除」修訂。轉出 PDF 可勾選是否含戶別清單。</div>'
   +'</div>';
@@ -8717,7 +8719,7 @@ function _vstatStageMapHTML(){
     +'<span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;border-radius:3px;background:rgba(133,79,11,.14);border:1px solid rgba(133,79,11,.3);border-left:3px solid #854F0B"></span>已複驗</span>'
     +'<span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;border-radius:3px;background:rgba(59,109,17,.14);border:1px solid rgba(59,109,17,.3);border-left:3px solid #3B6D11"></span>已交屋</span></div>';
   const subt='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text2);border-top:1px solid var(--border2);padding-top:8px;margin-top:4px"><span>小計：</span><span>未驗 <strong>'+tally.none+'</strong></span><span style="color:#185FA5">已初驗 <strong>'+tally.init+'</strong></span><span style="color:#854F0B">已複驗 <strong>'+tally.re+'</strong></span><span style="color:#3B6D11">已交屋 <strong>'+tally.deliv+'</strong></span></div>';
-  return '<div style="margin-top:24px"><div style="font-size:13px;font-weight:700;margin-bottom:4px">🟦 全區階段方塊圖</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px">橫向＝棟別欄(A1~A8/B1~B8)、縱向＝樓層(高→低)；底色＝目前階段。點卡片就地展開可修訂。</div>'
+  return '<div id="stagemap-cap" style="margin-top:24px;background:#fff"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700">🟦 全區階段方塊圖</span><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById(\'stagemap-cap\'),\'全區階段方塊圖.png\')" style="font-size:11px">📷 截圖</button><button class="btn btn-sm no-print" onclick="capCustom()" style="font-size:11px">✂️ 自訂範圍</button></div><div style="font-size:11px;color:var(--text3);margin-bottom:10px">橫向＝棟別欄(A1~A8/B1~B8)、縱向＝樓層(高→低)；底色＝目前階段。點卡片就地展開可修訂。</div>'
     +'<div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><span style="font-size:11px;color:var(--text2)">只看：</span>'+filterBtns+'</div>'
     +'<div class="no-print" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span style="font-size:11px;color:var(--text2)">排列：</span>'+layoutBtns+'</div>'
     +legend+detail+body+subt+'</div>';
