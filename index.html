@@ -274,7 +274,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 65;  // ← 每次部署新版時遞增
+const CODE_VERSION = 66;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -634,7 +634,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-03</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-04</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -2972,7 +2972,7 @@ function filterMainKeyword(){
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
   if(fMgr)data=data.filter(r=>r.manager===fMgr);
-  if(fRound){if(fRound==='(未設定)')data=data.filter(r=>!r.round);else data=data.filter(r=>(r.round||'')===fRound);}
+  if(fRound){if(fRound==='自檢')data=data.filter(r=>!r.round);else data=data.filter(r=>(r.round||'')===fRound);}
   const fKeyword=window._fKeyword||'';
   if(fKeyword)data=data.filter(r=>(r.issue||'').includes(fKeyword)||(r.note||'').includes(fKeyword)||(r.unit||'').includes(fKeyword)||(r.vendor||'').includes(fKeyword)||(r.manager||'').includes(fKeyword));
   if(window._fMissingDate){data=data.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);});}
@@ -3012,7 +3012,7 @@ function renderMain(){
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
   if(fMgr)data=data.filter(r=>r.manager===fMgr);
-  if(fRound){if(fRound==='(未設定)')data=data.filter(r=>!r.round);else data=data.filter(r=>(r.round||'')===fRound);}
+  if(fRound){if(fRound==='自檢')data=data.filter(r=>!r.round);else data=data.filter(r=>(r.round||'')===fRound);}
   const fKeyword=window._fKeyword||'';
   if(fKeyword)data=data.filter(r=>(r.issue||'').includes(fKeyword)||(r.note||'').includes(fKeyword)||(r.unit||'').includes(fKeyword)||(r.vendor||'').includes(fKeyword)||(r.manager||'').includes(fKeyword));
   if(window._fMissingDate){
@@ -3093,7 +3093,7 @@ function renderMain(){
       <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
       <datalist id="fVendor-list">${vOpDl}</datalist>
       <select id="fZone" onchange="mainPage=0;renderMain()"><option value="">全部區域</option>${zOp}</select>
-      <select id="fRound" onchange="mainPage=0;renderMain()" title="只看某輪次"><option value="">全部輪次</option>${(()=>{const rs=[...new Set(['初驗','複驗1','複驗2','複驗3',...S.rows.map(r=>r.round).filter(Boolean)])].sort((a,b)=>inspOrderVal(a)-inspOrderVal(b));return rs.map(x=>'<option value="'+esc(x)+'" '+(x===fRound?'selected':'')+'>'+esc(x)+'</option>').join('')+'<option value="(未設定)" '+(fRound==='(未設定)'?'selected':'')+'>(未設定)</option>';})()}</select>
+      <select id="fRound" onchange="mainPage=0;renderMain()" title="只看某輪次"><option value="">全部輪次</option>${(()=>{const rs=[...new Set(['初驗','複驗1','複驗2','複驗3',...S.rows.map(r=>r.round).filter(Boolean)])].sort((a,b)=>inspOrderVal(a)-inspOrderVal(b));return rs.map(x=>'<option value="'+esc(x)+'" '+(x===fRound?'selected':'')+'>'+esc(x)+'</option>').join('')+'<option value="自檢" '+(fRound==='自檢'?'selected':'')+'>自檢</option>';})()}</select>
       <select id="fMgr" onchange="mainPage=0;renderMain()"><option value="">全部管理人</option>${mOp}</select>
       <select id="fStatus" onchange="mainPage=0;window._fMissingDate=false;window._fMissingVendor=false;renderMain()">
         <option value="">全部狀態</option>
@@ -6247,7 +6247,7 @@ function renderHCal(){
           if(isB)return{bg:'#E1F5EE',border:'#0A6640',text:'#085041',label:'B'};
           return{bg:'#EBF4FF',border:'#185FA5',text:'#0A3D6E',label:'A'};
         }
-        const _hostColW=(S.hostBadgeMode==='code')?30:60;
+        const _hostColW=(S.hostBadgeMode==='code')?22:44;
         function _calChip(key,pct,delivered){
           const cs=chipStyle(key);
           const _noShow=dateStr<todayStr&&!_inspInitDone(key);
@@ -6255,7 +6255,7 @@ function renderHCal(){
           const isComH=(S.handoverUnits[key]||{}).inspTypes&&(S.handoverUnits[key].inspTypes||[]).includes('委外代驗');
           const pendingCount=getDefectRows(key).filter(r=>r.compId==null).length;
           const isExp=_hcalExpanded===key;
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:15px 50px ${_hostColW}px 13px 28px 30px 32px;align-items:center;column-gap:2px;font-size:12px;padding:3px 4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:right;font-size:9px;color:${statusColor}">${dateStr>=todayStr?`${pct??'—'}%`:''}</span><span style="text-align:right;font-size:9px;color:var(--red)">${pendingCount>0?`${pendingCount}筆`:''}</span></div>`;
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:13px minmax(0,1fr) ${_hostColW}px 10px 22px 24px 26px;align-items:center;column-gap:1px;font-size:11px;padding:2px 3px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:right;font-size:9px;color:${statusColor}">${dateStr>=todayStr?`${pct??'—'}%`:''}</span><span style="text-align:right;font-size:9px;color:var(--red)">${pendingCount>0?`${pendingCount}筆`:''}</span></div>`;
         }
         const _ownerCount={};
         units.forEach(u=>{const nm=((S.clientData||{})[u.key]||{}).name||'';if(nm)_ownerCount[nm]=(_ownerCount[nm]||0)+1;});
@@ -6267,7 +6267,7 @@ function renderHCal(){
             const gu=units.filter(x=>(((S.clientData||{})[x.key]||{}).name||'')===nm);
             _cellBody+=`<div style="margin-bottom:5px"><div style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#3F4756;background:#E7EAF0;border-radius:20px;padding:0 7px;margin-bottom:3px">👤 ${esc(nm)} · ${gu.length}戶</div><div style="border-left:3px solid #5A6478;padding-left:5px;display:flex;flex-direction:column;gap:4px">${gu.map(g=>_calChip(g.key,g.pct,g.delivered)).join('')}</div></div>`;
           } else {
-            _cellBody+=`<div style="margin-bottom:4px">${_calChip(u.key,u.pct,u.delivered)}</div>`;
+            _cellBody+=`<div style="margin-bottom:4px;border-left:3px solid transparent;padding-left:5px">${_calChip(u.key,u.pct,u.delivered)}</div>`;
           }
         });
         return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${_cellBody}</div></td>`;
@@ -6322,7 +6322,7 @@ function renderHCal(){
     return`<div style="margin-bottom:14px">
       <div style="font-size:12px;font-weight:600;color:var(--text2);padding:4px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:5px">${title}</div>
       <div style="overflow-x:auto">
-        <table style="border-collapse:collapse;width:100%;min-width:700px">
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:8%"><col span="7" style="width:13.14%"></colgroup>
           <thead><tr>
             <th style="padding:6px 10px;border:1px solid var(--border);background:var(--surface);white-space:nowrap;min-width:90px;font-size:11px">時段 / 日期</th>
             ${dateHdrs}
@@ -6705,7 +6705,6 @@ function renderClients(){
       ${isSel?`<span style="position:absolute;top:0;left:0;font-size:8px;color:#185FA5">✓</span>`:''}
       <div style="font-size:11px;font-weight:500">${unitDisplayName(key)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:10px"> ★</span>':''}</div>
       ${inspIconBadges(key)}
-      ${(function(){var hb=hostBadgesHtml(key,true);return hb?'<div style="margin-top:1px;display:flex;justify-content:center;gap:2px;flex-wrap:wrap">'+hb+'</div>':'';})()}
       ${cl.name?`<div style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75">${esc(cl.name)}</div>`:''}
       ${parkLabel}
       ${pctBar}
@@ -7299,7 +7298,7 @@ const TAB_DEFS={
   units:     {label:'🏠 戶別管理',        row:3},
   dupes:     {label:'🔁 重複作業',         row:3},
   inspstat:  {label:'🔎 驗收統計',         row:3},
-  defpivot:  {label:'🧩 缺失分類樞紐',     row:3},
+  defpivot:  {label:'🧩 驗屋缺失分析',     row:3},
   hreport:   {label:'📈 交屋進度報告',     row:3},
   trash:     {label:'🗑 垃圾桶',            row:3},
 };
@@ -8078,17 +8077,56 @@ function defectDateOf(r){
   if(r.createdAt){const d=new Date(r.createdAt); if(!isNaN(d))return d.toISOString().slice(0,10);}
   return '';
 }
+function _defRankHtml(){
+  if(!window._dpRound)window._dpRound='初驗';
+  if(!window._dpSort)window._dpSort='count';
+  const rows=S.rows.slice();
+  const huByDisp={};Object.keys(S.handoverUnits||{}).forEach(k=>{huByDisp[unitDisplayName(k)]=k;huByDisp[k]=k;});
+  const lastDate=u=>{const k=huByDisp[u];const insps=(k&&(S.handoverUnits[k]||{}).inspections)||[];let mx='';insps.forEach(i=>{if(i.date&&i.date>mx)mx=i.date;});return mx;};
+  const roundsSet=new Set(['自檢','初驗','複驗1','複驗2','複驗3']);
+  rows.forEach(r=>{if(r.round)roundsSet.add(r.round);});
+  const roundsArr=[...roundsSet].sort((a,b)=>a==='自檢'?-1:b==='自檢'?1:inspOrderVal(a)-inspOrderVal(b));
+  const sel=window._dpRound;
+  const filt=rows.filter(r=> sel==='自檢'? !r.round : (r.round===sel));
+  const byV={};
+  filt.forEach(r=>{const v=r.vendor||'（未填廠商）';if(!byV[v])byV[v]={count:0,date:'',items:[]};byV[v].count++;const d=lastDate(r.unit);if(d>byV[v].date)byV[v].date=d;byV[v].items.push(r);});
+  let arr=Object.keys(byV).map(v=>({v:v,count:byV[v].count,date:byV[v].date,items:byV[v].items}));
+  if(window._dpSort==='date')arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.count-a.count);
+  else arr.sort((a,b)=>b.count-a.count||(b.date||'').localeCompare(a.date||''));
+  const maxC=arr.reduce((m,x)=>Math.max(m,x.count),0)||1;
+  const md=d=>d?String(d).slice(5).replace(/-/g,'/'):'—';
+  const rbtn=roundsArr.map(function(rd){return '<span onclick="dpSetRound(\''+esc(rd)+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:20px;'+(sel===rd?'background:#EAF1FB;color:#185FA5;border:1px solid #9DC2EC;':'border:0.5px solid var(--border);color:var(--text2);')+'">'+esc(rd)+'</span>';}).join('');
+  const sopt=[['count','缺失數 多→少'],['date','最近日期 新→舊']];
+  const sbtn=sopt.map(function(p){return '<span onclick="dpSetSort(\''+p[0]+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:20px;'+(window._dpSort===p[0]?'background:#EAF1FB;color:#185FA5;border:1px solid #9DC2EC;':'border:0.5px solid var(--border);color:var(--text2);')+'">'+p[1]+'</span>';}).join('');
+  const body=arr.map(function(x,i){
+    const open=window._dpRankExpand===x.v;
+    const w=Math.round(x.count/maxC*100);
+    let detail='';
+    if(open){
+      const items=x.items.slice().sort((a,b)=>(lastDate(b.unit)||'').localeCompare(lastDate(a.unit)||''));
+      detail='<div style="padding:2px 12px 10px 48px;background:#F7F5FF;border-bottom:0.5px solid var(--border2)"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text3);font-size:11px"><td style="padding:2px 6px">戶別</td><td style="padding:2px 6px">缺失內容</td><td style="padding:2px 6px;text-align:right">最近驗收日</td></tr>'+items.slice(0,60).map(function(r){return '<tr style="border-top:0.5px solid var(--border2)"><td style="padding:3px 6px;white-space:nowrap">'+esc(unitDisplayName(r.unit||''))+'</td><td style="padding:3px 6px">'+esc(r.issue||'')+'</td><td style="padding:3px 6px;text-align:right;color:var(--text2)">'+md(lastDate(r.unit))+'</td></tr>';}).join('')+(items.length>60?'<tr><td colspan="3" style="padding:3px 6px;color:var(--text3);font-size:11px">…等 '+items.length+' 筆</td></tr>':'')+'</table></div>';
+    }
+    return '<div onclick="dpRankToggle(\''+esc(x.v)+'\')" style="display:grid;grid-template-columns:24px minmax(80px,150px) 1fr 30px 44px 16px;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;'+(i>0?'border-top:0.5px solid var(--border2);':'')+(open?'background:#F7F5FF;':'')+'"><span style="font-size:12px;color:var(--text3)">'+(i+1)+'</span><span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(x.v)+'</span><span style="height:13px;background:var(--surface);border-radius:3px;position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:'+w+'%;background:#378ADD;border-radius:3px"></span></span><span style="font-size:13px;font-weight:600;text-align:right">'+x.count+'</span><span style="font-size:11px;color:var(--text2);text-align:right">'+md(x.date)+'</span><span style="text-align:center;color:var(--text3);font-size:11px">'+(open?'▲':'▼')+'</span></div>'+detail;
+  }).join('');
+  return '<div style="margin-top:24px"><div style="font-size:14px;font-weight:700;margin-bottom:6px">📊 驗屋缺失排行（依輪次）</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">輪次</span>'+rbtn+'</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">排序</span>'+sbtn+'</div></div>'
+    +'<div style="background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden">'+(body||'<div style="padding:14px;text-align:center;color:var(--text3)">此輪次目前沒有缺失</div>')+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:8px">長條＝缺失數 · 日期＝該戶最近驗收日 · 點任一列展開該廠商缺失清單</div></div>';
+}
+function dpSetRound(r){window._dpRound=r;window._dpRankExpand=null;renderDefPivot();}
+function dpSetSort(s){window._dpSort=s;renderDefPivot();}
+function dpRankToggle(v){window._dpRankExpand=(window._dpRankExpand===v)?null:v;renderDefPivot();}
 function renderDefPivot(){
   const el=document.getElementById('pane-defpivot'); if(!el)return;
   const rows=S.rows.slice();
   const vendors=new Set(), dates=new Set(), cell={};
   rows.forEach(r=>{
     const v=(r.vendor||'（未填廠商）');
-    const dt=(r.round||'（未設定）');
+    const dt=(r.round||'自檢');
     vendors.add(v); dates.add(dt);
     const k=v+'||'+dt; cell[k]=(cell[k]||0)+1;
   });
-  const dateArr=[...dates].sort((a,b)=>a==='（未設定）'?1:b==='（未設定）'?-1:inspOrderVal(a)-inspOrderVal(b));
+  const dateArr=[...dates].sort((a,b)=>a==='自檢'?-1:b==='自檢'?1:inspOrderVal(a)-inspOrderVal(b));
   const vendorArr=[...vendors].sort((a,b)=>String(a).localeCompare(String(b),'zh-TW'));
   const head=dateArr.map(d=>`<th style="padding:6px 8px;font-size:11px;color:var(--text2);white-space:nowrap">${esc(d)}</th>`).join('');
   const body=vendorArr.map(v=>{
@@ -8099,7 +8137,7 @@ function renderDefPivot(){
   const colTot=dateArr.map(d=>{const n=vendorArr.reduce((a,v)=>a+(cell[v+'||'+d]||0),0);return `<td style="text-align:center;padding:5px 8px;font-weight:700">${n}</td>`;}).join('');
   const grand=rows.length;
   el.innerHTML=`<div style="padding:18px 20px">
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px">🧩 缺失分類樞紐</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px">🧩 驗屋缺失分析</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px">以「廠商/工種」分組，欄位為驗收輪次（初驗／複驗N）。數字＝缺失項數。例如木地板(諾貝達) 初驗 5、複驗1 3。</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn btn-sm btn-p" onclick="exportDefPivot()" style="font-size:11px">📥 匯出 Excel</button>
@@ -8109,14 +8147,15 @@ function renderDefPivot(){
       <tbody>${body||'<tr><td style="padding:14px;text-align:center;color:var(--text3)">目前沒有缺失資料</td></tr>'}</tbody>
       ${vendorArr.length?`<tfoot><tr style="background:var(--surface)"><td style="padding:6px 10px;font-weight:700">合計</td>${colTot}<td style="text-align:center;padding:6px 8px;font-weight:700;color:var(--purple)">${grand}</td></tr></tfoot>`:''}
     </table></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:10px">提醒：未標輪次的缺失會歸到「（未設定）」欄，可在追蹤總表點輪次徽章標記。</div>
+    ${_defRankHtml()}
+    <div style="font-size:11px;color:var(--text3);margin-top:10px">提醒：未標輪次的缺失＝自檢階段，會歸到「自檢」欄；可在追蹤總表點輪次徽章標記為初／複。</div>
   </div>`;
 }
 function exportDefPivot(){
   const rows=S.rows.slice();
   const vendors=new Set(), dates=new Set(), cell={};
-  rows.forEach(r=>{const v=(r.vendor||'（未填廠商）');const dt=(r.round||'（未設定）');vendors.add(v);dates.add(dt);const k=v+'||'+dt;cell[k]=(cell[k]||0)+1;});
-  const dateArr=[...dates].sort((a,b)=>a==='（未設定）'?1:b==='（未設定）'?-1:inspOrderVal(a)-inspOrderVal(b));
+  rows.forEach(r=>{const v=(r.vendor||'（未填廠商）');const dt=(r.round||'自檢');vendors.add(v);dates.add(dt);const k=v+'||'+dt;cell[k]=(cell[k]||0)+1;});
+  const dateArr=[...dates].sort((a,b)=>a==='自檢'?-1:b==='自檢'?1:inspOrderVal(a)-inspOrderVal(b));
   const vendorArr=[...vendors].sort((a,b)=>String(a).localeCompare(String(b),'zh-TW'));
   const aoa=[['廠商/工種',...dateArr,'合計']];
   vendorArr.forEach(v=>{const row=[v];let tot=0;dateArr.forEach(d=>{const n=cell[v+'||'+d]||0;row.push(n||'');tot+=n;});row.push(tot);aoa.push(row);});
@@ -8320,10 +8359,10 @@ function inspCheckRow(key){
   const delInp='<input type="date" value="'+(hu.deliveredDate||'')+'" onclick="event.stopPropagation()" onchange="setDeliveredDateQuick(\''+esc(key)+'\',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(hu.deliveredDate?'#3B6D11':'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(hu.deliveredDate?'color:#3B6D11':'')+'">';
   return '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--surface);border-radius:var(--rs);padding:8px 10px;margin-bottom:8px">'
     +'<span style="font-size:11px;color:var(--text2);font-weight:600">快速標記</span>'
-    +'<span style="display:inline-flex;align-items:center;gap:5px">'+chk('初驗完成','#185FA5',!!initD,'初驗')+dInp(initD,'初驗','#185FA5')+'</span>'
-    +reTypes.map(t=>'<span style="display:inline-flex;align-items:center;gap:5px">'+chk(t+'完成','#854F0B',!!dOf(t),t)+dInp(dOf(t),t,'#854F0B')+'</span>').join('')
+    +'<span style="display:inline-flex;align-items:center;gap:5px">'+chk('初驗完成','#185FA5',!!initD,'初驗')+dInp(initD,'初驗','#185FA5')+(initD?hostBadgesHtml(key,true):'')+'</span>'
+    +reTypes.map(t=>'<span style="display:inline-flex;align-items:center;gap:5px">'+chk(t+'完成','#854F0B',!!dOf(t),t)+dInp(dOf(t),t,'#854F0B')+(dOf(t)?hostBadgesHtml(key,true):'')+'</span>').join('')
     +'<button onclick="event.stopPropagation();addReinspect(\''+esc(key)+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:#854F0B">＋複驗</button>'
-    +'<span style="display:inline-flex;align-items:center;gap:5px">'+delLbl+delInp+'</span>'
+    +'<span style="display:inline-flex;align-items:center;gap:5px">'+delLbl+delInp+(hu.delivered?hostBadgesHtml(key,true):'')+'</span>'
   +'</div>';
 }
 
@@ -8437,7 +8476,7 @@ function roundBadgeSmall(r){
 //  V0623-12 輪次徽章（可點擊切換）+ 篩選
 // ============================================================
 function _roundAbbr(rd){
-  if(!rd)return'—';
+  if(!rd)return'自';
   if(rd==='初驗')return'初';
   const m=String(rd).match(/複驗(\d+)/);
   if(m)return'複'+m[1];
@@ -8456,9 +8495,9 @@ function roundCycle(id){
 function roundBadgeClick(r){
   const rd=r.round||'';const ab=_roundAbbr(rd);
   let sty;
-  if(!rd){sty='background:transparent;color:#9A9896;border:1px dashed #C0BEB9';}
+  if(!rd){sty='background:#EEF1F4;color:#5A6478;border:1px solid #C9CFD8';}
   else{const c=(/初驗/.test(rd))?'#185FA5':(/複驗/.test(rd))?'#854F0B':'#5F5E5A';sty='background:'+c+';color:#fff;border:1px solid '+c;}
-  return '<span id="round-badge-'+r.id+'" onclick="event.stopPropagation();roundCycle('+r.id+')" title="輪次：'+esc(rd||'未設定')+'（點擊循環 空白→初→複1→複2→複3）" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 5px;border-radius:8px;font-size:10px;font-weight:600;line-height:1;cursor:pointer;'+sty+'">'+ab+'</span>';
+  return '<span id="round-badge-'+r.id+'" onclick="event.stopPropagation();roundCycle('+r.id+')" title="輪次：'+esc(rd||'自檢')+'（點擊循環 自檢→初→複1→複2→複3）" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 5px;border-radius:8px;font-size:10px;font-weight:600;line-height:1;cursor:pointer;'+sty+'">'+ab+'</span>';
 }
 
 
