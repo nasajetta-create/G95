@@ -274,7 +274,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 63;  // ← 每次部署新版時遞增
+const CODE_VERSION = 64;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -634,7 +634,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-01</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-02</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -3816,14 +3816,14 @@ function renderMgr(){
     const total=st.total,done=st.done,over=st.overdue;
     const pct=total?Math.round(done/total*100):0;
     const sel=selMgr===m;
-    const det=S.managerDetails[m]||{title:'',duty:''};
+    const det=S.managerDetails[m]||{title:'',duty:''};const mc=mgrColor(m);
     return`<div class="vc${sel?' sel':''}" id="mcard-${esc(m)}" onclick="toggleSelMgr('${esc(m)}')" style="min-width:140px">
-      <div class="vc-name"><span style="width:9px;height:9px;border-radius:50%;background:${vColor(m)};display:inline-block;flex-shrink:0"></span>${esc(m)}</div>
-      <div style="font-size:10px;color:var(--text3);margin:2px 0 4px">${esc(det.title||'—')} ${det.duty?'｜'+esc(det.duty):''}</div>
+      <div class="vc-name"><span style="width:9px;height:9px;border-radius:50%;background:${mc.bg};display:inline-block;flex-shrink:0"></span>${esc(m)}</div>
+      <div style="font-size:10px;color:var(--text3);margin:2px 0 4px">${esc(det.title||'—')} ${det.duty?'｜'+esc(det.duty):''}</div><div style="display:flex;align-items:center;gap:5px;margin:0 0 5px" onclick="event.stopPropagation()"><span style="width:18px;height:18px;border-radius:50%;background:${mc.bg};color:${mc.text};font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${esc(mgrCode(m))}</span><span style="font-size:10px;color:var(--text3)">代碼</span><input value="${esc((S.managerDetails[m]||{}).code||'')}" maxlength="1" placeholder="${esc(m.slice(0,1))}" onclick="event.stopPropagation()" onchange="setMgrCode('${esc(m)}',this.value)" style="width:40px;text-align:center;font-size:12px;padding:2px 3px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>
       <div class="vc-row"><span style="color:var(--text2)">負責項目</span><b>${total}</b></div>
       <div class="vc-row"><span style="color:var(--text2)">已完成</span><b style="color:var(--green)">${done}</b></div>
       <div class="vc-row"><span style="color:var(--text2)">逾期</span><b style="color:var(--red)">${over}</b></div>
-      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${vColor(m)}"></div></div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${mc.bg}"></div></div>
       <div class="prog-lbl">${pct}%</div>
     </div>`;
   }).join('');
@@ -4401,13 +4401,14 @@ function renderHandover(){
     }).join('');
     return`<div style="background:#F7F5FF;border:2px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;animation:tIn .15s ease">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <span style="font-size:15px;font-weight:600">${esc(key)}</span>
+        <span style="font-size:15px;font-weight:600">${esc(key)}</span>${hostBadgesWrap(key,false)}
         <span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${grade.bg};color:${grade.color}">${pct??'—'}%</span>
         ${hu.delivered?`<span style="padding:1px 8px;border-radius:20px;font-size:11px;background:#EAF3DE;color:#3B6D11">🏠 已交屋</span>`:''}
         <button class="btn btn-sm" onclick="_hovExpanded=null;renderHandover()">✕</button>
         <button class="btn btn-sm btn-g" onclick="toggleDeliveredH('${esc(key)}')">${hu.delivered?'取消交屋':'🏠 已交屋'}</button>
       </div>
       ${inspCheckRow(key)}
+      ${hostPickerHtml(key)}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div><span style="font-size:11px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
         <div><span style="font-size:11px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
@@ -6141,6 +6142,31 @@ let _hcalOffset=0; // 週偏移，0=本週
 let _hcalExpanded=null; // 展開的戶別 key
 const HCAL_SLOTS=['09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'];
 
+// ── V0624-02 接待人員徽章 ──
+const MGR_BADGE_COLORS=[{bg:'#CECBF6',text:'#3C3489'},{bg:'#9FE1CB',text:'#085041'},{bg:'#F5C4B3',text:'#712B13'},{bg:'#B5D4F4',text:'#0C447C'},{bg:'#FAC775',text:'#633806'},{bg:'#F4C0D1',text:'#72243E'},{bg:'#C0DD97',text:'#27500A'},{bg:'#F7C1C1',text:'#791F1F'},{bg:'#D3D1C7',text:'#444441'}];
+function mgrColor(m){const i=(S.managers||[]).indexOf(m);return MGR_BADGE_COLORS[i>=0?i%MGR_BADGE_COLORS.length:8];}
+function mgrCode(m){const d=(S.managerDetails||{})[m];if(d&&d.code)return d.code;return m?String(m).slice(0,1):'';}
+function hostBadgesHtml(u,mini){
+  const hu=(S.handoverUnits||{})[u]||{};const hosts=hu.hosts||[];if(!hosts.length)return '';
+  const mode=S.hostBadgeMode||'name';
+  return hosts.map(function(m){const c=mgrColor(m);
+    if(mode==='code'){const sz=mini?15:22;return '<span title="'+esc(m)+'" style="display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+c.bg+';color:'+c.text+';font-size:'+(mini?9:12)+'px;font-weight:600;flex-shrink:0">'+esc(mgrCode(m))+'</span>';}
+    return '<span style="font-size:'+(mini?9:11)+'px;padding:'+(mini?'0 5px':'2px 8px')+';border-radius:20px;background:'+c.bg+';color:'+c.text+';white-space:nowrap">'+esc(m)+'</span>';
+  }).join('');
+}
+function hostBadgesWrap(u,mini){const h=hostBadgesHtml(u,mini);return h?'<span style="display:inline-flex;align-items:center;gap:'+(mini?3:4)+'px;margin-left:'+(mini?4:6)+'px;vertical-align:middle">'+h+'</span>':'';}
+function hostPickerHtml(u){
+  const hu=(S.handoverUnits||{})[u]||{};const hosts=hu.hosts||[];const mode=S.hostBadgeMode||'name';
+  const chips=(S.managers||[]).map(function(m){const on=hosts.includes(m);const c=mgrColor(m);
+    return '<span onclick="event.stopPropagation();toggleHost(\''+esc(u)+'\',\''+esc(m)+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:20px;'+(on?'background:'+c.bg+';color:'+c.text+';':'background:var(--card);color:var(--text2);border:1px solid var(--border);')+'">'+(on?'✓ ':'')+esc(m)+'</span>';
+  }).join('');
+  const mt='<span style="font-size:11px;color:var(--text2);margin-right:2px">徽章</span><span onclick="event.stopPropagation();setHostBadgeMode(\'name\')" style="cursor:pointer;font-size:11px;padding:2px 9px;border-radius:20px 0 0 20px;border:1px solid var(--border);'+(mode==='name'?'background:#F0EEFF;color:var(--purple);':'color:var(--text2);')+'">全名</span><span onclick="event.stopPropagation();setHostBadgeMode(\'code\')" style="cursor:pointer;font-size:11px;padding:2px 9px;border-radius:0 20px 20px 0;border:1px solid var(--border);border-left:none;'+(mode==='code'?'background:#F0EEFF;color:var(--purple);':'color:var(--text2);')+'">代碼</span>';
+  return '<div style="margin:6px 0;padding:8px 10px;background:var(--surface);border-radius:var(--rs)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><span style="font-size:11px;font-weight:600;color:var(--text2)">👤 接待人員</span>'+mt+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+(chips||'<span style="font-size:11px;color:var(--text3)">尚無管理人員，請先到「管理人員」頁新增</span>')+'</div></div>';
+}
+function toggleHost(u,m){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const h=(S.handoverUnits[u].hosts||[]).slice();const i=h.indexOf(m);if(i<0)h.push(m);else h.splice(i,1);S.handoverUnits[u].hosts=h;save();_hostReRender();}
+function setHostBadgeMode(mode){S.hostBadgeMode=mode;save();_hostReRender();}
+function setMgrCode(name,val){val=(val||'').trim().slice(0,1);if(!S.managerDetails)S.managerDetails={};if(!S.managerDetails[name])S.managerDetails[name]={};if(val){const dup=(S.managers||[]).find(function(m){return m!==name&&(((S.managerDetails||{})[m]||{}).code||'')===val;});if(dup){toast('代碼「'+val+'」已被 '+dup+' 使用，請換一個','⚠️');renderMgr();return;}}S.managerDetails[name].code=val;save();renderMgr();}
+function _hostReRender(){try{if(typeof renderHandover==='function')renderHandover();}catch(e){}try{if(typeof activeTab!=='undefined'&&activeTab==='hcal'&&typeof renderHCal==='function')renderHCal();}catch(e){}}
 function renderHCal(){
   if(!S.handoverUnits)S.handoverUnits={};
   _buildDefectCache();
@@ -6229,7 +6255,7 @@ function renderHCal(){
           const pendingCount=getDefectRows(key).filter(r=>r.compId==null).length;
           const pendingBadge=pendingCount>0?` <span style="font-size:9px;color:var(--red)">${pendingCount}筆</span>`:'';
           const isExp=_hcalExpanded===key;
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="font-size:12px;padding:3px 6px;margin-bottom:4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};white-space:nowrap;display:flex;align-items:center;gap:4px;cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}${gap}"><span style="font-size:8px;padding:0 3px;background:${cs.border};color:#fff;border-radius:2px;flex-shrink:0">${cs.label}</span>${esc(unitDisplayName(key))}${isComH?' <span style="color:#D4A900;font-size:9px">★</span>':''}${inspStageBadgeCal(key)}${dateStr>=todayStr?`<span style="opacity:.7;font-size:9px;color:${statusColor}"> ${pct??'—'}%</span>`:''}${pendingBadge}</div>`;
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="font-size:12px;padding:3px 6px;margin-bottom:4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};white-space:nowrap;display:flex;align-items:center;gap:4px;cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}${gap}"><span style="font-size:8px;padding:0 3px;background:${cs.border};color:#fff;border-radius:2px;flex-shrink:0">${cs.label}</span>${esc(unitDisplayName(key))}${hostBadgesWrap(key,true)}${isComH?' <span style="color:#D4A900;font-size:9px">★</span>':''}${inspStageBadgeCal(key)}${dateStr>=todayStr?`<span style="opacity:.7;font-size:9px;color:${statusColor}"> ${pct??'—'}%</span>`:''}${pendingBadge}</div>`;
         }).join('');
         return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${chips}</div></td>`;
       }).join('');
@@ -6252,7 +6278,7 @@ function renderHCal(){
           expandRow=`<tr><td colspan="${days.length+1}" style="border:1px solid var(--border);padding:0">
             <div style="background:#F7F5FF;border:2px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin:6px;animation:tIn .15s ease">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <span style="font-size:15px;font-weight:600">${esc(unitDisplayName(ek))}</span>
+                <span style="font-size:15px;font-weight:600">${esc(unitDisplayName(ek))}</span>${hostBadgesWrap(ek,false)}
                 <span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${grade.bg};color:${grade.color}">${pct??'—'}%</span>
                 ${hu.delivered?'<span style="padding:1px 8px;border-radius:20px;font-size:11px;background:#EAF3DE;color:#3B6D11">🏠 已交屋</span>':''}
                 ${defectBadge}
@@ -6261,7 +6287,7 @@ function renderHCal(){
                 ${hu.slot?`<span style="font-size:12px;color:var(--text2)">🕐 ${hu.slot}</span>`:''}
                 <button class="btn btn-sm" onclick="_hcalExpanded=null;renderHCal()" style="margin-left:auto">✕ 收合</button>
               </div>
-              ${inspCheckRow(ek)}
+              ${inspCheckRow(ek)}${hostPickerHtml(ek)}
               <div style="margin-top:4px">${buildUnitDefectTable(ek)}</div>
             </div>
           </td></tr>`;
