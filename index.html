@@ -274,7 +274,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 64;  // ← 每次部署新版時遞增
+const CODE_VERSION = 65;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -634,7 +634,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-02</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-03</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -6143,9 +6143,10 @@ let _hcalExpanded=null; // 展開的戶別 key
 const HCAL_SLOTS=['09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'];
 
 // ── V0624-02 接待人員徽章 ──
-const MGR_BADGE_COLORS=[{bg:'#CECBF6',text:'#3C3489'},{bg:'#9FE1CB',text:'#085041'},{bg:'#F5C4B3',text:'#712B13'},{bg:'#B5D4F4',text:'#0C447C'},{bg:'#FAC775',text:'#633806'},{bg:'#F4C0D1',text:'#72243E'},{bg:'#C0DD97',text:'#27500A'},{bg:'#F7C1C1',text:'#791F1F'},{bg:'#D3D1C7',text:'#444441'}];
+const MGR_BADGE_COLORS=[{bg:'#1F62C2',text:'#fff'},{bg:'#C77700',text:'#fff'},{bg:'#2F7D2A',text:'#fff'},{bg:'#A8237F',text:'#fff'},{bg:'#5B4BC4',text:'#fff'},{bg:'#0E8C7E',text:'#fff'},{bg:'#B5362B',text:'#fff'},{bg:'#475569',text:'#fff'},{bg:'#7A5E2E',text:'#fff'}];
 function mgrColor(m){const i=(S.managers||[]).indexOf(m);return MGR_BADGE_COLORS[i>=0?i%MGR_BADGE_COLORS.length:8];}
 function mgrCode(m){const d=(S.managerDetails||{})[m];if(d&&d.code)return d.code;return m?String(m).slice(0,1):'';}
+function hostCellAligned(u){const hosts=((S.handoverUnits||{})[u]||{}).hosts||[];if(!hosts.length)return '';const mode=S.hostBadgeMode||'name';const m=hosts[0];const c=mgrColor(m);const extra=hosts.length>1?('<span style="font-size:8px;color:var(--text3);margin-left:1px">+'+(hosts.length-1)+'</span>'):'';if(mode==='code'){return '<span title="'+esc(hosts.join('、'))+'" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:'+c.bg+';color:'+c.text+';font-size:12px;font-weight:600;flex-shrink:0">'+esc(mgrCode(m))+'</span>'+extra;}return '<span title="'+esc(hosts.join('、'))+'" style="font-size:11px;padding:1px 6px;border-radius:20px;background:'+c.bg+';color:'+c.text+';max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle">'+esc(m)+'</span>'+extra;}
 function hostBadgesHtml(u,mini){
   const hu=(S.handoverUnits||{})[u]||{};const hosts=hu.hosts||[];if(!hosts.length)return '';
   const mode=S.hostBadgeMode||'name';
@@ -6246,18 +6247,30 @@ function renderHCal(){
           if(isB)return{bg:'#E1F5EE',border:'#0A6640',text:'#085041',label:'B'};
           return{bg:'#EBF4FF',border:'#185FA5',text:'#0A3D6E',label:'A'};
         }
-        const chips=units.map(({key,pct,delivered},idx)=>{
+        const _hostColW=(S.hostBadgeMode==='code')?30:60;
+        function _calChip(key,pct,delivered){
           const cs=chipStyle(key);
           const _noShow=dateStr<todayStr&&!_inspInitDone(key);
           const statusColor=delivered?'#3B6D11':pct===100?'#3B6D11':pct>=80?'#854F0B':'#A32D2D';
-          const gap=(idx>0&&idx%4===0)?'margin-top:8px;border-top:1px dashed #ccc;padding-top:4px;':'';
           const isComH=(S.handoverUnits[key]||{}).inspTypes&&(S.handoverUnits[key].inspTypes||[]).includes('委外代驗');
           const pendingCount=getDefectRows(key).filter(r=>r.compId==null).length;
-          const pendingBadge=pendingCount>0?` <span style="font-size:9px;color:var(--red)">${pendingCount}筆</span>`:'';
           const isExp=_hcalExpanded===key;
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="font-size:12px;padding:3px 6px;margin-bottom:4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};white-space:nowrap;display:flex;align-items:center;gap:4px;cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}${gap}"><span style="font-size:8px;padding:0 3px;background:${cs.border};color:#fff;border-radius:2px;flex-shrink:0">${cs.label}</span>${esc(unitDisplayName(key))}${hostBadgesWrap(key,true)}${isComH?' <span style="color:#D4A900;font-size:9px">★</span>':''}${inspStageBadgeCal(key)}${dateStr>=todayStr?`<span style="opacity:.7;font-size:9px;color:${statusColor}"> ${pct??'—'}%</span>`:''}${pendingBadge}</div>`;
-        }).join('');
-        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${chips}</div></td>`;
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:15px 50px ${_hostColW}px 13px 28px 30px 32px;align-items:center;column-gap:2px;font-size:12px;padding:3px 4px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:right;font-size:9px;color:${statusColor}">${dateStr>=todayStr?`${pct??'—'}%`:''}</span><span style="text-align:right;font-size:9px;color:var(--red)">${pendingCount>0?`${pendingCount}筆`:''}</span></div>`;
+        }
+        const _ownerCount={};
+        units.forEach(u=>{const nm=((S.clientData||{})[u.key]||{}).name||'';if(nm)_ownerCount[nm]=(_ownerCount[nm]||0)+1;});
+        const _doneOwner={};let _cellBody='';
+        units.forEach(u=>{
+          const nm=((S.clientData||{})[u.key]||{}).name||'';
+          if(nm&&_ownerCount[nm]>=2){
+            if(_doneOwner[nm])return;_doneOwner[nm]=1;
+            const gu=units.filter(x=>(((S.clientData||{})[x.key]||{}).name||'')===nm);
+            _cellBody+=`<div style="margin-bottom:5px"><div style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#3F4756;background:#E7EAF0;border-radius:20px;padding:0 7px;margin-bottom:3px">👤 ${esc(nm)} · ${gu.length}戶</div><div style="border-left:3px solid #5A6478;padding-left:5px;display:flex;flex-direction:column;gap:4px">${gu.map(g=>_calChip(g.key,g.pct,g.delivered)).join('')}</div></div>`;
+          } else {
+            _cellBody+=`<div style="margin-bottom:4px">${_calChip(u.key,u.pct,u.delivered)}</div>`;
+          }
+        });
+        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${_cellBody}</div></td>`;
       }).join('');
       // 檢查此時段是否有展開的戶別
       let expandRow='';
@@ -6692,6 +6705,7 @@ function renderClients(){
       ${isSel?`<span style="position:absolute;top:0;left:0;font-size:8px;color:#185FA5">✓</span>`:''}
       <div style="font-size:11px;font-weight:500">${unitDisplayName(key)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:10px"> ★</span>':''}</div>
       ${inspIconBadges(key)}
+      ${(function(){var hb=hostBadgesHtml(key,true);return hb?'<div style="margin-top:1px;display:flex;justify-content:center;gap:2px;flex-wrap:wrap">'+hb+'</div>':'';})()}
       ${cl.name?`<div style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75">${esc(cl.name)}</div>`:''}
       ${parkLabel}
       ${pctBar}
