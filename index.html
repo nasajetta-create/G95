@@ -274,7 +274,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 67;  // ← 每次部署新版時遞增
+const CODE_VERSION = 68;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -634,7 +634,7 @@ document.dispatchEvent(new Event('firebase-ready'));
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-05</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-06</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button>
@@ -6146,7 +6146,7 @@ const HCAL_SLOTS=['09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50
 const MGR_BADGE_COLORS=[{bg:'#1F62C2',text:'#fff'},{bg:'#C77700',text:'#fff'},{bg:'#2F7D2A',text:'#fff'},{bg:'#A8237F',text:'#fff'},{bg:'#5B4BC4',text:'#fff'},{bg:'#0E8C7E',text:'#fff'},{bg:'#B5362B',text:'#fff'},{bg:'#475569',text:'#fff'},{bg:'#7A5E2E',text:'#fff'}];
 function mgrColor(m){const i=(S.managers||[]).indexOf(m);return MGR_BADGE_COLORS[i>=0?i%MGR_BADGE_COLORS.length:8];}
 function mgrCode(m){const d=(S.managerDetails||{})[m];if(d&&d.code)return d.code;return m?String(m).slice(0,1):'';}
-function hostCellAligned(u){const hosts=((S.handoverUnits||{})[u]||{}).hosts||[];if(!hosts.length)return '';const mode=S.hostBadgeMode||'name';const m=hosts[0];const c=mgrColor(m);const extra=hosts.length>1?('<span style="font-size:8px;color:var(--text3);margin-left:1px">+'+(hosts.length-1)+'</span>'):'';if(mode==='code'){return '<span title="'+esc(hosts.join('、'))+'" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:'+c.bg+';color:'+c.text+';font-size:12px;font-weight:600;flex-shrink:0">'+esc(mgrCode(m))+'</span>'+extra;}return '<span title="'+esc(hosts.join('、'))+'" style="font-size:11px;padding:1px 6px;border-radius:20px;background:'+c.bg+';color:'+c.text+';max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle">'+esc(m)+'</span>'+extra;}
+function hostCellAligned(u){const hosts=((S.handoverUnits||{})[u]||{}).hosts||[];if(!hosts.length)return '';const mode=S.hostBadgeMode||'name';const m=hosts[0];const c=mgrColor(m);const extra=hosts.length>1?('<span style="font-size:8px;color:var(--text3);margin-left:1px">+'+(hosts.length-1)+'</span>'):'';if(mode==='code'){return '<span title="'+esc(hosts.join('、'))+'" style="display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:'+c.bg+';color:'+c.text+';font-size:11px;font-weight:600;flex-shrink:0">'+esc(mgrCode(m))+'</span>'+extra;}return '<span title="'+esc(hosts.join('、'))+'" style="font-size:11px;padding:1px 6px;border-radius:20px;background:'+c.bg+';color:'+c.text+';max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle">'+esc(m)+'</span>'+extra;}
 function hostBadgesHtml(u,mini){
   const hu=(S.handoverUnits||{})[u]||{};const hosts=hu.hosts||[];if(!hosts.length)return '';
   const mode=S.hostBadgeMode||'name';
@@ -6167,7 +6167,7 @@ function hostPickerHtml(u){
 function toggleHost(u,m){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const h=(S.handoverUnits[u].hosts||[]).slice();const i=h.indexOf(m);if(i<0)h.push(m);else h.splice(i,1);S.handoverUnits[u].hosts=h;save();_hostReRender();}
 function setHostBadgeMode(mode){S.hostBadgeMode=mode;save();_hostReRender();}
 function setMgrCode(name,val){val=(val||'').trim().slice(0,1);if(!S.managerDetails)S.managerDetails={};if(!S.managerDetails[name])S.managerDetails[name]={};if(val){const dup=(S.managers||[]).find(function(m){return m!==name&&(((S.managerDetails||{})[m]||{}).code||'')===val;});if(dup){toast('代碼「'+val+'」已被 '+dup+' 使用，請換一個','⚠️');renderMgr();return;}}S.managerDetails[name].code=val;save();renderMgr();}
-function _hostReRender(){try{if(typeof renderHandover==='function')renderHandover();}catch(e){}try{if(typeof activeTab!=='undefined'&&activeTab==='hcal'&&typeof renderHCal==='function')renderHCal();}catch(e){}}
+function _hostReRender(){try{if(typeof renderHandover==='function')renderHandover();}catch(e){}try{if(typeof activeTab!=='undefined'){if(activeTab==='hcal'&&typeof renderHCal==='function')renderHCal();if(activeTab==='clients'&&typeof renderClients==='function')renderClients();}}catch(e){}}
 function renderHCal(){
   if(!S.handoverUnits)S.handoverUnits={};
   _buildDefectCache();
@@ -6225,7 +6225,7 @@ function renderHCal(){
       const isPastH=ds<todayStr;
       const bg=isToday?'#F0EEFF':isPastH?'#ECEAE6':isWeekend(d)?'#F5F3EE':'var(--surface)';
       const color=isToday?'var(--purple)':diff<0?'var(--text3)':diff<=3?'var(--red)':'var(--text2)';
-      return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px solid var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
+      return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px dashed var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
         ${fmtDate(d)}&nbsp;<span style="font-size:10px;color:var(--text3)">週${fmtDay(d)}</span><br>
         <span style="font-size:10px;color:${color}">${diffLabel}</span>
       </th>`;
@@ -6236,7 +6236,7 @@ function renderHCal(){
         const dateStr=isoDate(d);
         const units=getUnitsForDateSlot(dateStr,slot);
         const _isPast=dateStr<todayStr;const _isTodayCol=dateStr===todayStr;
-        if(!units.length)return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;height:50px;background:${_isPast?'#EFEDE9':'transparent'}"></td>`;
+        if(!units.length)return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;height:50px;background:${_isPast?'#EFEDE9':'transparent'}"></td>`;
         // A棟/B棟/店鋪色塊
         function chipStyle(key){
           const k=String(key);
@@ -6256,7 +6256,7 @@ function renderHCal(){
           const isComH=(S.handoverUnits[key]||{}).inspTypes&&(S.handoverUnits[key].inspTypes||[]).includes('委外代驗');
           const pendingCount=getDefectRows(key).filter(r=>r.compId==null).length;
           const isExp=_hcalExpanded===key;
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 8px 20px 20px 20px;align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:right;font-size:9px;color:${statusColor}">${dateStr>=todayStr?`${pct??'—'}%`:''}</span><span style="text-align:right;font-size:9px;color:var(--red)">${pendingCount>0?`${pendingCount}筆`:''}</span></div>`;
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 8px 22px 24px 26px;align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:right;font-size:9px;overflow:hidden;white-space:nowrap;color:${statusColor}">${dateStr>=todayStr?`${pct??'—'}%`:''}</span><span style="text-align:right;font-size:9px;overflow:hidden;white-space:nowrap;color:var(--red)">${pendingCount>0?`${pendingCount}筆`:''}</span></div>`;
         }
         const _ownerCount={};
         units.forEach(u=>{const nm=((S.clientData||{})[u.key]||{}).name||'';if(nm)_ownerCount[nm]=(_ownerCount[nm]||0)+1;});
@@ -6271,7 +6271,7 @@ function renderHCal(){
             _cellBody+=`<div style="margin-bottom:4px;border-left:3px solid transparent;padding-left:5px">${_calChip(u.key,u.pct,u.delivered)}</div>`;
           }
         });
-        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px solid var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${_cellBody}</div></td>`;
+        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${_cellBody}</div></td>`;
       }).join('');
       // 檢查此時段是否有展開的戶別
       let expandRow='';
@@ -6323,7 +6323,7 @@ function renderHCal(){
     return`<div style="margin-bottom:14px">
       <div style="font-size:12px;font-weight:600;color:var(--text2);padding:4px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:5px">${title}</div>
       <div style="overflow-x:auto">
-        <table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:8%"><col span="7" style="width:13.14%"></colgroup>
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:8%"><col span="6" style="width:13.87%"><col style="width:8.76%"></colgroup>
           <thead><tr>
             <th style="padding:6px 10px;border:1px solid var(--border);background:var(--surface);white-space:nowrap;min-width:90px;font-size:11px">時段 / 日期</th>
             ${dateHdrs}
@@ -6344,10 +6344,10 @@ function renderHCal(){
       <button class="btn btn-sm" onclick="_hcalOffset=0;renderHCal()">本週</button>
       <button class="btn btn-sm" onclick="_hcalOffset++;renderHCal()">下兩週 ▶</button>
       <span style="font-size:12px;color:var(--text2)">${fmtDate(week1Days[0])} – ${fmtDate(week2Days[6])}</span>
-      <label class="no-print" style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" checked onchange="_hcalPrintMode=this.checked?'split':'full'">上下午分頁</label><button class="btn btn-pdf no-print" onclick="printHCal()" style="padding:6px 16px;font-size:13px;font-weight:600">🖨 PDF</button>
+      <label class="no-print" style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" checked onchange="_hcalPrintMode=this.checked?'split':'full'">上下午分頁</label><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_第1週.png')" style="padding:5px 10px;font-size:12px">📷 單週</button><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_第1週.png');setTimeout(function(){_capEl(document.getElementById('hcal-week2'),'行事曆_第2週.png')},1300)" style="padding:5px 10px;font-size:12px">📷 雙週</button><button class="btn btn-sm no-print" onclick="capCustom()" style="padding:5px 10px;font-size:12px">✂️ 自訂</button><button class="btn btn-pdf no-print" onclick="printHCal()" style="padding:6px 16px;font-size:13px;font-weight:600">🖨 PDF</button>
     </div>
-    ${buildWeekTable(week1Days,w1Title)}
-    ${buildWeekTable(week2Days,w2Title)}
+    <div id="hcal-week1">${buildWeekTable(week1Days,w1Title)}</div>
+    <div id="hcal-week2">${buildWeekTable(week2Days,w2Title)}</div>
     <div style="padding:7px 10px;background:var(--surface);border-radius:var(--rs);font-size:11px;color:var(--text3)">
       💡 驗收時段在「客戶交屋狀態表」中展開各戶卡片設定。紫色底色格代表有安排戶別。
     </div>`;
@@ -6892,6 +6892,7 @@ function buildClientDetailInline(key){
       <span style="font-size:9px;color:var(--text3);margin-left:auto">即時儲存</span>
     </div>
     ${inspCheckRow(key)}
+    ${hostPickerHtml(key)}
     <div style="padding:8px 10px;background:var(--surface);border-radius:var(--rs);border:1px solid var(--border2);margin-bottom:10px">
       <div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:6px">📅 交屋資訊 <span style="font-size:9px;color:var(--text3);font-weight:400">— 即時儲存</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -8114,6 +8115,7 @@ function _defRankHtml(){
     +'<div style="background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden">'+(body||'<div style="padding:14px;text-align:center;color:var(--text3)">此輪次目前沒有缺失</div>')+'</div>'
     +'<div style="font-size:11px;color:var(--text3);margin-top:8px">長條＝缺失數 · 日期＝該戶最近驗收日 · 點任一列展開該廠商缺失清單</div></div>';
 }
+function dpTogglePivot(){window._dpPivotOpen=!window._dpPivotOpen;renderDefPivot();}
 function dpSetRound(r){window._dpRound=r;window._dpRankExpand=null;renderDefPivot();}
 function dpSetSort(s){window._dpSort=s;renderDefPivot();}
 function dpRankToggle(v){window._dpRankExpand=(window._dpRankExpand===v)?null:v;renderDefPivot();}
@@ -8142,8 +8144,9 @@ function renderDefPivot(){
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px">以「廠商/工種」分組，欄位為驗收輪次（初驗／複驗N）。數字＝缺失項數。例如木地板(諾貝達) 初驗 5、複驗1 3。</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn btn-sm btn-p" onclick="exportDefPivot()" style="font-size:11px">📥 匯出 Excel</button>
+      <button class="btn btn-sm" onclick="dpTogglePivot()" style="font-size:11px">${window._dpPivotOpen?'▾ 收折分類樞紐表':'▸ 展開分類樞紐表'}</button>
     </div>
-    <div style="overflow-x:auto"><table style="border-collapse:collapse;min-width:420px;background:var(--card);border-radius:var(--r);font-size:12px">
+    <div style="overflow-x:auto;display:${window._dpPivotOpen?'block':'none'}"><table style="border-collapse:collapse;min-width:420px;background:var(--card);border-radius:var(--r);font-size:12px">
       <thead><tr><th style="padding:6px 10px;font-size:11px;color:var(--text2);text-align:left;white-space:nowrap">廠商 / 工種</th>${head}<th style="padding:6px 8px;font-size:11px;color:var(--purple)">合計</th></tr></thead>
       <tbody>${body||'<tr><td style="padding:14px;text-align:center;color:var(--text3)">目前沒有缺失資料</td></tr>'}</tbody>
       ${vendorArr.length?`<tfoot><tr style="background:var(--surface)"><td style="padding:6px 10px;font-weight:700">合計</td>${colTot}<td style="text-align:center;padding:6px 8px;font-weight:700;color:var(--purple)">${grand}</td></tr></tfoot>`:''}
@@ -8286,16 +8289,18 @@ function renderHReport(){
     +'<div style="padding:18px 20px">'
     +'<div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">'
       +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_hrptDate)+'" onchange="_hrptDate=this.value;renderHReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>'
-      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">全案總戶數</span><input type="number" min="0" value="'+total+'" onchange="S.totalUnitsOverride=this.value?Number(this.value):0;save();renderHReport()" style="width:90px;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">全案總戶數 🔒</span><div style="display:flex;gap:4px;align-items:center"><input id="hrpt-total-inp" type="number" min="0" value="'+total+'" readonly onchange="S.totalUnitsOverride=this.value?Number(this.value):0;save();renderHReport()" style="width:72px;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);background:#F1EFEA"><button onclick="hrptUnlockTotal()" title="編輯需輸入認證碼" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);cursor:pointer">🔒</button></div></div>'
       +'<button class="btn btn-sm btn-p" onclick="exportHReport()" style="font-size:11px">📥 匯出 Excel</button>'
       +'<button class="btn btn-sm" onclick="window.print()" style="font-size:11px">🖨 列印 / PDF</button>'
+      +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'pane-hreport\'),\'交屋進度報告.png\')" style="font-size:11px">📷 截圖</button>'
+      +'<button class="btn btn-sm" onclick="capCustom()" style="font-size:11px">✂️ 自訂範圍</button>'
     +'</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
       +'<div style="flex:1;min-width:120px;background:#FAEEDA;border-radius:var(--r);padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact"><div style="font-size:11px;color:#854F0B">明日預計驗收</div><div style="font-size:24px;font-weight:600;color:#854F0B">'+up.tomorrow+' <span style="font-size:12px;font-weight:400">戶</span></div></div>'
       +'<div style="flex:1;min-width:120px;background:#EBF4FF;border-radius:var(--r);padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact"><div style="font-size:11px;color:#185FA5">本週預計驗收 <span style="font-size:9px;opacity:.7">（到 '+up.sunS.slice(5)+'）</span></div><div style="font-size:24px;font-weight:600;color:#185FA5">'+up.week+' <span style="font-size:12px;font-weight:400">戶</span></div></div>'
       +'<div style="flex:1;min-width:120px;background:#EAF6E7;border-radius:var(--r);padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact"><div style="font-size:11px;color:#2E6B26">今日完成驗收</div><div style="font-size:24px;font-weight:600;color:#2E6B26">'+(c.initT+c.reT)+' <span style="font-size:12px;font-weight:400">戶次</span></div></div>'
     +'</div>'
-    +'<div style="background:#F0EEF8;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#3C3489;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact">到 '+esc(_hrptDate)+' 為止：初驗 '+c.init+'　複驗 '+c.re+'　交屋 '+c.deliv+' ／ 全案 '+total+'（A '+bt.A+'／B '+bt.B+'／店 '+bt.shop+'）</div>'
+    +'<div style="background:#F0EEF8;border-radius:var(--r);padding:12px 16px;margin-bottom:14px;color:#3C3489;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact;display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-size:17px"><span>到 '+esc(_hrptDate)+' 為止</span><span style="border-left:2px solid #B7B0D8;padding-left:14px">初驗 '+c.init+'</span><span style="border-left:2px solid #B7B0D8;padding-left:14px">複驗 '+c.re+'</span><span style="border-left:2px solid #B7B0D8;padding-left:14px">交屋 '+c.deliv+'</span><span style="border-left:2px solid #B7B0D8;padding-left:14px">全案 '+total+'（A '+bt.A+'／B '+bt.B+'／店 '+bt.shop+'）</span></div>'
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px">'+card('初驗完成',c.init,c.initT,'#185FA5','init')+card('複驗完成',c.re,c.reT,'#854F0B','re')+card('交屋完成',c.deliv,c.delivT,'#3B6D11','deliv')+'</div>'
     +'<div style="font-size:12px;font-weight:600;margin-bottom:6px">📊 近 7 日每日完成（戶次）</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px;font-size:12px;color:var(--text2)"><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;background:#185FA5;display:inline-block;border-radius:2px"></span>初驗</span><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;background:#854F0B;display:inline-block;border-radius:2px"></span>複驗</span><span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:8px;background:#3B6D11;display:inline-block;border-radius:2px"></span>交屋</span></div>'
@@ -8606,18 +8611,18 @@ function vstatCardClick(u){window._vstatCardOpen=(window._vstatCardOpen===u)?'':
 function vstatSetStageFilter(v){window._vstatStageFilter=v;renderInspStat();}
 function vstatSetLayout(v){window._vstatLayout=v;renderInspStat();}
 function _vstatStageMapHTML(){
-  if(!window._vstatLayout)window._vstatLayout='stack';
+  if(!window._vstatLayout)window._vstatLayout='ab_shop_below';
   const flt=window._vstatStageFilter||'';
   const tint={none:{bg:'#fff',bd:'#D0CEC9',ac:'#B4B2A9'},init:{bg:'rgba(24,95,165,.12)',bd:'rgba(24,95,165,.30)',ac:'#185FA5'},re:{bg:'rgba(133,79,11,.14)',bd:'rgba(133,79,11,.30)',ac:'#854F0B'},deliv:{bg:'rgba(59,109,17,.14)',bd:'rgba(59,109,17,.30)',ac:'#3B6D11'}};
   const stLbl={none:'未驗',init:'已初驗',re:'已複驗',deliv:'已交屋'};
   const md=d=>d?String(d).slice(5):'—';
   const nameOf=k=>(typeof unitDisplayName==='function')?unitDisplayName(k):k;
   const cardHTML=key=>{const si=_unitStageInfo(key);const t=tint[si.stage];const nm=nameOf(key);const open=window._vstatCardOpen===key;
-    return '<div onclick="vstatCardClick(\''+esc(key)+'\')" title="'+esc(nm)+'｜'+stLbl[si.stage]+'" style="background:'+t.bg+';border:1px solid '+t.bd+';border-left:3px solid '+t.ac+';border-radius:7px;padding:4px 6px;box-shadow:0 1px 2px rgba(0,0,0,.12);cursor:pointer;'+(open?'outline:2px solid var(--purple);outline-offset:1px;':'')+'">'
-      +'<div style="font-size:11px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(nm)+'</div>'
-      +'<div style="font-size:9px;line-height:1.45;color:'+(si.initD?'#185FA5':'#BDBBB5')+'">初 '+md(si.initD)+'</div>'
-      +'<div style="font-size:9px;line-height:1.45;color:'+(si.reD?'#854F0B':'#BDBBB5')+'">複 '+md(si.reD)+'</div>'
-      +'<div style="font-size:9px;line-height:1.45;color:'+(si.delivD?'#3B6D11':'#BDBBB5')+'">交 '+md(si.delivD)+'</div>'
+    return '<div onclick="vstatCardClick(\''+esc(key)+'\')" title="'+esc(nm)+'｜'+stLbl[si.stage]+'" style="background:'+t.bg+';border:1px solid '+t.bd+';border-left:3px solid '+t.ac+';border-radius:5px;padding:2px 4px;box-shadow:0 1px 2px rgba(0,0,0,.1);cursor:pointer;'+(open?'outline:2px solid var(--purple);outline-offset:1px;':'')+'">'
+      +'<div style="font-size:10px;font-weight:600;margin-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(nm)+'</div>'
+      +'<div style="font-size:8px;line-height:1.3;color:'+(si.initD?'#185FA5':'#BDBBB5')+'">初 '+md(si.initD)+'</div>'
+      +'<div style="font-size:8px;line-height:1.3;color:'+(si.reD?'#854F0B':'#BDBBB5')+'">複 '+md(si.reD)+'</div>'
+      +'<div style="font-size:8px;line-height:1.3;color:'+(si.delivD?'#3B6D11':'#BDBBB5')+'">交 '+md(si.delivD)+'</div>'
     +'</div>';};
   const cellGrid=u=>{if(!u)return '<div></div>';if(flt&&_unitStageInfo(u).stage!==flt)return '<div style="border:1px dashed var(--border2);border-radius:7px;opacity:.35"></div>';return cardHTML(u);};
   const FL=(typeof G95_FLOORS!=='undefined')?G95_FLOORS:[];
@@ -8625,9 +8630,9 @@ function _vstatStageMapHTML(){
     const colHdr='<div></div>'+colList.map(c=>'<div style="font-size:10px;text-align:center;color:var(--text2);font-weight:600">'+c+'</div>').join('');
     let bodyR='';
     FL.forEach(fl=>{bodyR+='<div style="font-size:9px;color:var(--text3);display:flex;align-items:center;justify-content:flex-end;padding-right:3px">'+fl+'F</div>';colList.forEach(c=>{bodyR+=cellGrid((raw[c]||{})[fl]);});});
-    return '<div style="overflow-x:auto;padding-bottom:4px"><div style="display:grid;grid-template-columns:24px repeat('+colList.length+',minmax(74px,1fr));gap:5px;min-width:'+(30+colList.length*80)+'px">'+colHdr+bodyR+'</div></div>';
+    return '<div style="overflow-x:auto;padding-bottom:4px"><div style="display:grid;grid-template-columns:20px repeat('+colList.length+',minmax(50px,1fr));gap:3px;min-width:'+(24+colList.length*52)+'px">'+colHdr+bodyR+'</div></div>';
   };
-  const shopGrid=units=>{const cs=units.map(u=>{if(flt&&_unitStageInfo(u).stage!==flt)return '';return cardHTML(u);}).filter(Boolean).join('');return cs?('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px">'+cs+'</div>'):'<div style="font-size:11px;color:var(--text3);padding:4px 0">（此篩選下無）</div>';};
+  const shopGrid=units=>{const cs=units.map(u=>{if(flt&&_unitStageInfo(u).stage!==flt)return '';return cardHTML(u);}).filter(Boolean).join('');return cs?('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:4px">'+cs+'</div>'):'<div style="font-size:11px;color:var(--text3);padding:4px 0">（此篩選下無）</div>';};
   // tally（全部，不受篩選影響）
   const tally={none:0,init:0,re:0,deliv:0};const allKeys=[];
   const collectRaw=raw=>{try{Object.keys(raw).forEach(c=>Object.keys(raw[c]).forEach(fl=>{if(raw[c][fl])allKeys.push(raw[c][fl]);}));}catch(e){}};
@@ -8664,6 +8669,53 @@ function _vstatStageMapHTML(){
     +legend+detail+body+subt+'</div>';
 }
 
+function hrptUnlockTotal(){var c=prompt('編輯「全案總戶數」需輸入認證碼：');if(c===null)return;if(c==='MONGA'){var i=document.getElementById('hrpt-total-inp');if(i){i.readOnly=false;i.style.background='#FFF8E1';i.focus();try{toast('已解鎖，可編輯','🔓');}catch(e){}}}else{try{toast('認證碼錯誤','⚠️');}catch(e){}}}
+// ── V0624-06 截圖功能（html2canvas 延遲載入） ──
+function _loadH2C(cb){
+  if(window.html2canvas){cb();return;}
+  window._h2cQ=window._h2cQ||[];window._h2cQ.push(cb);
+  if(window._h2cLoading)return;window._h2cLoading=true;
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s.onload=function(){window._h2cLoading=false;(window._h2cQ||[]).forEach(function(f){try{f();}catch(e){}});window._h2cQ=[];};
+  s.onerror=function(){window._h2cLoading=false;try{toast('截圖元件載入失敗，請檢查網路','⚠️');}catch(e){}};
+  document.head.appendChild(s);
+}
+function _capEl(el,filename){
+  if(!el){try{toast('找不到截圖內容','⚠️');}catch(e){}return;}
+  try{toast('產生截圖中…','📷');}catch(e){}
+  _loadH2C(function(){
+    html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,scrollX:0,scrollY:-window.scrollY}).then(function(cv){
+      const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=filename||'截圖.png';a.click();
+    }).catch(function(e){try{toast('截圖失敗','⚠️');}catch(_){}});
+  });
+}
+function capCustom(){
+  try{toast('拖曳框選要截圖的範圍（Esc 取消）','✂️');}catch(e){}
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;cursor:crosshair;background:rgba(60,52,137,.10)';
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;border:2px dashed #3C3489;background:rgba(124,119,221,.14);display:none;z-index:100000;pointer-events:none';
+  document.body.appendChild(ov);document.body.appendChild(box);
+  let sx=0,sy=0,drawing=false;
+  function cleanup(){try{ov.remove();box.remove();}catch(e){}document.removeEventListener('keydown',onKey);}
+  function onKey(ev){if(ev.key==='Escape')cleanup();}
+  document.addEventListener('keydown',onKey);
+  ov.addEventListener('mousedown',function(e){drawing=true;sx=e.clientX;sy=e.clientY;box.style.display='block';box.style.left=sx+'px';box.style.top=sy+'px';box.style.width='0px';box.style.height='0px';});
+  ov.addEventListener('mousemove',function(e){if(!drawing)return;const x=Math.min(sx,e.clientX),y=Math.min(sy,e.clientY),w=Math.abs(e.clientX-sx),h=Math.abs(e.clientY-sy);box.style.left=x+'px';box.style.top=y+'px';box.style.width=w+'px';box.style.height=h+'px';});
+  ov.addEventListener('mouseup',function(e){
+    if(!drawing){cleanup();return;}drawing=false;
+    const x=Math.min(sx,e.clientX),y=Math.min(sy,e.clientY),w=Math.abs(e.clientX-sx),h=Math.abs(e.clientY-sy);
+    cleanup();
+    if(w<8||h<8)return;
+    try{toast('產生截圖中…','📷');}catch(_){}
+    _loadH2C(function(){
+      html2canvas(document.body,{x:x+window.scrollX,y:y+window.scrollY,width:w,height:h,scale:2,backgroundColor:'#ffffff',useCORS:true}).then(function(cv){
+        const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='自訂截圖.png';a.click();
+      }).catch(function(){try{toast('截圖失敗','⚠️');}catch(_){}});
+    });
+  });
+}
 function bootstrap(){
   load().then(()=>{init();if(typeof cleanTrash==="function")cleanTrash();});
 }
