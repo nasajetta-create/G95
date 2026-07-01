@@ -276,7 +276,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 115;  // ← 每次部署新版時遞增
+const CODE_VERSION = 118;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -670,7 +670,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-17</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-20</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1242,7 +1242,7 @@ function migrateState(d){
 
 // ── helpers ───────────────────────────────────────────────────────────────
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
-const todayISO=()=>TODAY.toISOString().slice(0,10);
+const todayISO=()=>TODAY.getFullYear()+'-'+String(TODAY.getMonth()+1).padStart(2,'0')+'-'+String(TODAY.getDate()).padStart(2,'0');  // 本地日期（原用 UTC，台灣凌晨會顯示前一天）
 const pd=s=>{if(!s)return null;const d=new Date(s);d.setHours(0,0,0,0);return isNaN(d)?null:d};
 const du=s=>{const d=pd(s);if(!d)return null;return Math.ceil((d-TODAY)/86400000)};
 const fmtMD=s=>{const d=pd(s);if(!d)return'';return`${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`};
@@ -6904,9 +6904,11 @@ function renderHCal(){
       const isPastH=ds<todayStr;
       const bg=isToday?'#F0EEFF':isPastH?'#ECEAE6':isWeekend(d)?'#F5F3EE':'var(--surface)';
       const color=isToday?'var(--purple)':diff<0?'var(--text3)':diff<=3?'var(--red)':'var(--text2)';
+      const comN=Object.keys(S.handoverUnits||{}).reduce((a,k)=>{const h=S.handoverUnits[k];return (h&&h.planDate===ds&&!h.cancelled&&!h.noShow&&(h.inspTypes||[]).includes('委外代驗'))?a+1:a;},0);
+      const comTag=comN>0?'<br><span style="display:inline-block;margin-top:2px;background:#FAEEDA;color:#6B4D00;border:1px solid #E0B84B;border-radius:10px;padding:0 6px;font-size:9px;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact">★委外 '+comN+'</span>':'';
       return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px dashed var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
         ${fmtDate(d)}&nbsp;<span style="font-size:10px;color:var(--text3)">週${fmtDay(d)}</span><br>
-        <span style="font-size:10px;color:${color}">${diffLabel}</span>
+        <span style="font-size:10px;color:${color}">${diffLabel}</span>${comTag}
       </th>`;
     }).join('');
 
@@ -6955,7 +6957,9 @@ function renderHCal(){
             _cellBody+=`<div style="margin-bottom:4px;border-left:3px solid transparent;padding-left:5px">${_calChip(u.key,u.pct,u.delivered)}</div>`;
           }
         });
-        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶</div>${_cellBody}</div></td>`;
+        const _comN=units.reduce((a,u)=>{const h=S.handoverUnits[u.key]||{};return (!h.cancelled&&!h.noShow&&(h.inspTypes||[]).includes('委外代驗'))?a+1:a;},0);
+        const _comTag=_comN>0?'<span style="margin-left:4px;background:#FAEEDA;color:#6B4D00;border:1px solid #E0B84B;border-radius:8px;padding:0 5px;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact">★委外 '+_comN+'</span>':'';
+        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length}戶${_comTag}</div>${_cellBody}</div></td>`;
       }).join('');
       // 檢查此時段是否有展開的戶別
       let expandRow='';
@@ -7976,8 +7980,9 @@ function printChangelogTable(){
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
-// ── 🧹 清潔追蹤（V0701-17）：今天以後有排初/複/交的戶別，對照清潔狀態，方便提前派清潔 ──
+// ── 🧹 清潔追蹤（V0701-20）：單週網格，日期×時段排戶卡，對照清潔狀態，方便提前派清潔 ──
 let _cleanOnlyPending=false;
+let _cleanWeekOffset=0;
 function _cleanTrackStatus(key){
   var n=_cleanCount(key),cd=_cleanDates(key),cp=_cleanPlanned(key);
   var done=[],wait=[],anyPlan=false;
@@ -7986,60 +7991,66 @@ function _cleanTrackStatus(key){
   return {state:state,done:done,wait:wait};
 }
 function cleanTrackToggle(v){_cleanOnlyPending=!!v;renderCleanTrack();}
-function _cleanTrackPrint(){var el=document.getElementById('cleantrack-cap');if(!el)return;printSection('清潔追蹤（'+todayISO()+'）',el.innerHTML,'清潔追蹤_'+todayISO());}
+function cleanWeekNav(delta){_cleanWeekOffset=(delta===0)?0:(_cleanWeekOffset+delta);renderCleanTrack();}
+function _cleanTrackPrint(){var el=document.getElementById('cleantrack-cap');if(!el)return;printSection('清潔追蹤',el.innerHTML,'清潔追蹤_'+todayISO());}
+function _cleanIso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function renderCleanTrack(){
   var el=document.getElementById('pane-clean');if(!el)return;
-  var today=todayISO();var hu=S.handoverUnits||{};
-  var rows=Object.keys(hu).map(function(k){
-    var h=hu[k];if(!h||!h.planDate||h.planDate<today||h.cancelled)return null;
-    return {key:k,date:h.planDate,slot:h.slot||'',stage:_rptCalStage(k),cs:_cleanTrackStatus(k)};
-  }).filter(Boolean);
-  rows.sort(function(a,b){return a.date!==b.date?a.date.localeCompare(b.date):(a.slot!==b.slot?a.slot.localeCompare(b.slot):String(a.key).localeCompare(String(b.key),'zh-TW',{numeric:true}));});
-  var cNeed=rows.filter(function(r){return r.cs.state==='need';}).length;
-  var cWait=rows.filter(function(r){return r.cs.state==='wait';}).length;
-  var cDone=rows.filter(function(r){return r.cs.state==='done';}).length;
-  var list=_cleanOnlyPending?rows.filter(function(r){return r.cs.state!=='done';}):rows;
+  var todayD=new Date();todayD.setHours(0,0,0,0);var todayStr=_cleanIso(todayD);
+  var base=new Date(todayD);base.setDate(base.getDate()+_cleanWeekOffset*7);
+  var dow=base.getDay();var mon=new Date(base);mon.setDate(base.getDate()+(dow===0?-6:1-dow));
+  var days=[];for(var i=0;i<7;i++){var dd=new Date(mon);dd.setDate(mon.getDate()+i);days.push(dd);}
+  var hu=S.handoverUnits||{};
   var stageStyle={'初':'background:#B5D4F4;color:#0C447C','複':'background:#FAC775;color:#633806','交':'background:#9FE1CB;color:#0F6E56'};
-  var stageLbl={'初':'初驗','複':'複驗','交':'交屋'};
-  function rowBg(st){return st==='need'?'#FCEBEB':(st==='wait'?'#FAEEDA':'#EAF3DE');}
-  function statusTxt(cs){
-    if(cs.state==='need')return '<span style="color:#A32D2D;font-weight:600">⚠ 需安排清潔</span>';
-    if(cs.state==='wait'){var t=cs.done.length?('第'+cs.done.join('、')+'次已清，第'+cs.wait.join('、')+'次待清'):('已安排第'+cs.wait.join('、')+'次，待清');return '<span style="color:#854F0B;font-weight:600">'+t+'</span>';}
-    return '<span style="color:#3B6D11;font-weight:600">✓ 已清完</span>';
-  }
-  var trs=list.map(function(r){
-    var diff=Math.round((new Date(r.date)-new Date(today))/86400000);
-    var dtxt=diff===0?'今天':(diff+'天後');
-    return '<tr style="border-top:1px solid var(--border);background:'+rowBg(r.cs.state)+';-webkit-print-color-adjust:exact;print-color-adjust:exact">'
-      +'<td style="padding:6px 10px;white-space:nowrap"><b>'+_rptMMDD(r.date)+'</b>（'+_rptDOW(r.date)+'）<span style="color:var(--text3);font-size:11px">'+dtxt+'</span></td>'
-      +'<td style="padding:6px 6px;white-space:nowrap">'+esc(r.slot||'—')+'</td>'
-      +'<td style="padding:6px 6px;white-space:nowrap;font-weight:500">'+esc(unitDisplayName(r.key))+'</td>'
-      +'<td style="padding:6px 6px"><span style="font-size:11px;'+stageStyle[r.stage]+';border-radius:3px;padding:1px 6px">'+stageLbl[r.stage]+'</span></td>'
-      +'<td style="padding:6px 6px">'+hostBadgesHtml(r.key,true)+'</td>'
-      +'<td style="padding:6px 6px">'+(_cleanDots(r.key,'#3B6D11')||'<span style="color:var(--text3)">—</span>')+'</td>'
-      +'<td style="padding:6px 10px">'+statusTxt(r.cs)+'</td>'
-    +'</tr>';
+  var stageLbl={'初':'初','複':'複','交':'交'};
+  function stateBd(st){return st==='need'?'#E24B4A':(st==='wait'?'#EF9F27':'#97C459');}
+  function stateBg(st){return st==='need'?'#FCEBEB':(st==='wait'?'#FAEEDA':'#EAF3DE');}
+  function unitsFor(ds,slot){var out=[];Object.keys(hu).forEach(function(k){var h=hu[k];if(h&&h.planDate===ds&&h.slot===slot&&!h.cancelled&&!h.noShow)out.push(k);});out.sort(function(a,b){return String(a).localeCompare(String(b),'zh-TW',{numeric:true});});return out;}
+  var num={},seq=0,cNeed=0,cWait=0,cDone=0;
+  days.forEach(function(dd){var ds=_cleanIso(dd);HCAL_SLOTS.forEach(function(slot){unitsFor(ds,slot).forEach(function(k){seq++;num[ds+'|'+slot+'|'+k]=seq;var st=_cleanTrackStatus(k).state;if(st==='need')cNeed++;else if(st==='wait')cWait++;else cDone++;});});});
+  var dhdr=days.map(function(dd){
+    var ds=_cleanIso(dd);var isToday=ds===todayStr;var diff=Math.round((dd-todayD)/86400000);
+    var dl=isToday?'今天':(diff>0?diff+'天後':Math.abs(diff)+'天前');
+    var needN=0;HCAL_SLOTS.forEach(function(slot){unitsFor(ds,slot).forEach(function(k){if(_cleanTrackStatus(k).state==='need')needN++;});});
+    var col=isToday?'var(--purple)':(diff<0?'var(--text3)':(diff<=3?'var(--red)':'var(--text2)'));
+    return '<th style="padding:5px 3px;border:1px solid var(--border);font-size:11px;min-width:90px;'+(isToday?'background:#F0EEFF;':(diff<0?'background:#ECEAE6;':''))+'-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(dd.getMonth()+1)+'/'+dd.getDate()+' <span style="color:var(--text3);font-size:10px">週'+['日','一','二','三','四','五','六'][dd.getDay()]+'</span><br><span style="font-size:10px;color:'+col+'">'+dl+'</span>'+(needN>0?' <span style="font-size:10px;color:#A32D2D">·需清'+needN+'</span>':'')+'</th>';
   }).join('');
-  if(!trs)trs='<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">'+(_cleanOnlyPending?'目前沒有需處理的戶別 🎉':'今天之後沒有已排程的戶別')+'</td></tr>';
+  var body=HCAL_SLOTS.map(function(slot){
+    var tds=days.map(function(dd){
+      var ds=_cleanIso(dd);var isPast=ds<todayStr;var isToday=ds===todayStr;
+      var cards=unitsFor(ds,slot).map(function(k){
+        var cs=_cleanTrackStatus(k);if(_cleanOnlyPending&&cs.state==='done')return '';
+        var st=_rptCalStage(k);
+        return '<div style="border:1.5px solid '+stateBd(cs.state)+';background:'+stateBg(cs.state)+';border-radius:4px;padding:2px 5px;margin-bottom:3px;display:flex;align-items:center;gap:4px;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact"><span style="color:var(--text3);font-size:9px">#'+num[ds+'|'+slot+'|'+k]+'</span><span style="font-weight:500">'+esc(unitDisplayName(k))+'</span><span style="font-size:10px;'+stageStyle[st]+';border-radius:2px;padding:0 3px">'+stageLbl[st]+'</span>'+_cleanDots(k,'#3B6D11')+'</div>';
+      }).join('');
+      return '<td style="border:1px solid var(--border);padding:3px;vertical-align:top;'+(isToday?'border-left:2px dashed var(--purple);':'')+(isPast?'background:#EFEDE9;':'')+'">'+(cards||'<span style="color:var(--text3);font-size:11px">—</span>')+'</td>';
+    }).join('');
+    return '<tr><td style="border:1px solid var(--border);padding:4px 3px;text-align:center;font-size:11px;color:var(--text2);background:var(--surface);white-space:nowrap">'+esc(slot)+'</td>'+tds+'</tr>';
+  }).join('');
+  var wtag=(mon.getMonth()+1)+'/'+mon.getDate()+'–'+(days[6].getMonth()+1)+'/'+days[6].getDate();
   el.innerHTML='<div style="padding:16px 18px">'
-    +'<div class="no-print" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px">'
+    +'<div class="no-print" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px">'
       +'<span style="font-size:16px;font-weight:600">🧹 清潔追蹤</span>'
-      +'<span style="font-size:12px;color:var(--text2)">今天之後有排驗收的戶別（'+list.length+' 戶）</span>'
+      +'<button class="btn btn-sm" onclick="cleanWeekNav(-1)" style="font-size:12px">◀ 上週</button>'
+      +'<button class="btn btn-sm'+(_cleanWeekOffset===0?' btn-p':'')+'" onclick="cleanWeekNav(0)" style="font-size:12px">本週</button>'
+      +'<button class="btn btn-sm" onclick="cleanWeekNav(1)" style="font-size:12px">下週 ▶</button>'
+      +'<span style="font-size:12px;color:var(--text2)">'+wtag+'</span>'
       +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;margin-left:6px"><input type="checkbox" '+(_cleanOnlyPending?'checked':'')+' onchange="cleanTrackToggle(this.checked)">只看需處理</label>'
       +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'cleantrack-cap\'),\'清潔追蹤_\'+todayISO()+\'.png\')" style="font-size:12px">📷 截圖</button>'
       +'<button class="btn btn-sm" onclick="_cleanTrackPrint()" style="font-size:12px">🖨 PDF</button>'
     +'</div>'
     +'<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:10px">'
+      +'<span style="color:var(--text2)">本週 '+seq+' 戶</span>'
       +'<span style="color:#A32D2D">⚠ 需安排清潔 <b>'+cNeed+'</b></span>'
       +'<span style="color:#854F0B">已安排待清 <b>'+cWait+'</b></span>'
       +'<span style="color:#3B6D11">已清完 <b>'+cDone+'</b></span>'
     +'</div>'
-    +'<div id="cleantrack-cap" style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
-      +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      +'<thead><tr style="background:var(--surface);color:var(--text2);font-size:12px">'
-        +'<th style="text-align:left;padding:8px 10px">日期</th><th style="text-align:left;padding:8px 6px">時段</th><th style="text-align:left;padding:8px 6px">戶別</th><th style="text-align:left;padding:8px 6px">階段</th><th style="text-align:left;padding:8px 6px">接待</th><th style="text-align:left;padding:8px 6px">清潔</th><th style="text-align:left;padding:8px 10px">狀態</th>'
-      +'</tr></thead><tbody>'+trs+'</tbody></table>'
+    +'<div id="cleantrack-cap" style="overflow-x:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+      +'<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
+      +'<thead><tr><th style="padding:5px 3px;border:1px solid var(--border);width:56px;font-size:11px;background:var(--surface);color:var(--text2)">時段</th>'+dhdr+'</tr></thead>'
+      +'<tbody>'+body+'</tbody></table>'
     +'</div>'
+    +'<div style="display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--text3);flex-wrap:wrap"><span>🟥 需安排　🟧 已安排待清　🟩 已清完　·　卡片＝#流水號 戶別 階段 清潔燈</span></div>'
   +'</div>';
 }
 const TAB_DEFS={
