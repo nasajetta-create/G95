@@ -264,7 +264,7 @@ import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, deleteDoc, g
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const FIREBASE_CONFIG = {
@@ -276,7 +276,8 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 109;  // ← 每次部署新版時遞增
+const CODE_VERSION = 114;  // ← 每次部署新版時遞增
+window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -291,9 +292,12 @@ const db   = getFirestore(app);
 const auth = getAuth(app);
 window._auth = auth;
 window._authSignInGoogle = function(){ return signInWithPopup(auth, new GoogleAuthProvider()); };
+window._authSignInGoogleRedirect = function(){ return signInWithRedirect(auth, new GoogleAuthProvider()); };
 window._authSignInAnon   = function(){ return signInAnonymously(auth); };
 window._authSignOut      = function(){ return signOut(auth); };
 window._onAuth           = function(cb){ return onAuthStateChanged(auth, cb); };
+// 轉頁登入返回後，完成登入（彈窗被擋時的 fallback 路徑）
+getRedirectResult(auth).catch(function(e){ console.warn('[auth] redirectResult', e); });
 const ref  = doc(db, DB_DOC);
 const metaRef = doc(db, 'projects/meta');
 
@@ -537,7 +541,7 @@ async function initVersionGate(){
   try{
     const metaSnap = await getDoc(metaRef);
     const remote = metaSnap.exists() ? (metaSnap.data().codeVersion || 0) : 0;
-    if(CODE_VERSION > remote){
+    if(CODE_VERSION > remote && !window._PREVIEW){
       await setDoc(metaRef, { codeVersion: CODE_VERSION, deployedAt: Date.now() }, { merge: true });
       console.log('[Version] 更新遠端版本號：' + remote + ' → ' + CODE_VERSION);
     }
@@ -666,7 +670,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-11</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-16</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -4952,6 +4956,7 @@ function _batchSchedPanelHTML(ns){
       +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
       +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option><option value="clear">清除清潔安排</option></select></label>'
       +'<button class="btn btn-sm" onclick="bslFillFromSlot(\''+ns+'\')" title="把目前排在上面這個日期/時段的戶別，帶成可勾選清單（預設全選，正確的取消勾選即可，不用手動打字）" style="font-size:12px">📥 抓取目前戶別</button>'
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
@@ -5011,24 +5016,32 @@ function bslClearChecked(ns){
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
   toast('已清除 '+n+' 戶的排程','🗑');
 }
-function _bslApplyOne(key,date,slot,com){
+function _bslApplyOne(key,date,slot,com,clean){
   if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
   if(date)hu.planDate=date;
   if(slot)hu.slot=slot;
   if(com==='add'){const cur=hu.inspTypes||[];if(!cur.includes('委外代驗'))hu.inspTypes=[...cur,'委外代驗'];}
   else if(com==='remove'){hu.inspTypes=(hu.inspTypes||[]).filter(x=>x!=='委外代驗');}
+  if(clean){
+    if(clean==='clear'){ hu.cleanPlanned={}; }
+    else if(clean.charAt(0)==='p'){
+      const N=parseInt(clean.slice(1),10)||0;
+      if(N>0){ if(!hu.cleanPlanned)hu.cleanPlanned={}; for(let i=1;i<=N;i++)hu.cleanPlanned[i]=true; if((hu.cleanCount||2)<N)hu.cleanCount=Math.min(4,N); }
+    }
+  }
 }
 function batchSchedByList(ns){
   const g=id=>document.getElementById(id+'-'+ns);
   const date=(g('bsl-date')||{}).value||'';
   const slot=(g('bsl-slot')||{}).value||'';
   const com=(g('bsl-com')||{}).value||'';
+  const clean=(g('bsl-clean')||{}).value||'';
   const raw=(g('bsl-units')||{}).value||'';
   const toks=_bslParseTokens(raw);
   if(!toks.length){toast('請先貼上戶別','⚠️');return;}
   const anyStar=toks.some(t=>t.star);
-  if(!date&&!slot&&!com&&!anyStar){toast('請至少選擇日期、時段或委外代驗（或在戶別後加 ＊）','⚠️');return;}
+  if(!date&&!slot&&!com&&!anyStar&&!clean){toast('請至少選擇日期、時段、委外代驗或清潔（或在戶別後加 ＊）','⚠️');return;}
   if(!S.handoverUnits)S.handoverUnits={};
   const map=_bslLookup();
   const matched=[],notfound=[];const seen=new Set();
@@ -5047,7 +5060,7 @@ function batchSchedByList(ns){
   if(!_bslConfirmBig(matched.length,'套用日期／時段／委外代驗'))return;
   _bslSnapForUndo();
   const applied=[];
-  matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com);applied.push(unitDisplayName(m.key));});
+  matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com,clean);applied.push(unitDisplayName(m.key));});
   save();reRenderActivePane();
   let msg='已排程 '+applied.length+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':'');
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
@@ -5141,15 +5154,18 @@ function toggleCancel(key){if(!S.handoverUnits)S.handoverUnits={};if(!S.handover
 // 燈號規則：只有該次「已勾選」（有日期）才顯示，未勾選完全不佔位置（V0701-03）
 function _cleanCount(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return Math.min(4,Math.max(2,hu.cleanCount||2));}
 function _cleanDates(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return hu.cleanDates||{};}
+function _cleanPlanned(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return hu.cleanPlanned||{};}
 function _cleanDots(key,accent){
-  // 2 欄式：1、2 並排；有第3次疊在1下面、有第4次疊在2下面（grid 2欄自動換行）
-  // 只渲染已勾選（有日期）的次數，未勾選的不輸出任何佔位方塊
-  const n=_cleanCount(key);const cd=_cleanDates(key);const ac=accent||'#3B6D11';
+  // 三態：已清（有日期）＝實心；已安排未清＝空心外框；未安排＝不顯示（不佔位）
+  const n=_cleanCount(key);const cd=_cleanDates(key);const cp=_cleanPlanned(key);const ac=accent||'#3B6D11';
   let items='';
   for(let i=1;i<=n;i++){
     const d=cd[i]||'';
-    if(!d)continue;
-    items+='<span title="第'+i+'次清潔：'+d+'" style="width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:'+ac+';color:#fff">'+i+'</span>';
+    if(d){
+      items+='<span title="第'+i+'次清潔：'+d+'（已清）" style="box-sizing:border-box;width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:'+ac+';color:#fff">'+i+'</span>';
+    }else if(cp[i]){
+      items+='<span title="第'+i+'次清潔：已安排、未清" style="box-sizing:border-box;width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid '+ac+';color:'+ac+'">'+i+'</span>';
+    }
   }
   if(!items)return'';
   let out='<span style="display:inline-grid;grid-template-columns:repeat(2,11px);grid-auto-rows:11px;gap:1px;vertical-align:middle;margin-left:2px">'+items+'</span>';
@@ -5203,15 +5219,16 @@ function bslApplyChecked(ns){
   const date=(g('bsl-date')||{}).value||'';
   const slot=(g('bsl-slot')||{}).value||'';
   const com=(g('bsl-com')||{}).value||'';
+  const clean=(g('bsl-clean')||{}).value||'';
   const sel=o.items.filter(it=>it.checked);
   if(!sel.length){toast('請至少勾選一戶','⚠️');return;}
-  if(!date&&!slot&&!com&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段或委外代驗','⚠️');return;}
+  if(!date&&!slot&&!com&&!clean&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段、委外代驗或清潔','⚠️');return;}
   const conflicts=_bslConflicts(sel.map(it=>it.key),date);
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
   if(!_bslConfirmBig(sel.length,'套用日期／時段／委外代驗'))return;
   if(!S.handoverUnits)S.handoverUnits={};
   _bslSnapForUndo();
-  sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com));
+  sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com,clean));
   save();
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
   toast('已套用 '+n+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':''),'✅');
@@ -9123,8 +9140,9 @@ function _rptFcHTML(refISO,total,c){var opt=_rptFcOpt();var restTxt=[opt.noSun?'
     if(fc.done){inner='<div>'+label+'　已全部完成 '+total+' 戶</div>';}
     else if(!fc.rate||fc.rate<=0){inner='<div>'+label+'　剩餘 '+fc.remain+' 戶（尚無可推估的實績，請於上方填速率）</div>';}
     else{var basis=startISO?('（'+doneCum+'÷'+_rptCountWorkdays(startISO,refISO,opt)+'）'):'';
-      inner='<div>'+label+'　剩餘 '+fc.remain+' 戶 ÷ 約 '+_rptR1(fc.rate)+' 戶/工作天'+basis+' ＝ 需 '+fc.workdays+' 個工作天</div>'
-        +'<div style="padding-left:2.6em">預計 '+_rptMMDD(fc.endISO)+'（'+_rptDOW(fc.endISO)+'）'+label+'完畢 · 不排'+restTxt+'，歷時 '+fc.calDays+' 天</div>';}
+      inner='<div><b>'+label+'</b>　剩餘 '+fc.remain+' 戶</div>'
+        +'<div style="padding-left:2.6em">約 '+_rptR1(fc.rate)+' 戶/工作天'+basis+' → 需 '+fc.workdays+' 個工作天</div>'
+        +'<div style="padding-left:2.6em">預計 '+_rptMMDD(fc.endISO)+'（'+_rptDOW(fc.endISO)+'）'+label+'完畢 · 不排'+restTxt+' · 歷時 '+fc.calDays+' 天</div>';}
     return '<div style="background:'+bg+';color:'+fg+';border-radius:8px;padding:10px 13px;margin-top:8px;line-height:'+((S.rptLineH||1.7)+0.3)+';-webkit-print-color-adjust:exact;print-color-adjust:exact">'+inner+'</div>';}
   return '<div style="margin-top:14px">'
     +'<div style="font-weight:600;margin-bottom:2px">📊 完工推估</div>'
@@ -9198,6 +9216,7 @@ function renderDailyReport(){
   if(!_rptDate)_rptDate=new Date().toISOString().slice(0,10);
   if(!S.rptFont)S.rptFont=16;
   const txt=buildDailyReportText();
+  const _sv=(S.rptSaved&&S.rptSaved[_rptDate]!=null)?S.rptSaved[_rptDate]:null;
   el.innerHTML='<div style="padding:18px 20px;max-width:560px">'
     +'<div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">'
       +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_rptDate)+'" onchange="_rptDate=this.value;renderDailyReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>'
@@ -9205,7 +9224,8 @@ function renderDailyReport(){
       +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">行距</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm" onclick="rptLineH(-1)" style="font-size:13px;padding:3px 10px">−</button><span id="rpt-lh-lbl" style="font-size:12px;color:var(--text2);min-width:30px;text-align:center">'+(S.rptLineH||1.7).toFixed(1)+'</span><button class="btn btn-sm" onclick="rptLineH(1)" style="font-size:13px;padding:3px 10px">＋</button></div></div>'
       +'<button class="btn btn-sm btn-p" onclick="copyDailyReport()" style="font-size:12px">📋 複製到剪貼簿</button>'
       +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'rpt-card\'),\'G95驗屋日報_\'+_rptDate+\'.png\')" style="font-size:12px">📷 截圖</button>'
-      +'<button class="btn btn-sm" onclick="renderDailyReport()" style="font-size:12px">↻ 重新產生</button>'
+      +'<button class="btn btn-sm btn-p" onclick="saveDailyReport()" style="font-size:12px">💾 儲存這份</button>'
+      +'<button class="btn btn-sm" onclick="regenDailyReport()" style="font-size:12px">↻ 重新產生</button>'
     +'</div>'
     +'<div class="no-print" style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:12px;padding:8px 12px;background:var(--surface);border-radius:8px;font-size:12px">'
       +'<span style="font-weight:600;color:var(--text2)">📊 完工推估</span>'
@@ -9223,9 +9243,27 @@ function renderDailyReport(){
       +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((!S.rptFc||S.rptFc.inReport!==false)?'checked':'')+' onchange="rptFcSet(\'inReport\',this.checked)">納入報告</label>'
       +'<span style="color:var(--text3);flex-basis:100%;font-size:11px">速率留空＝自動用（累計完成 ÷ 初驗開始日至今工作天）；初驗開始日留空＝自動抓最早初驗日；國定假日清單為 2026 年。</span>'
     +'</div>'
-    +'<div style="font-size:11px;color:var(--text3);margin-bottom:8px">下方內容可直接點擊修改，改完再複製／截圖。週統計為週一～週日；複驗、交屋僅在有資料時顯示。</div>'
-    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+S.rptFont+'px;line-height:'+(S.rptLineH||1.7)+';color:#1E1D1B;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:8px">下方內容可直接點擊修改，改完按「💾 儲存這份」保留你的版面；或複製／截圖。週統計為週一～週日；複驗、交屋僅在有資料時顯示。</div>'
+    +(_sv!=null?'<div class="no-print" style="font-size:11px;color:#7A4E00;background:#FBF3E2;border-radius:6px;padding:4px 9px;margin-bottom:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact">✔ 目前顯示的是你儲存的手動版本（'+_rptMMDD(_rptDate)+'）；按「↻ 重新產生」可還原自動內容。</div>':'')
+    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+S.rptFont+'px;line-height:'+(S.rptLineH||1.7)+';color:#1E1D1B;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
   +'</div>';
+}
+function saveDailyReport(){
+  const card=document.getElementById('rpt-card');if(!card)return;
+  if(!confirm('要儲存目前這份日報（含你手動修改的排版）嗎？\n儲存後這個日期（'+_rptMMDD(_rptDate)+'）會固定顯示這份，直到你按「↻ 重新產生」還原自動內容。'))return;
+  if(!S.rptSaved)S.rptSaved={};
+  S.rptSaved[_rptDate]=card.innerHTML;
+  save();
+  try{toast('已儲存這份日報（'+_rptMMDD(_rptDate)+'）','💾');}catch(e){}
+  renderDailyReport();
+}
+function regenDailyReport(){
+  if(S.rptSaved&&S.rptSaved[_rptDate]!=null){
+    if(!confirm('這個日期（'+_rptMMDD(_rptDate)+'）目前顯示的是你儲存的手動版本。\n要還原成系統自動產生的內容嗎？（會捨棄手動修改）'))return;
+    delete S.rptSaved[_rptDate];save();
+    try{toast('已還原自動內容','↻');}catch(e){}
+  }
+  renderDailyReport();
 }
 function rptFont(d){
   S.rptFont=Math.max(11,Math.min(30,(S.rptFont||16)+d));save();
@@ -9285,7 +9323,7 @@ function inspCheckRow(key){
   const cleanChk=i=>{
     const d=cleanDates[i]||'';const done=!!d;
     return '<span style="display:inline-flex;align-items:center;gap:3px">'
-      +'<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;font-weight:'+(done?'600':'400')+';color:'+(done?'#085041':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(done?'checked':'')+' onchange="setHuCleanToggle(\''+esc(key)+'\','+i+',this.checked)" style="accent-color:#0A6640;width:15px;height:15px"> 第'+i+'次</label>'
+      +'<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;font-weight:'+(done?'600':'400')+';color:'+(done?'#085041':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(done?'checked':'')+' onchange="setHuCleanToggle(\''+esc(key)+'\','+i+',this.checked)" style="accent-color:#0A6640;width:15px;height:15px"> 第'+i+'次'+((!done&&_cleanPlanned(key)[i])?'<span style="color:#3B6D11;font-size:10px;font-weight:600">·已安排</span>':'')+'</label>'
       +'<input type="date" value="'+d+'" onclick="event.stopPropagation()" onchange="setHuCleanDate(\''+esc(key)+'\','+i+',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(d?'#0A6640':'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(d?'color:#0A6640':'')+'">'
       +'</span>';
   };
@@ -9727,6 +9765,19 @@ document.addEventListener('firebase-ready',()=>{
 </script>
 
 <script>
+(function(){
+  function show(){ if(!window._PREVIEW)return; if(document.getElementById('preview-bar'))return;
+    var b=document.createElement('div'); b.id='preview-bar';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483650;background:#0C447C;color:#fff;text-align:center;padding:5px 12px;font-size:13px;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact';
+    b.textContent='🔧 預覽版 · 不影響正式版｜資料與正式版共用，請勿在此做重要編輯';
+    document.body.appendChild(b);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',show); else show();
+  setTimeout(show,1500);
+})();
+</script>
+
+<script>
 // ── 登入（Firebase Auth）──────────────────────────────────
 const LOGIN_GATE = true;
 const LOGIN_ALLOW = ['a0972955084@gmail.com','benchiapj@gmail.com','54jasonju@gmail.com','nasa.jetta@gmail.com','guoxiang0821@gmail.com','chenbobin371@gmail.com','abc128154614@gmail.com','huchingmingian@gmail.com','cchaling@gmail.com'];
@@ -9751,7 +9802,7 @@ function _loginOverlay(){
   const g=document.getElementById('login-google');if(g)g.onclick=_doGoogleLogin;
   const pb=document.getElementById('login-passbtn');if(pb)pb.onclick=_doPasscodeLogin;
 }
-function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._authSignInGoogle():Promise.reject(new Error('登入尚未啟用'))).catch(function(e){_loginMsg('登入失敗：'+((e&&e.message)||e));});}
+function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._authSignInGoogle():Promise.reject(new Error('登入尚未啟用'))).catch(function(e){var code=(e&&e.code)||'';if((code==='auth/popup-blocked'||code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request')&&window._authSignInGoogleRedirect){_loginMsg('彈窗被擋，改用轉頁登入…');window._authSignInGoogleRedirect().catch(function(e2){_loginMsg('登入失敗：'+((e2&&e2.message)||e2));});}else{_loginMsg('登入失敗：'+((e&&e.message)||e));}});}
 function _doPasscodeLogin(){const c=((document.getElementById('login-pass')||{}).value||'').trim();if(!_passcodeOk(c)){_loginMsg('通行碼錯誤或已過期');return;}_loginMsg('進入檢視模式…');(window._authSignInAnon?window._authSignInAnon():Promise.reject(new Error('未啟用'))).catch(function(e){_loginMsg('失敗：'+((e&&e.message)||e));});}
 function _doLogout(){if(window._authSignOut){window._authSignOut().then(function(){location.reload();});}else{location.reload();}}
 function _loginOnAuth(user){
