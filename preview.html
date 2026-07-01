@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#E4E4E4;--surface:#EBEBEB;--card:#fff;--border:#D6D6D6;--border2:#E7E7E7;
+  --bg:#E4E4E4;--surface:#EBEBEB;--card:#fff;--border:#D6D6D6;--border2:#E7E7E7;--pborder:#BCBDC9;
   --text:#1E1D1B;--text2:#5F5E5A;--text3:#9A9896;
   --purple:#3C3489;--green:#2E6B26;--green-lt:#EAF6E7;
   --red:#A32D2D;--red-lt:#FFF0F0;--amber:#7A4200;--amber-lt:#FFF4E0;
@@ -20,6 +20,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .shell{max-width:1700px;margin:0 auto;padding:14px}
 .page-hdr{background:#3C3489;color:#fff;font-size:18px;font-weight:700;letter-spacing:.03em;margin-bottom:14px;padding:11px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .page-hdr span{font-size:12px;font-weight:400;opacity:.65}
+.hdr-icon-btn{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
+.hdr-icon-btn:hover{color:#fff}
 .card{border-radius:14px;padding:16px;transition:box-shadow .3s}
 .card-main  {background:#F0EEF8;box-shadow:0 2px 14px rgba(60,52,137,.13)}
 .card-main:hover{box-shadow:0 8px 32px rgba(60,52,137,.22)}
@@ -36,14 +38,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 
 /* ── Tabs — 上排藥丸 pill style（方案 A，V0701-25）───────────────── */
 #mainCard{display:block;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0}
-.tabs-wrap{position:relative;margin-bottom:14px;padding-top:28px}
+.tabs-wrap{margin-bottom:14px}
 .main-col{display:block}
-.tab-btn-group{position:absolute;right:0;top:0;display:flex;gap:6px}
+.tab-btn-group{display:flex;gap:6px;align-items:center}
 .tab-edit-btn{font-size:10.5px;padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;background:var(--card);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
 .tab-edit-btn:hover{color:var(--text);border-color:var(--text2)}
 .tab-edit-btn.active{color:var(--purple);border-color:var(--purple);background:rgba(60,52,137,.06)}
-.tab-grid{display:flex;flex-wrap:wrap;gap:6px}
-.tab{padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--card);color:var(--text2);border-radius:20px;font-family:var(--font);white-space:nowrap;transition:background .12s,color .12s;user-select:none}
+.tab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.tab{padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--card);color:var(--text2);border-radius:20px;font-family:var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;text-align:left;transition:background .12s,color .12s;user-select:none}
 .tab:hover{color:var(--text);border-color:var(--text2);background:var(--surface)}
 .tab.active{background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700}
 .tab-filler{box-sizing:border-box;min-height:32px;min-width:56px;border:1px dashed transparent;border-radius:20px;visibility:hidden}
@@ -52,7 +54,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .tabs-wrap.edit-mode .tab.tab-drag-over{border-color:var(--amber);border-width:2px}
 .tab-grip{font-size:11px;color:var(--text3);line-height:1;margin-right:3px}
 /* ── 深色模式（基礎版：翻轉底色變數；少數寫死白卡/粉彩待下一步補）── */
-body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;--border2:#332E52;--text:#ECEAF6;--text2:#B4AFD2;--text3:#847FA6}
+body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;--border2:#332E52;--pborder:#565083;--text:#ECEAF6;--text2:#B4AFD2;--text3:#847FA6}
 
 /* ── Alert / Event tables ─────────────────────────── */
 .ae-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
@@ -60,13 +62,13 @@ body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;-
 .ae-tbl td{padding:5px 6px;border-bottom:1px solid var(--border2);vertical-align:middle}
 .ae-tbl tr:last-child td{border-bottom:none}
 .ae-tbl tr:hover td{background:rgba(0,0,0,.02)}
-.ae-tbl input[type=text],.ae-tbl textarea{width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);outline:none;background:var(--card)}
+.ae-tbl input[type=text],.ae-tbl textarea{width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);outline:none;background:var(--card)}
 .ae-tbl input[type=text]:focus,.ae-tbl textarea:focus{border-color:var(--purple)}
 .ae-tbl textarea{min-height:34px;resize:vertical}
-.ae-tbl input[type=date]{font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);outline:none;background:var(--card);color:var(--text)}
+.ae-tbl input[type=date]{font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);outline:none;background:var(--card);color:var(--text)}
 .ae-tbl input[type=date]:focus{border-color:var(--purple)}
-.ae-tbl select{width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);outline:none;background:var(--card)}
-.ae-sec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+.ae-tbl select{width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);outline:none;background:var(--card)}
+.ae-sec{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
 .ae-sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .ae-sec-title{font-size:13px;font-weight:700;flex:1}
 .ae-done-date{color:var(--green);font-weight:600}
@@ -100,9 +102,9 @@ body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;-
 .tab.tab-drag-over{border-bottom:2.5px solid var(--amber)!important}
 
 .bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.bar select{font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font);outline:none}
+.bar select{font-size:12px;padding:6px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font);outline:none}
 .bar select:focus{border-color:var(--purple)}
-.btn{font-size:12px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .18s}
+.btn{font-size:12px;padding:6px 12px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .18s}
 .btn:hover{background:var(--border2);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .btn-p{background:var(--purple)!important;color:#fff!important;border-color:var(--purple)!important;font-weight:500}
 .btn-p:hover{background:#2a2460!important}
@@ -118,9 +120,9 @@ body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;-
 
 .bulk-bar{display:none;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(60,52,137,.08);border:1px solid rgba(60,52,137,.2);border-radius:var(--rs);padding:8px 12px;margin-bottom:10px;font-size:12px}
 .bulk-bar.show{display:flex}
-.bulk-bar select,.bulk-bar input[type=text],.bulk-bar input[type=date]{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none;background:var(--card)}
+.bulk-bar select,.bulk-bar input[type=text],.bulk-bar input[type=date]{font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none;background:var(--card)}
 
-.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--pborder);border-radius:var(--r);background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,.07)}
 table{width:100%;border-collapse:collapse;font-size:11px}
 thead th{background:#E9E9E9;font-weight:600;font-size:10px;color:var(--text2);padding:7px 4px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:bottom}
 thead th.th-chk{width:26px;text-align:center}
@@ -136,10 +138,10 @@ tbody tr.row-sel td{background:rgba(60,52,137,.1)!important;outline:1px solid va
 td{padding:4px 4px;vertical-align:top;overflow:hidden}
 td.td-txt{white-space:pre-wrap;word-break:break-all;min-width:90px;max-width:220px}
 td.td-issue{white-space:pre-wrap;word-break:break-all;min-width:100px;max-width:240px}
-td input[type=text],td textarea,td select{font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;background:var(--card);color:var(--text);font-family:var(--font);width:100%;outline:none}
+td input[type=text],td textarea,td select{font-size:11px;padding:3px 4px;border:1px solid var(--pborder);border-radius:3px;background:var(--card);color:var(--text);font-family:var(--font);width:100%;outline:none}
 td input[type=text],td select{height:36px;box-sizing:border-box}
 td input[type=text]:focus,td select:focus,td textarea:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(60,52,137,.08)}
-td input[type=date]{font-size:10px;padding:2px 3px;border:1px solid var(--border);border-radius:3px;width:auto;background:var(--card);color:var(--text);min-width:0}
+td input[type=date]{font-size:10px;padding:2px 3px;border:1px solid var(--pborder);border-radius:3px;width:auto;background:var(--card);color:var(--text);min-width:0}
 td input[type=date]:focus{border-color:var(--purple)}
 td input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--purple)}
 td textarea{resize:vertical;min-height:32px;line-height:1.5}
@@ -165,24 +167,24 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .modal-bg.show{display:flex}
 .modal{background:var(--card);border-radius:14px;padding:22px 24px;min-width:300px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2)}
 .modal h3{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)}
-.modal input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none;margin-bottom:12px}
+.modal input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none;margin-bottom:12px}
 .modal input[type=text]:focus{border-color:var(--purple)}
 .modal .modal-btns{display:flex;gap:8px;justify-content:flex-end}
 
-.sec{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.07);transition:box-shadow .2s}
+.sec{border:1px solid var(--pborder);border-radius:var(--r);overflow:hidden;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.07);transition:box-shadow .2s}
 .sec:hover{box-shadow:0 5px 18px rgba(0,0,0,.12)}
 .sec-hdr{padding:8px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;justify-content:space-between}
 .sec-hdr-l{display:flex;align-items:center;gap:8px}
 
 .vcards{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:12px}
 .vcards-4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
-.vc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;cursor:pointer;transition:all .18s}
+.vc{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:11px 13px;cursor:pointer;transition:all .18s}
 .vc:hover{border-color:#888;transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.1)}
 .vc.sel{border:2px solid var(--purple);box-shadow:0 0 0 3px rgba(60,52,137,.12)}
 .vc-name{font-size:12px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px}
 .vc-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--border2)}
 .vcards2{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:12px}
-.vc2{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;cursor:pointer;transition:all .18s}
+.vc2{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:6px 8px;cursor:pointer;transition:all .18s}
 .vc2:hover{border-color:#888;transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.1)}
 .vc2.sel{border:2px solid var(--purple);box-shadow:0 0 0 3px rgba(60,52,137,.12)}
 .vc2.vc-done100{opacity:.6}
@@ -191,7 +193,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .vc2-stat{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vc-row:last-child{border-bottom:none}
 
-.side-editor{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;width:230px;flex-shrink:0;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.side-editor{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:13px;width:230px;flex-shrink:0;box-shadow:0 1px 5px rgba(0,0,0,.07)}
 /* drag-sortable list */
 .ed-list{list-style:none}
 .ed-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2);cursor:default}
@@ -200,18 +202,18 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .drag-handle{cursor:grab;color:var(--text3);font-size:14px;flex-shrink:0;user-select:none;padding:0 2px}
 .drag-handle:active{cursor:grabbing}
 
-.ztab{padding:7px 14px;font-size:12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:var(--card);color:var(--text2);font-family:var(--font);font-weight:500;transition:all .15s}
+.ztab{padding:7px 14px;font-size:12px;border:1px solid var(--pborder);border-radius:20px;cursor:pointer;background:var(--card);color:var(--text2);font-family:var(--font);font-weight:500;transition:all .15s}
 .ztab:hover{border-color:#888;transform:translateY(-1px)}
 .ztab.active{color:#fff;border-color:transparent;font-weight:600}
 .zs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}
-.zs-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;border-left:4px solid transparent;cursor:pointer;transition:all .18s}
+.zs-card{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:11px 13px;border-left:4px solid transparent;cursor:pointer;transition:all .18s}
 .zs-card:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.1)}
 .zs-card.sel{box-shadow:0 0 0 2px var(--purple)}
 .zs-title{font-size:12px;font-weight:600;margin-bottom:7px}
 .zs-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--border2)}
 .zs-row:last-child{border-bottom:none}
 .zs-grid2{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
-.zs2-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;border-left:3px solid transparent;cursor:pointer;transition:all .18s}
+.zs2-card{background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:8px 10px;border-left:3px solid transparent;cursor:pointer;transition:all .18s}
 .zs2-card:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.1)}
 .zs2-card.sel{box-shadow:0 0 0 2px var(--purple)}
 .zs2-card.zs2-done100{opacity:.6}
@@ -269,7 +271,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 123;  // ← 每次部署新版時遞增
+const CODE_VERSION = 126;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -663,18 +665,18 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-25</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-28</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
+    <div class="tab-btn-group no-print">
+      <button class="tab-edit-btn" id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button>
+      <button class="tab-edit-btn" id="tab-edit-btn" onclick="toggleTabEditMode()">🔓 編輯排序</button>
+      <button class="tab-edit-btn" id="theme-toggle" onclick="toggleTheme()">🌙 深色</button>
+    </div>
   </div>
   <div class="card card-main" id="mainCard">
     <div class="tabs-wrap" id="tab-bar-wrap">
-      <div class="tab-btn-group">
-        <button class="tab-edit-btn" id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button>
-        <button class="tab-edit-btn" id="tab-edit-btn" onclick="toggleTabEditMode()">🔓 編輯排序</button>
-        <button class="tab-edit-btn" id="theme-toggle" onclick="toggleTheme()">🌙 深色</button>
-      </div>
       <div id="tab-bar"></div>
     </div>
     <div class="main-col">
@@ -931,11 +933,14 @@ function _computeDirtyFields(){
   // changelog
   if((S.changelog||[]).length !== (_savedSnapshot.changelog||[]).length) dirty.add('changelog');
   else if(JSON.stringify((S.changelog||[]).slice(0,5)) !== JSON.stringify((_savedSnapshot.changelog||[]).slice(0,5))) dirty.add('changelog');
-  // meta: 其餘欄位
-  const metaKeys = ['zones','zoneUnits','zoneFloors','handoverUnits','clientData','floorConfig',
-    'unitConfig','publicAreaList','unitFloorLock','managerDetails','tabOrder',
-    'vendors','managers','alerts','events','nextId','nextCompId'];
-  for(const k of metaKeys){
+  // meta：所有「非核心四欄（rows/completed/trash/changelog）」的欄位。
+  // 與 _splitState 完全對齊——凡是會被塞進 meta 文件的 key 都在此比對，
+  // 避免新增欄位（如 appTitle/rptFc/rptSaved/viewPass/hostBadgeMode…）因未列入白名單
+  // 而漏判、導致只改這些欄位時儲存被跳過、資料未寫入 Firestore。
+  const CORE = {rows:1, completed:1, trash:1, changelog:1};
+  const allKeys = new Set([...Object.keys(S), ...Object.keys(_savedSnapshot)]);
+  for(const k of allKeys){
+    if(CORE[k]) continue;
     if(JSON.stringify(S[k]) !== JSON.stringify(_savedSnapshot[k])){ dirty.add('meta'); break; }
   }
   return dirty;
@@ -1344,9 +1349,9 @@ function openFloorConfigModal(){
   modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
     <div style="font-size:14px;font-weight:700;margin-bottom:12px">⚙️ 樓層範圍設定</div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">頂樓層數（R?F）<input id="fc-roof" type="number" min="0" max="9" value="${fc.roof}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
-      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地面層數（1F~?F）<input id="fc-top" type="number" min="1" max="99" value="${fc.top}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
-      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地下層數（B?F）<input id="fc-basement" type="number" min="0" max="9" value="${fc.basement}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs)"></label>
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">頂樓層數（R?F）<input id="fc-roof" type="number" min="0" max="9" value="${fc.roof}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs)"></label>
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地面層數（1F~?F）<input id="fc-top" type="number" min="1" max="99" value="${fc.top}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs)"></label>
+      <label style="font-size:12px;display:flex;justify-content:space-between;align-items:center">地下層數（B?F）<input id="fc-basement" type="number" min="0" max="9" value="${fc.basement}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs)"></label>
       <div style="font-size:11px;color:var(--text2)">樓層順序：R${fc.roof}F...R1F → ${fc.top}F...1F → B1F...B${fc.basement}F</div>
     </div>
     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
@@ -1432,15 +1437,15 @@ function openZoneConfigModal(){
     <div style="font-size:14px;font-weight:700;margin-bottom:12px">🏗 區域樓層／戶別設定</div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
       <span style="font-size:11px;color:var(--text2)">選擇區域</span>
-      <select id="zc-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)" onchange="loadZoneConfigFields()">${zoneOptsHtml}</select>
+      <select id="zc-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs)" onchange="loadZoneConfigFields()">${zoneOptsHtml}</select>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
       <span style="font-size:11px;color:var(--text2)">樓層清單（逗號分隔，可用~表示範圍，如B1F~B5F；留空表示不限制）</span>
-      <input id="zc-floors" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)">
+      <input id="zc-floors" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs)">
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
       <span style="font-size:11px;color:var(--text2)">戶別清單（逗號分隔，可用~表示範圍，如店A1~店A30；留空表示不限制）</span>
-      <input id="zc-units" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs)">
+      <input id="zc-units" type="text" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs)">
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="document.getElementById('zone-cfg-modal').remove()">取消</button>
@@ -1629,17 +1634,17 @@ function showInlineAdd(){
         <button class="btn btn-sm" onclick="resetMultiSelection()">🔄 重置套用選擇</button>
         <button class="btn btn-sm" onclick="undoLastAction()">↩️ 還原上一步</button>
       </div>
-      <div id="ia-multi-zone-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+      <div id="ia-multi-zone-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--pborder);border-radius:var(--rs)">
         <div style="font-size:10px;color:var(--text2);margin-bottom:4px">勾選區域會自動加選/取消該區域所有戶別</div>
         <div id="ia-multi-zones" style="display:flex;flex-wrap:wrap;gap:4px"></div>
       </div>
-      <div id="ia-multi-floor-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+      <div id="ia-multi-floor-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--pborder);border-radius:var(--rs)">
         <div style="font-size:10px;color:var(--text2);margin-bottom:4px">勾選樓層會自動加選/取消該樓層所有戶別</div>
         <div id="ia-multi-floors" style="display:flex;flex-wrap:wrap;gap:4px"></div>
       </div>
-      <div id="ia-multi-unit-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:var(--rs)">
+      <div id="ia-multi-unit-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--pborder);border-radius:var(--rs)">
         <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="ia-multi-search" placeholder="搜尋戶別..." oninput="renderMultiUnitList()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <input type="text" id="ia-multi-search" placeholder="搜尋戶別..." oninput="renderMultiUnitList()" style="font-size:11px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
           <button class="btn btn-sm" onclick="multiUnitSelectAll(true)">全選</button>
           <button class="btn btn-sm" onclick="multiUnitSelectAll(false)">取消全選</button>
         </div>
@@ -1650,16 +1655,16 @@ function showInlineAdd(){
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">區域</span>
-        <select id="ia-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.zone=this.value;refreshUnitSelect();refreshFloorSelect()">${zoneOpts}</select>
+        <select id="ia-zone" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.zone=this.value;refreshUnitSelect();refreshFloorSelect()">${zoneOpts}</select>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">管理人</span>
-        <select id="ia-mgr" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.manager=this.value">${mgrOpts}</select>
+        <select id="ia-mgr" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.manager=this.value">${mgrOpts}</select>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">戶別</span>
         <div style="display:flex;align-items:center;gap:6px">
-          <select id="ia-unit" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:80px" onchange="_pendingRow.unit=this.value;applyUnitFloorLock()">
+          <select id="ia-unit" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:80px" onchange="_pendingRow.unit=this.value;applyUnitFloorLock()">
             <option value="">戶別</option>
             ${zoneUnitList(_pendingRow.zone).map(u=>`<option value="${esc(u)}" ${u===_pendingRow.unit?'selected':''}>${esc(u)}</option>`).join('')}
           </select>
@@ -1672,7 +1677,7 @@ function showInlineAdd(){
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">樓層</span>
         <div style="display:flex;gap:3px;align-items:center">
-          <select id="ia-floor" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:75px" onchange="_pendingRow.floor=this.value">
+          <select id="ia-floor" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:75px" onchange="_pendingRow.floor=this.value">
             <option value="">樓層</option>
             ${zoneFloorList(_pendingRow.zone).map(f=>`<option value="${esc(f)}" ${f===_pendingRow.floor?'selected':''}>${esc(f)}</option>`).join('')}
           </select>
@@ -1682,29 +1687,29 @@ function showInlineAdd(){
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">輪次</span>
-        <select id="ia-round" onchange="_pendingRow.round=this.value" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:82px">${['初驗','複驗1','複驗2','複驗3','複驗4','複驗5'].map(o=>`<option value="${o}" ${(_pendingRow.round||'初驗')===o?'selected':''}>${o}</option>`).join('')}</select>
+        <select id="ia-round" onchange="_pendingRow.round=this.value" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:82px">${['初驗','複驗1','複驗2','複驗3','複驗4','複驗5'].map(o=>`<option value="${o}" ${(_pendingRow.round||'初驗')===o?'selected':''}>${o}</option>`).join('')}</select>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">廠商</span>
         <div style="display:flex;gap:3px;align-items:center">
-          <input id="ia-vendor" type="text" list="ia-vendor-list" placeholder="輸入關鍵字搜尋廠商" value="${esc(S.vendors[0]||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:120px" oninput="_pendingRow.vendor=this.value">
+          <input id="ia-vendor" type="text" list="ia-vendor-list" placeholder="輸入關鍵字搜尋廠商" value="${esc(S.vendors[0]||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:120px" oninput="_pendingRow.vendor=this.value">
           <datalist id="ia-vendor-list">${vendorOpts}</datalist>
           <button class="btn btn-sm" onclick="(function(){const n=prompt('新廠商名稱（需以合約代號開頭，如 025B、D306）');if(!n||!n.trim())return;if(!/^[0-9A-Za-z]/.test(n.trim())){toast('請在前面加合約代號（數字或英文字母開頭）','⚠️');return;}S.vendors.push(n.trim());save();const dl=document.getElementById('ia-vendor-list');const opt=document.createElement('option');opt.value=n.trim();dl.appendChild(opt);const inp=document.getElementById('ia-vendor');inp.value=n.trim();_pendingRow.vendor=n.trim();toast('已新增廠商：'+n.trim())})()" style="padding:3px 7px;font-size:11px;flex-shrink:0">＋</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px">
         <span style="font-size:10px;color:var(--text2)">缺失內容</span>
-        <input id="ia-issue" type="text" placeholder="缺失內容（必填）" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:100%" oninput="_pendingRow.issue=this.value">
+        <input id="ia-issue" type="text" placeholder="缺失內容（必填）" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:100%" oninput="_pendingRow.issue=this.value">
       </div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:8px">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">預計進場</span>
-        <input id="ia-planIn" type="date" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="(function(v){_pendingRow.planIn=v;if(!_pendingRow.planDone){_pendingRow.planDone=v;const d=document.getElementById('ia-planDone');if(d&&!d.value)d.value=v;}})(this.value)">
+        <input id="ia-planIn" type="date" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="(function(v){_pendingRow.planIn=v;if(!_pendingRow.planDone){_pendingRow.planDone=v;const d=document.getElementById('ia-planDone');if(d&&!d.value)d.value=v;}})(this.value)">
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">預計完成</span>
-        <input id="ia-planDone" type="date" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.planDone=this.value">
+        <input id="ia-planDone" type="date" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="_pendingRow.planDone=this.value">
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:10px">
@@ -1825,7 +1830,7 @@ function renderMultiUnitList(){
   const units=unitsInZones(_activeMultiZones()).filter(u=>!q||u.toLowerCase().includes(q));
   list.innerHTML=units.map(u=>{
     const checked=_pendingRow.multiUnitsManual.has(u);
-    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#F0EEFF':'#fff'}">`
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--pborder);border-radius:12px;cursor:pointer;background:${checked?'#F0EEFF':'#fff'}">`
       +`<input type="checkbox" ${checked?'checked':''} onchange="toggleMultiUnit('${esc(u)}',this.checked)" style="margin:0">${esc(u)}</label>`;
   }).join('');
   updateMultiUnitCount();
@@ -1838,7 +1843,7 @@ function renderMultiFloorList(){
   const floors=uniqueFloors().map(f=>({f,fu:unitsOnFloor(f,zs)})).filter(x=>x.fu.length>0);
   wrap.innerHTML=floors.map(({f,fu})=>{
     const checked=_pendingRow.multiFloors.has(f);
-    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#E6F4EA':'#fff'}">`
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--pborder);border-radius:12px;cursor:pointer;background:${checked?'#E6F4EA':'#fff'}">`
       +`<input type="checkbox" ${checked?'checked':''} onchange="toggleFloorSelect('${esc(f)}',this.checked)" style="margin:0">${esc(f)}（${fu.length}戶）</label>`;
   }).join('');
 }
@@ -1854,7 +1859,7 @@ function renderMultiZoneList(){
     const checked=_pendingRow.multiZones.has(z);
     const _zo=S.zones.find(x=>x.id===z)||{};
     const _blockBadge=_zo.block?`<span style="font-size:9px;font-weight:700;color:#fff;background:${_zo.block==='A'?'#1565C0':'#6A1E6A'};padding:0 4px;border-radius:2px;margin-right:2px">${_zo.block}</span>`:'';
-    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:${checked?'#FFF3E0':'#fff'}">`
+    return `<label style="font-size:11px;display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--pborder);border-radius:12px;cursor:pointer;background:${checked?'#FFF3E0':'#fff'}">`
       +`<input type="checkbox" ${checked?'checked':''} onchange="toggleZoneSelect('${esc(z)}',this.checked)" style="margin:0">${_blockBadge}${esc(zLabel(z))}（${zu.length}戶${range}）</label>`;
   }).join('');
 }
@@ -2017,7 +2022,7 @@ function showSelectMenu(btn,visIds,allFilteredIds){
   const rect=btn.getBoundingClientRect();
   const menu=document.createElement('div');
   menu.id='sel-menu';
-  menu.style.cssText='position:fixed;z-index:9999;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.15);padding:4px 0;min-width:185px;font-size:12px;font-family:var(--font)';
+  menu.style.cssText='position:fixed;z-index:9999;background:#fff;border:1px solid var(--pborder);border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.15);padding:4px 0;min-width:185px;font-size:12px;font-family:var(--font)';
   menu.style.top=(rect.bottom+4)+'px';menu.style.left=rect.left+'px';
   const allSelOnPage=visIds.length>0&&visIds.every(id=>selectedIds.has(id));
   const allSelFiltered=allFiltered.length>0&&allFiltered.every(id=>selectedIds.has(id));
@@ -2619,7 +2624,7 @@ function pgBarHTML(total, page, onClickFn){
   btns+=`<button class="pg-btn no-print" ${page>=pages-1?'disabled':''} onclick="${onClickFn}(${page+1})">›</button>`;
   btns+=`<span class="pg-info">${start}–${end} / 共 ${total} 筆</span>`;
   // 快速跳頁
-  btns+=`<input type="number" min="1" max="${pages}" value="${page+1}" onchange="gotoMainPage(this.value-1,${pages})" style="width:48px;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:6px;text-align:center;font-family:var(--font)" title="跳至頁數">`;
+  btns+=`<input type="number" min="1" max="${pages}" value="${page+1}" onchange="gotoMainPage(this.value-1,${pages})" style="width:48px;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:6px;text-align:center;font-family:var(--font)" title="跳至頁數">`;
   return `<div class="pg-bar">${btns}</div>`;
 }
 function setMainPage(p){mainPage=p;renderMain();}
@@ -2657,10 +2662,10 @@ function bulkBarHTML(visIds,allFilteredIds){
     <span style="font-weight:600;color:var(--purple)">已選 ${n} 筆</span>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding-bottom:7px;border-bottom:0.5px solid #C8C5F4;margin-bottom:7px">
       <span style="font-size:11px;color:var(--text2);flex-shrink:0">批次填入日期：</span>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkPlanIn" style="accent-color:var(--purple)"> 預計進場 <input type="date" id="bMPlanIn" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkPlanDone" style="accent-color:var(--purple)"> 預計完成 <input type="date" id="bMPlanDone" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkActIn" style="accent-color:var(--purple)"> 實際進場 <input type="date" id="bMActIn" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkActDone" style="accent-color:var(--purple)"> 實際完成 <input type="date" id="bMActDone" style="font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkPlanIn" style="accent-color:var(--purple)"> 預計進場 <input type="date" id="bMPlanIn" style="font-size:11px;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkPlanDone" style="accent-color:var(--purple)"> 預計完成 <input type="date" id="bMPlanDone" style="font-size:11px;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkActIn" style="accent-color:var(--purple)"> 實際進場 <input type="date" id="bMActIn" style="font-size:11px;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="bChkActDone" style="accent-color:var(--purple)"> 實際完成 <input type="date" id="bMActDone" style="font-size:11px;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);height:24px"></label>
       <button class="btn btn-p" onclick="applyBulkDates()" style="padding:3px 10px;font-size:11px">套用日期</button>
     </div>
     <select id="bField" style="width:100px">
@@ -2788,7 +2793,7 @@ function alertsHTML(){
   const bulkBar=selCount?`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#F0EEFF;border-radius:var(--rs);margin-bottom:6px;flex-wrap:wrap">
     <span style="font-size:12px;font-weight:600;color:var(--purple)">已選 ${selCount} 筆</span>
     <label style="font-size:12px;color:var(--text2)">批次填入完成日期：
-      <input type="date" id="alert-bulk-date" style="margin-left:4px;font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+      <input type="date" id="alert-bulk-date" style="margin-left:4px;font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
     </label>
     <button class="btn btn-p btn-sm" onclick="alertBulkComplete()">✅ 確認完成並移至已完成看板</button>
     <button class="btn btn-d btn-sm" onclick="alertBulkDelete()">🗑 批次刪除</button>
@@ -3171,7 +3176,7 @@ function renderMain(){
   const uCheckboxes=units.map(u=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;cursor:pointer;white-space:nowrap" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.has(u)?'checked':''} onclick="event.stopPropagation()" onchange="window._fUnitSet=window._fUnitSet||new Set();this.checked?window._fUnitSet.add('${esc(u).replace(/'/g,"\\'")}'):window._fUnitSet.delete('${esc(u).replace(/'/g,"\\'")}');mainPage=0;renderMain()"> ${esc(u)}</label>`).join('');
   const uDropdown=`<div style="position:relative;display:inline-block">
     <button class="btn${fUnitSet.size>0?' btn-p':''}" id="fUnit-btn" onclick="toggleMainUnitMenu()" style="font-size:12px;padding:5px 10px;min-width:110px;text-align:left">${unitBtnLabel} ▾</button>
-    <div id="fUnit-menu" style="display:none;position:absolute;top:calc(100% + 2px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);z-index:200;min-width:150px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)">
+    <div id="fUnit-menu" style="display:none;position:absolute;top:calc(100% + 2px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);z-index:200;min-width:150px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)">
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-bottom:1px solid var(--border2)" onclick="event.stopPropagation()" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){window._fUnitSet=new Set();mainPage=0;renderMain();}"> 全部</label>
       ${uCheckboxes}
     </div>
@@ -3196,7 +3201,7 @@ function renderMain(){
     <div class="bar">
       ${uDropdown}
       <select id="fFloor" onchange="mainPage=0;renderMain()"><option value="">全部樓層</option>${flOp}</select>
-      <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
+      <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
       <datalist id="fVendor-list">${vOpDl}</datalist>
       <select id="fZone" onchange="mainPage=0;renderMain()"><option value="">全部區域</option>${zOp}</select>
       <select id="fRound" onchange="mainPage=0;renderMain()" title="只看某輪次"><option value="">全部輪次</option>${(()=>{const rs=[...new Set(['初驗','複驗1','複驗2','複驗3',...S.rows.map(r=>r.round).filter(Boolean)])].sort((a,b)=>inspOrderVal(a)-inspOrderVal(b));return rs.map(x=>'<option value="'+esc(x)+'" '+(x===fRound?'selected':'')+'>'+esc(x)+'</option>').join('')+'<option value="自檢" '+(fRound==='自檢'?'selected':'')+'>自檢</option>';})()}</select>
@@ -3210,8 +3215,8 @@ function renderMain(){
       </select>
       ${(()=>{const missCnt=S.rows.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);}).length;return missCnt?`<button class="btn no-print" onclick="applyMissingDateFilter()" style="background:#FFF8E6;color:#6B4D00;border-color:#D4A900;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 已完成未填日期 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#F5C842;color:#5A3E00;font-weight:600">${missCnt}</span></button>`:'';})()}
       ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;return missVendorCnt?`<button class="btn no-print" onclick="applyMissingVendorFilter()" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:20px;font-size:11px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px">⚠️ 未填廠商 <span style="font-size:10px;padding:1px 5px;border-radius:20px;background:#E24B4A;color:#fff;font-weight:600">${missVendorCnt}</span></button>`:'';})()}
-      <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
-      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:140px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()">
+      <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
+      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:140px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()">
       <button class="btn btn-p no-print" onclick="showInlineAdd()">＋ 新增</button>
       <button class="btn no-print" onclick="exportCSV()">↓ CSV</button>
       <button class="btn btn-pdf no-print" id="mainPdf">🖨 PDF</button>
@@ -3313,13 +3318,13 @@ function _patchMgrDetail(statsMap){
       // selMgr 與 zone 都沒變：只更新 detail-editor（職位/擔單），不重建大表格
       const _mSelTitle=(S.managerDetails[selMgr]||{}).title||'';
       const _mSelDuty=(S.managerDetails[selMgr]||{}).duty||'';
-      const mDetailEditorHTML=`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--border);border-radius:var(--rs)">
+      const mDetailEditorHTML=`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--pborder);border-radius:var(--rs)">
     <div style="font-size:12px;font-weight:600;margin-bottom:8px">📝 ${esc(selMgr)} 基本資料</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
         </div>
@@ -3327,7 +3332,7 @@ function _patchMgrDetail(statsMap){
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
         </div>
@@ -3356,13 +3361,13 @@ function _patchMgrDetail(statsMap){
   }
   const _mSelTitle=(S.managerDetails[selMgr]||{}).title||'';
   const _mSelDuty=(S.managerDetails[selMgr]||{}).duty||'';
-  const mDetailEditorHTML=selMgr?`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--border);border-radius:var(--rs)">
+  const mDetailEditorHTML=selMgr?`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--pborder);border-radius:var(--rs)">
     <div style="font-size:12px;font-weight:600;margin-bottom:8px">📝 ${esc(selMgr)} 基本資料</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
         </div>
@@ -3370,7 +3375,7 @@ function _patchMgrDetail(statsMap){
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
         </div>
@@ -3422,7 +3427,7 @@ function vendorEditorHTML(){
   const countBadge=v=>{const c=S.rows.filter(r=>r.vendor===v).length;return c?`<span style="font-size:10px;color:var(--text3);margin-left:4px">(${c}項)</span>`:'';}
   const pills=sorted.map(v=>{
     const col=vColor(v);
-    return`<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:4px">
+    return`<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fff;border:1px solid var(--pborder);border-radius:6px;margin-bottom:4px">
       <span style="width:8px;height:8px;border-radius:2px;background:${col};flex-shrink:0"></span>
       <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}${countBadge(v)}</span>
       <button class="btn btn-sm" style="flex-shrink:0;padding:2px 6px;font-size:10px" onclick="editVendorModal(${S.vendors.indexOf(v)})">✏️</button>
@@ -3430,7 +3435,7 @@ function vendorEditorHTML(){
   }).join('');
   return`<div style="margin-bottom:8px">
     <div style="display:flex;gap:5px;align-items:center;margin-bottom:8px">
-      <select id="vendorSortSel" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_vendorSort=this.value;renderVendor()">
+      <select id="vendorSortSel" style="font-size:11px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="_vendorSort=this.value;renderVendor()">
         <option value="order"${_vendorSort==='order'?' selected':''}>依順序</option>
         <option value="az"${_vendorSort==='az'?' selected':''}>A → Z</option>
         <option value="za"${_vendorSort==='za'?' selected':''}>Z → A</option>
@@ -3440,22 +3445,22 @@ function vendorEditorHTML(){
     <div style="max-height:260px;overflow-y:auto;padding-right:2px">${pills||'<div style="font-size:12px;color:var(--text3)">尚無廠商</div>'}</div>
   </div>
   <div style="display:flex;gap:6px;margin-top:8px">
-    <input id="nvInp" type="text" placeholder="新增廠商" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addVendor()">
+    <input id="nvInp" type="text" placeholder="新增廠商" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addVendor()">
     <button class="btn btn-p" onclick="addVendor()">＋</button>
   </div>`;
 }
 function zoneEditorHTML(){
   const pills=S.zones.map(z=>{
-    return`<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:4px">
+    return`<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fff;border:1px solid var(--pborder);border-radius:6px;margin-bottom:4px">
       <input type="color" value="${esc(z.color)}" style="width:18px;height:18px;border:none;border-radius:3px;cursor:pointer;flex-shrink:0;padding:0" onchange="changeZoneColor('${z.id}',this.value)">
       <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${z.color};font-weight:500">${esc(z.label)}</span>
-      <select style="font-size:10px;border:1px solid var(--border);border-radius:3px;padding:1px 2px;flex-shrink:0;cursor:pointer" onchange="setZoneBlock('${z.id}',this.value)"><option value="" ${!z.block?'selected':''}>全棟</option><option value="A" ${z.block==='A'?'selected':''}>A</option><option value="B" ${z.block==='B'?'selected':''}>B</option></select>
+      <select style="font-size:10px;border:1px solid var(--pborder);border-radius:3px;padding:1px 2px;flex-shrink:0;cursor:pointer" onchange="setZoneBlock('${z.id}',this.value)"><option value="" ${!z.block?'selected':''}>全棟</option><option value="A" ${z.block==='A'?'selected':''}>A</option><option value="B" ${z.block==='B'?'selected':''}>B</option></select>
       <button class="btn btn-sm" style="flex-shrink:0;padding:2px 6px;font-size:10px" onclick="editZoneModal('${z.id}')">✏️</button>
     </div>`;
   }).join('');
   return`<div style="max-height:240px;overflow-y:auto;margin-bottom:8px;padding-right:2px">${pills}</div>
   <div style="display:flex;gap:6px;margin-top:4px">
-    <input id="nzInp" type="text" placeholder="新增分區名稱" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addZone()">
+    <input id="nzInp" type="text" placeholder="新增分區名稱" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addZone()">
     <button class="btn btn-p" onclick="addZone()">＋</button>
   </div>
   <div style="font-size:10px;color:var(--text3);margin-top:5px">🎨 色塊可修改分區顏色</div>`;
@@ -3517,7 +3522,7 @@ function mgrEditorHTML(statsMap){
   }).join('');
   return`<div style="margin-bottom:8px">
     <div style="display:flex;gap:5px;align-items:center;margin-bottom:8px">
-      <select id="mgrListSortSel" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="_mgrListSort=this.value;_refreshMgrEditorBody()">
+      <select id="mgrListSortSel" style="font-size:11px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="_mgrListSort=this.value;_refreshMgrEditorBody()">
         <option value="order"${sortSel==='order'?' selected':''}>依順序</option>
         <option value="az"${sortSel==='az'?' selected':''}>A → Z</option>
         <option value="za"${sortSel==='za'?' selected':''}>Z → A</option>
@@ -3527,9 +3532,9 @@ function mgrEditorHTML(statsMap){
     <div style="max-height:420px;overflow-y:auto;padding-right:2px">${pills||'<div style="font-size:12px;color:var(--text3)">尚無管理人員</div>'}</div>
   </div>
   <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-    <input id="nmInp" type="text" placeholder="新增管理人姓名" style="flex:2;min-width:90px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
-    <input id="nmTitleInp" type="text" list="dl-mgr-title" placeholder="職位（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
-    <input id="nmDutyInp" type="text" list="dl-mgr-duty" placeholder="擔當（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+    <input id="nmInp" type="text" placeholder="新增管理人姓名" style="flex:2;min-width:90px;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+    <input id="nmTitleInp" type="text" list="dl-mgr-title" placeholder="職位（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
+    <input id="nmDutyInp" type="text" list="dl-mgr-duty" placeholder="擔當（選填）" style="flex:1;min-width:80px;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')addManager()">
     <button class="btn btn-p" onclick="addManager()">＋</button>
   </div>`;
 }
@@ -3923,7 +3928,7 @@ function renderMgr(){
     const det=S.managerDetails[m]||{title:'',duty:''};const mc=mgrColor(m);
     return`<div class="vc${sel?' sel':''}" id="mcard-${esc(m)}" onclick="toggleSelMgr('${esc(m)}')" style="min-width:140px">
       <div class="vc-name"><span style="width:9px;height:9px;border-radius:50%;background:${mc.bg};display:inline-block;flex-shrink:0"></span>${esc(m)}</div>
-      <div style="font-size:10px;color:var(--text3);margin:2px 0 4px">${esc(det.title||'—')} ${det.duty?'｜'+esc(det.duty):''}</div><div style="display:flex;align-items:center;gap:5px;margin:0 0 5px" onclick="event.stopPropagation()"><span style="width:18px;height:18px;border-radius:50%;background:${mc.bg};color:${mc.text};font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${esc(mgrCode(m))}</span><span style="font-size:10px;color:var(--text3)">代碼</span><input value="${esc((S.managerDetails[m]||{}).code||'')}" maxlength="1" placeholder="${esc(m.slice(0,1))}" onclick="event.stopPropagation()" onchange="setMgrCode('${esc(m)}',this.value)" style="width:40px;text-align:center;font-size:12px;padding:2px 3px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>
+      <div style="font-size:10px;color:var(--text3);margin:2px 0 4px">${esc(det.title||'—')} ${det.duty?'｜'+esc(det.duty):''}</div><div style="display:flex;align-items:center;gap:5px;margin:0 0 5px" onclick="event.stopPropagation()"><span style="width:18px;height:18px;border-radius:50%;background:${mc.bg};color:${mc.text};font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${esc(mgrCode(m))}</span><span style="font-size:10px;color:var(--text3)">代碼</span><input value="${esc((S.managerDetails[m]||{}).code||'')}" maxlength="1" placeholder="${esc(m.slice(0,1))}" onclick="event.stopPropagation()" onchange="setMgrCode('${esc(m)}',this.value)" style="width:40px;text-align:center;font-size:12px;padding:2px 3px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></div>
       <div class="vc-row"><span style="color:var(--text2)">負責項目</span><b>${total}</b></div>
       <div class="vc-row"><span style="color:var(--text2)">已完成</span><b style="color:var(--green)">${done}</b></div>
       <div class="vc-row"><span style="color:var(--text2)">逾期</span><b style="color:var(--red)">${over}</b></div>
@@ -3962,13 +3967,13 @@ function renderMgr(){
 
   const _mSelTitle=(S.managerDetails[selMgr]||{}).title||'';
   const _mSelDuty=(S.managerDetails[selMgr]||{}).duty||'';
-  const mDetailEditor=selMgr?`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--border);border-radius:var(--rs)">
+  const mDetailEditor=selMgr?`<div style="margin-top:12px;padding:10px;background:#FAF9F7;border:1px solid var(--pborder);border-radius:var(--rs)">
     <div style="font-size:12px;font-weight:600;margin-bottom:8px">📝 ${esc(selMgr)} 基本資料</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">職位</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrTitleInp" value="${esc(_mSelTitle)}" placeholder="輸入或選擇職位" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrTitleInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','title',document.getElementById('mgrTitleInp').value)">確認</button>
         </div>
@@ -3976,7 +3981,7 @@ function renderMgr(){
       <div style="flex:1;min-width:120px">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">擔單</div>
         <div style="display:flex;gap:4px">
-          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);box-sizing:border-box">
+          <input type="text" id="mgrDutyInp" value="${esc(_mSelDuty)}" placeholder="輸入或選擇擔當" style="flex:1;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);box-sizing:border-box">
           <button class="btn btn-sm" onclick="document.getElementById('mgrDutyInp').value=''">清除</button>
           <button class="btn btn-p btn-sm" onclick="updMgrDetail('${esc(selMgr)}','duty',document.getElementById('mgrDutyInp').value)">確認</button>
         </div>
@@ -4094,7 +4099,7 @@ function _evScheduleHtml(){
   const head='<tr style="background:var(--surface);color:var(--text2);font-size:11px"><th style="text-align:left;padding:6px 8px">事件</th><th style="padding:6px 8px">預計工期</th><th style="padding:6px 8px">實際工期</th><th style="padding:6px 8px">工期差異</th><th style="padding:6px 8px">差異%</th><th style="padding:6px 8px">完工延誤</th><th style="padding:6px 8px">狀態</th></tr>';
   const foot='<tr style="background:var(--surface);font-weight:700;font-size:12px"><td style="padding:6px 8px">總計／平均</td><td style="text-align:center;padding:6px 8px">'+sumPlan+'天</td><td style="text-align:center;padding:6px 8px">'+sumAct+'天</td><td style="text-align:center;padding:6px 8px;color:'+c(sumDiff)+'">'+sign(sumDiff)+'天</td><td style="text-align:center;padding:6px 8px;color:'+c(avgPct)+'">'+sign(avgPct)+'%</td><td colspan="2"></td></tr>';
   const open=window._evSchedOpen;
-  return '<div class="no-print" style="border:1px solid var(--border);border-radius:var(--r);margin-top:14px;overflow:hidden">'
+  return '<div class="no-print" style="border:1px solid var(--pborder);border-radius:var(--r);margin-top:14px;overflow:hidden">'
     +'<div onclick="toggleEvSched()" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--surface);cursor:pointer;user-select:none"><span style="font-size:14px;font-weight:600">⏱ 時程分析（點到點工期 vs 預計）</span><span style="font-size:13px;color:var(--text2)">'+(open?'▾ 收合':'▸ 展開')+'</span></div>'
     +(open?('<div style="overflow-x:auto;padding:4px 8px 10px"><table style="width:100%;border-collapse:collapse;min-width:560px"><thead>'+head+'</thead><tbody>'+(rows||'<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3)">尚無事件</td></tr>')+'</tbody><tfoot>'+foot+'</tfoot></table><div style="font-size:10px;color:var(--text3);margin-top:6px">工期＝完成−開始；差異＝實際−預計（＋超時/紅、−提前/綠）；未完成以今天計並標「進行中」。</div></div>'):'')
     +'</div>';
@@ -4546,7 +4551,7 @@ function renderHandover(){
       return`<div style="display:flex;flex-direction:column;gap:2px">
         <span style="font-size:11px;color:var(--text2)">${esc(ins.label)}</span>
         <div style="display:flex;align-items:center;gap:3px">
-          <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:13px;padding:4px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
+          <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:13px;padding:4px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
           <button class="btn btn-sm btn-d" onclick="delHuInspH2('${esc(key)}',${i})" style="padding:2px 4px;font-size:10px">—</button>
         </div>
       </div>`;
@@ -4562,8 +4567,8 @@ function renderHandover(){
       ${inspCheckRow(key)}
       ${hostPickerHtml(key)}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><span style="font-size:11px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
-        <div><span style="font-size:11px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+        <div><span style="font-size:11px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+        <div><span style="font-size:11px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:14px;padding:5px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text2)">驗屋方式：</span>
@@ -4573,7 +4578,7 @@ function renderHandover(){
       <div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
         <div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:11px;color:var(--text2)">預定驗收</span>
-          <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:14px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:14px;padding:5px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
         </div>
         ${inspCols}
         <button class="btn btn-sm" onclick="addHuInspH2('${esc(key)}')" style="padding:3px 8px;align-self:flex-end">＋</button>
@@ -4670,7 +4675,7 @@ function renderHandover(){
   else if(_be.sortBy==='pctDesc')_beUnits=[..._beUnits].sort((a,b)=>_beUnitPct(b)-_beUnitPct(a));
   else if(_be.sortBy==='floorAsc')_beUnits=[..._beUnits].sort((a,b)=>_floorRank(_beUnitFloor(a))-_floorRank(_beUnitFloor(b)));
   else if(_be.sortBy==='floorDesc')_beUnits=[..._beUnits].sort((a,b)=>_floorRank(_beUnitFloor(b))-_floorRank(_beUnitFloor(a)));
-  const batchExportPanel=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+  const batchExportPanel=`<div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
     <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);${_be.open?'border-bottom:1px solid var(--border);':''}gap:10px;flex-wrap:wrap;cursor:pointer" onclick="window._batchExport.open=!window._batchExport.open;renderHandover()">
       <span style="font-size:12px;font-weight:700">📦 批次匯出驗屋缺失PDF</span>
       <span style="font-size:11px;color:var(--text2);margin-left:auto">${_be.open?'▲ 收合':'▼ 展開'}</span>
@@ -4678,17 +4683,17 @@ function renderHandover(){
     ${_be.open?`<div style="padding:10px 12px">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
         <span style="font-size:11px;color:var(--text2)">驗屋日期：</span>
-        <select onchange="window._batchExport.date=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+        <select onchange="window._batchExport.date=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="">請選擇</option>
           ${_beDates.map(d=>`<option value="${esc(d)}" ${_be.date===d?'selected':''}>${esc(d)}</option>`).join('')}
         </select>
         <span style="font-size:11px;color:var(--text2);margin-left:8px">時段：</span>
-        <select onchange="window._batchExport.slot=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+        <select onchange="window._batchExport.slot=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="">全部時段</option>
           ${HCAL_SLOTS.map((s,i)=>`<option value="${esc(s)}" ${_be.slot===s?'selected':''}>第${i+1}時段 ${esc(s)}</option>`).join('')}
         </select>
         <span style="font-size:11px;color:var(--text2);margin-left:8px">排序：</span>
-        <select onchange="window._batchExport.sortBy=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+        <select onchange="window._batchExport.sortBy=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="" ${_be.sortBy===''?'selected':''}>預設</option>
           <option value="pctAsc" ${_be.sortBy==='pctAsc'?'selected':''}>完成度 A-Z</option>
           <option value="pctDesc" ${_be.sortBy==='pctDesc'?'selected':''}>完成度 Z-A</option>
@@ -4696,7 +4701,7 @@ function renderHandover(){
           <option value="floorDesc" ${_be.sortBy==='floorDesc'?'selected':''}>樓層 Z-A</option>
         </select>
         <span style="font-size:11px;color:var(--text2);margin-left:8px">狀態：</span>
-        <select onchange="window._batchExport.statusFilter=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+        <select onchange="window._batchExport.statusFilter=this.value;window._batchExport.selected=new Set();renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="" ${_be.statusFilter===''?'selected':''}>全部</option>
           <option value="pending" ${_be.statusFilter==='pending'?'selected':''}>未完成</option>
           <option value="done" ${_be.statusFilter==='done'?'selected':''}>已完成</option>
@@ -4726,7 +4731,7 @@ function renderHandover(){
   </div>`;
 
   document.getElementById('pane-handover').innerHTML=`
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+    <div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
       <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700">📊 缺失進度修繕分析表</span>
         <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
@@ -4751,7 +4756,7 @@ function renderHandover(){
     ${batchExportPanel}
     <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap;padding:7px 8px;background:var(--surface);border-radius:var(--rs)">
       <span style="font-size:11px;color:var(--text2);flex-shrink:0">篩選：</span>
-      <select onchange="window._hovFilter.planDate=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select onchange="window._hovFilter.planDate=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="" ${hf.planDate===''?'selected':''}>預定驗收日</option>
         <option value="has" ${hf.planDate==='has'?'selected':''}>已設定驗收日</option>
         <option value="none" ${hf.planDate==='none'?'selected':''}>未設定驗收日</option>
@@ -4760,16 +4765,16 @@ function renderHandover(){
       </select>
       <div style="position:relative;display:inline-block">
         <button class="btn btn-sm no-print${hf.dateExact?' btn-p':''}" onclick="toggleHovDatePicker(this)" id="hov-date-btn" style="font-size:11px">${_dateLabel2}</button>
-        <div id="hov-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
+        <div id="hov-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
           <div style="font-size:11px;color:var(--text2);margin-bottom:6px">選擇驗收日期：</div>
-          <input type="date" id="hov-date-inp" value="${esc(hf.dateExact||'')}" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:160px">
+          <input type="date" id="hov-date-inp" value="${esc(hf.dateExact||'')}" style="font-size:13px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:160px">
           <div style="display:flex;gap:6px;margin-top:8px">
             <button class="btn btn-p btn-sm" onclick="window._hovFilter.dateExact=document.getElementById('hov-date-inp').value;document.getElementById('hov-date-picker').style.display='none';renderHandover()">套用</button>
             <button class="btn btn-sm" onclick="window._hovFilter.dateExact='';document.getElementById('hov-date-picker').style.display='none';renderHandover()">清除</button>
           </div>
         </div>
       </div>
-      <select onchange="window._hovFilter.type=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select onchange="window._hovFilter.type=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="" ${hf.type===''?'selected':''}>類別</option>
         <option value="地主戶" ${hf.type==='地主戶'?'selected':''}>地主戶</option>
         <option value="自購戶" ${hf.type==='自購戶'?'selected':''}>自購戶</option>
@@ -4781,7 +4786,7 @@ function renderHandover(){
         const active=v===b;
         return`<button onclick="window._hovFilter.block='${b}';renderHandover()" style="font-size:11px;padding:2px 9px;border:1px solid ${active?'var(--purple)':'var(--border)'};background:${active?'#F0EEFF':'var(--card)'};color:${active?'var(--purple)':'var(--text2)'};border-radius:3px;cursor:pointer;margin-right:2px">${{all:'全部',A:'A棟',B:'B棟',shop:'店鋪'}[b]}</button>`;
       }).join('')}
-      <select onchange="window._hovFilter.tier=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font);margin-left:6px">
+      <select onchange="window._hovFilter.tier=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font);margin-left:6px">
         <option value="" ${!(hf.tier||'')?'selected':''}>完成度</option>
         <option value="0" ${(hf.tier||'')==='0'?'selected':''}>100%（可交屋）</option>
         <option value="1" ${(hf.tier||'')==='1'?'selected':''}>90-99%（7天內可完成）</option>
@@ -4949,21 +4954,21 @@ function _batchSchedPanelHTML(ns){
   const slots=['','09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'];
   const slotOpts=slots.map(s=>'<option value="'+s+'">'+(s||'— 時段（不變更）—')+'</option>').join('');
   const head='<div onclick="toggleBsl()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#F0EEFF;cursor:pointer;user-select:none"><span style="font-size:13px;font-weight:700;color:#3C3489">📋 貼上戶別批次排程</span><span style="font-size:12px;color:#3C3489">'+(open?'▾ 收合':'▸ 展開')+'</span></div>';
-  if(!open)return '<div style="border:1px solid #C9C3F0;border-radius:8px;margin-bottom:12px;overflow:hidden">'+head+'</div>';
+  if(!open)return '<div style="border:2px solid #7C77DD;border-radius:10px;margin-bottom:14px;box-shadow:0 2px 10px rgba(60,52,137,.13);overflow:hidden">'+head+'</div>';
   const body='<div style="padding:10px 12px;background:#FAF9FF">'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'
-      +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
-      +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
-      +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
-      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option><option value="clear">清除清潔安排</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
+      +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option><option value="clear">清除清潔安排</option></select></label>'
       +'<button class="btn btn-sm" onclick="bslFillFromSlot(\''+ns+'\')" title="把目前排在上面這個日期/時段的戶別，帶成可勾選清單（預設全選，正確的取消勾選即可，不用手動打字）" style="font-size:12px">📥 抓取目前戶別</button>'
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
-    +'<textarea id="bsl-units-'+ns+'" rows="2" placeholder="貼上戶別，例：B1-9F、B3-23＊、B6-10（戶別後加 ＊ ＝委外代驗；頓號／逗號／空格／換行皆可；或用上方「📥 抓取目前戶別」自動帶入）" style="width:100%;box-sizing:border-box;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical"></textarea>'
+    +'<textarea id="bsl-units-'+ns+'" rows="2" placeholder="貼上戶別，例：B1-9F、B3-23＊、B6-10（戶別後加 ＊ ＝委外代驗；頓號／逗號／空格／換行皆可；或用上方「📥 抓取目前戶別」自動帶入）" style="width:100%;box-sizing:border-box;font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);resize:vertical"></textarea>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="batchSchedByList(\''+ns+'\')" style="font-size:12px">✓ 套用到這些戶別</button><button class="btn btn-d btn-sm" onclick="batchClearByList(\''+ns+'\')" title="清除這些戶別的驗收日期與時段（移出行事曆，接待人員與缺失保留）" style="font-size:12px">🗑 批次清除排程</button><button class="btn btn-sm" onclick="bslExpandOwners(\''+ns+'\')" style="font-size:12px">👥 帶出同屋主</button><span style="font-size:11px;color:var(--text3)">＊＝委外代驗；找不到的戶別會跳過並回報。</span></div>'
     +'<div id="bsl-owner-'+ns+'">'+_bslOwnerChecklistHTML(ns)+'</div>'
   +'</div>';
-  return '<div style="border:1px solid #C9C3F0;border-radius:8px;margin-bottom:12px;overflow:hidden">'+head+body+'</div>';
+  return '<div style="border:2px solid #7C77DD;border-radius:10px;margin-bottom:14px;box-shadow:0 2px 10px rgba(60,52,137,.13);overflow:hidden">'+head+body+'</div>';
 }
 function _bslParseTokens(raw){
   return raw.split(/[、,，;；\s]+/).map(t=>t.trim()).filter(Boolean).map(t=>{
@@ -5381,7 +5386,7 @@ function _pwoVendorBlock(v,list){
     const head='<tr style="background:var(--surface);color:var(--text2);font-size:11px"><th class="no-print" style="background:#FAEEDA;padding:5px 6px">完成<br><span style="font-size:9px;color:#854F0B">不列印</span></th><th style="padding:5px 6px">編碼</th><th style="padding:5px 6px">戶別</th><th style="padding:5px 6px">樓層</th><th style="padding:5px 6px">區域</th><th style="text-align:left;padding:5px 6px">缺失內容</th><th style="padding:5px 6px">接待</th><th style="padding:5px 6px">'+_pwoRound+'完成</th><th style="padding:5px 6px">預計進場</th><th style="padding:5px 6px">預計完成</th><th style="padding:5px 6px">實際進場</th><th style="padding:5px 6px">實際完成</th></tr>';
     body='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:820px">'+head+rows+'</table></div>';
   }
-  return '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px">'
+  return '<div style="border:1px solid var(--pborder);border-radius:12px;overflow:hidden;margin-bottom:10px">'
     +'<div onclick="pwoToggleOpen(\''+_jsq(v)+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:#F0EEFF;flex-wrap:wrap;cursor:pointer">'
       +'<input type="checkbox" '+(_pwoSel.has(v)?'checked':'')+' onclick="event.stopPropagation();pwoToggleSel(\''+_jsq(v)+'\')" title="勾選後可用「展開勾選」批次展開">'
       +'<span style="font-size:13px;color:#3C3489;width:12px">'+(open?'▾':'▸')+'</span>'
@@ -5407,16 +5412,16 @@ function renderPWO(){
   el.innerHTML='<div style="padding:16px 18px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
       +'<span style="font-size:15px;font-weight:700">📋 廠商派工單</span>'
-      +'<label style="font-size:12px;color:var(--text2)">輪次 <select onchange="pwoSetRound(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+roundOpts+'</select></label>'
-      +'<label style="font-size:12px;color:var(--text2)">驗屋日 <select onchange="pwoSetDay(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+dayOpts+'</select></label>'
-      +'<input type="text" value="'+esc(_pwoSearch)+'" oninput="pwoSearch(this.value)" placeholder="🔍 搜尋廠商/戶別/缺失/#編號" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:190px">'
+      +'<label style="font-size:12px;color:var(--text2)">輪次 <select onchange="pwoSetRound(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+roundOpts+'</select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">驗屋日 <select onchange="pwoSetDay(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+dayOpts+'</select></label>'
+      +'<input type="text" value="'+esc(_pwoSearch)+'" oninput="pwoSearch(this.value)" placeholder="🔍 搜尋廠商/戶別/缺失/#編號" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:190px">'
       +'<button class="btn btn-sm no-print" onclick="pwoOpenAll()" style="font-size:12px">全部展開</button>'
       +'<button class="btn btn-sm no-print" onclick="pwoCloseAll()" style="font-size:12px">全部收合</button>'
       +'<button class="btn btn-sm no-print" onclick="pwoOpenSel()" style="font-size:12px">展開勾選</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
-      +'<label style="font-size:12px;color:var(--text2)">排序 <select onchange="pwoSetSort(this.value)" style="font-size:13px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+sortOpts+'</select></label>'
-      +'<label style="font-size:12px;color:var(--text2)">匯出範圍 <select id="pwo-scope" style="font-size:13px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="all">全部廠商</option><option value="sel">僅勾選</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">排序 <select onchange="pwoSetSort(this.value)" style="font-size:13px;height:32px;padding:0 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+sortOpts+'</select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">匯出範圍 <select id="pwo-scope" style="font-size:13px;height:32px;padding:0 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="all">全部廠商</option><option value="sel">僅勾選</option></select></label>'
       +'<button class="btn btn-p no-print" onclick="pwoExport(\'one\')" style="font-size:13px;height:32px;padding:0 14px">📦 合併一份</button>'
       +'<button class="btn no-print" onclick="pwoExport(\'split\')" style="font-size:13px;height:32px;padding:0 14px">🗂 各家分檔（自動下載）</button>'
     +'</div>'
@@ -5492,7 +5497,7 @@ function renderHStats(){
     </tr>`;
   }).join('');
 
-  const summaryTable=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+  const summaryTable=`<div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#E9E9E9;cursor:pointer" onclick="_hstatsTableOpen=!_hstatsTableOpen;renderHStats()">
       <span style="font-size:13px;font-weight:600">📋 交屋狀態統計表</span>
       <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
@@ -5584,7 +5589,7 @@ function renderHStats(){
         return`<div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:10px;color:var(--text2)">${esc(ins.label)}</span>
           <div style="display:flex;align-items:center;gap:3px">
-            <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
+            <input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(key)}',${i},this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}">
             <button class="btn btn-sm btn-d" onclick="event.stopPropagation();delHuInspH2('${esc(key)}',${i})" style="padding:1px 4px;font-size:9px">—</button>
           </div>
         </div>`;
@@ -5595,8 +5600,8 @@ function renderHStats(){
       expandHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">
         ${inspCheckRow(key)}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px">
-          <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
-          <div><span style="font-size:10px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+          <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br><input value="${esc(cl.name||'')}" placeholder="姓名" onchange="setCl('${esc(key)}','name',this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
+          <div><span style="font-size:10px;color:var(--text2)">電話</span><br><input value="${esc(cl.tel||'')}" placeholder="電話" onchange="setCl('${esc(key)}','tel',this.value)" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:2px"></div>
         </div>
         ${parkChips?`<div style="margin-bottom:7px;display:flex;flex-wrap:wrap;gap:4px">${parkChips}</div>`:''}
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
@@ -5607,11 +5612,11 @@ function renderHStats(){
         <div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
           <div style="display:flex;flex-direction:column;gap:2px">
             <span style="font-size:10px;color:var(--text2)">預定驗收</span>
-            <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+            <input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(key)}','planDate',this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:2px 4px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
           </div>
           <div style="display:flex;flex-direction:column;gap:2px">
             <span style="font-size:10px;color:var(--text2)">驗收時段</span>
-            <select onchange="setHuField('${esc(key)}','slot',this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+            <select onchange="setHuField('${esc(key)}','slot',this.value)" onclick="event.stopPropagation()" style="font-size:10px;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
               <option value="" ${!hu.slot?'selected':''}>— 未設定 —</option>
               <option value="09:00–10:20" ${hu.slot==='09:00–10:20'?'selected':''}>09:00–10:20</option>
               <option value="10:30–11:50" ${hu.slot==='10:30–11:50'?'selected':''}>10:30–11:50</option>
@@ -5786,7 +5791,7 @@ function renderHStats(){
     <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
       <span style="font-size:12px;color:var(--text2);flex-shrink:0">篩選：</span>
 
-      <select onchange="_hstatsPlanDate=this.value;renderHStats()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select onchange="_hstatsPlanDate=this.value;renderHStats()" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="" ${fPlanDate===''?'selected':''}>預定驗收日</option>
         <option value="has" ${fPlanDate==='has'?'selected':''}>已設定驗收日</option>
         <option value="none" ${fPlanDate==='none'?'selected':''}>未設定驗收日</option>
@@ -5796,9 +5801,9 @@ function renderHStats(){
 
       <div style="position:relative;display:inline-block">
         <button class="btn no-print${fDateExact?' btn-p':''}" id="hstats-date-btn" onclick="toggleHStatsDatePicker(this)" style="font-size:12px">${_dateLabel}</button>
-        <div id="hstats-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
+        <div id="hstats-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
           <div style="font-size:11px;color:var(--text2);margin-bottom:6px">選擇要篩選的驗收日期：</div>
-          <input type="date" id="hstats-date-inp" value="${esc(fDateExact)}" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:160px">
+          <input type="date" id="hstats-date-inp" value="${esc(fDateExact)}" style="font-size:13px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:160px">
           <div style="display:flex;gap:6px;margin-top:8px">
             <button class="btn btn-p btn-sm" onclick="applyHStatsDate()">套用</button>
             <button class="btn btn-sm" onclick="window._hstatsDateExact='';document.getElementById('hstats-date-picker').style.display='none';renderHStats()">清除</button>
@@ -5808,7 +5813,7 @@ function renderHStats(){
 
       <div style="position:relative;display:inline-block">
         <button class="btn no-print" id="hstats-ts-btn" onclick="toggleHStatsMenu('hstats-ts-menu',this)" style="font-size:12px">${window._hstatsTs&&window._hstatsTs.size>0?`時段（已選 ${window._hstatsTs.size}）`:'時段'} ▾</button>
-        <div id="hstats-ts-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px;z-index:99;min-width:150px">
+        <div id="hstats-ts-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:6px;z-index:99;min-width:150px">
           ${['09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'].map(ts=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${(window._hstatsTs||new Set()).has(ts)?'checked':''} value="${ts}" onclick="event.stopPropagation()" onchange="window._hstatsTs=window._hstatsTs||new Set();this.checked?window._hstatsTs.add(this.value):window._hstatsTs.delete(this.value);updateMenuLabel('hstats-ts-btn',window._hstatsTs,'時段')"> ${ts}</label>`).join('')}
           <div style="padding:4px 6px;margin-top:4px;border-top:1px solid var(--border2)"><button class="btn btn-p btn-sm" style="width:100%" onclick="document.getElementById('hstats-ts-menu').style.display='none';renderHStats()">套用</button></div>
         </div>
@@ -5816,7 +5821,7 @@ function renderHStats(){
 
       <div style="position:relative;display:inline-block">
         <button class="btn no-print" id="hstats-blk-btn" onclick="toggleHStatsMenu('hstats-blk-menu',this)" style="font-size:12px">${fBlock.size>0?`棟別（已選 ${fBlock.size}）`:'棟別'} ▾</button>
-        <div id="hstats-blk-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px;z-index:99;min-width:110px">
+        <div id="hstats-blk-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:6px;z-index:99;min-width:110px">
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fBlock.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){_hstatsBlock=new Set();document.querySelectorAll('#hstats-blk-menu input[type=checkbox]:not(:first-of-type)').forEach(c=>c.checked=false);}updateMenuLabel('hstats-blk-btn',_hstatsBlock,'棟別')"> 全部</label>
           ${['A','B','shop'].map(b=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fBlock.has(b)?'checked':''} value="${b}" onclick="event.stopPropagation()" onchange="_hstatsBlock=_hstatsBlock||new Set();this.checked?_hstatsBlock.add(this.value):_hstatsBlock.delete(this.value);updateMenuLabel('hstats-blk-btn',_hstatsBlock,'棟別')"> ${b==='A'?'A棟':b==='B'?'B棟':'店鋪'}</label>`).join('')}
           <div style="padding:4px 6px;margin-top:4px;border-top:1px solid var(--border2)"><button class="btn btn-p btn-sm" style="width:100%" onclick="document.getElementById('hstats-blk-menu').style.display='none';renderHStats()">套用</button></div>
@@ -5825,7 +5830,7 @@ function renderHStats(){
 
       <div style="position:relative;display:inline-block">
         <button class="btn no-print" id="hstats-fl-btn" onclick="toggleHStatsMenu('hstats-fl-menu',this)" style="font-size:12px">${fFloors.size>0?`樓層（已選 ${fFloors.size}）`:'樓層'} ▾</button>
-        <div id="hstats-fl-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px;z-index:99;min-width:110px;max-height:260px;overflow-y:auto">
+        <div id="hstats-fl-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:6px;z-index:99;min-width:110px;max-height:260px;overflow-y:auto">
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fFloors.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){_hstatsFloors=new Set();}updateMenuLabel('hstats-fl-btn',_hstatsFloors,'樓層')"> 全部</label>
           ${G95_FLOORS.map(fl=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fFloors.has(String(fl))?'checked':''} value="${fl}" onclick="event.stopPropagation()" onchange="_hstatsFloors=_hstatsFloors||new Set();this.checked?_hstatsFloors.add(this.value):_hstatsFloors.delete(this.value);updateMenuLabel('hstats-fl-btn',_hstatsFloors,'樓層')"> ${fl}F</label>`).join('')}
           <div style="padding:4px 6px;margin-top:4px;border-top:1px solid var(--border2)"><button class="btn btn-p btn-sm" style="width:100%;position:sticky;bottom:0" onclick="document.getElementById('hstats-fl-menu').style.display='none';renderHStats()">套用</button></div>
@@ -5834,7 +5839,7 @@ function renderHStats(){
 
       <div style="position:relative;display:inline-block">
         <button class="btn no-print" id="hstats-col-btn" onclick="toggleHStatsMenu('hstats-col-menu',this)" style="font-size:12px">${fUnitCols.size>0?`戶別（已選 ${fUnitCols.size}）`:'戶別'} ▾</button>
-        <div id="hstats-col-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:6px;z-index:99;min-width:140px;max-height:280px;overflow-y:auto">
+        <div id="hstats-col-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:6px;z-index:99;min-width:140px;max-height:280px;overflow-y:auto">
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitCols.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){_hstatsUnitCols=new Set();}updateMenuLabel('hstats-col-btn',_hstatsUnitCols,'戶別')"> 全部</label>
           <div style="font-size:10px;color:var(--text3);padding:3px 8px;margin-top:2px">A 棟</div>
           ${G95_A_COLS.map(c2=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitCols.has(c2)?'checked':''} value="${c2}" onclick="event.stopPropagation()" onchange="_hstatsUnitCols=_hstatsUnitCols||new Set();this.checked?_hstatsUnitCols.add(this.value):_hstatsUnitCols.delete(this.value);updateMenuLabel('hstats-col-btn',_hstatsUnitCols,'戶別')"> ${c2}</label>`).join('')}
@@ -5844,7 +5849,7 @@ function renderHStats(){
         </div>
       </div>
 
-      <select onchange="_hstatsType=this.value;renderHStats()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select onchange="_hstatsType=this.value;renderHStats()" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="" ${fType===''?'selected':''}>類別</option>
         <option value="地主戶" ${fType==='地主戶'?'selected':''}>地主戶</option>
         <option value="自購戶" ${fType==='自購戶'?'selected':''}>自購戶</option>
@@ -5867,9 +5872,9 @@ function renderHStats(){
         <span style="font-size:12px;color:var(--text2);flex-shrink:0;font-weight:500">批次變更：</span>
         <div style="position:relative;display:inline-block">
           <button class="btn no-print" id="bch-date-btn" onclick="toggleHStatsMenu('bch-date-picker',this)" style="font-size:12px">${window._bchDate?`📅 ${window._bchDate}`:'選取日期'}</button>
-          <div id="bch-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
+          <div id="bch-date-picker" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:10px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.14)">
             <div style="font-size:11px;color:var(--text2);margin-bottom:6px">批次填入預定驗收日期：</div>
-            <input type="date" id="bch-date-inp" value="${esc(window._bchDate||'')}" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:160px">
+            <input type="date" id="bch-date-inp" value="${esc(window._bchDate||'')}" style="font-size:13px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:160px">
             <div style="display:flex;gap:6px;margin-top:8px">
               <button class="btn btn-p btn-sm" onclick="const v=document.getElementById('bch-date-inp').value;window._bchDate=v;document.getElementById('bch-date-picker').style.display='none';updateBchDateBtn()">套用</button>
               <button class="btn btn-sm" onclick="window._bchDate='';document.getElementById('bch-date-picker').style.display='none';updateBchDateBtn()">清除</button>
@@ -5878,11 +5883,11 @@ function renderHStats(){
         </div>
         <div style="position:relative;display:inline-block">
           <button class="btn no-print" id="bch-ts-btn" onclick="toggleHStatsMenu('bch-ts-menu',this)" style="font-size:12px">${window._bchTs?`🕐 ${window._bchTs}`:'時段'} ▾</button>
-          <div id="bch-ts-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:8px;z-index:99;min-width:160px">
+          <div id="bch-ts-menu" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:8px;z-index:99;min-width:160px">
             ${['','09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'].map(ts=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-radius:4px"><input type="radio" name="bch-ts" value="${ts}" ${window._bchTs===ts?'checked':''} onclick="event.stopPropagation()" onchange="window._bchTs=this.value;updateBchTsBtn();document.getElementById('bch-ts-menu').style.display='none'"> ${ts||'— 不變更 —'}</label>`).join('')}
           </div>
         </div>
-        <select id="bch-type-sel" onchange="window._bchTypeVal=this.value" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+        <select id="bch-type-sel" onchange="window._bchTypeVal=this.value" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
           <option value="" ${!window._bchTypeVal?'selected':''}>類別（不變更）</option>
           <option value="地主戶" ${window._bchTypeVal==='地主戶'?'selected':''}>地主戶</option>
           <option value="自購戶" ${window._bchTypeVal==='自購戶'?'selected':''}>自購戶</option>
@@ -5938,7 +5943,7 @@ function buildUnitDefectTable(unitKey){
     const rowBg=done?'background:rgba(59,109,17,.04);':st==='overdue'?'background:rgba(163,45,45,.04);':'';
     return`<tr style="border-bottom:1px solid var(--border2);${rowBg}"><td style="padding:5px 6px;text-align:center"><input type="checkbox" ${done?'checked disabled':''} onchange="quickCompleteDefect(${r.id})" style="width:15px;height:15px;cursor:${done?'default':'pointer'}" title="${done?'已完成':'勾選標記為完成'}"></td><td style="padding:5px 6px;font-size:12px;color:var(--text3);text-align:right;width:24px">${idx+1}</td><td style="padding:5px 6px;font-size:12px">${roundBadgeSmall(r)}${esc(r.vendor)}</td><td style="padding:5px 6px;font-size:12px;max-width:180px;word-break:break-word">${esc(r.issue)}</td><td style="padding:5px 6px;font-size:12px;white-space:nowrap">${r.planDone||'—'}</td><td style="padding:5px 6px;font-size:12px;color:${stColor}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stColor||'var(--text3)'};margin-right:4px;vertical-align:middle"></span>${stLabel}</td></tr>`;
   }).join('');
-  return`<div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--rs)"><table style="width:100%;border-collapse:collapse"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+  return`<div style="overflow-x:auto;border:1px solid var(--pborder);border-radius:var(--rs)"><table style="width:100%;border-collapse:collapse"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 }
 // ── Defect lookup cache（renderHandover/renderHStats 開頭呼叫 _buildDefectCache() 建立）──
 let _defectCache=null;
@@ -6183,8 +6188,8 @@ function renderHPend(){
       const _seq=_unitIdx[it.unit];
       const _cntBadge=_tot>1?`<span style="font-size:8px;background:#555;color:#fff;padding:0 3px;border-radius:2px;margin-left:2px">${_seq}</span>`:'';
       const _ubadge=`<span style="display:inline-flex;align-items:center;gap:2px;background:${_cs.bg};border:1px solid ${_cs.border};color:${_cs.text};border-radius:3px;padding:1px 5px;font-size:11px;white-space:nowrap"><span style="font-size:8px;background:${_cs.border};color:#fff;padding:0 3px;border-radius:2px">${_cs.label}</span>${esc(it.unit)}${_cntBadge}</span>`;
-      const inCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planIn)}</div><input type="date" value="${r.actualIn||''}" style="font-size:10px;width:100%;border:1px solid var(--border);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualIn',this.value)">`;
-      const doneCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planDone)}</div><input type="date" value="${r.actualDone||''}" style="font-size:10px;width:100%;border:1px solid var(--border);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualDone',this.value)">`;
+      const inCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planIn)}</div><input type="date" value="${r.actualIn||''}" style="font-size:10px;width:100%;border:1px solid var(--pborder);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualIn',this.value)">`;
+      const doneCell=`<div style="font-size:9px;color:var(--text3);white-space:nowrap">預 ${fmtMD(r.planDone)}</div><input type="date" value="${r.actualDone||''}" style="font-size:10px;width:100%;border:1px solid var(--pborder);border-radius:3px;padding:1px 2px;box-sizing:border-box" onchange="hpendUpdateActual(${r.id},'actualDone',this.value)">`;
       const _idLink=`<span onclick="event.stopPropagation();gotoMainRow(${r.id})" style="cursor:pointer;font-size:9px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;padding:0 4px;color:#555;margin-right:4px;white-space:nowrap;flex-shrink:0" title="跳至追蹤總表">#${r.id}</span>`;
       return`<tr><td style="white-space:nowrap">${esc(it.planDate.slice(5))}</td><td>${_ubadge}</td><td><div style="display:flex;align-items:flex-start;gap:2px">${_idLink}${esc(it.row.issue)}</div></td><td>${inCell}</td><td>${doneCell}</td><td style="text-align:right;color:${HPEND_ST_COLOR[it.st]};white-space:nowrap">${HPEND_ST_LABEL[it.st]||''}</td></tr>`;
     }).join('');
@@ -6216,7 +6221,7 @@ function renderHPend(){
         <button class="btn btn-pdf no-print" onclick="printHPendBatch()">🖨 列印已選廠商（${selectedCount}）</button>
       </div>
     </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
+    <div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:10px 12px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--text2);margin-bottom:6px">交屋日期（可複選）</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">${dateChips}</div>
       <div style="border-top:1px solid var(--border2);padding-top:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -6340,7 +6345,7 @@ function buildExpandedUnit(key){
   const parkChips=allPark.map((p,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#E6F1FB;color:#0C447C;border-radius:20px;font-size:11px">🚗 ${esc(p)} <input type="checkbox" title="已驗收" ${(hu.parkChecked||{})[p]?'checked':''} onchange="setHuParkCheck('${key}','${esc(p)}',this.checked)" style="accent-color:var(--green);cursor:pointer"></span>`).join('');
   const inspRows=(hu.inspections||[]).map((ins,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
     <span style="font-size:11px;min-width:60px;color:var(--text2)">${esc(ins.label)}</span>
-    <input type="date" value="${esc(ins.date||'')}" onchange="setHuInsp('${key}',${i},'date',this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+    <input type="date" value="${esc(ins.date||'')}" onchange="setHuInsp('${key}',${i},'date',this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
     <button class="btn btn-sm btn-d" onclick="delHuInsp('${key}',${i})">✕</button>
   </div>`).join('');
   // 缺失數量統計
@@ -6362,11 +6367,11 @@ function buildExpandedUnit(key){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
       <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br>
-        <input value="${esc(cl.name)}" placeholder="姓名" onchange="setCl('${key}','name',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
+        <input value="${esc(cl.name)}" placeholder="姓名" onchange="setCl('${key}','name',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
       <div><span style="font-size:10px;color:var(--text2)">聯絡電話</span><br>
-        <input value="${esc(cl.tel)}" placeholder="電話" onchange="setCl('${key}','tel',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
+        <input value="${esc(cl.tel)}" placeholder="電話" onchange="setCl('${key}','tel',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
       <div><span style="font-size:10px;color:var(--text2)">戶別類型</span><br>
-        <select onchange="setCl('${key}','type',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
+        <select onchange="setCl('${key}','type',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
           <option ${cl.type==='地主戶'?'selected':''}>地主戶</option>
           <option ${cl.type==='業主戶'?'selected':''}>業主戶</option>
           <option ${cl.type==='自購戶'?'selected':''}>自購戶</option>
@@ -6386,11 +6391,11 @@ function buildExpandedUnit(key){
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px">
       <div>
         <span style="font-size:10px;color:var(--text2)">預定驗收日期</span><br>
-        <input type="date" value="${esc(hu.planDate||'')}" onchange="setHu('${key}','planDate',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px;width:100%">
+        <input type="date" value="${esc(hu.planDate||'')}" onchange="setHu('${key}','planDate',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px;width:100%">
       </div>
       <div>
         <span style="font-size:10px;color:var(--text2)">驗收時段</span><br>
-        <select onchange="setHu('${key}','slot',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
+        <select onchange="setHu('${key}','slot',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
           <option value="" ${!hu.slot?'selected':''}>— 未設定 —</option>
           <option value="09:00–10:20" ${hu.slot==='09:00–10:20'?'selected':''}>09:00–10:20</option>
           <option value="10:30–11:50" ${hu.slot==='10:30–11:50'?'selected':''}>10:30–11:50</option>
@@ -6404,7 +6409,7 @@ function buildExpandedUnit(key){
       </div>
     </div>
     <div><span style="font-size:10px;color:var(--text2)">注意事項</span><br>
-      <textarea onchange="setCl('${key}','note',this.value)" placeholder="注意事項…" style="width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical;min-height:46px;margin-top:3px">${esc(cl.note||'')}</textarea>
+      <textarea onchange="setCl('${key}','note',this.value)" placeholder="注意事項…" style="width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);resize:vertical;min-height:46px;margin-top:3px">${esc(cl.note||'')}</textarea>
     </div>
     <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border2)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
@@ -6503,7 +6508,7 @@ function batchFillInspDate(){
   modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;min-width:280px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
     <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)">📅 批次填寫預定驗收日</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:8px">已選取 <strong>${_hstatsSelected.size}</strong> 戶，選擇日期後按確認：</div>
-    <input type="date" id="batch-date-inp" value="${today}" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-bottom:14px;outline:none;color:var(--text);background:var(--card)">
+    <input type="date" id="batch-date-inp" value="${today}" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-bottom:14px;outline:none;color:var(--text);background:var(--card)">
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="document.getElementById('batch-date-modal').remove()">取消</button>
       <button class="btn btn-p btn-sm" onclick="confirmBatchDate()">✓ 確認填入</button>
@@ -7238,8 +7243,8 @@ function renderPubArea(){
     let expandHtml='';
     if(isExp){
       const insps=hu.inspections||[];
-      const inspCols=insps.map((ins,i)=>{const isDone=!!ins.date;return`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--text2)">${esc(ins.label)}</span><div style="display:flex;align-items:center;gap:3px"><input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(u)}',${i},this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}"><button class="btn btn-sm btn-d" onclick="event.stopPropagation();delHuInspH2('${esc(u)}',${i})" style="padding:1px 4px;font-size:9px">—</button></div></div>`;}).join('');
-      expandHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)"><div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--text2)">預定驗收</span><input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(u)}','planDate',this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>${inspCols}<button class="btn btn-sm" onclick="event.stopPropagation();addHuInspH2('${esc(u)}')" style="padding:2px 6px;align-self:flex-end;font-size:10px">＋</button><button class="btn btn-sm btn-g" onclick="event.stopPropagation();toggleDeliveredH('${esc(u)}')" style="align-self:flex-end;padding:2px 8px;font-size:10px">${hu.delivered?'取消':'🏠 已交屋'}</button></div></div>`;
+      const inspCols=insps.map((ins,i)=>{const isDone=!!ins.date;return`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--text2)">${esc(ins.label)}</span><div style="display:flex;align-items:center;gap:3px"><input type="date" value="${esc(ins.date||'')}" onchange="setHuFieldH('${esc(u)}',${i},this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);${isDone?'color:var(--green);border-color:var(--green)':''}"><button class="btn btn-sm btn-d" onclick="event.stopPropagation();delHuInspH2('${esc(u)}',${i})" style="padding:1px 4px;font-size:9px">—</button></div></div>`;}).join('');
+      expandHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)"><div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--text2)">預定驗收</span><input type="date" value="${esc(hu.planDate||'')}" onchange="setHuField('${esc(u)}','planDate',this.value)" style="font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></div>${inspCols}<button class="btn btn-sm" onclick="event.stopPropagation();addHuInspH2('${esc(u)}')" style="padding:2px 6px;align-self:flex-end;font-size:10px">＋</button><button class="btn btn-sm btn-g" onclick="event.stopPropagation();toggleDeliveredH('${esc(u)}')" style="align-self:flex-end;padding:2px 8px;font-size:10px">${hu.delivered?'取消':'🏠 已交屋'}</button></div></div>`;
     }
     const border=isExp?'border:2px solid var(--purple);':'border:1px solid var(--border);';
     return`<div style="background:var(--card);${border}border-radius:var(--r);padding:8px 10px;margin-bottom:4px" onclick="if(event.target.closest('input,button,select'))return;_hovExpanded=(_hovExpanded==='${esc(u)}')?null:'${esc(u)}';renderPubArea()">
@@ -7258,7 +7263,7 @@ function renderPubArea(){
 
   const paEditorOpen=window._paEditOpen||false;
   const paEditorBtn=`<button class="btn btn-sm no-print" onclick="window._paEditOpen=!window._paEditOpen;renderPubArea()" style="font-size:10px;padding:2px 8px">${paEditorOpen?'✕ 關閉':'✏️ 編輯清單'}</button>`;
-  function buildPaEditor(zone){const items=(S.publicAreaList[zone]||[]);const rows=items.map((item,i)=>`<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><input value="${esc(item.label)}" style="flex:1;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" onchange="updPaItem('${zone}',${i},'label',this.value)"><input value="${esc(item.floor)}" style="width:48px;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)" placeholder="樓層" onchange="updPaItem('${zone}',${i},'floor',this.value)"><button class="btn btn-sm btn-d" onclick="delPaItem('${zone}',${i})" style="padding:2px 5px;font-size:10px">✕</button></div>`).join('');return`<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">${zone==='A'?'A棟':'B棟'}公設固定清單</div>${rows}<button class="btn btn-sm" onclick="addPaItem('${zone}')" style="font-size:10px;padding:2px 8px;margin-top:2px">＋ 新增</button></div>`;}
+  function buildPaEditor(zone){const items=(S.publicAreaList[zone]||[]);const rows=items.map((item,i)=>`<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><input value="${esc(item.label)}" style="flex:1;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" onchange="updPaItem('${zone}',${i},'label',this.value)"><input value="${esc(item.floor)}" style="width:48px;font-size:11px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)" placeholder="樓層" onchange="updPaItem('${zone}',${i},'floor',this.value)"><button class="btn btn-sm btn-d" onclick="delPaItem('${zone}',${i})" style="padding:2px 5px;font-size:10px">✕</button></div>`).join('');return`<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">${zone==='A'?'A棟':'B棟'}公設固定清單</div>${rows}<button class="btn btn-sm" onclick="addPaItem('${zone}')" style="font-size:10px;padding:2px 8px;margin-top:2px">＋ 新增</button></div>`;}
   const paEditor=paEditorOpen?`<div style="background:var(--card);border:1.5px solid var(--purple);border-radius:var(--r);padding:10px 12px;margin-bottom:10px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:8px">⚙️ 公設固定清單編輯</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${buildPaEditor('A')}${buildPaEditor('B')}</div></div>`:'';
 
   const paA=S.publicAreaList.A||[];const paB=S.publicAreaList.B||[];
@@ -7426,12 +7431,12 @@ function renderClients(){
   document.getElementById('pane-clients').innerHTML=`
     ${statsBar}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-      <input id="cl-search" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);width:200px">
+      <input id="cl-search" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:200px">
       <button class="btn btn-sm" onclick="renderClients()">確認</button>
-      <select id="cl-type" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select id="cl-type" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="">全部類型</option><option value="地主戶">地主戶</option><option value="業主戶">業主戶</option><option value="自購戶">自購戶</option>
       </select>
-      <select id="cl-block" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
+      <select id="cl-block" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="">全部棟別</option><option value="A">A棟</option><option value="B">B棟</option>
       </select>
       <button class="btn btn-sm no-print" onclick="document.getElementById('cl-import-inp').click()" style="background:#E8E0F8;color:#3C3489;border-color:#C4B8F0">📂 匯入 Excel</button>
@@ -7552,7 +7557,7 @@ function buildClientDetailInline(key){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
       <div><span style="font-size:10px;color:var(--text2)">客戶姓名</span><br>
-        <input class="cl-inp-name" value="${esc(name)}" placeholder="姓名" oninput="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
+        <input class="cl-inp-name" value="${esc(name)}" placeholder="姓名" oninput="setCl('${esc(key)}','name',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
         ${(()=>{
           const sameKeys=(cl.name||'')?Object.keys(S.clientData).filter(k=>k!==key&&(S.clientData[k].name||'')===cl.name):[];
           if(!sameKeys.length)return'';
@@ -7567,9 +7572,9 @@ function buildClientDetailInline(key){
         })()}
       </div>
       <div><span style="font-size:10px;color:var(--text2)">聯絡電話</span><br>
-        <input class="cl-inp-tel" value="${esc(tel)}" placeholder="電話" oninput="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
+        <input class="cl-inp-tel" value="${esc(tel)}" placeholder="電話" oninput="setCl('${esc(key)}','tel',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px"></div>
       <div><span style="font-size:10px;color:var(--text2)">戶別類型</span><br>
-        <select class="cl-inp-type" onchange="setCl('${esc(key)}','type',this.value);clUpdateTypeBadge('${key}',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
+        <select class="cl-inp-type" onchange="setCl('${esc(key)}','type',this.value);clUpdateTypeBadge('${key}',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
           <option value="地主戶" ${type==='地主戶'?'selected':''}>地主戶</option>
           <option value="業主戶" ${type==='業主戶'?'selected':''}>業主戶</option>
           <option value="自購戶" ${type==='自購戶'?'selected':''}>自購戶</option>
@@ -7594,11 +7599,11 @@ function buildClientDetailInline(key){
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:10px;color:var(--text2)">預定驗收日期</span>
-          <input type="date" value="${esc(planDate)}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <input type="date" value="${esc(planDate)}" onchange="setHuField('${esc(key)}','planDate',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
         </div>
         <div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:10px;color:var(--text2)">驗收時段</span>
-          <select onchange="setHuField('${esc(key)}','slot',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+          <select onchange="setHuField('${esc(key)}','slot',this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
             <option value="" ${!slot?'selected':''}>— 未設定 —</option>
             <option value="09:00–10:20" ${slot==='09:00–10:20'?'selected':''}>09:00–10:20</option>
             <option value="10:30–11:50" ${slot==='10:30–11:50'?'selected':''}>10:30–11:50</option>
@@ -7610,7 +7615,7 @@ function buildClientDetailInline(key){
       </div>
     </div>
     <div><span style="font-size:10px;color:var(--text2)">注意事項</span><br>
-      <textarea class="cl-inp-note" placeholder="注意事項…" oninput="setCl('${esc(key)}','note',this.value)" style="width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical;min-height:46px;margin-top:3px">${esc(note)}</textarea>
+      <textarea class="cl-inp-note" placeholder="注意事項…" oninput="setCl('${esc(key)}','note',this.value)" style="width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);resize:vertical;min-height:46px;margin-top:3px">${esc(note)}</textarea>
     </div>
   </div>`;
 }
@@ -7668,13 +7673,13 @@ function showBatchClientEdit(){
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
       <label style="display:flex;align-items:center;gap:8px;font-size:12px">
         <input type="checkbox" id="bcl-type-chk"> 戶別類型
-        <select id="bcl-type-val" style="font-size:12px;padding:3px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+        <select id="bcl-type-val" style="font-size:12px;padding:3px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
           <option>地主戶</option><option>業主戶</option><option>自購戶</option>
         </select>
       </label>
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">
         <input type="checkbox" id="bcl-note-chk"> 注意事項（附加，不覆蓋）
-        <input type="text" id="bcl-note-val" placeholder="要附加的文字" style="flex:1;min-width:120px;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">
+        <input type="text" id="bcl-note-val" placeholder="要附加的文字" style="flex:1;min-width:120px;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
       </label>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -7918,7 +7923,7 @@ function renderChangelog(){
       <button class="btn btn-sm no-print" onclick="clearChangelogWithAuth()" style="color:var(--red)">🗑 清除紀錄</button>
       <button class="btn btn-pdf btn-sm no-print" onclick="printChangelogTable()">🖨 PDF</button>
     </div>
-    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--card)">
+    <div style="overflow-x:auto;border:1px solid var(--pborder);border-radius:var(--r);background:var(--card)">
       <table class="ae-tbl" style="min-width:600px">
         <thead><tr>
           <th style="width:160px;white-space:nowrap">日期時間</th>
@@ -7946,7 +7951,7 @@ function clearChangelogWithAuth(){
   modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;min-width:280px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
     <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">🔒 需要認證</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:12px">請輸入認證碼以清除所有更新紀錄（此操作無法復原）：</div>
-    <input type="password" id="auth-code-inp" placeholder="認證碼" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-bottom:6px;outline:none;color:var(--text);background:var(--card)" onkeydown="if(event.key==='Enter')confirmClearChangelog()">
+    <input type="password" id="auth-code-inp" placeholder="認證碼" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-bottom:6px;outline:none;color:var(--text);background:var(--card)" onkeydown="if(event.key==='Enter')confirmClearChangelog()">
     <div id="auth-error" style="font-size:11px;color:var(--red);margin-bottom:10px;min-height:16px"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="document.getElementById('auth-modal').remove()">取消</button>
@@ -8081,6 +8086,7 @@ let _tabOrderBackup=null;
 let _editSlots=null;
 function toggleTheme(){var dark=document.body.classList.toggle('theme-dark');try{localStorage.setItem('g95_theme',dark?'dark':'light');}catch(e){}var b=document.getElementById('theme-toggle');if(b)b.textContent=dark?'☀️ 淺色':'🌙 深色';}
 (function(){try{if(localStorage.getItem('g95_theme')==='dark'){document.body.classList.add('theme-dark');var b=document.getElementById('theme-toggle');if(b)b.textContent='☀️ 淺色';}}catch(e){}})();
+function renameApp(){var cur=S.appTitle||'工程缺失追蹤系統';var n=prompt('系統名稱（顯示在最上方標題）：',cur);if(n===null)return;n=String(n).trim()||'工程缺失追蹤系統';S.appTitle=n;save();var e=document.getElementById('app-title');if(e)e.textContent=n;try{document.title=n;}catch(_){}}
 function renderTabBar(){
   let cells;
   if(_tabEditMode){
@@ -8110,6 +8116,7 @@ function renderTabBar(){
     btn.innerHTML=_tabEditMode?'🔒 完成排序':'🔓 編輯排序';
   }
   if(cancelBtn)cancelBtn.style.display=_tabEditMode?'':'none';
+  try{var _at=document.getElementById('app-title');if(_at&&S.appTitle)_at.textContent=S.appTitle;}catch(e){}
 }
 function toggleTabEditMode(){
   if(_tabEditMode){
@@ -8133,7 +8140,7 @@ function tabEditAuthModal(){
   modal.innerHTML=`<div style="background:var(--card);border-radius:14px;padding:22px 24px;min-width:280px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);font-family:var(--font)">
     <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">🔒 需要認證</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:12px">請輸入認證碼以編輯選單標籤排序：</div>
-    <input type="password" id="tab-auth-code-inp" placeholder="認證碼" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);margin-bottom:6px;outline:none;color:var(--text);background:var(--card)" onkeydown="if(event.key==='Enter')confirmTabEditAuth()">
+    <input type="password" id="tab-auth-code-inp" placeholder="認證碼" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-bottom:6px;outline:none;color:var(--text);background:var(--card)" onkeydown="if(event.key==='Enter')confirmTabEditAuth()">
     <div id="tab-auth-error" style="font-size:11px;color:var(--red);margin-bottom:10px;min-height:16px"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-sm" onclick="document.getElementById('tab-auth-modal').remove()">取消</button>
@@ -8627,8 +8634,8 @@ function renderUnits(){
             ${inp}${sel}
             <div style="display:flex;gap:3px;margin-top:1px">
               <button onclick="unitSetCell('${esc(block)}','${esc(col)}',${fl},document.getElementById('ucell-${esc(block)}-${esc(col)}-${fl}').value,document.getElementById('upfx-${esc(block)}-${esc(col)}-${fl}').value)"
-                style="font-size:9px;padding:1px 5px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--card)">儲存</button>
-              ${key?`<button onclick="unitDelCell('${esc(block)}','${esc(col)}',${fl})" style="font-size:9px;padding:1px 4px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--card);color:var(--red)">✕</button>`:''}
+                style="font-size:9px;padding:1px 5px;border:1px solid var(--pborder);border-radius:3px;cursor:pointer;background:var(--card)">儲存</button>
+              ${key?`<button onclick="unitDelCell('${esc(block)}','${esc(col)}',${fl})" style="font-size:9px;padding:1px 4px;border:1px solid var(--pborder);border-radius:3px;cursor:pointer;background:var(--card);color:var(--red)">✕</button>`:''}
             </div>
           </div>
         </td>`;
@@ -8641,21 +8648,21 @@ function renderUnits(){
         ${cells}
       </tr>`;
     }).join('');
-    return`<div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--rs)">
+    return`<div style="overflow-x:auto;border:1px solid var(--pborder);border-radius:var(--rs)">
       <table style="border-collapse:collapse;width:100%">
         <thead><tr>
           <th style="padding:4px 6px;font-size:11px;font-weight:600;background:#E9E9E9;min-width:40px">樓層</th>
           ${thCells}
           <th style="background:#E9E9E9;padding:4px 6px;text-align:center">
             <button onclick="(()=>{const n=prompt('新增棟號（如 A9）');if(n)unitAddCol('${esc(block)}',n);})()"
-              style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;background:var(--card)">＋棟號</button>
+              style="font-size:11px;padding:2px 8px;border:1px solid var(--pborder);border-radius:var(--rs);cursor:pointer;background:var(--card)">＋棟號</button>
           </th>
         </tr></thead>
         <tbody>${rows}
           <tr>
             <td colspan="${cols.length+2}" style="padding:4px 8px;background:#F5F4F0;border:1px solid var(--border2)">
               <button onclick="(()=>{const n=prompt('新增樓層（數字，如 32）');if(n)unitAddFloor(n);})()"
-                style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;background:var(--card)">＋樓層</button>
+                style="font-size:11px;padding:2px 8px;border:1px solid var(--pborder);border-radius:var(--rs);cursor:pointer;background:var(--card)">＋樓層</button>
             </td>
           </tr>
         </tbody>
@@ -8665,7 +8672,7 @@ function renderUnits(){
 
   const shopList=[...G95_SHOP_KEYS].sort();
   const shopHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-    ${shopList.map(k=>`<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);font-size:12px">
+    ${shopList.map(k=>`<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--surface);font-size:12px">
       ${esc(k)}<button onclick="unitDelShop('${esc(k)}')" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:11px">✕</button>
     </div>`).join('')}
     <button onclick="(()=>{const n=prompt('新增店鋪 key（如 地A30-1）');if(n)unitAddShop(n);})()"
@@ -8678,11 +8685,11 @@ function renderUnits(){
   </button>`).join('');
 
   document.getElementById('pane-units').innerHTML=`
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
+    <div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
         <span style="font-size:14px;font-weight:700">🏠 戶別管理</span>
         <span style="font-size:12px;color:var(--text3)">可新增、編輯、刪除棟號/樓層/戶別</span>
-        <button onclick="unitResetToDefault()" style="margin-left:auto;font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;background:var(--surface);color:var(--red)">↺ 還原預設</button>
+        <button onclick="unitResetToDefault()" style="margin-left:auto;font-size:11px;padding:3px 10px;border:1px solid var(--pborder);border-radius:var(--rs);cursor:pointer;background:var(--surface);color:var(--red)">↺ 還原預設</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px">${tabs}</div>
       ${_unitMgrTab==='A'?buildGrid(G95_A_COLS,G95_RAW_A,'A'):
@@ -8852,7 +8859,7 @@ function renderInspStat(){
   const expandRow=(d,round)=>{const arr=(map[d]&&map[d][round])||[];const rn={'初':'初驗','複':'複驗','交':'交屋'}[round];
     const list=arr.slice().sort((x,y)=>String(x.unit).localeCompare(String(y.unit),'zh-TW')).map(o=>{const cl=(S.clientData&&S.clientData[o.unit])||{};const tlbl=round==='複'?o.type:rn;
       const bk=_unitBlock(o.unit);const owner=isOwnerUnit(o.unit),biz=isBizUnit(o.unit);const bgMap={A:'#EAF1FB',B:'#E7F5EE',shop:'#F1EFF4'},bdMap={A:'#9DBFE8',B:'#9FE1CB',shop:'#CFCBD6'};const cbg=bgMap[bk]||bgMap.shop,cbd=owner?'#D8A93A':(bdMap[bk]||bdMap.shop);const ttag=owner?'<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#FBEFD0;color:#7A5A12;margin-left:6px">🏛地主</span>':biz?'<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#E1F5EE;color:#085041;margin-left:6px">🏢業主</span>':'';
-      return '<div style="background:'+cbg+';border:'+(owner?'2px':'1px')+' solid '+cbd+';border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;font-size:12px"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-weight:700;font-size:15px">'+esc(unitDisplayName(o.unit))+'</span><span style="font-size:9px;padding:1px 6px;border-radius:10px;background:'+colColor[round]+';color:#fff">'+esc(tlbl)+'</span></div><div style="font-weight:500;color:var(--text1)">'+esc(cl.name||'—')+ttag+'</div><div class="no-print" style="display:flex;align-items:center;gap:4px"><input type="date" value="'+d+'" onchange="vstatEditDate(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);flex:1;min-width:0"><button onclick="vstatRemove(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\')" title="移除" style="font-size:12px;padding:2px 7px;border:1px solid #E24B4A;color:#A32D2D;background:#FCEBEB;border-radius:4px;cursor:pointer;flex-shrink:0">✕</button></div></div>';
+      return '<div style="background:'+cbg+';border:'+(owner?'2px':'1px')+' solid '+cbd+';border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;font-size:12px"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-weight:700;font-size:15px">'+esc(unitDisplayName(o.unit))+'</span><span style="font-size:9px;padding:1px 6px;border-radius:10px;background:'+colColor[round]+';color:#fff">'+esc(tlbl)+'</span></div><div style="font-weight:500;color:var(--text1)">'+esc(cl.name||'—')+ttag+'</div><div class="no-print" style="display:flex;align-items:center;gap:4px"><input type="date" value="'+d+'" onchange="vstatEditDate(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid var(--pborder);border-radius:4px;font-family:var(--font);flex:1;min-width:0"><button onclick="vstatRemove(\''+esc(o.unit)+'\',\''+round+'\',\''+esc(o.type)+'\',\''+d+'\')" title="移除" style="font-size:12px;padding:2px 7px;border:1px solid #E24B4A;color:#A32D2D;background:#FCEBEB;border-radius:4px;cursor:pointer;flex-shrink:0">✕</button></div></div>';
     }).join('');
     return '<tr style="background:#FBFAFF;border-bottom:1px solid var(--border2)"><td colspan="4" style="padding:6px 12px 10px"><div style="font-size:11px;color:'+colColor[round]+';font-weight:500;margin-bottom:6px">'+d+' '+rn+'完成 '+arr.length+' 戶</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">'+(list||'<span style="color:var(--text3)">無</span>')+'</div></td></tr>';};
   const rows=dates.map(d=>{
@@ -8869,7 +8876,7 @@ function renderInspStat(){
       +'<span style="font-size:14px;font-weight:700">🔎 驗收統計</span>'
       +'<span style="font-size:12px;color:var(--text2)">'+(window._vstatMonth?window._vstatMonth.replace('-','/'):'全部')+'</span>'
       +'<span class="no-print" style="display:inline-flex;gap:10px;align-items:center;flex-wrap:wrap">'
-        +'<select onchange="vstatSetMonth(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+monthOpts+'</select>'
+        +'<select onchange="vstatSetMonth(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+monthOpts+'</select>'
         +'<label style="font-size:11px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="vstat-expand-print" '+(window._vstatPrintAll?'checked':'')+'> 含戶別清單（PDF／截圖）</label>'
         +'<button class="btn btn-sm btn-p" onclick="vstatPrint()" style="font-size:11px">🖨 轉出 PDF</button>'
         +'<button class="btn btn-sm" onclick="vstatCapShot()" style="font-size:11px">📷 截圖</button>'
@@ -9111,8 +9118,8 @@ function renderHReport(){
   el.innerHTML='<style>@media print{#pane-hreport .no-print{display:none!important}#pane-hreport *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}</style>'
     +'<div style="padding:18px 20px">'
     +'<div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">'
-      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_hrptDate)+'" onchange="_hrptDate=this.value;renderHReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>'
-      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">全案總戶數 🔒</span><div style="display:flex;gap:4px;align-items:center"><input id="hrpt-total-inp" type="number" min="0" value="'+total+'" readonly onchange="S.totalUnitsOverride=this.value?Number(this.value):0;save();renderHReport()" style="width:72px;font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);background:#F1EFEA"><button onclick="hrptUnlockTotal()" title="編輯需輸入認證碼" style="font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card);cursor:pointer">🔒</button></div></div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_hrptDate)+'" onchange="_hrptDate=this.value;renderHReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">全案總戶數 🔒</span><div style="display:flex;gap:4px;align-items:center"><input id="hrpt-total-inp" type="number" min="0" value="'+total+'" readonly onchange="S.totalUnitsOverride=this.value?Number(this.value):0;save();renderHReport()" style="width:72px;font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);background:#F1EFEA"><button onclick="hrptUnlockTotal()" title="編輯需輸入認證碼" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);cursor:pointer">🔒</button></div></div>'
       +'<button class="btn btn-sm btn-p" onclick="exportHReport()" style="font-size:11px">📥 匯出 Excel</button>'
       +'<button class="btn btn-sm" onclick="window.print()" style="font-size:11px">🖨 列印 / PDF</button>'
       +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'pane-hreport\'),\'交屋進度報告.png\')" style="font-size:11px">📷 截圖</button>'
@@ -9300,7 +9307,7 @@ function renderDailyReport(){
   const _sv=(S.rptSaved&&S.rptSaved[_rptDate]!=null)?S.rptSaved[_rptDate]:null;
   el.innerHTML='<div style="padding:18px 20px;max-width:560px">'
     +'<div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">'
-      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_rptDate)+'" onchange="_rptDate=this.value;renderDailyReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">報告日期</span><input type="date" value="'+esc(_rptDate)+'" onchange="_rptDate=this.value;renderDailyReport()" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></div>'
       +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">字體大小</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm" onclick="rptFont(-1)" style="font-size:13px;padding:3px 10px">A−</button><span id="rpt-font-lbl" style="font-size:12px;color:var(--text2);min-width:38px;text-align:center">'+_rptFontV()+'px</span><button class="btn btn-sm" onclick="rptFont(1)" style="font-size:13px;padding:3px 10px">A＋</button></div></div>'
       +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">行距</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm" onclick="rptLineH(-1)" style="font-size:13px;padding:3px 10px">−</button><span id="rpt-lh-lbl" style="font-size:12px;color:var(--text2);min-width:30px;text-align:center">'+_rptLineHV().toFixed(1)+'</span><button class="btn btn-sm" onclick="rptLineH(1)" style="font-size:13px;padding:3px 10px">＋</button></div></div>'
       +'<button class="btn btn-sm btn-p" onclick="copyDailyReport()" style="font-size:12px">📋 複製到剪貼簿</button>'
@@ -9314,19 +9321,19 @@ function renderDailyReport(){
       +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((S.rptFc&&S.rptFc.noSat)?'checked':'')+' onchange="rptFcSet(\'noSat\',this.checked)">也不排週六</label>'
       +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((S.rptFc&&S.rptFc.noHol)?'checked':'')+' onchange="rptFcSet(\'noHol\',this.checked)">排除國定假日</label>'
       +'<span style="color:var(--text3)">｜</span>'
-      +'<label style="display:flex;align-items:center;gap:4px">初驗速率<input type="number" min="0" step="0.5" value="'+((S.rptFc&&S.rptFc.initRate)||'')+'" placeholder="自動" onchange="rptFcRate(\'init\',this.value)" style="width:54px;font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
-      +'<label style="display:flex;align-items:center;gap:4px">複驗速率<input type="number" min="0" step="0.5" value="'+((S.rptFc&&S.rptFc.reRate)||'')+'" placeholder="自動" onchange="rptFcRate(\'re\',this.value)" style="width:54px;font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
+      +'<label style="display:flex;align-items:center;gap:4px">初驗速率<input type="number" min="0" step="0.5" value="'+((S.rptFc&&S.rptFc.initRate)||'')+'" placeholder="自動" onchange="rptFcRate(\'init\',this.value)" style="width:54px;font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
+      +'<label style="display:flex;align-items:center;gap:4px">複驗速率<input type="number" min="0" step="0.5" value="'+((S.rptFc&&S.rptFc.reRate)||'')+'" placeholder="自動" onchange="rptFcRate(\'re\',this.value)" style="width:54px;font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<span style="color:var(--text3)">戶/工作天</span>'
       +'<span style="color:var(--text3)">｜</span>'
-      +'<label style="display:flex;align-items:center;gap:4px">初驗開始<input type="date" value="'+esc(_rptInitStartISO()||'')+'" onchange="rptFcStart(\'init\',this.value)" style="font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
-      +'<label style="display:flex;align-items:center;gap:4px">複驗開始<input type="date" value="'+esc(_rptReStartISO()||'')+'" onchange="rptFcStart(\'re\',this.value)" style="font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
+      +'<label style="display:flex;align-items:center;gap:4px">初驗開始<input type="date" value="'+esc(_rptInitStartISO()||'')+'" onchange="rptFcStart(\'init\',this.value)" style="font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
+      +'<label style="display:flex;align-items:center;gap:4px">複驗開始<input type="date" value="'+esc(_rptReStartISO()||'')+'" onchange="rptFcStart(\'re\',this.value)" style="font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<span style="color:var(--text3)">｜</span>'
       +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((!S.rptFc||S.rptFc.inReport!==false)?'checked':'')+' onchange="rptFcSet(\'inReport\',this.checked)">納入報告</label>'
       +'<span style="color:var(--text3);flex-basis:100%;font-size:11px">速率留空＝自動用（累計完成 ÷ 初驗開始日至今工作天）；初驗開始日留空＝自動抓最早初驗日；國定假日清單為 2026 年。</span>'
     +'</div>'
     +'<div style="font-size:11px;color:var(--text3);margin-bottom:8px">下方內容可直接點擊修改，改完按「💾 儲存這份」保留你的版面；或複製／截圖。週統計為週一～週日；複驗、交屋僅在有資料時顯示。</div>'
     +(_sv!=null?'<div class="no-print" style="font-size:11px;color:#7A4E00;background:#FBF3E2;border-radius:6px;padding:4px 9px;margin-bottom:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact">✔ 目前顯示的是你儲存的手動版本（'+_rptMMDD(_rptDate)+'）；按「↻ 重新產生」可還原自動內容。</div>':'')
-    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_rptFontV()+'px;line-height:'+_rptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
+    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_rptFontV()+'px;line-height:'+_rptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:10px;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
   +'</div>';
 }
 function saveDailyReport(){
@@ -9755,7 +9762,7 @@ function _viewCfgCardHTML(){
     +'<div class="sec-hdr" style="background:#F0EEF8"><div class="sec-hdr-l">🔑 檢視通行碼設定</div><span style="font-size:12px;font-weight:700;color:'+statusColor+'">'+statusTxt+'</span></div>'
     +'<div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end">'
       +'<div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">通行碼（固定，需更改請找維護者）</div><div style="font-size:16px;font-weight:700;letter-spacing:1px;font-family:monospace;background:var(--surface);padding:5px 12px;border-radius:6px;border:1px solid var(--border)">KIMZOG95</div></div>'
-      +'<div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">到期日</div><input type="date" value="'+esc(vp.expire||'')+'" onchange="setViewExpire(this.value)" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font)"></div>'
+      +'<div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">到期日</div><input type="date" value="'+esc(vp.expire||'')+'" onchange="setViewExpire(this.value)" style="font-size:13px;padding:5px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font)"></div>'
       +'<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" '+(enabled?'checked':'')+' onchange="toggleViewEnabled(this.checked)" style="width:16px;height:16px;accent-color:var(--purple)"> 啟用檢視</label>'
       +'<button class="btn btn-sm btn-p" onclick="copyViewLink()" style="font-size:12px">🔗 複製分享連結</button>'
     +'</div>'
