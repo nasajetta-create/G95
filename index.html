@@ -276,7 +276,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 103;  // ← 每次部署新版時遞增
+const CODE_VERSION = 106;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -666,7 +666,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-05</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-08</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -4952,9 +4952,10 @@ function _batchSchedPanelHTML(ns){
       +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
       +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
+      +'<button class="btn btn-sm" onclick="bslFillFromSlot(\''+ns+'\')" title="把目前排在上面這個日期/時段的戶別，帶成可勾選清單（預設全選，正確的取消勾選即可，不用手動打字）" style="font-size:12px">📥 抓取目前戶別</button>'
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
-    +'<textarea id="bsl-units-'+ns+'" rows="2" placeholder="貼上戶別，例：B1-9F、B3-23＊、B6-10（戶別後加 ＊ ＝委外代驗；頓號／逗號／空格／換行皆可）" style="width:100%;box-sizing:border-box;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical"></textarea>'
+    +'<textarea id="bsl-units-'+ns+'" rows="2" placeholder="貼上戶別，例：B1-9F、B3-23＊、B6-10（戶別後加 ＊ ＝委外代驗；頓號／逗號／空格／換行皆可；或用上方「📥 抓取目前戶別」自動帶入）" style="width:100%;box-sizing:border-box;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical"></textarea>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="batchSchedByList(\''+ns+'\')" style="font-size:12px">✓ 套用到這些戶別</button><button class="btn btn-d btn-sm" onclick="batchClearByList(\''+ns+'\')" title="清除這些戶別的驗收日期與時段（移出行事曆，接待人員與缺失保留）" style="font-size:12px">🗑 批次清除排程</button><button class="btn btn-sm" onclick="bslExpandOwners(\''+ns+'\')" style="font-size:12px">👥 帶出同屋主</button><span style="font-size:11px;color:var(--text3)">＊＝委外代驗；找不到的戶別會跳過並回報。</span></div>'
     +'<div id="bsl-owner-'+ns+'">'+_bslOwnerChecklistHTML(ns)+'</div>'
   +'</div>';
@@ -4973,6 +4974,43 @@ function _bslLookup(){
   return map;
 }
 function _ownerOf(key){const cl=(S.clientData&&S.clientData[key])||{};return String(cl.name||'').trim();}
+// ── 大量異動安全警示（V0701-06）：影響 10 戶（含）以上先跳確認 ──────────
+function _bslConfirmBig(n,actionLabel){
+  if(n<10)return true;
+  return confirm('⚠️ 這次操作將影響 '+n+' 戶（'+actionLabel+'），數量較多，請確認無誤再繼續。\n\n按「確定」繼續執行；按「取消」中止、資料不會變更。');
+}
+// ── 抓取此日期/時段目前戶別，帶入可勾選清單（V0701-07，取代手動打字＋可個別取消勾選）──────
+function bslFillFromSlot(ns){
+  const g=id=>document.getElementById(id+'-'+ns);
+  const date=(g('bsl-date')||{}).value||'';
+  const slot=(g('bsl-slot')||{}).value||'';
+  if(!date){toast('請先選日期（時段留空＝抓當天所有時段）','⚠️');return;}
+  if(!S.handoverUnits)S.handoverUnits={};
+  const keys=Object.entries(S.handoverUnits).filter(([k,hu])=>hu&&hu.planDate===date&&(!slot||hu.slot===slot)).map(([k])=>k);
+  if(!keys.length){toast('該日期'+(slot?'／時段':'')+'目前沒有任何戶別','⚠️');return;}
+  keys.sort((a,b)=>String(a).localeCompare(String(b),'zh-TW',{numeric:true}));
+  const items=keys.map(k=>({key:k,owner:_ownerOf(k),checked:true,star:false}));
+  window._bslOwner={ns,items,notfound:[],title:'📥 目前排在 '+date+(slot?' '+slot:'')+' 的戶別（預設全選，錯的留著、正確的取消勾選再操作）'};
+  _bslRenderOwnerBox();
+  toast('已帶入 '+keys.length+' 戶（'+date+(slot?' '+slot:'')+'），全部預設勾選，請把正確的取消勾選後再套用/清除','📥');
+}
+function bslClearChecked(ns){
+  const o=window._bslOwner;if(!o||!o.items)return;
+  const sel=o.items.filter(it=>it.checked);
+  if(!sel.length){toast('請至少勾選一戶','⚠️');return;}
+  const names=sel.map(it=>unitDisplayName(it.key));
+  if(!confirm('確定清除以下 '+sel.length+' 戶的驗收日期與時段？\n'+names.join('、')+'\n（接待人員與缺失資料會保留，戶別會從行事曆移除；可用「↩ 還原」復原）'))return;
+  if(!S.handoverUnits)S.handoverUnits={};
+  _bslSnapForUndo();
+  sel.forEach(it=>{
+    const hu=S.handoverUnits[it.key];
+    if(!hu)return;
+    delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;
+  });
+  save();
+  const n=sel.length;window._bslOwner=null;reRenderActivePane();
+  toast('已清除 '+n+' 戶的排程','🗑');
+}
 function _bslApplyOne(key,date,slot,com){
   if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
@@ -5006,6 +5044,7 @@ function batchSchedByList(ns){
   // 重複時段提醒
   const conflicts=_bslConflicts(matched.map(m=>m.key),date);
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
+  if(!_bslConfirmBig(matched.length,'套用日期／時段／委外代驗'))return;
   _bslSnapForUndo();
   const applied=[];
   matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com);applied.push(unitDisplayName(m.key));});
@@ -5058,7 +5097,7 @@ function bslExpandOwners(ns){
   });
   standalone.forEach(k=>{if(seen.has(k))return;seen.add(k);items.push({key:k,owner:'',checked:true,star:starKeys.has(k)});});
   if(!items.length){toast('找不到可帶出的戶別'+(notfound.length?'：'+notfound.join('、'):''),'⚠️');return;}
-  window._bslOwner={ns,items,notfound};
+  window._bslOwner={ns,items,notfound,title:'👥 同屋主戶別（預設全選，可取消）'};
   _bslRenderOwnerBox();
   const ownerCnt=owners.length;
   let msg='已帶出 '+items.length+' 戶（'+ownerCnt+' 位屋主）';
@@ -5080,9 +5119,9 @@ function _bslOwnerChecklistHTML(ns){
     return '<div style="margin:6px 0"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:2px">'+esc(ow)+'（'+byOwner[ow].length+' 戶）</div><div>'+rows+'</div></div>';
   }).join('');
   return '<div style="margin-top:10px;padding:10px;background:#fff;border:1px dashed #C9C3F0;border-radius:8px">'
-    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:#3C3489">👥 同屋主戶別（預設全選，可取消）</span><span onclick="bslCheckAll(true)" style="font-size:11px;color:#3C3489;cursor:pointer">全選</span><span onclick="bslCheckAll(false)" style="font-size:11px;color:var(--text3);cursor:pointer">全不選</span><span style="color:var(--border)">｜</span><span onclick="bslComAll(true)" style="font-size:11px;color:#A35200;cursor:pointer">＊委外全選</span><span onclick="bslComAll(false)" style="font-size:11px;color:var(--text3);cursor:pointer">委外全不選</span></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:#3C3489">'+esc(o.title||'👥 同屋主戶別（預設全選，可取消）')+'</span><span onclick="bslCheckAll(true)" style="font-size:11px;color:#3C3489;cursor:pointer">全選</span><span onclick="bslCheckAll(false)" style="font-size:11px;color:var(--text3);cursor:pointer">全不選</span><span style="color:var(--border)">｜</span><span onclick="bslComAll(true)" style="font-size:11px;color:#A35200;cursor:pointer">＊委外全選</span><span onclick="bslComAll(false)" style="font-size:11px;color:var(--text3);cursor:pointer">委外全不選</span></div>'
     +groupsHtml
-    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="bslApplyChecked(\''+ns+'\')" style="font-size:12px">✓ 套用勾選戶別</button><button class="btn btn-sm" onclick="bslClearOwner()" style="font-size:12px;color:var(--text3)">✕ 清除清單</button></div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="bslApplyChecked(\''+ns+'\')" style="font-size:12px">✓ 套用勾選戶別</button><button class="btn btn-d btn-sm" onclick="bslClearChecked(\''+ns+'\')" title="清除勾選戶別的驗收日期與時段（移出行事曆，接待人員與缺失保留）" style="font-size:12px">🗑 清除勾選戶別排程</button><button class="btn btn-sm" onclick="bslClearOwner()" style="font-size:12px;color:var(--text3)">✕ 清除清單</button></div>'
   +'</div>';
 }
 function bslToggleUnit(idx){if(!window._bslOwner)return;const it=window._bslOwner.items[idx];if(it){it.checked=!it.checked;_bslRenderOwnerBox();}}
@@ -5169,6 +5208,7 @@ function bslApplyChecked(ns){
   if(!date&&!slot&&!com&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段或委外代驗','⚠️');return;}
   const conflicts=_bslConflicts(sel.map(it=>it.key),date);
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
+  if(!_bslConfirmBig(sel.length,'套用日期／時段／委外代驗'))return;
   if(!S.handoverUnits)S.handoverUnits={};
   _bslSnapForUndo();
   sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com));
@@ -9661,4 +9701,146 @@ function _loginOverlay(){
   const g=document.getElementById('login-google');if(g)g.onclick=_doGoogleLogin;
   const pb=document.getElementById('login-passbtn');if(pb)pb.onclick=_doPasscodeLogin;
 }
-function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._aut
+function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._authSignInGoogle():Promise.reject(new Error('登入尚未啟用'))).catch(function(e){_loginMsg('登入失敗：'+((e&&e.message)||e));});}
+function _doPasscodeLogin(){const c=((document.getElementById('login-pass')||{}).value||'').trim();if(!_passcodeOk(c)){_loginMsg('通行碼錯誤或已過期');return;}_loginMsg('進入檢視模式…');(window._authSignInAnon?window._authSignInAnon():Promise.reject(new Error('未啟用'))).catch(function(e){_loginMsg('失敗：'+((e&&e.message)||e));});}
+function _doLogout(){if(window._authSignOut){window._authSignOut().then(function(){location.reload();});}else{location.reload();}}
+function _loginOnAuth(user){
+  if(!user){_loginOverlay();return;}
+  if(user.isAnonymous){
+    if(location.search.indexOf('mode=view')<0){location.replace(location.pathname+'?mode=view');return;}
+    _loginHide();return;
+  }
+  if(_loginAllowed(user.email)){_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';return;}
+  _loginOverlay();_loginMsg('此帳號（'+(user.email||'')+'）不在可用名單，請聯絡管理者');
+  const g=document.getElementById('login-google');if(g)g.textContent='換帳號登入';
+}
+(function(){
+  if(!LOGIN_GATE)return;
+  try{ _loginOverlay(); }catch(e){}
+  (function waitAuth(){ if(window._onAuth){ try{window._onAuth(_loginOnAuth);}catch(e){console.warn(e);} } else setTimeout(waitAuth,200); })();
+})();
+// ── 唯讀模式（?mode=view）──────────────────────────────────
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('mode') !== 'view') return;
+
+  window._VIEW_ONLY = true;
+  document.title = document.title + '（唯讀）';
+  try{ setTimeout(_enforceViewExpiry,1500); window._viewExpTimer=setInterval(_enforceViewExpiry,4000); }catch(e){}
+
+  // 1) 攔截 save — 不做任何寫入
+  const _origSave = window.save;
+  window.save = function(){ console.log('[VIEW] save blocked'); };
+
+  // 2) 注入 CSS：隱藏所有編輯操作元素
+  const style = document.createElement('style');
+  style.textContent = `
+    /* 隱藏新增/編輯/刪除按鈕 */
+    button[onclick*="showInlineAdd"],
+    button[onclick*="addRow"],
+    button[onclick*="deleteRow"],
+    button[onclick*="editVendorModal"],
+    button[onclick*="editManagerModal"],
+    button[onclick*="openModal"],
+    button[onclick*="confirmInlineAdd"],
+    button[onclick*="addZoneUnit"],
+    button[onclick*="openFloorConfigModal"],
+    button[onclick*="openZoneConfigModal"],
+    button[onclick*="toggleTabEditMode"],
+    button[onclick*="importClientExcel"],
+    button[onclick*="addEvent"],
+    button[onclick*="clearAllData"],
+    button[onclick*="completeRow"],
+    button[onclick*="undoComplete"],
+    button[onclick*="rowMenu"],
+    button[onclick*="batchComplete"],
+    button[onclick*="exportExcel"],
+    button[onclick*="addHandoverUnit"],
+    button[onclick*="addPubArea"],
+    button[onclick*="removeClient"],
+    button[onclick*="editClient"],
+    button[onclick*="delEvent"],
+    button[onclick*="saveNote"],
+    button[onclick*="restoreTrashItem"],
+    button[onclick*="permDeleteTrash"],
+    button[onclick*="emptyTrash"],
+    button[onclick*="showInlineAdd"],
+    .row-action-btn,
+    #inline-add-area,
+    #modalBg,
+    #tab-edit-btn { display:none!important; }
+
+    /* 讓 input/select/textarea 看起來是純文字 */
+    input:not([type="checkbox"]):not(.view-allow),
+    select:not(.view-allow),
+    textarea:not(.view-allow) {
+      pointer-events:none!important;
+      opacity:0.85;
+      background:transparent!important;
+      border-color:transparent!important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 3) 等 DOM ready 後處理
+  function applyReadonly(){
+    // 設定所有 input/textarea 為 readonly
+    document.querySelectorAll('input,textarea').forEach(el=>{
+      el.setAttribute('readonly','');
+      el.removeAttribute('contenteditable');
+    });
+    // 停用所有 select
+    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
+    // 停用所有 checkbox
+    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
+      el.setAttribute('disabled','');
+      el.style.pointerEvents='none';
+    });
+
+    // 移除行的右鍵選單 / 點擊編輯
+    document.querySelectorAll('[oncontextmenu]').forEach(el=>el.removeAttribute('oncontextmenu'));
+
+    // 頂部顯示唯讀提示條
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FEF3C7;color:#92400E;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F59E0B;';
+    bar.textContent = '🔒 唯讀模式 — 僅供檢視，無法編輯或修改';
+    document.body.prepend(bar);
+    document.body.style.paddingTop = '34px';
+  }
+
+  // 4) 攔截動態渲染後新出現的元素
+  const _origRenderAll = window.renderAll;
+  if(_origRenderAll){
+    window.renderAll = function(){
+      _origRenderAll.apply(this, arguments);
+      setTimeout(applyReadonly, 50);
+    };
+  }
+
+  // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
+  window.prompt = function(){ return null; };
+  window.confirm = function(){ return false; };
+  // 6) 強化唯讀：全域攜截編輯互動 + 動態元素停用（修補切分頁/展開後的新元素與新功能按鈕）
+  (function(){
+    const editRe=/\b(upd|addRow|delRow|deleteRow|confirmInlineAdd|toggleInlineAdd|showInlineAdd|editVendorModal|editManagerModal|addVendor|addZoneUnit|addZone|quickInspToggle|quickInspDate|addReinspect|toggleDeliveredQuick|toggleDeliveredH|toggleDeliveredCl|toggleDelivered|setDeliveredDateQuick|vstatEditDate|vstatRemove|roundCycle|dupeSetKeep|applyDupeKeep|mergeDupes|addHuInspH2|addHuInsp|delHuInspH2|delHuInsp|setHuFieldH|setHuField|setHuInspType|setHuParkCheck|setHu|setCl|quickCompleteDefect|completeRow|toggleCheck|batchMarkDelivered|batchFillInspDate|batchComplete|importClientExcel|importClient|emptyTrash|permDeleteTrash|permDelete|restoreTrashItem|restoreTrash|restoreRow|delEvent|addEvent|addHuParking|removeHandover|renumberAlerts|renumberEvents|renumber|clearAllData|confirmClientEdit|showBatchClientEdit|saveNote|_undoDelete|toggleNoShow|toggleCancel|clearSchedule|pwoMarkDone|batchSchedByList|bslApplyChecked|bslExpandOwners|toggleHost|setHostBadgeMode|setMgrCode|hrptUnlockTotal)\b/;
+    let _nt=0; function notify(){const n=Date.now(); if(n-_nt<1500)return; _nt=n; try{ if(typeof toast==='function')toast('唯讀模式，無法編輯','🔒'); }catch(_){}}
+    function block(e){ try{
+      const t=e.target;
+      if(t&&t.matches&&t.matches('input[type=checkbox],input[type=radio]')){ e.preventDefault(); e.stopImmediatePropagation(); notify(); return; }
+      const el=t&&t.closest?t.closest('[onclick],[onchange]'):null;
+      if(el){ const oc=(el.getAttribute('onclick')||'')+';'+(el.getAttribute('onchange')||''); if(editRe.test(oc)){ e.preventDefault(); e.stopImmediatePropagation(); notify(); } }
+    }catch(_){} }
+    ['click','change','input'].forEach(function(ev){document.addEventListener(ev,block,true);});
+    function disableEl(el){ try{ el.setAttribute('disabled',''); el.style.pointerEvents='none'; }catch(_){} }
+    try{ const mo=new MutationObserver(function(ms){ ms.forEach(function(m){ (m.addedNodes||[]).forEach(function(n){ if(n&&n.nodeType===1){ if(n.matches&&n.matches('input[type=checkbox],select'))disableEl(n); if(n.querySelectorAll)n.querySelectorAll('input[type=checkbox],select').forEach(disableEl); } }); }); }); mo.observe(document.body,{childList:true,subtree:true}); }catch(_){}
+  })();
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
+  } else {
+    setTimeout(applyReadonly,100);
+  }
+})();
+</script>
+</body>
+</html>
