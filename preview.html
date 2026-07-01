@@ -18,7 +18,7 @@
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
 .shell{max-width:1700px;margin:0 auto;padding:14px}
-.page-hdr{color:#fff;font-size:19px;font-weight:700;letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.page-hdr{background:#3C3489;color:#fff;font-size:18px;font-weight:700;letter-spacing:.03em;margin-bottom:14px;padding:11px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .page-hdr span{font-size:12px;font-weight:400;opacity:.65}
 .card{border-radius:14px;padding:16px;transition:box-shadow .3s}
 .card-main  {background:#F0EEF8;box-shadow:0 2px 14px rgba(60,52,137,.13)}
@@ -34,25 +34,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .card-mgr   {background:#FFF0F8;box-shadow:0 2px 14px rgba(122,0,85,.11)}
 .card-mgr:hover{box-shadow:0 8px 32px rgba(122,0,85,.22)}
 
-/* ── Tabs — 左側欄 sidebar style（V0701-24）───────────────────────── */
-#mainCard{display:flex;align-items:flex-start;gap:14px;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0}
-.tabs-wrap{width:176px;flex-shrink:0;margin-bottom:0;position:sticky;top:14px;align-self:flex-start;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 8px;max-height:calc(100vh - 28px);overflow-y:auto}
-.main-col{flex:1;min-width:0}
-.tab-btn-group{display:flex;gap:6px;justify-content:flex-end;margin-bottom:8px}
-.tab-edit-btn{font-size:10.5px;padding:3px 9px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
+/* ── Tabs — 上排藥丸 pill style（方案 A，V0701-25）───────────────── */
+#mainCard{display:block;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0}
+.tabs-wrap{position:relative;margin-bottom:14px;padding-top:28px}
+.main-col{display:block}
+.tab-btn-group{position:absolute;right:0;top:0;display:flex;gap:6px}
+.tab-edit-btn{font-size:10.5px;padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;background:var(--card);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
 .tab-edit-btn:hover{color:var(--text);border-color:var(--text2)}
 .tab-edit-btn.active{color:var(--purple);border-color:var(--purple);background:rgba(60,52,137,.06)}
-.tab-grid{display:flex;flex-direction:column;gap:2px}
-.tab{padding:9px 11px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);border-radius:8px;font-family:var(--font);white-space:nowrap;text-align:left;overflow:hidden;text-overflow:ellipsis;width:100%;display:flex;align-items:center;gap:6px;transition:background .12s,color .12s;user-select:none}
-.tab:hover{color:var(--text);background:var(--border2)}
-.tab.active{color:var(--purple);font-weight:700;background:rgba(60,52,137,.10)}
-.tab-filler{box-sizing:border-box;min-height:6px;visibility:hidden}
-.tabs-wrap.edit-mode .tab-filler{min-height:26px;border:1px dashed var(--border);border-radius:8px;visibility:visible}
-.tabs-wrap.edit-mode .tab-grid{gap:4px}
-.tabs-wrap.edit-mode .tab{border:1px solid var(--border);background:var(--surface);cursor:grab}
-.tabs-wrap.edit-mode .tab.active{color:var(--purple);background:rgba(60,52,137,.08);border-color:var(--purple)}
+.tab-grid{display:flex;flex-wrap:wrap;gap:6px}
+.tab{padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--card);color:var(--text2);border-radius:20px;font-family:var(--font);white-space:nowrap;transition:background .12s,color .12s;user-select:none}
+.tab:hover{color:var(--text);border-color:var(--text2);background:var(--surface)}
+.tab.active{background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700}
+.tab-filler{box-sizing:border-box;min-height:32px;min-width:56px;border:1px dashed transparent;border-radius:20px;visibility:hidden}
+.tabs-wrap.edit-mode .tab-filler{border-color:var(--border);visibility:visible}
+.tabs-wrap.edit-mode .tab{cursor:grab}
 .tabs-wrap.edit-mode .tab.tab-drag-over{border-color:var(--amber);border-width:2px}
-.tab-grip{font-size:11px;color:var(--text3);line-height:1}
+.tab-grip{font-size:11px;color:var(--text3);line-height:1;margin-right:3px}
 /* ── 深色模式（基礎版：翻轉底色變數；少數寫死白卡/粉彩待下一步補）── */
 body.theme-dark{--bg:#161327;--surface:#221E3C;--card:#2A2547;--border:#3E3862;--border2:#332E52;--text:#ECEAF6;--text2:#B4AFD2;--text3:#847FA6}
 
@@ -271,7 +269,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 122;  // ← 每次部署新版時遞增
+const CODE_VERSION = 123;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -665,7 +663,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-24</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-25</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -675,9 +673,9 @@ if(window._LOGIN_GATE){
       <div class="tab-btn-group">
         <button class="tab-edit-btn" id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button>
         <button class="tab-edit-btn" id="tab-edit-btn" onclick="toggleTabEditMode()">🔓 編輯排序</button>
+        <button class="tab-edit-btn" id="theme-toggle" onclick="toggleTheme()">🌙 深色</button>
       </div>
       <div id="tab-bar"></div>
-      <button class="tab" id="theme-toggle" onclick="toggleTheme()" style="margin-top:8px">🌙 深色模式</button>
     </div>
     <div class="main-col">
     <div id="pane-main"></div>
@@ -8081,8 +8079,8 @@ const TAB_DEFS={
 let _tabEditMode=false;
 let _tabOrderBackup=null;
 let _editSlots=null;
-function toggleTheme(){var dark=document.body.classList.toggle('theme-dark');try{localStorage.setItem('g95_theme',dark?'dark':'light');}catch(e){}var b=document.getElementById('theme-toggle');if(b)b.textContent=dark?'☀️ 淺色模式':'🌙 深色模式';}
-(function(){try{if(localStorage.getItem('g95_theme')==='dark'){document.body.classList.add('theme-dark');var b=document.getElementById('theme-toggle');if(b)b.textContent='☀️ 淺色模式';}}catch(e){}})();
+function toggleTheme(){var dark=document.body.classList.toggle('theme-dark');try{localStorage.setItem('g95_theme',dark?'dark':'light');}catch(e){}var b=document.getElementById('theme-toggle');if(b)b.textContent=dark?'☀️ 淺色':'🌙 深色';}
+(function(){try{if(localStorage.getItem('g95_theme')==='dark'){document.body.classList.add('theme-dark');var b=document.getElementById('theme-toggle');if(b)b.textContent='☀️ 淺色';}}catch(e){}})();
 function renderTabBar(){
   let cells;
   if(_tabEditMode){
