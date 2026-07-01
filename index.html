@@ -276,7 +276,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 98;  // ← 每次部署新版時遞增
+const CODE_VERSION = 103;  // ← 每次部署新版時遞增
 
 const app  = initializeApp(FIREBASE_CONFIG);
 // App Check（reCAPTCHA v3）— 網域驗證，擋住非本網域複製檔案的請求。先監控、未強制；包 try/catch 確保即使失敗也不影響 Firestore。
@@ -590,7 +590,10 @@ async function setupPresence(){
 
   async function writeHeartbeat(){
     try{
-      await setDoc(presRef, { t: Date.now(), alive: true }, { merge: true });
+      const _me=auth&&auth.currentUser;
+      const _name=(_me&&(_me.displayName||_me.email))||'訪客';
+      const _email=(_me&&_me.email)||'';
+      await setDoc(presRef, { t: Date.now(), alive: true, name:_name, email:_email }, { merge: true });
     }catch(e){}
   }
 
@@ -609,17 +612,24 @@ async function setupPresence(){
   // 監聽 presence 集合，計算在線人數
   onSnapshot(collection(db, PRESENCE_COL), snap=>{
     const now=Date.now();
-    let count=0;
+    let count=0;const names=[];
     snap.forEach(d=>{
       const data=d.data();
       const t=typeof data.t==='number'?data.t:(data.t?.seconds?data.t.seconds*1000:0);
-      if(now-t < STALE_MS) count++;
+      if(now-t < STALE_MS){ count++; if(data.name)names.push(data.name); }
     });
     // 更新畫面
     const el=document.getElementById('user-count');
-    if(el){ el.style.display=''; el.textContent='👤 '+Math.max(1,count)+' 人'; }
+    if(el){
+      el.style.display='';
+      el.textContent='👤 '+Math.max(1,count)+' 人';
+      el.style.cursor='pointer';
+      el.title=names.length?('在線：'+names.join('、')):'';
+      el.onclick=function(){ toast(names.length?('在線：'+names.join('、')):'在線名單暫無資料','👤'); };
+    }
     // 同步到主程式讓 BroadcastChannel 不再覆蓋
     window._onlineCount=Math.max(1,count);
+    window._onlineNames=names;
   });
 }
 
@@ -656,7 +666,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0624-36</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-05</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -4945,7 +4955,7 @@ function _batchSchedPanelHTML(ns){
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
     +'<textarea id="bsl-units-'+ns+'" rows="2" placeholder="貼上戶別，例：B1-9F、B3-23＊、B6-10（戶別後加 ＊ ＝委外代驗；頓號／逗號／空格／換行皆可）" style="width:100%;box-sizing:border-box;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font);resize:vertical"></textarea>'
-    +'<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="batchSchedByList(\''+ns+'\')" style="font-size:12px">✓ 套用到這些戶別</button><button class="btn btn-sm" onclick="bslExpandOwners(\''+ns+'\')" style="font-size:12px">👥 帶出同屋主</button><span style="font-size:11px;color:var(--text3)">＊＝委外代驗；找不到的戶別會跳過並回報。</span></div>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn btn-p btn-sm" onclick="batchSchedByList(\''+ns+'\')" style="font-size:12px">✓ 套用到這些戶別</button><button class="btn btn-d btn-sm" onclick="batchClearByList(\''+ns+'\')" title="清除這些戶別的驗收日期與時段（移出行事曆，接待人員與缺失保留）" style="font-size:12px">🗑 批次清除排程</button><button class="btn btn-sm" onclick="bslExpandOwners(\''+ns+'\')" style="font-size:12px">👥 帶出同屋主</button><span style="font-size:11px;color:var(--text3)">＊＝委外代驗；找不到的戶別會跳過並回報。</span></div>'
     +'<div id="bsl-owner-'+ns+'">'+_bslOwnerChecklistHTML(ns)+'</div>'
   +'</div>';
   return '<div style="border:1px solid #C9C3F0;border-radius:8px;margin-bottom:12px;overflow:hidden">'+head+body+'</div>';
@@ -5003,6 +5013,30 @@ function batchSchedByList(ns){
   let msg='已排程 '+applied.length+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':'');
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
   toast(msg,'✅');
+}
+// ── 批次清除排程（V0701-05）：修手誤誤排一次清空，沿用還原機制 ──────────
+function batchClearByList(ns){
+  const g=id=>document.getElementById(id+'-'+ns);
+  const raw=(g('bsl-units')||{}).value||'';
+  const toks=_bslParseTokens(raw);
+  if(!toks.length){toast('請先貼上戶別','⚠️');return;}
+  if(!S.handoverUnits)S.handoverUnits={};
+  const map=_bslLookup();
+  const matched=[],notfound=[];const seen=new Set();
+  toks.forEach(t=>{const key=map.get(t.name.toUpperCase());if(!key){notfound.push(t.raw);return;}if(seen.has(key))return;seen.add(key);matched.push(key);});
+  if(!matched.length){toast('找不到對應戶別'+(notfound.length?'：'+notfound.join('、'):''),'⚠️');return;}
+  const names=matched.map(k=>unitDisplayName(k));
+  if(!confirm('確定清除以下 '+matched.length+' 戶的驗收日期與時段？\n'+names.join('、')+'\n（接待人員與缺失資料會保留，戶別會從行事曆移除；清錯了可按「↩ 還原」復原）'))return;
+  _bslSnapForUndo();
+  matched.forEach(key=>{
+    const hu=S.handoverUnits[key];
+    if(!hu)return;
+    delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;
+  });
+  save();reRenderActivePane();
+  let msg='已清除 '+matched.length+' 戶的排程';
+  if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
+  toast(msg,'🗑');
 }
 function bslExpandOwners(ns){
   const g=id=>document.getElementById(id+'-'+ns);
@@ -5063,6 +5097,63 @@ function _bslConflicts(keys,date){if(!date)return [];const out=[];keys.forEach(k
 function _bslConfirmConflicts(conflicts){const lines=conflicts.slice(0,12).map(c=>'・'+unitDisplayName(c.key)+'（已排 '+c.d+(c.slot?' '+c.slot:'')+'）').join('\n');return confirm('以下 '+conflicts.length+' 戶已排在其他日期/時段：\n'+lines+(conflicts.length>12?'\n…（其餘省略）':'')+'\n\n是否覆蓋為新的日期/時段？');}
 function toggleNoShow(key){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key].noShow=!S.handoverUnits[key].noShow;save();renderHCal();}
 function toggleCancel(key){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key].cancelled=!S.handoverUnits[key].cancelled;save();renderHCal();}
+
+// ── 清潔狀態（V0701-03）：預設兩次，可加開到 4 次；每次記勾選＋完成日期 ──────
+// 燈號規則：只有該次「已勾選」（有日期）才顯示，未勾選完全不佔位置（V0701-03）
+function _cleanCount(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return Math.min(4,Math.max(2,hu.cleanCount||2));}
+function _cleanDates(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return hu.cleanDates||{};}
+function _cleanDots(key,accent){
+  // 2 欄式：1、2 並排；有第3次疊在1下面、有第4次疊在2下面（grid 2欄自動換行）
+  // 只渲染已勾選（有日期）的次數，未勾選的不輸出任何佔位方塊
+  const n=_cleanCount(key);const cd=_cleanDates(key);const ac=accent||'#3B6D11';
+  let items='';
+  for(let i=1;i<=n;i++){
+    const d=cd[i]||'';
+    if(!d)continue;
+    items+='<span title="第'+i+'次清潔：'+d+'" style="width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:'+ac+';color:#fff">'+i+'</span>';
+  }
+  if(!items)return'';
+  let out='<span style="display:inline-grid;grid-template-columns:repeat(2,11px);grid-auto-rows:11px;gap:1px;vertical-align:middle;margin-left:2px">'+items+'</span>';
+  return out;
+}
+function setHuCleanToggle(key,idx,checked){
+  if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
+  if(!S.handoverUnits[key].cleanDates)S.handoverUnits[key].cleanDates={};
+  const cd=S.handoverUnits[key].cleanDates;
+  if(checked&&idx>1&&!cd[idx-1]){
+    toast('請先完成第'+(idx-1)+'次清潔，才能勾選第'+idx+'次','⚠️');
+    reRenderActivePane();
+    return;
+  }
+  cd[idx]=checked?todayISO():'';
+  if(!checked){ for(let j=idx+1;j<=4;j++){ if(cd[j])cd[j]=''; } } // 取消較前次數時，連動清除後面已勾選的次數，避免中間空掉
+  save();reRenderActivePane();
+}
+function setHuCleanDate(key,idx,val){
+  if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
+  if(!S.handoverUnits[key].cleanDates)S.handoverUnits[key].cleanDates={};
+  const cd=S.handoverUnits[key].cleanDates;
+  if(val&&idx>1&&!cd[idx-1]){
+    toast('請先完成第'+(idx-1)+'次清潔，才能填第'+idx+'次的日期','⚠️');
+    reRenderActivePane();
+    return;
+  }
+  cd[idx]=val;
+  if(!val){ for(let j=idx+1;j<=4;j++){ if(cd[j])cd[j]=''; } }
+  save();reRenderActivePane();
+}
+function addCleanSlot(key){
+  if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
+  const cur=_cleanCount(key);
+  if(cur>=4)return;
+  S.handoverUnits[key].cleanCount=cur+1;
+  save();reRenderActivePane();
+}
+function _cellAccent(key){
+  if(isOwnerUnit(key))return'#3C3489';
+  if(isBizUnit(key))return'#085041';
+  return'#5F5E5A';
+}
 function clearSchedule(key){if(!S.handoverUnits||!S.handoverUnits[key])return;if(!confirm('確定清除「'+unitDisplayName(key)+'」的驗收日期與時段？\n（接待人員與缺失資料會保留，戶別會從行事曆移除）'))return;const hu=S.handoverUnits[key];delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;_hcalExpanded=null;save();renderHCal();toast('已清除排程，戶別已移出行事曆','🗑');}
 function bslCheckAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.checked=v);_bslRenderOwnerBox();}
 function bslComAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.star=v);_bslRenderOwnerBox();}
@@ -6664,6 +6755,8 @@ function confirmBatchHStats(){
 // ══════════════════════════════════════════════════════════════════════════
 let _hcalOffset=0; // 週偏移，0=本週
 let _hcalExpanded=null; // 展開的戶別 key
+let _hcalShowCount=true; // 是否顯示缺失筆數
+let _hcalShowPct=true;   // 是否顯示進度%
 const HCAL_SLOTS=['09:00–10:20','10:30–11:50','14:00–15:20','15:30–16:50'];
 
 // ── V0624-02 接待人員徽章 ──
@@ -6786,7 +6879,9 @@ function renderHCal(){
           const isComH=(S.handoverUnits[key]||{}).inspTypes&&(S.handoverUnits[key].inspTypes||[]).includes('委外代驗');
           const pendingCount=getDefectRows(key).filter(r=>r.compId==null).length;
           const isExp=_hcalExpanded===key;
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 7px 20px 22px 22px;align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${_grey?'#E6E3DE':cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;${_grey?'text-decoration:line-through;color:#8A8783;':''}">${esc(unitDisplayName(key))}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:var(--red);padding-left:2px">${pendingCount>0?`${pendingCount}筆`:''}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:${statusColor};padding-left:2px">${_cancel?'已取消':(_absent?'未到':(dateStr>=todayStr?`${pct??'—'}%`:''))}</span></div>`;
+          const _colCount=_hcalShowCount?'22px':'0px';
+          const _colPct=_hcalShowPct?'22px':'0px';
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 7px 20px ${_colCount} ${_colPct};align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${_grey?'#E6E3DE':cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;${_grey?'text-decoration:line-through;color:#8A8783;':''}">${esc(unitDisplayName(key))}${_cleanDots(key,cs.border)}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:var(--red);padding-left:2px">${_hcalShowCount&&pendingCount>0?`${pendingCount}筆`:''}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:${statusColor};padding-left:2px">${_cancel?'已取消':(_absent?'未到':(_hcalShowPct&&dateStr>=todayStr?`${pct??'—'}%`:''))}</span></div>`;
         }
         const _ownerCount={};
         units.forEach(u=>{const nm=((S.clientData||{})[u.key]||{}).name||'';if(nm)_ownerCount[nm]=(_ownerCount[nm]||0)+1;});
@@ -6854,7 +6949,12 @@ function renderHCal(){
     </tr>`;
 
     return`<div style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--text2);padding:4px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:5px">${title}</div>
+      <div style="display:flex;align-items:center;gap:12px;font-size:12px;font-weight:600;color:var(--text2);padding:4px 8px;background:var(--surface);border-radius:var(--rs);margin-bottom:5px">
+        <span>${title}</span>
+        <span class="no-print" style="font-size:10px;font-weight:400;color:#854F0B;background:#FAEEDA;padding:1px 7px;border-radius:10px">⚠ 清潔燈號：該次已勾選才會顯示，未勾選不佔位置</span>
+        <label class="no-print" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:400;color:var(--text2);cursor:pointer;margin-left:auto"><input type="checkbox" ${_hcalShowCount?'checked':''} onchange="_hcalShowCount=this.checked;renderHCal()" style="width:13px;height:13px">顯示缺失筆數</label>
+        <label class="no-print" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:400;color:var(--text2);cursor:pointer"><input type="checkbox" ${_hcalShowPct?'checked':''} onchange="_hcalShowPct=this.checked;renderHCal()" style="width:13px;height:13px">顯示進度%</label>
+      </div>
       <div style="overflow-x:auto">
         <table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:8%"><col span="6" style="width:13.87%"><col style="width:8.76%"></colgroup>
           <thead><tr>
@@ -7238,7 +7338,7 @@ function renderClients(){
     const parkLabel=`<div style="font-size:8px;color:#0C447C;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.8;min-height:11px;display:flex;align-items:center;gap:2px">${allPark.length?`🚗 ${esc(allPark[0])}`+(allPark.length>1?` <span onclick="event.stopPropagation();showParkList('${esc(key)}')" style="font-size:7px;cursor:pointer">▼</span>`:''):''}</div>`;
     return`<span onclick="clientCellClick('${esc(key)}',event)" title="${esc(key)}${cl.name?' - '+esc(cl.name):''}${allPark.length?' - 🚗'+esc(allPark.join('、')):''}" style="display:block;padding:5px 3px;border-radius:4px;cursor:pointer;border:0.5px solid transparent;${cellBg(key)};${selRing||expRing}font-size:11px;text-align:center;line-height:1.3;position:relative">
       ${isSel?`<span style="position:absolute;top:0;left:0;font-size:8px;color:#185FA5">✓</span>`:''}
-      <div style="font-size:11px;font-weight:500">${unitDisplayName(key)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:10px"> ★</span>':''}</div>
+      <div style="font-size:11px;font-weight:500">${unitDisplayName(key)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:10px"> ★</span>':''}${_cleanDots(key,_cellAccent(key))}</div>
       ${inspIconBadges(key)}
       ${cl.name?`<div style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.75">${esc(cl.name)}</div>`:''}
       ${parkLabel}
@@ -9091,12 +9191,27 @@ function inspCheckRow(key){
   const dInp=(val,type,color)=>'<input type="date" value="'+val+'" onclick="event.stopPropagation()" onchange="quickInspDate(\''+esc(key)+'\',\''+type+'\',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(val?color:'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(val?'color:'+color:'')+'">';
   const delLbl='<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;font-weight:'+(hu.delivered?'600':'400')+';color:'+(hu.delivered?'#3B6D11':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(hu.delivered?'checked':'')+' onchange="toggleDeliveredQuick(\''+esc(key)+'\',this.checked)" style="accent-color:#3B6D11;width:15px;height:15px"> 已交屋</label>';
   const delInp='<input type="date" value="'+(hu.deliveredDate||'')+'" onclick="event.stopPropagation()" onchange="setDeliveredDateQuick(\''+esc(key)+'\',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(hu.deliveredDate?'#3B6D11':'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(hu.deliveredDate?'color:#3B6D11':'')+'">';
+  const cleanN=_cleanCount(key);const cleanDates=_cleanDates(key);
+  const cleanChk=i=>{
+    const d=cleanDates[i]||'';const done=!!d;
+    return '<span style="display:inline-flex;align-items:center;gap:3px">'
+      +'<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;font-weight:'+(done?'600':'400')+';color:'+(done?'#085041':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(done?'checked':'')+' onchange="setHuCleanToggle(\''+esc(key)+'\','+i+',this.checked)" style="accent-color:#0A6640;width:15px;height:15px"> 第'+i+'次</label>'
+      +'<input type="date" value="'+d+'" onclick="event.stopPropagation()" onchange="setHuCleanDate(\''+esc(key)+'\','+i+',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(d?'#0A6640':'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(d?'color:#0A6640':'')+'">'
+      +'</span>';
+  };
+  let cleanGroup='<span style="display:inline-flex;align-items:center;gap:8px;background:#E1F5EE;border-radius:var(--rs);padding:3px 8px;flex-wrap:wrap">'
+    +'<span style="font-size:11px;color:#085041;font-weight:600">清潔：</span>';
+  for(let i=1;i<=cleanN;i++)cleanGroup+=cleanChk(i);
+  if(cleanN<4)cleanGroup+='<button onclick="event.stopPropagation();addCleanSlot(\''+esc(key)+'\')" title="新增下一次清潔（上限4次）" style="font-size:11px;padding:1px 6px;border-radius:4px;cursor:pointer;border:1px solid #0A6640;background:var(--card);color:#0A6640">＋</button>';
+  cleanGroup+='</span>';
   return '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--surface);border-radius:var(--rs);padding:8px 10px;margin-bottom:8px">'
     +'<span style="font-size:11px;color:var(--text2);font-weight:600">快速標記</span>'
     +'<span style="display:inline-flex;align-items:center;gap:5px">'+chk('初驗完成','#185FA5',!!initD,'初驗')+dInp(initD,'初驗','#185FA5')+(initD?hostBadgesHtml(key,true):'')+'</span>'
     +reTypes.map(t=>'<span style="display:inline-flex;align-items:center;gap:5px">'+chk(t+'完成','#854F0B',!!dOf(t),t)+dInp(dOf(t),t,'#854F0B')+(dOf(t)?hostBadgesHtml(key,true):'')+'</span>').join('')
     +'<button onclick="event.stopPropagation();addReinspect(\''+esc(key)+'\')" style="font-size:11px;padding:2px 7px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:#854F0B">＋複驗</button>'
     +'<span style="display:inline-flex;align-items:center;gap:5px">'+delLbl+delInp+(hu.delivered?hostBadgesHtml(key,true):'')+'</span>'
+    +'<span style="width:1px;height:16px;background:var(--border2)"></span>'
+    +cleanGroup
   +'</div>';
 }
 
@@ -9546,146 +9661,4 @@ function _loginOverlay(){
   const g=document.getElementById('login-google');if(g)g.onclick=_doGoogleLogin;
   const pb=document.getElementById('login-passbtn');if(pb)pb.onclick=_doPasscodeLogin;
 }
-function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._authSignInGoogle():Promise.reject(new Error('登入尚未啟用'))).catch(function(e){_loginMsg('登入失敗：'+((e&&e.message)||e));});}
-function _doPasscodeLogin(){const c=((document.getElementById('login-pass')||{}).value||'').trim();if(!_passcodeOk(c)){_loginMsg('通行碼錯誤或已過期');return;}_loginMsg('進入檢視模式…');(window._authSignInAnon?window._authSignInAnon():Promise.reject(new Error('未啟用'))).catch(function(e){_loginMsg('失敗：'+((e&&e.message)||e));});}
-function _doLogout(){if(window._authSignOut){window._authSignOut().then(function(){location.reload();});}else{location.reload();}}
-function _loginOnAuth(user){
-  if(!user){_loginOverlay();return;}
-  if(user.isAnonymous){
-    if(location.search.indexOf('mode=view')<0){location.replace(location.pathname+'?mode=view');return;}
-    _loginHide();return;
-  }
-  if(_loginAllowed(user.email)){_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';return;}
-  _loginOverlay();_loginMsg('此帳號（'+(user.email||'')+'）不在可用名單，請聯絡管理者');
-  const g=document.getElementById('login-google');if(g)g.textContent='換帳號登入';
-}
-(function(){
-  if(!LOGIN_GATE)return;
-  try{ _loginOverlay(); }catch(e){}
-  (function waitAuth(){ if(window._onAuth){ try{window._onAuth(_loginOnAuth);}catch(e){console.warn(e);} } else setTimeout(waitAuth,200); })();
-})();
-// ── 唯讀模式（?mode=view）──────────────────────────────────
-(function(){
-  const params = new URLSearchParams(window.location.search);
-  if(params.get('mode') !== 'view') return;
-
-  window._VIEW_ONLY = true;
-  document.title = document.title + '（唯讀）';
-  try{ setTimeout(_enforceViewExpiry,1500); window._viewExpTimer=setInterval(_enforceViewExpiry,4000); }catch(e){}
-
-  // 1) 攔截 save — 不做任何寫入
-  const _origSave = window.save;
-  window.save = function(){ console.log('[VIEW] save blocked'); };
-
-  // 2) 注入 CSS：隱藏所有編輯操作元素
-  const style = document.createElement('style');
-  style.textContent = `
-    /* 隱藏新增/編輯/刪除按鈕 */
-    button[onclick*="showInlineAdd"],
-    button[onclick*="addRow"],
-    button[onclick*="deleteRow"],
-    button[onclick*="editVendorModal"],
-    button[onclick*="editManagerModal"],
-    button[onclick*="openModal"],
-    button[onclick*="confirmInlineAdd"],
-    button[onclick*="addZoneUnit"],
-    button[onclick*="openFloorConfigModal"],
-    button[onclick*="openZoneConfigModal"],
-    button[onclick*="toggleTabEditMode"],
-    button[onclick*="importClientExcel"],
-    button[onclick*="addEvent"],
-    button[onclick*="clearAllData"],
-    button[onclick*="completeRow"],
-    button[onclick*="undoComplete"],
-    button[onclick*="rowMenu"],
-    button[onclick*="batchComplete"],
-    button[onclick*="exportExcel"],
-    button[onclick*="addHandoverUnit"],
-    button[onclick*="addPubArea"],
-    button[onclick*="removeClient"],
-    button[onclick*="editClient"],
-    button[onclick*="delEvent"],
-    button[onclick*="saveNote"],
-    button[onclick*="restoreTrashItem"],
-    button[onclick*="permDeleteTrash"],
-    button[onclick*="emptyTrash"],
-    button[onclick*="showInlineAdd"],
-    .row-action-btn,
-    #inline-add-area,
-    #modalBg,
-    #tab-edit-btn { display:none!important; }
-
-    /* 讓 input/select/textarea 看起來是純文字 */
-    input:not([type="checkbox"]):not(.view-allow),
-    select:not(.view-allow),
-    textarea:not(.view-allow) {
-      pointer-events:none!important;
-      opacity:0.85;
-      background:transparent!important;
-      border-color:transparent!important;
-    }
-  `;
-  document.head.appendChild(style);
-
-  // 3) 等 DOM ready 後處理
-  function applyReadonly(){
-    // 設定所有 input/textarea 為 readonly
-    document.querySelectorAll('input,textarea').forEach(el=>{
-      el.setAttribute('readonly','');
-      el.removeAttribute('contenteditable');
-    });
-    // 停用所有 select
-    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
-    // 停用所有 checkbox
-    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
-      el.setAttribute('disabled','');
-      el.style.pointerEvents='none';
-    });
-
-    // 移除行的右鍵選單 / 點擊編輯
-    document.querySelectorAll('[oncontextmenu]').forEach(el=>el.removeAttribute('oncontextmenu'));
-
-    // 頂部顯示唯讀提示條
-    const bar = document.createElement('div');
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FEF3C7;color:#92400E;text-align:center;padding:6px 12px;font-size:13px;font-weight:600;border-bottom:1px solid #F59E0B;';
-    bar.textContent = '🔒 唯讀模式 — 僅供檢視，無法編輯或修改';
-    document.body.prepend(bar);
-    document.body.style.paddingTop = '34px';
-  }
-
-  // 4) 攔截動態渲染後新出現的元素
-  const _origRenderAll = window.renderAll;
-  if(_origRenderAll){
-    window.renderAll = function(){
-      _origRenderAll.apply(this, arguments);
-      setTimeout(applyReadonly, 50);
-    };
-  }
-
-  // 5) 攔截可能的 prompt / confirm 呼叫（防止新增戶別等操作）
-  window.prompt = function(){ return null; };
-  window.confirm = function(){ return false; };
-  // 6) 強化唯讀：全域攜截編輯互動 + 動態元素停用（修補切分頁/展開後的新元素與新功能按鈕）
-  (function(){
-    const editRe=/\b(upd|addRow|delRow|deleteRow|confirmInlineAdd|toggleInlineAdd|showInlineAdd|editVendorModal|editManagerModal|addVendor|addZoneUnit|addZone|quickInspToggle|quickInspDate|addReinspect|toggleDeliveredQuick|toggleDeliveredH|toggleDeliveredCl|toggleDelivered|setDeliveredDateQuick|vstatEditDate|vstatRemove|roundCycle|dupeSetKeep|applyDupeKeep|mergeDupes|addHuInspH2|addHuInsp|delHuInspH2|delHuInsp|setHuFieldH|setHuField|setHuInspType|setHuParkCheck|setHu|setCl|quickCompleteDefect|completeRow|toggleCheck|batchMarkDelivered|batchFillInspDate|batchComplete|importClientExcel|importClient|emptyTrash|permDeleteTrash|permDelete|restoreTrashItem|restoreTrash|restoreRow|delEvent|addEvent|addHuParking|removeHandover|renumberAlerts|renumberEvents|renumber|clearAllData|confirmClientEdit|showBatchClientEdit|saveNote|_undoDelete|toggleNoShow|toggleCancel|clearSchedule|pwoMarkDone|batchSchedByList|bslApplyChecked|bslExpandOwners|toggleHost|setHostBadgeMode|setMgrCode|hrptUnlockTotal)\b/;
-    let _nt=0; function notify(){const n=Date.now(); if(n-_nt<1500)return; _nt=n; try{ if(typeof toast==='function')toast('唯讀模式，無法編輯','🔒'); }catch(_){}}
-    function block(e){ try{
-      const t=e.target;
-      if(t&&t.matches&&t.matches('input[type=checkbox],input[type=radio]')){ e.preventDefault(); e.stopImmediatePropagation(); notify(); return; }
-      const el=t&&t.closest?t.closest('[onclick],[onchange]'):null;
-      if(el){ const oc=(el.getAttribute('onclick')||'')+';'+(el.getAttribute('onchange')||''); if(editRe.test(oc)){ e.preventDefault(); e.stopImmediatePropagation(); notify(); } }
-    }catch(_){} }
-    ['click','change','input'].forEach(function(ev){document.addEventListener(ev,block,true);});
-    function disableEl(el){ try{ el.setAttribute('disabled',''); el.style.pointerEvents='none'; }catch(_){} }
-    try{ const mo=new MutationObserver(function(ms){ ms.forEach(function(m){ (m.addedNodes||[]).forEach(function(n){ if(n&&n.nodeType===1){ if(n.matches&&n.matches('input[type=checkbox],select'))disableEl(n); if(n.querySelectorAll)n.querySelectorAll('input[type=checkbox],select').forEach(disableEl); } }); }); }); mo.observe(document.body,{childList:true,subtree:true}); }catch(_){}
-  })();
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', ()=>setTimeout(applyReadonly,100));
-  } else {
-    setTimeout(applyReadonly,100);
-  }
-})();
-</script>
-</body>
-</html>
+function _doGoogleLogin(){_loginMsg('登入中…');(window._authSignInGoogle?window._aut
