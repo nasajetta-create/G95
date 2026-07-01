@@ -276,7 +276,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 113;  // ← 每次部署新版時遞增
+const CODE_VERSION = 115;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -670,7 +670,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-15</span>
+  <div class="page-hdr">🏗 工程缺失追蹤系統 <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-17</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -706,6 +706,7 @@ if(window._LOGIN_GATE){
     <div id="pane-hreport"   style="display:none"></div>
     <div id="pane-rpt"       style="display:none"></div>
     <div id="pane-pwo"       style="display:none"></div>
+    <div id="pane-clean"     style="display:none"></div>
   </div>
 </div>
 <script>
@@ -1180,6 +1181,7 @@ function migrateState(d){
   if(!d.tabOrder.includes('hstats'))d.tabOrder.push('hstats');
   if(!d.tabOrder.includes('clients'))d.tabOrder.push('clients');
   if(!d.tabOrder.includes('hcal'))d.tabOrder.push('hcal');
+  if(!d.tabOrder.includes('clean'))d.tabOrder.push('clean');
   if(!d.tabOrder.includes('pubarea'))d.tabOrder.push('pubarea');
   if(!d.tabOrder.includes('dupes'))d.tabOrder.push('dupes');
   if(!d.tabOrder.includes('units'))d.tabOrder.push('units');
@@ -4956,6 +4958,7 @@ function _batchSchedPanelHTML(ns){
       +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
       +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option><option value="clear">清除清潔安排</option></select></label>'
       +'<button class="btn btn-sm" onclick="bslFillFromSlot(\''+ns+'\')" title="把目前排在上面這個日期/時段的戶別，帶成可勾選清單（預設全選，正確的取消勾選即可，不用手動打字）" style="font-size:12px">📥 抓取目前戶別</button>'
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
@@ -5015,24 +5018,32 @@ function bslClearChecked(ns){
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
   toast('已清除 '+n+' 戶的排程','🗑');
 }
-function _bslApplyOne(key,date,slot,com){
+function _bslApplyOne(key,date,slot,com,clean){
   if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
   if(date)hu.planDate=date;
   if(slot)hu.slot=slot;
   if(com==='add'){const cur=hu.inspTypes||[];if(!cur.includes('委外代驗'))hu.inspTypes=[...cur,'委外代驗'];}
   else if(com==='remove'){hu.inspTypes=(hu.inspTypes||[]).filter(x=>x!=='委外代驗');}
+  if(clean){
+    if(clean==='clear'){ hu.cleanPlanned={}; }
+    else if(clean.charAt(0)==='p'){
+      const N=parseInt(clean.slice(1),10)||0;
+      if(N>0){ if(!hu.cleanPlanned)hu.cleanPlanned={}; for(let i=1;i<=N;i++)hu.cleanPlanned[i]=true; if((hu.cleanCount||2)<N)hu.cleanCount=Math.min(4,N); }
+    }
+  }
 }
 function batchSchedByList(ns){
   const g=id=>document.getElementById(id+'-'+ns);
   const date=(g('bsl-date')||{}).value||'';
   const slot=(g('bsl-slot')||{}).value||'';
   const com=(g('bsl-com')||{}).value||'';
+  const clean=(g('bsl-clean')||{}).value||'';
   const raw=(g('bsl-units')||{}).value||'';
   const toks=_bslParseTokens(raw);
   if(!toks.length){toast('請先貼上戶別','⚠️');return;}
   const anyStar=toks.some(t=>t.star);
-  if(!date&&!slot&&!com&&!anyStar){toast('請至少選擇日期、時段或委外代驗（或在戶別後加 ＊）','⚠️');return;}
+  if(!date&&!slot&&!com&&!anyStar&&!clean){toast('請至少選擇日期、時段、委外代驗或清潔（或在戶別後加 ＊）','⚠️');return;}
   if(!S.handoverUnits)S.handoverUnits={};
   const map=_bslLookup();
   const matched=[],notfound=[];const seen=new Set();
@@ -5051,7 +5062,7 @@ function batchSchedByList(ns){
   if(!_bslConfirmBig(matched.length,'套用日期／時段／委外代驗'))return;
   _bslSnapForUndo();
   const applied=[];
-  matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com);applied.push(unitDisplayName(m.key));});
+  matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com,clean);applied.push(unitDisplayName(m.key));});
   save();reRenderActivePane();
   let msg='已排程 '+applied.length+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':'');
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
@@ -5145,15 +5156,18 @@ function toggleCancel(key){if(!S.handoverUnits)S.handoverUnits={};if(!S.handover
 // 燈號規則：只有該次「已勾選」（有日期）才顯示，未勾選完全不佔位置（V0701-03）
 function _cleanCount(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return Math.min(4,Math.max(2,hu.cleanCount||2));}
 function _cleanDates(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return hu.cleanDates||{};}
+function _cleanPlanned(key){const hu=(S.handoverUnits&&S.handoverUnits[key])||{};return hu.cleanPlanned||{};}
 function _cleanDots(key,accent){
-  // 2 欄式：1、2 並排；有第3次疊在1下面、有第4次疊在2下面（grid 2欄自動換行）
-  // 只渲染已勾選（有日期）的次數，未勾選的不輸出任何佔位方塊
-  const n=_cleanCount(key);const cd=_cleanDates(key);const ac=accent||'#3B6D11';
+  // 三態：已清（有日期）＝實心；已安排未清＝空心外框；未安排＝不顯示（不佔位）
+  const n=_cleanCount(key);const cd=_cleanDates(key);const cp=_cleanPlanned(key);const ac=accent||'#3B6D11';
   let items='';
   for(let i=1;i<=n;i++){
     const d=cd[i]||'';
-    if(!d)continue;
-    items+='<span title="第'+i+'次清潔：'+d+'" style="width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:'+ac+';color:#fff">'+i+'</span>';
+    if(d){
+      items+='<span title="第'+i+'次清潔：'+d+'（已清）" style="box-sizing:border-box;width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:'+ac+';color:#fff">'+i+'</span>';
+    }else if(cp[i]){
+      items+='<span title="第'+i+'次清潔：已安排、未清" style="box-sizing:border-box;width:11px;height:11px;border-radius:2px;font-size:7px;line-height:1;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid '+ac+';color:'+ac+'">'+i+'</span>';
+    }
   }
   if(!items)return'';
   let out='<span style="display:inline-grid;grid-template-columns:repeat(2,11px);grid-auto-rows:11px;gap:1px;vertical-align:middle;margin-left:2px">'+items+'</span>';
@@ -5207,15 +5221,16 @@ function bslApplyChecked(ns){
   const date=(g('bsl-date')||{}).value||'';
   const slot=(g('bsl-slot')||{}).value||'';
   const com=(g('bsl-com')||{}).value||'';
+  const clean=(g('bsl-clean')||{}).value||'';
   const sel=o.items.filter(it=>it.checked);
   if(!sel.length){toast('請至少勾選一戶','⚠️');return;}
-  if(!date&&!slot&&!com&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段或委外代驗','⚠️');return;}
+  if(!date&&!slot&&!com&&!clean&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段、委外代驗或清潔','⚠️');return;}
   const conflicts=_bslConflicts(sel.map(it=>it.key),date);
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
   if(!_bslConfirmBig(sel.length,'套用日期／時段／委外代驗'))return;
   if(!S.handoverUnits)S.handoverUnits={};
   _bslSnapForUndo();
-  sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com));
+  sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com,clean));
   save();
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
   toast('已套用 '+n+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':''),'✅');
@@ -7961,6 +7976,72 @@ function printChangelogTable(){
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
+// ── 🧹 清潔追蹤（V0701-17）：今天以後有排初/複/交的戶別，對照清潔狀態，方便提前派清潔 ──
+let _cleanOnlyPending=false;
+function _cleanTrackStatus(key){
+  var n=_cleanCount(key),cd=_cleanDates(key),cp=_cleanPlanned(key);
+  var done=[],wait=[],anyPlan=false;
+  for(var i=1;i<=n;i++){ if(cp[i])anyPlan=true; if(cd[i])done.push(i); else if(cp[i])wait.push(i); }
+  var state=(!anyPlan&&done.length===0)?'need':(wait.length>0?'wait':'done');
+  return {state:state,done:done,wait:wait};
+}
+function cleanTrackToggle(v){_cleanOnlyPending=!!v;renderCleanTrack();}
+function _cleanTrackPrint(){var el=document.getElementById('cleantrack-cap');if(!el)return;printSection('清潔追蹤（'+todayISO()+'）',el.innerHTML,'清潔追蹤_'+todayISO());}
+function renderCleanTrack(){
+  var el=document.getElementById('pane-clean');if(!el)return;
+  var today=todayISO();var hu=S.handoverUnits||{};
+  var rows=Object.keys(hu).map(function(k){
+    var h=hu[k];if(!h||!h.planDate||h.planDate<today||h.cancelled)return null;
+    return {key:k,date:h.planDate,slot:h.slot||'',stage:_rptCalStage(k),cs:_cleanTrackStatus(k)};
+  }).filter(Boolean);
+  rows.sort(function(a,b){return a.date!==b.date?a.date.localeCompare(b.date):(a.slot!==b.slot?a.slot.localeCompare(b.slot):String(a.key).localeCompare(String(b.key),'zh-TW',{numeric:true}));});
+  var cNeed=rows.filter(function(r){return r.cs.state==='need';}).length;
+  var cWait=rows.filter(function(r){return r.cs.state==='wait';}).length;
+  var cDone=rows.filter(function(r){return r.cs.state==='done';}).length;
+  var list=_cleanOnlyPending?rows.filter(function(r){return r.cs.state!=='done';}):rows;
+  var stageStyle={'初':'background:#B5D4F4;color:#0C447C','複':'background:#FAC775;color:#633806','交':'background:#9FE1CB;color:#0F6E56'};
+  var stageLbl={'初':'初驗','複':'複驗','交':'交屋'};
+  function rowBg(st){return st==='need'?'#FCEBEB':(st==='wait'?'#FAEEDA':'#EAF3DE');}
+  function statusTxt(cs){
+    if(cs.state==='need')return '<span style="color:#A32D2D;font-weight:600">⚠ 需安排清潔</span>';
+    if(cs.state==='wait'){var t=cs.done.length?('第'+cs.done.join('、')+'次已清，第'+cs.wait.join('、')+'次待清'):('已安排第'+cs.wait.join('、')+'次，待清');return '<span style="color:#854F0B;font-weight:600">'+t+'</span>';}
+    return '<span style="color:#3B6D11;font-weight:600">✓ 已清完</span>';
+  }
+  var trs=list.map(function(r){
+    var diff=Math.round((new Date(r.date)-new Date(today))/86400000);
+    var dtxt=diff===0?'今天':(diff+'天後');
+    return '<tr style="border-top:1px solid var(--border);background:'+rowBg(r.cs.state)+';-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+      +'<td style="padding:6px 10px;white-space:nowrap"><b>'+_rptMMDD(r.date)+'</b>（'+_rptDOW(r.date)+'）<span style="color:var(--text3);font-size:11px">'+dtxt+'</span></td>'
+      +'<td style="padding:6px 6px;white-space:nowrap">'+esc(r.slot||'—')+'</td>'
+      +'<td style="padding:6px 6px;white-space:nowrap;font-weight:500">'+esc(unitDisplayName(r.key))+'</td>'
+      +'<td style="padding:6px 6px"><span style="font-size:11px;'+stageStyle[r.stage]+';border-radius:3px;padding:1px 6px">'+stageLbl[r.stage]+'</span></td>'
+      +'<td style="padding:6px 6px">'+hostBadgesHtml(r.key,true)+'</td>'
+      +'<td style="padding:6px 6px">'+(_cleanDots(r.key,'#3B6D11')||'<span style="color:var(--text3)">—</span>')+'</td>'
+      +'<td style="padding:6px 10px">'+statusTxt(r.cs)+'</td>'
+    +'</tr>';
+  }).join('');
+  if(!trs)trs='<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">'+(_cleanOnlyPending?'目前沒有需處理的戶別 🎉':'今天之後沒有已排程的戶別')+'</td></tr>';
+  el.innerHTML='<div style="padding:16px 18px">'
+    +'<div class="no-print" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px">'
+      +'<span style="font-size:16px;font-weight:600">🧹 清潔追蹤</span>'
+      +'<span style="font-size:12px;color:var(--text2)">今天之後有排驗收的戶別（'+list.length+' 戶）</span>'
+      +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;margin-left:6px"><input type="checkbox" '+(_cleanOnlyPending?'checked':'')+' onchange="cleanTrackToggle(this.checked)">只看需處理</label>'
+      +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'cleantrack-cap\'),\'清潔追蹤_\'+todayISO()+\'.png\')" style="font-size:12px">📷 截圖</button>'
+      +'<button class="btn btn-sm" onclick="_cleanTrackPrint()" style="font-size:12px">🖨 PDF</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:10px">'
+      +'<span style="color:#A32D2D">⚠ 需安排清潔 <b>'+cNeed+'</b></span>'
+      +'<span style="color:#854F0B">已安排待清 <b>'+cWait+'</b></span>'
+      +'<span style="color:#3B6D11">已清完 <b>'+cDone+'</b></span>'
+    +'</div>'
+    +'<div id="cleantrack-cap" style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      +'<thead><tr style="background:var(--surface);color:var(--text2);font-size:12px">'
+        +'<th style="text-align:left;padding:8px 10px">日期</th><th style="text-align:left;padding:8px 6px">時段</th><th style="text-align:left;padding:8px 6px">戶別</th><th style="text-align:left;padding:8px 6px">階段</th><th style="text-align:left;padding:8px 6px">接待</th><th style="text-align:left;padding:8px 6px">清潔</th><th style="text-align:left;padding:8px 10px">狀態</th>'
+      +'</tr></thead><tbody>'+trs+'</tbody></table>'
+    +'</div>'
+  +'</div>';
+}
 const TAB_DEFS={
   events:    {label:'📌 進度里程碑',       row:1},
   main:      {label:'📋 追蹤總表',         row:1},
@@ -7974,6 +8055,7 @@ const TAB_DEFS={
   hpend:     {label:'📦 交屋前缺失彙整',  row:3},
   hstats:    {label:'📊 客戶交屋狀態表',  row:3},
   hcal:      {label:'📆 交屋行事曆',      row:3},
+  clean:     {label:'🧹 清潔追蹤',        row:3},
   pubarea:   {label:'🏛 公設狀態表',      row:3},
   clients:   {label:'👥 客戶清單',         row:3},
   changelog: {label:'📝 更新紀錄',         row:3},
@@ -8102,6 +8184,7 @@ function renderPane(id){
   else if(id==='defpivot')renderDefPivot();
   else if(id==='hreport')renderHReport();
   else if(id==='rpt')renderDailyReport();
+  else if(id==='clean')renderCleanTrack();
   else if(id==='pwo')renderPWO();
   else if(id==='units')renderUnits();
   else if(id==='hpend')renderHPend();
@@ -9310,7 +9393,7 @@ function inspCheckRow(key){
   const cleanChk=i=>{
     const d=cleanDates[i]||'';const done=!!d;
     return '<span style="display:inline-flex;align-items:center;gap:3px">'
-      +'<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;font-weight:'+(done?'600':'400')+';color:'+(done?'#085041':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(done?'checked':'')+' onchange="setHuCleanToggle(\''+esc(key)+'\','+i+',this.checked)" style="accent-color:#0A6640;width:15px;height:15px"> 第'+i+'次</label>'
+      +'<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;font-weight:'+(done?'600':'400')+';color:'+(done?'#085041':'var(--text)')+'" onclick="event.stopPropagation()"><input type="checkbox" '+(done?'checked':'')+' onchange="setHuCleanToggle(\''+esc(key)+'\','+i+',this.checked)" style="accent-color:#0A6640;width:15px;height:15px"> 第'+i+'次'+((!done&&_cleanPlanned(key)[i])?'<span style="color:#3B6D11;font-size:10px;font-weight:600">·已安排</span>':'')+'</label>'
       +'<input type="date" value="'+d+'" onclick="event.stopPropagation()" onchange="setHuCleanDate(\''+esc(key)+'\','+i+',this.value)" style="font-size:11px;padding:2px 5px;border:1px solid '+(d?'#0A6640':'var(--border)')+';border-radius:var(--rs);font-family:var(--font);'+(d?'color:#0A6640':'')+'">'
       +'</span>';
   };
