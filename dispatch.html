@@ -233,6 +233,8 @@ function mgrColor(name){var pal=['#16a34a','#7c3aed','#0891b2','#db2777','#ea580
 function slotRange(it){if(it.slotType==='custom'&&it.start&&it.end){var a=it.start.split(':'),b=it.end.split(':');return[(+a[0])*60+(+a[1]),(+b[0])*60+(+b[1])];}if(it.slot==='am')return[480,720];if(it.slot==='pm')return[780,1020];return[480,1020];}
 function overlap(a,b){var ra=slotRange(a),rb=slotRange(b);return ra[0]<rb[1]&&rb[0]<ra[1];}
 function slotLabel(it){if(it.slotType==='custom')return (it.start||'')+'–'+(it.end||'');return it.slot==='am'?'上午':it.slot==='pm'?'下午':'全天';}
+function parseUnit(s){s=String(s||'');var fm=s.match(/(\d+)\s*[Ff]/);var floor=fm?+fm[1]:null;var bm=s.match(/([A-Za-z]+)\s*(\d+)/);var bldg=bm?bm[1].toUpperCase():'';var num=bm?+bm[2]:0;return{floor:floor,bldg:bldg,num:num};}
+function unitCompare(a,b){var pa=parseUnit(a),pb=parseUnit(b);var fa=pa.floor==null?-Infinity:pa.floor,fb=pb.floor==null?-Infinity:pb.floor;if(fa!==fb)return fb-fa;if(pa.bldg!==pb.bldg)return pa.bldg<pb.bldg?-1:1;return pa.num-pb.num;}
 function conflictsFor(day){
   var items=DS.items.filter(function(it){return it.day===day;});var pConf={},mOver={};
   for(var i=0;i<items.length;i++)for(var j=i+1;j<items.length;j++){if(!overlap(items[i],items[j]))continue;
@@ -348,7 +350,7 @@ function renderStaging(){
   var q=(document.getElementById('stgSearch').value||'').trim();var sort=document.getElementById('stgSort').value;var imp=importedRefs();
   var list=DS.candidates.filter(function(c){return imp.indexOf(c.refId)<0;});
   if(q)list=list.filter(function(c){return (c.unit+c.vendor+c.content).indexOf(q)>=0;});
-  list.sort(function(a,b){if(sort==='unit')return a.unit.localeCompare(b.unit);if(sort==='vendor')return a.vendor.localeCompare(b.vendor);return a.due.localeCompare(b.due);});
+  list.sort(function(a,b){if(sort==='unit')return unitCompare(a.unit,b.unit);if(sort==='vendor')return a.vendor.localeCompare(b.vendor);return a.due.localeCompare(b.due);});
   document.getElementById('stgTitle').textContent='待帶入工作（'+list.length+' 筆）';
   if(!list.length){box.innerHTML='<span class="muted">（無待帶入工作 — 示範資料已全部帶入）</span>';return;}
   list.forEach(function(c){var diff=Math.round((parseISO(c.due)-new Date())/86400000);var lbl=diff<0?'逾期 '+(-diff)+' 天':diff===0?'今天到期':'到期 '+c.due.slice(5);
