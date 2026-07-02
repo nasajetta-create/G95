@@ -271,7 +271,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 130;  // ← 每次部署新版時遞增
+const CODE_VERSION = 132;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -671,7 +671,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-32</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-34</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1250,7 +1250,7 @@ function migrateState(d){
 // ── helpers ───────────────────────────────────────────────────────────────
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
 const _isoL=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');  // 任一 Date → 本地 YYYY-MM-DD
-const todayISO=()=>_isoL(TODAY);  // 本地日期（原用 UTC，台灣凌晨會顯示前一天，V0701-20 修）
+const todayISO=()=>_isoL(new Date());  // 本地日期，且「每次即時取當下」——分頁長開跨過午夜後不會再用到載入時的舊日期（V0701-33 修：清潔勾選會蓋成前一天）
 const pd=s=>{if(!s)return null;const d=new Date(s);d.setHours(0,0,0,0);return isNaN(d)?null:d};
 const du=s=>{const d=pd(s);if(!d)return null;return Math.ceil((d-TODAY)/86400000)};
 const fmtMD=s=>{const d=pd(s);if(!d)return'';return`${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`};
@@ -8063,6 +8063,25 @@ function cleanTrackToggle(v){_cleanOnlyPending=!!v;renderCleanTrack();}
 function cleanWeekNav(delta){_cleanWeekOffset=(delta===0)?0:(_cleanWeekOffset+delta);renderCleanTrack();}
 function _cleanTrackPrint(){var el=document.getElementById('cleantrack-cap');if(!el)return;printSection('清潔追蹤',el.innerHTML,'清潔追蹤_'+todayISO());}
 function _cleanIso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// ── 清潔日批次修正（安全版：查某日→逐戶勾選→整批 +1 天 或 指定日期；有復原）──
+function _datePlus1(iso){var p=String(iso).split('-');if(p.length!==3)return iso;var d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+1);return _isoL(d);}
+function toggleCleanFix(k){if(!window._cleanFixUnsel)window._cleanFixUnsel=new Set();if(window._cleanFixUnsel.has(k))window._cleanFixUnsel.delete(k);else window._cleanFixUnsel.add(k);renderCleanTrack();}
+function cleanFixSelAll(all){window._cleanFixUnsel=all?new Set():new Set(window._cleanFixHits||[]);renderCleanTrack();}
+function applyCleanFix(mode){
+  var qd=window._cleanQueryDate||'';if(!qd)return;
+  var nd=(mode==='set')?((document.getElementById('clean-fix-date')||{}).value||''):_datePlus1(qd);
+  if(!nd){toast('請先選「指定日期」','⚠️');return;}
+  if(nd===qd){toast('目標日期與原日期相同','⚠️');return;}
+  var hu=S.handoverUnits||{};var unsel=window._cleanFixUnsel||new Set();
+  var targets=[];
+  Object.keys(hu).forEach(function(k){if(unsel.has(k))return;var cd=(hu[k]&&hu[k].cleanDates)||{};for(var t=1;t<=4;t++){if(cd[t]===qd)targets.push({k:k,t:t});}});
+  if(!targets.length){toast('沒有勾選到可修正的戶別','⚠️');return;}
+  if(!confirm('把 '+targets.length+' 筆「'+qd+'」的清潔日改成「'+nd+'」？\n（可按「↩ 復原上一次」還原）'))return;
+  try{window._cleanFixUndo=JSON.parse(JSON.stringify(S.handoverUnits||{}));}catch(e){window._cleanFixUndo=null;}
+  targets.forEach(function(o){if(S.handoverUnits[o.k]&&S.handoverUnits[o.k].cleanDates)S.handoverUnits[o.k].cleanDates[o.t]=nd;});
+  save();toast('已修正 '+targets.length+' 筆清潔日 → '+nd,'✅');renderCleanTrack();
+}
+function undoCleanFix(){if(!window._cleanFixUndo){toast('沒有可復原的批次','⚠️');return;}S.handoverUnits=window._cleanFixUndo;window._cleanFixUndo=null;save();toast('已復原上一次清潔日修正','↩');renderCleanTrack();}
 function renderCleanTrack(){
   var el=document.getElementById('pane-clean');if(!el)return;
   var todayD=new Date();todayD.setHours(0,0,0,0);var todayStr=_cleanIso(todayD);
@@ -8099,6 +8118,33 @@ function renderCleanTrack(){
     return '<tr><td style="border:1px solid var(--border);padding:4px 3px;text-align:center;font-size:11px;color:var(--text2);background:var(--surface);white-space:nowrap">'+(slot==='__none__'?'未分時段':esc(slot))+'</td>'+tds+'</tr>';
   }).join('');
   var wtag=days.length?((days[0].getMonth()+1)+'/'+days[0].getDate()+'–'+(days[days.length-1].getMonth()+1)+'/'+days[days.length-1].getDate()):'—';
+  // ── 查某日「已清潔」的戶別（掃全部戶別的 cleanDates，不受本週視窗限制）──
+  var _qd=window._cleanQueryDate||'';var qPanel='';
+  if(_qd){
+    var hits=[];
+    Object.keys(hu).forEach(function(k){var cdz=(hu[k]&&hu[k].cleanDates)||{};var times=[];for(var t=1;t<=4;t++){if(cdz[t]===_qd)times.push(t);}if(times.length)hits.push({k:k,times:times});});
+    hits.sort(function(a,b){return String(a.k).localeCompare(String(b.k),'zh-TW',{numeric:true});});
+    window._cleanFixHits=hits.map(function(o){return o.k;});
+    var _unsel=window._cleanFixUnsel||new Set();
+    var _nd=_datePlus1(_qd);
+    var rows=hits.map(function(o){var ck=!_unsel.has(o.k);return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;background:'+(ck?'#EAF3DE':'#F0F0F0')+';border:1px solid '+(ck?'#97C459':'var(--border)')+';border-radius:20px;padding:2px 10px;margin:2px;cursor:pointer">'+'<input type="checkbox" '+(ck?'checked':'')+' onchange="toggleCleanFix(\''+esc(o.k)+'\')" style="margin:0">'+esc(unitDisplayName(o.k))+' <span style="font-size:10px;color:#3B6D11">第'+o.times.join('、')+'次</span></label>';}).join('');
+    qPanel='<div style="border:1px solid var(--pborder);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;background:var(--card)">'
+      +'<div style="font-size:13px;font-weight:600;margin-bottom:6px">📅 '+esc(_qd)+' 已清潔戶別：共 '+hits.length+' 戶<button class="btn btn-sm no-print" onclick="window._cleanQueryDate=\'\';window._cleanFixUnsel=null;renderCleanTrack()" style="font-size:11px;margin-left:8px">✕ 清除查詢</button></div>'
+      +(hits.length?(
+        '<div style="font-size:11px;color:var(--text3);margin-bottom:6px">若這些是被 bug 記錯前一天的：勾選要修正的戶別（本來就正確的請取消勾選），再選一種方式套用。</div>'
+        +'<div style="margin-bottom:8px">'+rows+'</div>'
+        +'<div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border2);padding-top:8px">'
+          +'<button class="btn btn-sm" onclick="cleanFixSelAll(true)" style="font-size:11px">全選</button>'
+          +'<button class="btn btn-sm" onclick="cleanFixSelAll(false)" style="font-size:11px">全不選</button>'
+          +'<button class="btn btn-p btn-sm" onclick="applyCleanFix(\'plus1\')" style="font-size:12px">＋1 天（改成 '+_nd+'）</button>'
+          +'<span style="font-size:12px;color:var(--text2)">或指定日期</span>'
+          +'<input type="date" id="clean-fix-date" style="font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
+          +'<button class="btn btn-sm" onclick="applyCleanFix(\'set\')" style="font-size:12px">套用指定日期</button>'
+          +'<button class="btn btn-sm" onclick="undoCleanFix()" style="font-size:12px;color:var(--text2)">↩ 復原上一次</button>'
+        +'</div>'
+      ):'<span style="font-size:12px;color:var(--text3)">這一天沒有標記為「已清潔」的戶別。</span>')
+    +'</div>';
+  }
   el.innerHTML='<div style="padding:16px 18px">'
     +'<div class="no-print" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px">'
       +'<span style="font-size:16px;font-weight:600">🧹 清潔追蹤</span>'
@@ -8109,7 +8155,9 @@ function renderCleanTrack(){
       +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;margin-left:6px"><input type="checkbox" '+(_cleanOnlyPending?'checked':'')+' onchange="cleanTrackToggle(this.checked)">只看需處理</label>'
       +'<button class="btn btn-sm" onclick="_capEl(document.getElementById(\'cleantrack-cap\'),\'清潔追蹤_\'+todayISO()+\'.png\')" style="font-size:12px">📷 截圖</button>'
       +'<button class="btn btn-sm" onclick="_cleanTrackPrint()" style="font-size:12px">🖨 PDF</button>'
+      +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;margin-left:6px">🔎 查某日已清 <input type="date" value="'+(window._cleanQueryDate||'')+'" onchange="window._cleanQueryDate=this.value;window._cleanFixUnsel=null;renderCleanTrack()" style="font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
     +'</div>'
+    +qPanel
     +'<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:10px">'
       +'<span style="color:var(--text2)">本週 '+seq+' 戶</span>'
       +'<span style="color:#A32D2D">⚠ 需安排清潔 <b>'+cNeed+'</b></span>'
