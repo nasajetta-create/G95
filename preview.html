@@ -271,7 +271,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 136;  // ← 每次部署新版時遞增
+const CODE_VERSION = 137;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -671,7 +671,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-38</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-39</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1025,6 +1025,7 @@ function save(){
     return;
   }
   try{_stampMetaTouch();}catch(e){}
+  if(S.trash&&S.trash.length>300)S.trash=S.trash.slice(0,300);  // 垃圾桶上限300筆（新的在前），避免meta無限膨脹
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
   if(window._fbSave){
     // 若正在寫入中，標記需要再存一次（不設新 timer）
@@ -5389,7 +5390,7 @@ function _pwoCurrentVendors(){return Object.keys(_pwoGroup(_pwoFilterRows(_pwoBa
 function _pwoSort(a,b){const bk={A:0,B:1,shop:2};const ba=bk[_unitBlock(a.unit)]??3,bb=bk[_unitBlock(b.unit)]??3;if(ba!==bb)return ba-bb;const fa=_pwoFloorNum(a),fb=_pwoFloorNum(b);if(fa!==fb)return fb-fa;const za=_zoneLabelOf(a.zone),zb=_zoneLabelOf(b.zone);if(za!==zb)return za.localeCompare(zb,'zh-Hant');return String(a.issue||'').localeCompare(String(b.issue||''),'zh-Hant');}
 function _pwoMD(d){if(!d)return '—';const p=String(d).split('-');return p.length>=3?(p[1]+'-'+p[2]):d;}
 function _pwoVerPeek(){const now=new Date();return (now.getMonth()+1)+'/'+now.getDate();}
-function _pwoVerNext(){const now=new Date();const md=(now.getMonth()+1)+'/'+now.getDate();const key='pwoVer_'+now.toISOString().slice(0,10);let n=(parseInt(localStorage.getItem(key)||'0')||0)+1;try{localStorage.setItem(key,String(n));}catch(e){}return md+'-'+n+'-'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
+function _pwoVerNext(){const now=new Date();const md=(now.getMonth()+1)+'/'+now.getDate();const key='pwoVer_'+todayISO();let n=(parseInt(localStorage.getItem(key)||'0')||0)+1;try{localStorage.setItem(key,String(n));}catch(e){}return md+'-'+n+'-'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
 function pwoSetRound(v){_pwoRound=v;_pwoDay='';renderPWO();}
 function pwoSetDay(v){_pwoDay=v;renderPWO();}
 function pwoSearch(v){_pwoSearch=v;_pwoRefresh();}
@@ -6241,7 +6242,7 @@ function renderHPend(){
   const selectedCount=visibleVendorNames.filter(v=>_hpendState.vendors.has(v)).length;
 
   if(_hpendState.openMonths===null||_hpendState.openMonths===undefined){
-    const todayYm=new Date().toISOString().slice(0,7);
+    const todayYm=todayISO().slice(0,7);
     const nearestYm=allDates.map(d=>d.slice(0,7)).find(ym=>ym>=todayYm)||(allDates.length?allDates[allDates.length-1].slice(0,7):todayYm);
     _hpendState.openMonths=new Set([nearestYm]);
   }
