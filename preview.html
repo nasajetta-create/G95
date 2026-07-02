@@ -271,7 +271,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 126;  // ← 每次部署新版時遞增
+const CODE_VERSION = 128;  // ← 每次部署新版時遞增
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -557,8 +557,14 @@ async function initVersionGate(){
           if(_saving){ for(let i=0;i<30&&_saving;i++) await new Promise(r=>setTimeout(r,200)); }
           // 再做一次最終存檔
           if(window._fbSave && typeof _takeSnapshot==='function'){
-            setSyncStatus('saving');
-            try{ if(!window._VIEW_ONLY){ await window._fbSave(S); _savedSnapshot=_takeSnapshot(); console.log('[Version] 自動存檔完成 ✅'); } }
+            try{ if(!window._VIEW_ONLY){
+              // 只寫「本機真的改過」的欄位（差異儲存），避免舊分頁整包覆蓋別人的設定
+              // （曾造成：改版瞬間某個舊分頁把檢視到期日/其他設定蓋回預設值）
+              const _dk=(typeof _computeDirtyFields==='function')?_computeDirtyFields():null;
+              if(!_dk || _dk.size>0){ setSyncStatus('saving'); await window._fbSave(S, _dk); }
+              _savedSnapshot=_takeSnapshot();
+              console.log('[Version] 自動存檔完成 ✅（僅寫變動欄位）');
+            } }
             catch(e){ console.error('[Version] 自動存檔失敗',e); }
           }
         }
@@ -665,7 +671,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-28</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-30</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -4754,6 +4760,7 @@ function renderHandover(){
       </div>
     </div>
     ${batchExportPanel}
+    ${_hoSummaryTableHTML()}
     <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap;padding:7px 8px;background:var(--surface);border-radius:var(--rs)">
       <span style="font-size:11px;color:var(--text2);flex-shrink:0">篩選：</span>
       <select onchange="window._hovFilter.planDate=this.value;renderHandover()" style="font-size:11px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
@@ -4796,6 +4803,7 @@ function renderHandover(){
       </select>
       ${(hf.planDate||hf.dateExact||hf.type||(hf.block&&hf.block!=='all')||hf.tier)?`<button class="btn btn-sm" onclick="window._hovFilter={planDate:'',dateExact:'',type:'',floors:new Set(),cols:new Set(),block:'all',tier:''};renderHandover()" style="font-size:11px;color:var(--red)">✕ 清除篩選</button>`:''}
     </div>
+    ${_batchSchedPanelHTML('hd')}
     ${batchBar}
     <div style="display:grid;grid-template-columns:${_hovExpanded?'1fr':(showA&&showB?'1fr 1fr':(showA||showB)?'1fr':'')} ${_hovExpanded?'':(showShop?'auto':'')};gap:14px;align-items:start">
       ${showA?`<div><div style="font-size:12px;font-weight:600;color:#3C3489;padding:5px 8px;background:#EEEDFE;border-radius:var(--rs);margin-bottom:6px">🏢 A 棟</div>${buildGrid(G95_RAW_A,G95_A_COLS,'A')}</div>`:''}
@@ -4948,6 +4956,61 @@ function _allUnitKeys(){
   return out;
 }
 function toggleBsl(){window._bslOpen=!window._bslOpen;reRenderActivePane();}
+// ── 交屋狀態統計表（V0701-29 由客戶交屋狀態表併入交屋狀態表；共用同一份計數邏輯）──
+function _hoSummaryTableHTML(){
+  if(!S.handoverUnits)S.handoverUnits={};
+  const isOwnerK=k=>k&&k.startsWith('地');
+  const isBizK=k=>k&&k.startsWith('業');
+  const isNormalK=k=>k&&!k.startsWith('地')&&!k.startsWith('業');
+  const shopKeys=['地A1-1','A2-1','A3-1','業A5-1','地A6-1','地A7-1','地A8-1','地A9-1','地A10-1','地A11-1','地A12-1','地A15-1','地A16-1','地A17-1','地A18-1','地A19-1','地A20-1','地A21-1','地A22-1','地A23-1','地A25-1','地A26-1','地A27-1','業A28-1','地A29-1','業A30-1','業C2-1','地C1-2'];
+  function countUnits(rawData,typeCheck){let total=0,delivered=0;Object.values(rawData).forEach(colObj=>{Object.values(colObj).forEach(key=>{if(!key||!typeCheck(key))return;total++;if(S.handoverUnits[key]&&S.handoverUnits[key].delivered)delivered++;});});return{total,delivered,remain:total-delivered};}
+  function shopCount(typeCheck){let total=0,delivered=0;shopKeys.forEach(k=>{if(!typeCheck(k))return;total++;if(S.handoverUnits[k]&&S.handoverUnits[k].delivered)delivered++;});return{total,delivered,remain:total-delivered};}
+  const sections=[{label:'A棟',rd:G95_RAW_A},{label:'B棟',rd:G95_RAW_B}];
+  const cell=(v,bold)=>`<td style="text-align:center;padding:5px 8px;font-size:12px;border:1px solid var(--border);${bold?'font-weight:600':'color:var(--text2)'}">${v}</td>`;
+  const tableRows=['總戶數','交屋完成','剩餘戶數'].map((rowLabel,ri)=>{
+    const getVal=(data,fn)=>{const r=fn?countUnits(data,fn):null;if(!r)return 0;return ri===0?r.total:ri===1?r.delivered:r.remain;};
+    const shopGetVal=(fn)=>{const r=fn?shopCount(fn):null;if(!r)return 0;return ri===0?r.total:ri===1?r.delivered:r.remain;};
+    const totalGetVal=(fn)=>[G95_RAW_A,G95_RAW_B].reduce((sum,rd)=>sum+getVal(rd,fn),0)+shopGetVal(fn);
+    const rowColor=ri===1?'color:var(--green);font-weight:600':ri===2?'color:var(--red)':'';
+    return`<tr style="${rowColor}">
+      <td style="padding:5px 8px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid var(--border)">${rowLabel}</td>
+      ${sections.map(s=>[isOwnerK,isNormalK,isBizK].map(fn=>cell(getVal(s.rd,fn))).join('')).join('')}
+      ${[isOwnerK,isNormalK,isBizK].map(fn=>cell(shopGetVal(fn))).join('')}
+      ${[isOwnerK,isNormalK,isBizK].map(fn=>cell(totalGetVal(fn),true)).join('')}
+    </tr>`;
+  }).join('');
+  const open=window._hoSummaryOpen!==false;
+  return `<div style="background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:#E9E9E9;cursor:pointer" onclick="window._hoSummaryOpen=!(window._hoSummaryOpen!==false);renderHandover()">
+      <span style="font-size:13px;font-weight:600">📋 交屋狀態統計表</span>
+      <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+        <button class="btn btn-pdf btn-sm no-print" onclick="printSummaryTablePdf()" style="padding:2px 9px;font-size:11px">🖨 PDF</button>
+        <span style="font-size:14px;color:var(--text2);cursor:pointer" onclick="window._hoSummaryOpen=!(window._hoSummaryOpen!==false);renderHandover()">${open?'▲':'▼'}</span>
+      </div>
+    </div>
+    ${open?`<div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--surface)">
+            <th style="padding:5px 8px;text-align:left;border:1px solid var(--border);font-size:11px">　</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">A 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">B 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">店鋪</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:11px;font-weight:600;color:var(--purple)">全案合計</th>
+          </tr>
+          <tr style="background:var(--surface)">
+            <th style="padding:4px 8px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:400;color:var(--text2)">　</th>
+            ${['A棟','B棟','店鋪'].map(()=>`<th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">地主</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">自購</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">業主</th>`).join('')}
+            <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:10px;color:var(--purple)">地主</th>
+            <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">自購</th>
+            <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">業主</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`:''}
+  </div>`;
+}
 function _batchSchedPanelHTML(ns){
   if(window._bslOpen===undefined)window._bslOpen=false;
   const open=window._bslOpen;
@@ -5216,7 +5279,7 @@ function _cellAccent(key){
 function clearSchedule(key){if(!S.handoverUnits||!S.handoverUnits[key])return;if(!confirm('確定清除「'+unitDisplayName(key)+'」的驗收日期與時段？\n（接待人員與缺失資料會保留，戶別會從行事曆移除）'))return;const hu=S.handoverUnits[key];delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;_hcalExpanded=null;save();renderHCal();toast('已清除排程，戶別已移出行事曆','🗑');}
 function bslCheckAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.checked=v);_bslRenderOwnerBox();}
 function bslComAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.star=v);_bslRenderOwnerBox();}
-function bslClearOwner(){window._bslOwner=null;['hs','hc'].forEach(n=>{const el=document.getElementById('bsl-owner-'+n);if(el)el.innerHTML='';});}
+function bslClearOwner(){window._bslOwner=null;['hs','hc','hd'].forEach(n=>{const el=document.getElementById('bsl-owner-'+n);if(el)el.innerHTML='';});}
 function bslApplyChecked(ns){
   const o=window._bslOwner;if(!o||!o.items)return;
   const g=id=>document.getElementById(id+'-'+ns);
@@ -8066,7 +8129,7 @@ const TAB_DEFS={
   done:      {label:'✅ 已完成工作',       row:2},
   handover:  {label:'🏠 交屋狀態表',      row:3},
   hpend:     {label:'📦 交屋前缺失彙整',  row:3},
-  hstats:    {label:'📊 客戶交屋狀態表',  row:3},
+  // hstats:    {label:'📊 客戶交屋狀態表',  row:3},  // V0701-29：統計表＋批次排程已併入「交屋狀態表」，隱藏此分頁。還原＝取消本行註解
   hcal:      {label:'📆 交屋行事曆',      row:3},
   clean:     {label:'🧹 清潔追蹤',        row:3},
   pubarea:   {label:'🏛 公設狀態表',      row:3},
@@ -8091,7 +8154,9 @@ function renderTabBar(){
   let cells;
   if(_tabEditMode){
     if(!_editSlots)_editSlots=S.tabOrder.map(id=>(id&&TAB_DEFS[id])?id:null);
-    while(_editSlots.length<24)_editSlots.push(null);
+    // 多留幾列空位方便拖拉重排：至少 35 格，且比實際分頁數多約兩列（可拉到第四、五列、隨時有空位暫放）
+    const _slotTarget=Math.max(35,_editSlots.length+14);
+    while(_editSlots.length<_slotTarget)_editSlots.push(null);
     cells=_editSlots;
   }else{
     cells=S.tabOrder.filter(id=>id&&TAB_DEFS[id]);  // 側欄：正常模式只列實際分頁、不放填充格
