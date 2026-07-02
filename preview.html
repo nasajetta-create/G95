@@ -247,19 +247,27 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
   .card{box-shadow:none;padding:0}.tbl-wrap{box-shadow:none;border:1px solid #ccc}
 }
 @media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.side-editor{width:100%}.cal-cell{min-height:55px}.cal-ev{font-size:10px}}
-/* ── V0701-42 手機檢視最佳化（只在 ≤700px 生效，桌機零影響）── */
+/* ── V0701-42 手機檢視最佳化（只在 ≤700px 生效，桌機零影響）；V0701-44 改雙列橫滑＋☰看板選單 ── */
+.m-only{display:none}
 @media(max-width:700px){
   body{font-size:15px}
   .page-hdr{font-size:15px;padding:9px 12px;gap:6px;margin-bottom:10px}
   .page-hdr span{font-size:12px}
-  .tabs-wrap:not(.edit-mode) .tab-grid{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding-bottom:4px;scrollbar-width:none}
+  .m-only{display:inline-flex}
+  .tabs-wrap:not(.edit-mode) .tab-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:max-content;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px 8px;padding-bottom:4px;scrollbar-width:none}
   .tabs-wrap:not(.edit-mode) .tab-grid::-webkit-scrollbar{display:none}
-  .tabs-wrap:not(.edit-mode) .tab{flex:0 0 auto;padding:11px 16px;font-size:14px;min-height:44px;display:flex;align-items:center}
+  .tabs-wrap:not(.edit-mode) .tab{padding:10px 15px;font-size:14px;min-height:42px;display:flex;align-items:center}
   [id^="pane-"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .card{padding:10px 12px}
   input,select,textarea{font-size:16px}
   .btn{min-height:36px}
 }
+#tab-menu-ov{position:fixed;inset:0;z-index:99990;background:rgba(30,26,70,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px}
+#tab-menu-ov .tmenu{background:#fff;border-radius:14px;padding:14px;max-width:520px;width:100%;max-height:82vh;overflow-y:auto}
+#tab-menu-ov .tmenu h3{margin:0 0 10px;font-size:15px;color:#3C3489}
+#tab-menu-ov .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+#tab-menu-ov .titem{border:1px solid #D6D6D6;background:#F7F6F2;border-radius:9px;padding:11px 6px;font-size:12.5px;text-align:center;cursor:pointer;font-family:inherit;min-height:44px}
+#tab-menu-ov .titem.on{background:#534AB7;border-color:#534AB7;color:#fff}
 /* ── V0701-40 使照進度分頁（scope 在 #pane-uso，不影響其他分頁）── */
 #pane-uso .uso-card{background:#fff;border:1px solid var(--pborder,#BCBDC9);border-radius:12px;padding:14px 16px;margin-bottom:14px}
 #pane-uso .uso-goal{background:#EEEDFE;border-color:#CECBF6}
@@ -330,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 141;  // ← 每次部署新版時遞增
+const CODE_VERSION = 142;  // ← 每次部署新版時遞增
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -731,11 +739,12 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-43</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-44</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
     <div class="tab-btn-group no-print">
+      <button class="tab-edit-btn m-only" id="tab-menu-btn" onclick="g95TabMenu()">☰ 看板</button>
       <button class="tab-edit-btn" id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button>
       <button class="tab-edit-btn" id="tab-edit-btn" onclick="toggleTabEditMode()">🔓 編輯排序</button>
       <button class="tab-edit-btn" id="theme-toggle" onclick="toggleTheme()">🌙 深色</button>
@@ -8433,6 +8442,27 @@ function confirmTabEditAuth(){
   _tabOrderBackup=[...S.tabOrder];
   _tabEditMode=true;renderTabBar();
   toast('已進入排序模式，拖曳卡片調整順序','🔓');
+}
+// ── V0701-44 手機「☰ 看板」全部分頁選單 ──
+function g95TabMenu(){
+ var old=document.getElementById('tab-menu-ov');
+ if(old){old.remove();return;}
+ var ov=document.createElement('div');
+ ov.id='tab-menu-ov';
+ ov.onclick=function(e){if(e.target===ov)ov.remove();};
+ var h='<div class="tmenu"><h3>全部看板（點選跳轉）</h3><div class="tgrid">';
+ (S.tabOrder||[]).forEach(function(id){
+  if(!id||!TAB_DEFS[id])return;
+  h+='<button class="titem'+(id===activeTab?' on':'')+'" onclick="g95TabGo(\''+id+'\')">'+esc(tabLabel(id))+'</button>';
+ });
+ h+='</div></div>';
+ ov.innerHTML=h;
+ document.body.appendChild(ov);
+}
+function g95TabGo(id){
+ var ov=document.getElementById('tab-menu-ov');if(ov)ov.remove();
+ switchTab(id);
+ try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){window.scrollTo(0,0);}
 }
 function switchTab(id){
   activeTab=id;
