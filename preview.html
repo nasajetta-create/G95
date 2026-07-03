@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 144;  // ← 每次部署新版時遞增
+const CODE_VERSION = 145;  // ← 每次部署新版時遞增
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-46</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-47</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -11019,7 +11019,7 @@ function _loginOnAuth(user){
     var list=window._dispatchFb||[];
     if(!list.length){box.innerHTML='<div style="color:#888;padding:14px">（沒有待確認的回報）</div>';return;}
     box.innerHTML=list.map(function(f){
-      var r=(window.S&&Array.isArray(S.rows))?S.rows.filter(function(x){return String(x.id)===String(f.refId);})[0]:null;
+      var r=(typeof S!=='undefined'&&S&&Array.isArray(S.rows))?S.rows.filter(function(x){return String(x.id)===String(f.refId);})[0]:null; // V0701-47:S 是 let 宣告,不能用 window.S 判斷
       var miss=!r;
       var okBtn=miss
         ?'<span style="font-size:12px;color:#9a3412">⚠ 總表找不到此列（可能已完成或刪除），只能刪回報</span> '
