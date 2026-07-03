@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 145;  // ← 每次部署新版時遞增
+const CODE_VERSION = 146;  // ← 每次部署新版時遞增
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-47</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-48</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -7113,11 +7113,9 @@ function renderHCal(){
       const isPastH=ds<todayStr;
       const bg=isToday?'#F0EEFF':isPastH?'#E9E9E9':isWeekend(d)?'#F5F3EE':'var(--surface)';
       const color=isToday?'var(--purple)':diff<0?'var(--text3)':diff<=3?'var(--red)':'var(--text2)';
-      const comN=Object.keys(S.handoverUnits||{}).reduce((a,k)=>{const h=S.handoverUnits[k];return (h&&h.planDate===ds&&!h.cancelled&&!h.noShow&&(h.inspTypes||[]).includes('委外代驗'))?a+1:a;},0);
-      const comTag=comN>0?'<br><span style="display:inline-block;margin-top:2px;background:#FAEEDA;color:#6B4D00;border:1px solid #E0B84B;border-radius:10px;padding:0 6px;font-size:9px;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact">★委外 '+comN+'</span>':'';
       return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px dashed var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
         ${fmtDate(d)}&nbsp;<span style="font-size:10px;color:var(--text3)">週${fmtDay(d)}</span><br>
-        <span style="font-size:10px;color:${color}">${diffLabel}</span>${comTag}
+        <span style="font-size:10px;color:${color}">${diffLabel}</span>
       </th>`;
     }).join('');
 
@@ -7216,8 +7214,12 @@ function renderHCal(){
       <td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:600">預定驗收 戶數</td>
       ${days.map(d=>{
         const ds=isoDate(d);
-        const n=Object.values(S.handoverUnits).filter(hu=>hu.planDate===ds&&hu.slot&&HCAL_SLOTS.includes(hu.slot)).length;
-        return`<td style="text-align:center;padding:4px;font-size:12px;border:1px solid var(--border);${n?'font-weight:600;color:var(--purple)':''}">${n||''}</td>`;
+        const list=Object.values(S.handoverUnits).filter(hu=>hu.planDate===ds&&hu.slot&&HCAL_SLOTS.includes(hu.slot));
+        const n=list.length;
+        const com=list.filter(hu=>(hu.inspTypes||[]).includes('委外代驗')).length;
+        const self=n-com;
+        const txt=n?`<span style="font-size:10px;color:#6B4D00">★委外${com}</span>＋<span style="font-size:10px">自驗${self}</span>＝<b>${n}</b>戶`:'';
+        return`<td style="text-align:center;padding:4px;font-size:12px;border:1px solid var(--border);${n?'font-weight:600;color:var(--purple)':''}">${txt}</td>`;
       }).join('')}
     </tr>`;
 
@@ -10264,7 +10266,8 @@ function usoRenderGoal(){
  });
  h+=sel+'</select>';
  if(U.startNode&&tgt){var sn=usoById(U.startNode);var snd=sn?usoDateOf(sn):'';
-  if(snd&&tgt>=snd)h+='<span class="uso-badge">'+esc(sn.name)+' → 目標：'+usoDaysN(snd,tgt)+' 日曆天／'+usoWDN(snd,tgt)+' 工作天</span>';}
+  if(snd&&tgt>=snd){var gn=usoById(U.goalId);var bk2=usoBreak(snd,tgt);
+   h+='<span class="uso-badge">'+esc(sn.name)+'（'+snd+'）→ '+esc(gn?gn.name:'目標')+'（'+tgt+'）：工作天 '+bk2.wd+' 天＋六日 '+bk2.wk+' 天＋國定假日 '+bk2.hol+' 天＝'+bk2.total+' 天</span>';}}
  h+='</div>';
  box.innerHTML=h;
 }
@@ -10607,7 +10610,7 @@ function usoRenderEd(){
   h+='<tr draggable="true" ondragstart="usoDgs(event,'+i+')" ondragover="event.preventDefault()" ondrop="usoDgd(event,'+i+')" ondragend="usoDge(event)">';
   h+='<td><span class="uso-grip" title="拖曳排序">⠿</span><button class="uso-ebtn" onclick="usoMv('+i+',-1)">↑</button><button class="uso-ebtn" onclick="usoMv('+i+',1)">↓</button></td>';
   h+='<td style="color:#534AB7;font-size:12px;font-weight:500">#'+n.id+'</td>';
-  h+='<td><input type="text" value="'+esc(n.name)+'" style="width:190px" onchange="usoNf('+n.id+',\'name\',this.value)"></td>';
+  h+='<td><input type="text" value="'+esc(n.name)+'" style="width:190px;font-size:14px" onchange="usoNf('+n.id+',\'name\',this.value)"></td>';
   var deps=n.deps||[];
   var sum=deps.length?deps.map(function(x){return '#'+x;}).join(','):'—';
   h+='<td style="position:relative"><button class="uso-ebtn" onclick="usoDepOpen('+n.id+')">'+sum+' ▾</button>';
@@ -10654,7 +10657,12 @@ function usoDepTgl(id,oid,ck){
  if(!ck&&ix>=0)n.deps.splice(ix,1);
  usoSave();
 }
-function usoDgs(e,i){window._usoDrag=i;e.target.classList.add('uso-drg');}
+function usoDgs(e,i){
+ // V0701-48：只有 ⠿ 把手能啟動拖曳，按鈕/輸入框/下拉不再被拖曳吃掉點擊
+ if(e.target&&e.target.closest&&!e.target.closest('.uso-grip')){e.preventDefault();return;}
+ window._usoDrag=i;
+ var tr=e.target.closest?e.target.closest('tr'):e.target;if(tr)tr.classList.add('uso-drg');
+}
 function usoDge(e){var r=document.querySelector('tr.uso-drg');if(r)r.classList.remove('uso-drg');}
 function usoDgd(e,i){e.preventDefault();var f=window._usoDrag;if(f===null||f===undefined||f===i){window._usoDrag=null;return;}var U=_USO();var n=U.nodes.splice(f,1)[0];U.nodes.splice(i,0,n);window._usoDrag=null;usoSave();}
 function usoSortBy(f,dir){
