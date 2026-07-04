@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 146;  // ← 每次部署新版時遞增
+const CODE_VERSION = 147;  // ← 每次部署新版時遞增（V0704-01 交屋行事曆未清潔警示+一鍵產生清潔工作）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0701-48</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0704-01</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -5414,6 +5414,78 @@ function addCleanSlot(key){
   S.handoverUnits[key].cleanCount=cur+1;
   save();reRenderActivePane();
 }
+// ── V0704-01 未清潔警示（交屋行事曆）：驗收日在「今天之後」(不含今天)且清潔完成 0 次 → 行事曆警示＋一鍵產生清潔工作到追蹤總表（全程不碰 planDate）──
+let _cwOpen=false,_cwDays=14,_cwUnsel={},_cwZonePick={};
+let _cwIssue='全室清潔（交屋前）',_cwVendor='',_cwDmode='prev',_cwMgr='';
+function _cleanDoneCount(key){const cd=_cleanDates(key);let n=0;for(let i=1;i<=4;i++)if(cd[i])n++;return n;}
+function _cwNeedWarn(key){const hu=(S.handoverUnits||{})[key];if(!hu||!hu.planDate||hu.cancelled||hu.noShow||hu.delivered)return false;return hu.planDate>todayISO()&&_cleanDoneCount(key)===0;}
+function _cwLimitDate(){const d=new Date();d.setDate(d.getDate()+_cwDays);return _isoL(d);}
+function _cwList(){const lim=_cwLimitDate();const out=[];Object.keys(S.handoverUnits||{}).forEach(k=>{const hu=S.handoverUnits[k];if(!_cwNeedWarn(k))return;if(hu.planDate>lim)return;out.push({key:k,hu});});out.sort((a,b)=>a.hu.planDate===b.hu.planDate?String(a.key).localeCompare(String(b.key),'zh-TW',{numeric:true}):(a.hu.planDate<b.hu.planDate?-1:1));return out;}
+function _cwExistOpenCleanRow(key){const rows=getDefectRows(key)||[];return rows.find(r=>r.compId==null&&!r.actualDone&&/清潔/.test(String(r.issue||'')));}
+function _cwZoneOf(key){const rows=getDefectRows(key)||[];return rows.length?(rows[0].zone||''):'';}
+function _cwPlanDone(pd){if(!pd)return'';if(_cwDmode==='same')return pd;const d=new Date(pd+'T12:00:00');d.setDate(d.getDate()-1);return _isoL(d);}
+function _cwMarkHTML(key){const hu=(S.handoverUnits||{})[key]||{};return '<span title="未清潔（清潔完成 0 次）｜驗收 '+esc(hu.planDate||'')+'" style="margin-left:2px;font-size:8px;line-height:1;background:#A32D2D;color:#fff;border-radius:2px;padding:1px 2px;vertical-align:middle">🧹</span>';}
+function _cwBtnHTML(){const n=_cwList().length;if(!n&&!_cwOpen)return'';return '<button class="btn btn-sm no-print" onclick="_cwOpen=!_cwOpen;renderHCal()" style="background:'+(n?'#FCEBEB':'var(--surface)')+';border-color:'+(n?'#E39B9B':'var(--border)')+';color:#A32D2D;font-weight:600">🧹 未清潔警示（'+n+'）'+(_cwOpen?' ▲':' ▼')+'</button>';}
+function cwSetZone(key,val){_cwZonePick[key]=val;}
+function cwToggleSel(key){if(_cwUnsel[key])delete _cwUnsel[key];else _cwUnsel[key]=1;renderHCal();}
+function _cleanWarnPanelHTML(){
+  if(!_cwOpen)return'';
+  const list=_cwList();
+  if(!_cwVendor)_cwVendor=(S.vendors||[]).find(v=>/點工/.test(v))||'A301金藏(點工)';
+  let rowsH='';let genN=0;
+  list.forEach(it=>{
+    const hu=it.hu;const exist=_cwExistOpenCleanRow(it.key);
+    const zone=_cwZoneOf(it.key);
+    const status=hu.cleanPlanDate?('已排未清（預定 '+esc(String(hu.cleanPlanDate).slice(5))+'）'):'未排未清';
+    const skip=!!exist;const sel=!skip&&!_cwUnsel[it.key];
+    if(sel&&(zone||_cwZonePick[it.key]))genN++;
+    const zoneCell=zone?esc(zLabel(zone)):('<select onchange="cwSetZone(\''+esc(it.key)+'\',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">— 選區域 —</option>'+zOpts(_cwZonePick[it.key]||'')+'</select>');
+    const act=skip?('<span style="color:var(--text3)">跳過（已有未完成清潔列 #'+exist.id+'）</span>'):(sel?('將新增：'+esc(_cwIssue)+' · 預計 '+esc(_cwPlanDone(hu.planDate).slice(5))):'<span style="color:var(--text3)">（未勾選）</span>');
+    rowsH+='<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="text-align:center;padding:4px"><input type="checkbox" '+(sel?'checked':'')+(skip?' disabled':'')+' onchange="cwToggleSel(\''+esc(it.key)+'\')"></td>'
+      +'<td style="padding:4px 6px;font-weight:600">'+esc(unitDisplayName(it.key))+'</td>'
+      +'<td style="padding:4px 6px">'+esc(String(hu.planDate).slice(5))+(hu.slot?(' '+esc(hu.slot)):'')+'</td>'
+      +'<td style="padding:4px 6px;color:'+(hu.cleanPlanDate?'#854F0B':'#A32D2D')+'">'+status+'</td>'
+      +'<td style="padding:4px 6px">'+zoneCell+'</td>'
+      +'<td style="padding:4px 6px;font-size:11px">'+act+'</td></tr>';
+  });
+  const dayBtn=n=>'<button class="btn btn-sm no-print" onclick="_cwDays='+n+';renderHCal()" style="'+(_cwDays===n?'background:#A32D2D;color:#fff;border-color:#A32D2D;':'')+'font-size:11px;padding:3px 10px">'+n+' 天內</button>';
+  const vendorOpts=(S.vendors||[]).map(v=>'<option value="'+esc(v)+'"'+(v===_cwVendor?' selected':'')+'>'+esc(v)+'</option>').join('');
+  return '<div class="no-print" style="border:1.5px solid #E39B9B;border-radius:var(--r);background:var(--card);padding:12px 14px;margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><span style="font-size:13px;font-weight:700;color:#A32D2D">🧹 未清潔警示 — 驗收日在今天之後（不含今天）且清潔完成 0 次：'+list.length+' 戶</span>'+dayBtn(14)+dayBtn(21)+'<span style="font-size:11px;color:var(--text3)">產生的工作走追蹤總表→點工派遣「待帶入」，不會動任何驗收日</span></div>'
+    +(list.length?('<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--surface)"><th style="padding:4px;width:34px">☑</th><th style="padding:4px 6px;text-align:left">戶別</th><th style="padding:4px 6px;text-align:left">驗收日/時段</th><th style="padding:4px 6px;text-align:left">清潔狀態</th><th style="padding:4px 6px;text-align:left">區域</th><th style="padding:4px 6px;text-align:left">動作預覽</th></tr></thead><tbody>'+rowsH+'</tbody></table></div>'):'<div style="font-size:12px;color:var(--text3)">範圍內沒有未清潔的戶別 🎉</div>')
+    +(list.length?('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--rs);padding:8px 10px;font-size:12px">'
+      +'工作內容 <input value="'+esc(_cwIssue)+'" oninput="_cwIssue=this.value" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:180px">'
+      +'責任廠商 <select onchange="_cwVendor=this.value" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+vendorOpts+'</select>'
+      +'預計完成 <select onchange="_cwDmode=this.value;renderHCal()" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="prev"'+(_cwDmode==='prev'?' selected':'')+'>驗收日前 1 天</option><option value="same"'+(_cwDmode==='same'?' selected':'')+'>驗收日當天</option></select>'
+      +'管理 <select onchange="_cwMgr=this.value" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+mOpts(_cwMgr)+'</select>'
+      +'<button class="btn btn-p btn-sm" onclick="cwGenerate()" style="font-size:12px">✚ 產生清潔工作（'+genN+' 筆）</button>'
+      +'<button class="btn btn-sm" onclick="cwUndo()" style="font-size:12px">↩ 復原上一批</button></div>'):'')
+    +'</div>';
+}
+function cwGenerate(){
+  const list=_cwList();
+  if(!_cwVendor){toast('請選擇責任廠商','⚠️');return;}
+  if(!/點工/.test(_cwVendor)&&!confirm('廠商「'+_cwVendor+'」不含「點工」，產生的工作不會出現在點工派遣候選。仍要產生？'))return;
+  const todo=[];const noZone=[];
+  list.forEach(it=>{
+    if(_cwUnsel[it.key])return;
+    if(_cwExistOpenCleanRow(it.key))return;
+    const zone=_cwZonePick[it.key]||_cwZoneOf(it.key);
+    if(!zone){noZone.push(unitDisplayName(it.key));return;}
+    todo.push({key:it.key,zone,pd:_cwPlanDone(it.hu.planDate)});
+  });
+  if(noZone.length){toast('有 '+noZone.length+' 戶尚未選區域：'+noZone.slice(0,5).join('、')+(noZone.length>5?'…':''),'⚠️');return;}
+  if(!todo.length){toast('沒有可產生的戶別','⚠️');return;}
+  if(!confirm('將在追蹤總表新增 '+todo.length+' 筆清潔工作（可用「復原上一批」還原）？'))return;
+  window._cwUndo={rows:JSON.parse(JSON.stringify(S.rows)),nextId:S.nextId};
+  todo.forEach(t=>{
+    const dn=unitDisplayName(t.key);const fm=dn.match(/-(\d+)F?$/);
+    S.rows.push({id:S.nextId++,createdAt:Date.now(),round:'初驗',zone:t.zone,manager:_cwMgr,unit:dn,floor:fm?(fm[1]+'F'):'',vendor:_cwVendor,issue:_cwIssue||'全室清潔（交屋前）',note:'[自動] 交屋前未清潔警示產生',planIn:'',planDone:t.pd,actualIn:'',actualDone:'',isOwner:isOwnerUnit(t.key)});
+  });
+  save();toast('已新增 '+todo.length+' 筆清潔工作到追蹤總表','✅');renderHCal();
+}
+function cwUndo(){if(!window._cwUndo){toast('沒有可復原的批次','⚠️');return;}S.rows=window._cwUndo.rows;S.nextId=window._cwUndo.nextId;window._cwUndo=null;save();toast('已復原上一批自動清潔工作','↩');renderHCal();}
 function _cellAccent(key){
   if(isOwnerUnit(key))return'#3C3489';
   if(isBizUnit(key))return'#085041';
@@ -5567,6 +5639,11 @@ function pwoMarkDone(id){
   if(!S.completed)S.completed=[];
   S.completed.push({...r,compId:S.nextCompId++,completedAt:todayISO()});
   S.rows=S.rows.filter(x=>x.id!==id);
+  // V0704-01（Q6）：自動清潔列銷項 → 同步勾該戶「第1次清潔」完成（只寫 cleanDates，不碰 planDate）
+  if(/未清潔警示產生/.test(String(r.note||''))){
+    const _ck=_pwoUnitKey(r);const _chu=(S.handoverUnits||{})[_ck];
+    if(_chu){if(!_chu.cleanDates)_chu.cleanDates={};if(!_chu.cleanDates[1]){_chu.cleanDates[1]=todayISO();try{toast('已同步勾選 '+unitDisplayName(_ck)+' 第1次清潔完成','🧹');}catch(e){}}}
+  }
   save();renderPWO();
   toast('已標記完成（移至已完成工作，可還原）','✅');
 }
@@ -7149,7 +7226,7 @@ function renderHCal(){
           const isExp=_hcalExpanded===key;
           const _colCount=_hcalShowCount?'22px':'0px';
           const _colPct=_hcalShowPct?'22px':'0px';
-          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 7px 20px ${_colCount} ${_colPct};align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${_grey?'#E6E3DE':cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;${_grey?'text-decoration:line-through;color:#8A8783;':''}">${esc(unitDisplayName(key))}${_cleanDots(key,cs.border)}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:var(--red);padding-left:2px">${_hcalShowCount&&pendingCount>0?`${pendingCount}筆`:''}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:${statusColor};padding-left:2px">${_cancel?'已取消':(_absent?'未到':(_hcalShowPct&&dateStr>=todayStr?`${pct??'—'}%`:''))}</span></div>`;
+          return`<div onclick="_hcalExpanded=(_hcalExpanded==='${esc(key)}')?null:'${esc(key)}';renderHCal()" style="display:grid;grid-template-columns:10px minmax(36px,1fr) ${_hostColW}px 7px 20px ${_colCount} ${_colPct};align-items:center;column-gap:1px;font-size:11px;padding:2px 2px;border-radius:3px;background:${_grey?'#E6E3DE':cs.bg};border:1px ${_noShow?'dashed':'solid'} ${isExp?'var(--purple)':(_noShow?'#B4B2A9':cs.border)};color:${cs.text};cursor:pointer;${isExp?'outline:2px solid var(--purple);':''}"><span style="font-size:8px;padding:0 2px;background:${cs.border};color:#fff;border-radius:2px;text-align:center">${cs.label}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;${_grey?'text-decoration:line-through;color:#8A8783;':''}">${esc(unitDisplayName(key))}${_cleanDots(key,cs.border)}${_cwNeedWarn(key)?_cwMarkHTML(key):''}</span><span style="display:inline-flex;align-items:center;overflow:hidden">${hostCellAligned(key)}</span><span style="text-align:center;color:#D4A900;font-size:10px">${isComH?'★':''}</span><span style="display:inline-flex;justify-content:center">${inspStageBadgeCal(key)}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:var(--red);padding-left:2px">${_hcalShowCount&&pendingCount>0?`${pendingCount}筆`:''}</span><span style="text-align:left;font-size:9px;overflow:hidden;white-space:nowrap;color:${statusColor};padding-left:2px">${_cancel?'已取消':(_absent?'未到':(_hcalShowPct&&dateStr>=todayStr?`${pct??'—'}%`:''))}</span></div>`;
         }
         const _ownerCount={};
         units.forEach(u=>{const nm=((S.clientData||{})[u.key]||{}).name||'';if(nm)_ownerCount[nm]=(_ownerCount[nm]||0)+1;});
@@ -7252,9 +7329,11 @@ function renderHCal(){
       <button class="btn btn-sm" onclick="_hcalOffset=0;renderHCal()">本週</button>
       <button class="btn btn-sm" onclick="_hcalOffset++;renderHCal()">下兩週 ▶</button>
       <span style="font-size:12px;color:var(--text2)">${fmtDate(week1Days[0])} – ${fmtDate(week2Days[6])}</span>
+      ${_cwBtnHTML()}
       <label class="no-print" style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" checked onchange="_hcalPrintMode=this.checked?'split':'full'">上下午分頁</label><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_(${w1tag}).png')" style="padding:5px 10px;font-size:12px">📷 單週</button><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_(${w1tag}).png');setTimeout(function(){_capEl(document.getElementById('hcal-week2'),'行事曆_(${w2tag}).png')},1300)" style="padding:5px 10px;font-size:12px">📷 雙週</button><button class="btn btn-sm no-print" onclick="capCustom()" style="padding:5px 10px;font-size:12px">✂️ 自訂</button><button class="btn btn-pdf no-print" onclick="printHCal()" style="padding:6px 16px;font-size:13px;font-weight:600">🖨 PDF</button>
     </div>
     ${_batchSchedPanelHTML('hc')}
+    ${_cleanWarnPanelHTML()}
     <div id="hcal-week1">${buildWeekTable(week1Days,w1Title)}</div>
     <div id="hcal-week2">${buildWeekTable(week2Days,w2Title)}</div>
     <div style="padding:7px 10px;background:var(--surface);border-radius:var(--rs);font-size:11px;color:var(--text3)">
@@ -10988,7 +11067,7 @@ function _loginOnAuth(user){
   window.confirm = function(){ return false; };
   // 6) 強化唯讀：全域攜截編輯互動 + 動態元素停用（修補切分頁/展開後的新元素與新功能按鈕）
   (function(){
-    const editRe=/\b(upd|addRow|delRow|deleteRow|confirmInlineAdd|toggleInlineAdd|showInlineAdd|editVendorModal|editManagerModal|addVendor|addZoneUnit|addZone|quickInspToggle|quickInspDate|addReinspect|toggleDeliveredQuick|toggleDeliveredH|toggleDeliveredCl|toggleDelivered|setDeliveredDateQuick|vstatEditDate|vstatRemove|roundCycle|dupeSetKeep|applyDupeKeep|mergeDupes|addHuInspH2|addHuInsp|delHuInspH2|delHuInsp|setHuFieldH|setHuField|setHuInspType|setHuParkCheck|setHu|setCl|quickCompleteDefect|completeRow|toggleCheck|batchMarkDelivered|batchFillInspDate|batchComplete|importClientExcel|importClient|emptyTrash|permDeleteTrash|permDelete|restoreTrashItem|restoreTrash|restoreRow|delEvent|addEvent|addHuParking|removeHandover|renumberAlerts|renumberEvents|renumber|clearAllData|confirmClientEdit|showBatchClientEdit|saveNote|_undoDelete|toggleNoShow|toggleCancel|clearSchedule|pwoMarkDone|batchSchedByList|bslApplyChecked|bslExpandOwners|toggleHost|setHostBadgeMode|setMgrCode|hrptUnlockTotal)\b/;
+    const editRe=/\b(upd|addRow|delRow|deleteRow|confirmInlineAdd|toggleInlineAdd|showInlineAdd|editVendorModal|editManagerModal|addVendor|addZoneUnit|addZone|quickInspToggle|quickInspDate|addReinspect|toggleDeliveredQuick|toggleDeliveredH|toggleDeliveredCl|toggleDelivered|setDeliveredDateQuick|vstatEditDate|vstatRemove|roundCycle|dupeSetKeep|applyDupeKeep|mergeDupes|addHuInspH2|addHuInsp|delHuInspH2|delHuInsp|setHuFieldH|setHuField|setHuInspType|setHuParkCheck|setHu|setCl|quickCompleteDefect|completeRow|toggleCheck|batchMarkDelivered|batchFillInspDate|batchComplete|importClientExcel|importClient|emptyTrash|permDeleteTrash|permDelete|restoreTrashItem|restoreTrash|restoreRow|delEvent|addEvent|addHuParking|removeHandover|renumberAlerts|renumberEvents|renumber|clearAllData|confirmClientEdit|showBatchClientEdit|saveNote|_undoDelete|toggleNoShow|toggleCancel|clearSchedule|pwoMarkDone|batchSchedByList|bslApplyChecked|bslExpandOwners|toggleHost|setHostBadgeMode|setMgrCode|hrptUnlockTotal|cwGenerate|cwUndo)\b/;
     let _nt=0; function notify(){const n=Date.now(); if(n-_nt<1500)return; _nt=n; try{ if(typeof toast==='function')toast('唯讀模式，無法編輯','🔒'); }catch(_){}}
     function block(e){ try{
       const t=e.target;
