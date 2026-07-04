@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 152;  // ← 每次部署新版時遞增（V0705-01 清潔追蹤三修(標題列/欄寬/棟別配色)+歷史資料上鎖MONGA）
+const CODE_VERSION = 153;  // ← 每次部署新版時遞增（V0705-02 更新紀錄記操作者+交屋/清潔/派工操作入紀錄+點工廠商旗標+週一備份提醒+2027假日表+關頁flush+垃圾桶上限300）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0705-01</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0705-02</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -764,6 +764,7 @@ if(window._LOGIN_GATE){
   </div>
   <div class="card card-main" id="mainCard">
     <div class="tabs-wrap" id="tab-bar-wrap">
+      <div id="g95BkBanner" class="no-print" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:9px 12px;font-size:13px;color:#92400e;margin-bottom:10px">📦 週一提醒：本週還沒匯出完整備份（缺失／交屋／設定整包 JSON）<button class="btn btn-sm" onclick="g95FullBackup()" style="margin-left:8px;background:#f59e0b;color:#fff;border-color:#f59e0b">⬇ 立即備份</button><button class="btn btn-sm" onclick="document.getElementById('g95BkBanner').style.display='none'" style="margin-left:4px">稍後</button></div>
       <div id="tab-bar"></div>
     </div>
     <div class="main-col">
@@ -1000,6 +1001,7 @@ function logChange(type, detail, extra){
     ts: new Date().toISOString(),
     type: type||'更新',
     detail: detail||'',
+    who: String(window._authEmail||'').replace(/@gmail\.com$/,'')||undefined, // V0705-02：記操作者
     rowCount: S.rows.length
   }, extra||{}));
   // 最多保留 500 筆
@@ -1101,6 +1103,7 @@ function _stampMetaTouch(){
 }
 function save(){
   if(window._VIEW_ONLY)return;
+  try{if(S.trash&&S.trash.length>300)S.trash.length=300;}catch(e){} // V0705-02：垃圾桶上限 300（新的在前，砍最舊）
   // ── 版本閘門：舊版禁止寫入 ──
   if(window._versionBlocked){
     toast('⛔ 偵測到新版本，請重新整理頁面後再操作','⚠️');
@@ -1132,6 +1135,16 @@ function manualSave(){
   _saveTimer=null;
   _doSave();
 }
+// V0705-02：關頁/切出分頁前把還在防抖等待的變更立刻送出（避免 1.5 秒內關頁掉資料）
+document.addEventListener('visibilitychange',function(){
+  try{
+    if(document.visibilityState==='hidden'&&_saveTimer){
+      if(window._VIEW_ONLY||window._versionBlocked||!window._fbSave)return;
+      try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
+      clearTimeout(_saveTimer);_saveTimer=null;_doSave();
+    }
+  }catch(e){}
+});
 
 let _pendingRemote=null;
 // ── renderAll 節流：500ms 內最多渲染一次 ──
@@ -3518,14 +3531,23 @@ function getVendorSort(){
   return _vendorSort;
 }
 
+// V0705-02：點工廠商旗標——dispatch 候選改優先看這個（名字含「點工」為 fallback），改廠商名不再斷線
+function setVendorFlag(v,on){
+  if(!S.vendorFlags)S.vendorFlags={};
+  if(on)S.vendorFlags[v]=true;else delete S.vendorFlags[v];
+  logChange('🏷 點工旗標',v+' → '+(on?'是點工廠商':'取消點工廠商'));
+  save();toast(v+(on?' 已標為點工廠商':' 已取消點工旗標'),'🏷');renderVendor();
+}
 function vendorEditorHTML(){
   const sorted=[...S.vendors].sort((a,b)=>a.localeCompare(b,'zh-TW'));
   const countBadge=v=>{const c=S.rows.filter(r=>r.vendor===v).length;return c?`<span style="font-size:10px;color:var(--text3);margin-left:4px">(${c}項)</span>`:'';}
   const pills=sorted.map(v=>{
     const col=vColor(v);
+    const isPW=!!(S.vendorFlags&&S.vendorFlags[v]);
     return`<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fff;border:1px solid var(--pborder);border-radius:6px;margin-bottom:4px">
       <span style="width:8px;height:8px;border-radius:2px;background:${col};flex-shrink:0"></span>
       <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}${countBadge(v)}</span>
+      <label title="勾選＝點工廠商：這家的缺失會出現在點工派遣的「待帶入」（比名字含不含『點工』更可靠）" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:${isPW?'#B45309':'var(--text3)'};cursor:pointer;flex-shrink:0;white-space:nowrap"><input type="checkbox" ${isPW?'checked':''} onchange="setVendorFlag('${esc(v)}',this.checked)" style="width:12px;height:12px;margin:0">點工</label>
       <button class="btn btn-sm" style="flex-shrink:0;padding:2px 6px;font-size:10px" onclick="editVendorModal(${S.vendors.indexOf(v)})">✏️</button>
     </div>`;
   }).join('');
@@ -4004,8 +4026,17 @@ function g95FullBackup(){
     a.click();
     setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(e){}},3000);
     toast('已匯出完整備份，請收好檔案','💾');
+    try{localStorage.setItem('g95_bkWeek',_bkWeekKey());var _bb=document.getElementById('g95BkBanner');if(_bb)_bb.style.display='none';}catch(e){}
   }catch(e){toast('備份失敗：'+(e&&e.message||e),'⚠️');}
 }
+// V0705-02：週一備份提醒（本週鍵=週一日期；備份過就記住，整週不再提醒）
+function _bkWeekKey(){var d=new Date();var m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));return _isoL(m);}
+(function(){try{
+  var d=new Date();
+  if(d.getDay()===1&&localStorage.getItem('g95_bkWeek')!==_bkWeekKey()){
+    var b=document.getElementById('g95BkBanner');if(b)b.style.display='';
+  }
+}catch(e){}})();
 function renderMgr(){
   const TITLE_ORDER=['副理','所長','主任','組長','工程師','其他',''];
   function titleRank(t){const i=TITLE_ORDER.indexOf(t||'');return i<0?TITLE_ORDER.length-1:i;}
@@ -4976,7 +5007,7 @@ function toggleHovFloorMenu(btn){const m=document.getElementById('hov-fl-menu');
 function setHuFieldH(u,inspIdx,val){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];S.handoverUnits[u].inspections[inspIdx].date=val;save();}
 function addHuInspH2(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];const _t=nextInspType(S.handoverUnits[u]);S.handoverUnits[u].inspections.push({label:_t,type:_t,date:'',planDate:''});save();_hovExpanded=u;reRenderActivePane();}
 function delHuInspH2(u,i){if(!S.handoverUnits||!S.handoverUnits[u])return;S.handoverUnits[u].inspections.splice(i,1);save();_hovExpanded=u;reRenderActivePane();}
-function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&_hu.cancelled&&val!==_hu.planDate){_hu.cancelled=false;}/* 改成新驗收日＝視為新排程（原取消紀錄已保留在 cancelHistory）*/_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();}
+function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(field==='planDate'||field==='slot')logChange('📆 交屋/行事曆','改'+(field==='planDate'?'驗收日':'時段')+' '+unitDisplayName(u)+' → '+(val||'(清空)'));if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&_hu.cancelled&&val!==_hu.planDate){_hu.cancelled=false;}/* 改成新驗收日＝視為新排程（原取消紀錄已保留在 cancelHistory）*/_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();}
 function setHuInspType(u,type,checked){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const cur=S.handoverUnits[u].inspTypes||[];if(checked){if(!cur.includes(type))S.handoverUnits[u].inspTypes=[...cur,type];}else{S.handoverUnits[u].inspTypes=cur.filter(t=>t!==type);}save();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(activeTab==='clients')renderClients();}
 function toggleDeliveredH(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderHandover();if(activeTab==='hstats')renderHStats();}
 function toggleDeliveredCl(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderClients();renderHandover();if(activeTab==='hstats'||document.getElementById('pane-hstats').style.display!=='none')renderHStats();if(activeTab==='hcal'||document.getElementById('pane-hcal').style.display!=='none')renderHCal();}
@@ -5246,6 +5277,7 @@ function batchSchedByList(ns){
   const applied=[];
   matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com,clean);applied.push(unitDisplayName(m.key));});
   save();reRenderActivePane();
+  logChange('📆 交屋/行事曆',(_schedClean?'批次排清潔 ':'批次排程 ')+applied.length+' 戶'+(date?('→'+date):''),{units:applied.map(m=>unitDisplayName(m.key)).slice(0,50)});
   let msg=(_schedClean?'已排清潔 ':'已排程 ')+applied.length+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':'');
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
   toast(msg,'✅');
@@ -5353,12 +5385,13 @@ function _pastGuardBatch(n){
   if(c!==null){try{toast('認證碼錯誤','⚠️');}catch(e){}}
   return false;
 }
-function toggleNoShow(key){if(!_pastGuard(key)){reRenderActivePane();return;}if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key].noShow=!S.handoverUnits[key].noShow;save();renderHCal();}
+function toggleNoShow(key){if(!_pastGuard(key)){reRenderActivePane();return;}if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key].noShow=!S.handoverUnits[key].noShow;logChange('📆 交屋/行事曆',(S.handoverUnits[key].noShow?'標記未到 ':'取消未到 ')+unitDisplayName(key));save();renderHCal();}
 function toggleCancel(key){
   if(!_pastGuard(key)){reRenderActivePane();return;}
   if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
   hu.cancelled=!hu.cancelled;
+  logChange('📆 交屋/行事曆',(hu.cancelled?'取消驗收 ':'恢復驗收 ')+unitDisplayName(key));
   if(hu.cancelled){
     // 記下這次被取消的排程（日期／時段），日後改成新日期也不會遺失這筆取消紀錄
     if(!Array.isArray(hu.cancelHistory))hu.cancelHistory=[];
@@ -5490,6 +5523,7 @@ function cwMarkDone(){
   window._cwDoneUndo=JSON.parse(JSON.stringify(S.handoverUnits));
   let n=0;
   todo.forEach(it=>{const hu=S.handoverUnits[it.key];if(!hu)return;if(!hu.cleanDates)hu.cleanDates={};if(!hu.cleanDates[1]){hu.cleanDates[1]=d;n++;}});
+  logChange('🧹 清潔','批次標第1次清潔完成 '+n+' 戶（'+d+'）');
   save();toast('已標 '+n+' 戶第1次清潔完成（'+d+'）','✅');renderHCal();
 }
 function cwDoneUndo(){if(!window._cwDoneUndo){toast('沒有可復原的批次','⚠️');return;}S.handoverUnits=window._cwDoneUndo;window._cwDoneUndo=null;save();toast('已復原批次清潔標註','↩');renderHCal();}
@@ -5567,6 +5601,7 @@ function cwGenerate(){
     const dn=unitDisplayName(t.key);const fm=dn.match(/-(\d+)F?$/);
     S.rows.push({id:S.nextId++,createdAt:Date.now(),round:'初驗',zone:t.zone,manager:_cwMgr,unit:dn,floor:fm?(fm[1]+'F'):'',vendor:_cwVendor,issue:_cwIssue||'全室清潔（交屋前）',note:'[自動] 交屋前未清潔警示產生（驗收'+String(t.hpd||'').slice(5)+'）',planIn:'',planDone:t.pd,actualIn:'',actualDone:'',isOwner:isOwnerUnit(t.key)});
   });
+  logChange('🧹 清潔','未清潔警示產生清潔工作 '+todo.length+' 筆',{units:todo.map(t=>unitDisplayName(t.key)).slice(0,50)});
   save();toast('已新增 '+todo.length+' 筆清潔工作到追蹤總表'+(noZone.length?('；'+noZone.length+' 戶未選區域留在清單'):''),'✅');renderHCal();
 }
 function cwUndo(){if(!window._cwUndo){toast('沒有可復原的批次','⚠️');return;}S.rows=window._cwUndo.rows;S.nextId=window._cwUndo.nextId;window._cwUndo=null;save();toast('已復原上一批自動清潔工作','↩');renderHCal();}
@@ -5575,7 +5610,7 @@ function _cellAccent(key){
   if(isBizUnit(key))return'#085041';
   return'#5F5E5A';
 }
-function clearSchedule(key){if(!S.handoverUnits||!S.handoverUnits[key])return;if(!_pastGuard(key))return;if(!confirm('確定清除「'+unitDisplayName(key)+'」的驗收日期與時段？\n（接待人員與缺失資料會保留，戶別會從行事曆移除）'))return;const hu=S.handoverUnits[key];delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;_hcalExpanded=null;save();renderHCal();toast('已清除排程，戶別已移出行事曆','🗑');}
+function clearSchedule(key){if(!S.handoverUnits||!S.handoverUnits[key])return;if(!_pastGuard(key))return;if(!confirm('確定清除「'+unitDisplayName(key)+'」的驗收日期與時段？\n（接待人員與缺失資料會保留，戶別會從行事曆移除）'))return;const hu=S.handoverUnits[key];delete hu.planDate;delete hu.slot;hu.cancelled=false;hu.noShow=false;_hcalExpanded=null;logChange('📆 交屋/行事曆','清除排程 '+unitDisplayName(key));save();renderHCal();toast('已清除排程，戶別已移出行事曆','🗑');}
 function bslCheckAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.checked=v);_bslRenderOwnerBox();}
 function bslComAll(v){if(!window._bslOwner)return;window._bslOwner.items.forEach(it=>it.star=v);_bslRenderOwnerBox();}
 function bslClearOwner(){window._bslOwner=null;['hs','hc','hd'].forEach(n=>{const el=document.getElementById('bsl-owner-'+n);if(el)el.innerHTML='';});}
@@ -5599,6 +5634,7 @@ function bslApplyChecked(ns){
   sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com,clean));
   save();
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
+  logChange('📆 交屋/行事曆',(_schedClean?'批次排清潔 ':'批次套用 ')+n+' 戶'+(date?('→'+date):''));
   toast((_schedClean?'已排清潔 ':'已套用 ')+n+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':''),'✅');
 }
 // ════════════ 廠商派工單 (V0624-20) ════════════
@@ -5729,6 +5765,7 @@ function pwoMarkDone(id){
     const _ck=_pwoUnitKey(r);const _chu=(S.handoverUnits||{})[_ck];
     if(_chu){if(!_chu.cleanDates)_chu.cleanDates={};if(!_chu.cleanDates[1]){_chu.cleanDates[1]=todayISO();try{toast('已同步勾選 '+unitDisplayName(_ck)+' 第1次清潔完成','🧹');}catch(e){}}}
   }
+  logChange('🛠 派工','完成銷項 #'+id+' '+(r.unit||''));
   save();renderPWO();
   toast('已標記完成（移至已完成工作，可還原）','✅');
 }
@@ -8280,15 +8317,16 @@ function renderChangelog(){
     if(c.oldValue!==undefined){detailContent+=`<div style="margin-bottom:4px"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px;font-size:10px">修改前</span> ${esc(String(c.oldValue))} → <span style="background:#DCFCE7;color:#166534;padding:1px 5px;border-radius:3px;font-size:10px">修改後</span> ${esc(String(c.newValue||''))}</div>`;}
     if(hasChanges){const shown=c.changes.slice(0,20);detailContent+=`<div>影響項目：${shown.map(esc).join('、')}${c.changes.length>20?`…等共 ${c.changes.length} 筆`:''}</div>`;}
     if(hasUnits){detailContent+=`<div>明細：${c.units.map(esc).join('、')}</div>`;}
-    const detailRow=hasDetail?`<tr id="cl-d-${i}" style="display:none"><td></td><td colspan="3" style="font-size:11px;color:var(--text2);background:var(--bg2,rgba(0,0,0,.03));padding:6px 10px">${detailContent}</td></tr>`:'';
+    const detailRow=hasDetail?`<tr id="cl-d-${i}" style="display:none"><td></td><td colspan="4" style="font-size:11px;color:var(--text2);background:var(--bg2,rgba(0,0,0,.03));padding:6px 10px">${detailContent}</td></tr>`:'';
     return`<tr>
       <td style="white-space:nowrap;color:var(--text2);font-size:11px">${fmtTs(c.ts)}</td>
       <td><span style="font-size:11px;font-weight:600;color:${col}">${esc(c.type)}</span></td>
       <td style="font-size:11px">${arrow}${esc(c.detail)}</td>
+      <td style="font-size:11px;color:var(--text2);white-space:nowrap">${esc(c.who||'—')}</td>
       <td style="text-align:center;font-size:11px;color:var(--text3)">${c.rowCount??'—'}</td>
     </tr>${detailRow}`;
   }).join('');
-  const empty=!log.length?'<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">尚無更新紀錄</td></tr>':'';
+  const empty=!log.length?'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">尚無更新紀錄</td></tr>':'';
   document.getElementById('pane-changelog').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <span style="font-size:14px;font-weight:700">📝 更新紀錄</span>
@@ -8303,6 +8341,7 @@ function renderChangelog(){
           <th style="width:160px;white-space:nowrap">日期時間</th>
           <th style="width:140px">類型</th>
           <th>內容說明</th>
+          <th style="width:110px">操作者</th>
           <th style="width:70px;text-align:center">總筆數</th>
         </tr></thead>
         <tbody>${rows}${empty}</tbody>
@@ -9705,7 +9744,9 @@ function _rptWeekRange(refDate){
 }
 function _rptBlkTxt(a,b,s){return '（A棟 '+(a||0)+'戶 ＋B棟 '+(b||0)+'戶 ＋店 '+(s||0)+'戶）';}
 // ── 完工推估（工作天）──────────────────────────────
-var _TW_HOLIDAYS_2026=['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-27','2026-04-03','2026-04-06','2026-05-01','2026-06-19','2026-09-25','2026-09-28','2026-10-09','2026-10-26','2026-12-25'];
+var _TW_HOLIDAYS_2026=['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-27','2026-04-03','2026-04-06','2026-05-01','2026-06-19','2026-09-25','2026-09-28','2026-10-09','2026-10-26','2026-12-25',
+  // V0705-02：2027（民國116年）平日放假日，依人事行政總處 115-05-22 公告核定版
+  '2027-01-01','2027-02-04','2027-02-05','2027-02-08','2027-02-09','2027-02-10','2027-03-01','2027-04-05','2027-04-06','2027-04-30','2027-06-09','2027-09-15','2027-09-28','2027-10-11','2027-10-25','2027-12-24','2027-12-31'];
 function _rptR1(x){return Math.round(Number(x)*10)/10;}
 function _rptFcOpt(){var f=S.rptFc||{};return {noSun:f.noSun!==false,noSat:!!f.noSat,noHol:!!f.noHol};}
 function _rptIsRest(iso,opt){var w=new Date(iso).getDay();if(opt.noSun&&w===0)return true;if(opt.noSat&&w===6)return true;if(opt.noHol&&_TW_HOLIDAYS_2026.indexOf(iso)>=0)return true;return false;}
@@ -9893,6 +9934,7 @@ function quickInspDate(key,type,date){_clGuard(key);quickInspDone(key,type,date)
 // 初驗「同一個日期」：初驗排程日＝交屋行事曆位置（planDate）；初驗完成日與排程日同步
 function setHuInspSchedule(key,val){
   if(!_pastGuard(key)){reRenderActivePane();return;}
+  logChange('📆 交屋/行事曆','改初驗排程日 '+unitDisplayName(key)+' → '+(val||'(清空)'));
   _clGuard(key);
   if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
@@ -11064,7 +11106,7 @@ function _loginOnAuth(user){
     if(location.search.indexOf('mode=view')<0){location.replace(location.pathname+'?mode=view');return;}
     _loginHide();return;
   }
-  if(_loginAllowed(user.email)){_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';return;}
+  if(_loginAllowed(user.email)){window._authEmail=user.email;_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';return;}
   _loginOverlay();_loginMsg('此帳號（'+(user.email||'')+'）不在可用名單，請聯絡管理者');
   const g=document.getElementById('login-google');if(g)g.textContent='換帳號登入';
 }
