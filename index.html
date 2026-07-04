@@ -38,13 +38,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 
 /* ── Tabs — 上排藥丸 pill style（方案 A，V0701-25）───────────────── */
 #mainCard{display:block;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0}
-.tabs-wrap{margin-bottom:14px}
+.tabs-wrap{margin-bottom:14px;overflow-x:auto}/* V0704-04：分頁區不夠寬時橫向捲動，不換行跑版 */
 .main-col{display:block}
 .tab-btn-group{display:flex;gap:6px;align-items:center}
 .tab-edit-btn{font-size:10.5px;padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;background:var(--card);cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
 .tab-edit-btn:hover{color:var(--text);border-color:var(--text2)}
 .tab-edit-btn.active{color:var(--purple);border-color:var(--purple);background:rgba(60,52,137,.06)}
-.tab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.tab-grid{display:grid;grid-template-columns:repeat(8,minmax(150px,1fr));gap:6px;min-width:1254px}/* V0704-04：固定 8 欄＝排版快照，任何螢幕排列一致（窄螢幕由 .tabs-wrap 橫向捲動；手機另有媒體查詢覆蓋不受影響） */
 .tab{padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--card);color:var(--text2);border-radius:20px;font-family:var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;text-align:left;transition:background .12s,color .12s;user-select:none}
 .tab:hover{color:var(--text);border-color:var(--text2);background:var(--surface)}
 .tab.active{background:var(--purple);color:#fff;border-color:var(--purple);font-weight:700}
@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 149;  // ← 每次部署新版時遞增（V0704-03 警示面板：全選/取消全選+未選區域改跳過不擋批+依棟別帶入區域）
+const CODE_VERSION = 150;  // ← 每次部署新版時遞增（V0704-04 分頁固定8欄grid+警示面板批次填區域）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0704-03</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0704-04</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -5419,6 +5419,33 @@ let _cwOpen=false,_cwDays=14,_cwUnsel={},_cwZonePick={};
 let _cwIssue='全室清潔（交屋前）',_cwVendor='',_cwDmode='prev',_cwMgr='',_cwDoneDate='';
 // V0704-03：全選/取消全選＋依棟別帶入區域（只動面板本地狀態，不寫 S）
 function cwSelAll(on){const list=_cwList();if(on){_cwUnsel={};}else{list.forEach(it=>{_cwUnsel[it.key]=1;});}renderHCal();}
+// V0704-04：批次填區域——未選區域的戶別集中列出，選一個區域→勾戶別→套用，可分批（只動 _cwZonePick，不寫 S）
+let _cwZbOpen=false,_cwZbSel={},_cwZbZone='';
+function _cwNoZoneList(){return _cwList().filter(it=>!_cwExistOpenCleanRow(it.key)&&!_cwZonePick[it.key]&&!_cwZoneOf(it.key));}
+function cwZbToggle(key){if(_cwZbSel[key])delete _cwZbSel[key];else _cwZbSel[key]=1;renderHCal();}
+function cwZbSelBldg(L){_cwNoZoneList().forEach(it=>{if(L===''){delete _cwZbSel[it.key];return;}const dn=unitDisplayName(it.key).toUpperCase();if(dn.indexOf(L)===0)_cwZbSel[it.key]=1;});renderHCal();}
+function cwZbApply(){
+  if(!_cwZbZone){toast('請先選區域','⚠️');return;}
+  const nz=_cwNoZoneList();let n=0;
+  nz.forEach(it=>{if(_cwZbSel[it.key]){_cwZonePick[it.key]=_cwZbZone;delete _cwZbSel[it.key];n++;}});
+  if(!n){toast('沒有勾選戶別','⚠️');return;}
+  toast('已把 '+n+' 戶的區域設為「'+zLabel(_cwZbZone)+'」','✅');renderHCal();
+}
+function _cwZbSectionHTML(){
+  const nz=_cwNoZoneList();
+  if(!nz.length){_cwZbOpen=false;return'';}
+  if(!_cwZbOpen)return'';
+  const chips=nz.map(it=>'<label style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11.5px;background:var(--surface);cursor:pointer"><input type="checkbox"'+(_cwZbSel[it.key]?' checked':'')+' onchange="cwZbToggle(\''+esc(it.key)+'\')">'+esc(unitDisplayName(it.key))+'</label>').join('');
+  return '<div class="no-print" style="margin-bottom:10px;border:1.5px solid #94a3b8;border-radius:var(--rs);padding:10px 12px;background:var(--card)">'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:12.5px">⚠ 未選區域的戶別（'+nz.length+'）— 分批指定</b>'
+    +'區域 <select onchange="_cwZbZone=this.value" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">— 選區域 —</option>'+zOpts(_cwZbZone)+'</select>'
+    +'<button class="btn btn-p btn-sm" onclick="cwZbApply()" style="font-size:12px">✓ 套用到勾選戶</button>'
+    +'<button class="btn btn-sm" onclick="cwZbSelBldg(\'A\')" style="font-size:11.5px">全選 A</button>'
+    +'<button class="btn btn-sm" onclick="cwZbSelBldg(\'B\')" style="font-size:11.5px">全選 B</button>'
+    +'<button class="btn btn-sm" onclick="cwZbSelBldg(\'\')" style="font-size:11.5px">全不選</button>'
+    +'<span style="font-size:11px;color:var(--text3)">套用後即時回填面板區域欄（仍可逐戶改）；填完的戶自動消失，可換區域再選下一批</span></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto">'+chips+'</div></div>';
+}
 function cwZoneAuto(){
   const list=_cwList();let n=0,miss=0;
   list.forEach(it=>{
@@ -5490,7 +5517,10 @@ function _cleanWarnPanelHTML(){
       +'<button class="btn btn-sm" onclick="cwUndo()" style="font-size:12px">↩ 復原上一批</button>'
       +'<span style="display:inline-flex;align-items:center;gap:6px;border-left:2px solid #FED7AA;padding-left:10px;margin-left:2px">已清完補登記：<input type="date" value="'+esc(_cwDoneDate||todayISO())+'" onchange="_cwDoneDate=this.value" style="font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
       +'<button class="btn btn-sm" onclick="cwMarkDone()" style="font-size:12px;background:#E9F5E1;border-color:#8AB86E;color:#3B6D11;font-weight:600">✓ 勾選戶標第1次清潔完成</button>'
-      +'<button class="btn btn-sm" onclick="cwDoneUndo()" style="font-size:12px">↩ 復原標註</button></span></div>'):'')
+      +'<button class="btn btn-sm" onclick="cwDoneUndo()" style="font-size:12px">↩ 復原標註</button></span>'
+      +(_cwNoZoneList().length?('<button class="btn btn-sm" onclick="_cwZbOpen=!_cwZbOpen;renderHCal()" style="font-size:12px;background:#FCEBEB;border-color:#E39B9B;color:#A32D2D;font-weight:600">⚠ 批次填區域（'+_cwNoZoneList().length+'）'+(_cwZbOpen?' ▲':' ▼')+'</button>'):'')
+      +'</div>'):'')
+    +_cwZbSectionHTML()
     +(list.length?('<div style="overflow:auto;max-height:340px;border:1px solid var(--border);border-radius:var(--rs)"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--surface);position:sticky;top:0;z-index:1"><th style="padding:4px;width:34px"><input type="checkbox" title="全選 / 取消全選"'+(selectable>0&&selectedN===selectable?' checked':'')+' onchange="cwSelAll(this.checked)"></th><th style="padding:4px 6px;text-align:left">戶別</th><th style="padding:4px 6px;text-align:left">驗收日/時段</th><th style="padding:4px 6px;text-align:left">清潔狀態</th><th style="padding:4px 6px;text-align:left">區域</th><th style="padding:4px 6px;text-align:left">動作預覽</th></tr></thead><tbody>'+rowsH+'</tbody></table></div>'):'<div style="font-size:12px;color:var(--text3)">範圍內沒有未清潔的戶別 🎉</div>')
     +'</div>';
 }
