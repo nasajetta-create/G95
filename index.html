@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 163;  // ← 每次部署新版時遞增（V0706-07 交屋行事曆批次排程「清潔」下拉新增「標實際清潔完成日 d1-d4」＝批次寫入 cleanDates[N]）
+const CODE_VERSION = 164;  // ← 每次部署新版時遞增（V0706-08 修複驗徽章空殼：A 取消勾複驗完成時空列自動刪、B _rptCalStage 複驗要有日期/排程日才算複）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-07</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-08</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -9812,7 +9812,8 @@ function _rptMMDD(dateStr){return dateStr.slice(5).replace('-','/');}
 // 用與行事曆徽章相同邏輯判定某戶當前階段（初/複/交），讓日報數字與行事曆一致
 function _rptCalStage(key){
   const hu=(S.handoverUnits||{})[key]||{};const insps=hu.inspections||[];
-  const reHas=insps.some(i=>/^複驗/.test(inspTypeOf(i)));
+  // V0706-08(B)：複驗要「有完成日或排程日」才算複；空殼複驗列（無 date 無 planDate）視為初，不再讓徽章卡在複
+  const reHas=insps.some(i=>/^複驗/.test(inspTypeOf(i))&&(i.date||i.planDate));
   const reCount=insps.filter(i=>i.date&&/^複驗/.test(inspTypeOf(i))).length;
   if(hu.delivered)return '交';
   if(reCount>0)return '交';
@@ -10113,7 +10114,10 @@ function quickInspDone(key,type,date){
   const hu=S.handoverUnits[key];if(!hu.inspections)hu.inspections=[];
   let ins=hu.inspections.find(i=>inspTypeOf(i)===type);
   if(date){if(!ins){hu.inspections.push({label:type,type:type,date:date,planDate:''});}else{ins.date=date;if(!ins.type)ins.type=type;}}
-  else{if(ins)ins.date='';}
+  else{if(ins){ins.date='';
+    // V0706-08(A)：取消勾「複驗」完成後，若整列已空（無完成日、無排程日）就整列刪掉，不留空殼卡徽章
+    if(/^複驗/.test(inspTypeOf(ins))&&!ins.date&&!ins.planDate){var _ix=hu.inspections.indexOf(ins);if(_ix>=0)hu.inspections.splice(_ix,1);}
+  }}
   save();
 }
 function quickInspToggle(key,type,checked){_clGuard(key);quickInspDone(key,type,checked?todayISO():'');reRenderActivePane();}
