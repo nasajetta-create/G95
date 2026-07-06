@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 158;  // ← 每次部署新版時遞增（V0706-02 差異說明只列取消/未到；新增🚫取消/未到統計（本週＋累計、初/複驗分開、含戶別與日期）併進驗屋日報）
+const CODE_VERSION = 159;  // ← 每次部署新版時遞增（V0706-03 取消/未到統計改版：本週有才顯示＋累計加勾選方塊控制＋初/複→未到/取消→A/B棟分層、日期加括號、長行每3戶換行對齊）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -751,7 +751,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-02</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-03</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -9726,16 +9726,37 @@ function _rptCxnStat(from,to){
     if(!h.planDate)return;
     if(from&&(h.planDate<from||h.planDate>to))return;
     var st=_rptCalStage(u);if(st!=='初'&&st!=='複')return;
-    out[st].push({name:unitDisplayName(u),why:h.cancelled?'取消':'未到',date:h.planDate});
+    out[st].push({name:unitDisplayName(u),why:h.cancelled?'取消':'未到',date:h.planDate,block:_unitBlock(u)});
   });
   out['初'].sort(function(a,b){return a.date<b.date?-1:1;});
   out['複'].sort(function(a,b){return a.date<b.date?-1:1;});
   return out;
 }
-function _rptCxnLine(label,arr){
-  if(!arr.length)return label+'（0 戶）';
-  var show=arr.slice(0,30);
-  return label+'（'+arr.length+' 戶）：'+show.map(function(o){return o.name+' '+o.why+' '+_rptMMDD(o.date);}).join('、')+(arr.length>30?('…等 '+arr.length+' 戶'):'');
+// V0706-03：一個棟的清單——A棟/B棟固定列（空＝無），店有才列；日期加括號；每 3 戶換行、續行縮排對齊第一筆
+function _rptCxnBlkLines(label,arr){
+  var prefix='　　　'+label+'：';
+  if(!arr.length)return [prefix+'無'];
+  var items=arr.map(function(o){return o.name+' ('+_rptMMDD(o.date)+')';});
+  var per=3,cont='　　　　　　',lines=[];
+  for(var i=0;i<items.length;i+=per){
+    var chunk=items.slice(i,i+per).join('、')+((i+per<items.length)?'、':'');
+    lines.push((i===0?prefix:cont)+chunk);
+  }
+  return lines;
+}
+// V0706-03：一個階段（初/複）完整區塊——階段（N 戶）→（未到/取消 各 N 戶，0 不顯示）→ A棟/B棟(/店)
+function _rptCxnStageLines(stageLabel,arr){
+  var out=['　'+stageLabel+'（'+arr.length+' 戶）'];
+  ['未到','取消'].forEach(function(why){
+    var wu=arr.filter(function(o){return o.why===why;});
+    if(!wu.length)return;
+    out.push('　　'+why+'（'+wu.length+' 戶）');
+    out=out.concat(_rptCxnBlkLines('A棟',wu.filter(function(o){return o.block==='A';})));
+    out=out.concat(_rptCxnBlkLines('B棟',wu.filter(function(o){return o.block==='B';})));
+    var sh=wu.filter(function(o){return o.block==='shop';});
+    if(sh.length)out=out.concat(_rptCxnBlkLines('店',sh));
+  });
+  return out;
 }
 function _rptPlanRange(from,to){
   const hu=S.handoverUnits||{};const out={'初':0,'複':0,'交':0};
@@ -9854,18 +9875,22 @@ function buildDailyReportText(){
   L.push('');L.push(BAR);L.push('');
   L.push('下週預計（'+_rptMMDD(wk.nmon)+'～'+_rptMMDD(wk.nsun)+'）');
   L.push('初驗- '+nwPlan['初']+' 戶｜複驗- '+nwPlan['複']+' 戶｜交屋- '+nwPlan['交']+' 戶');
-  // V0706-02：🚫 取消／未到統計（本週＋累計，初/複驗分開；有排但沒驗成）
+  // V0706-03：🚫 取消／未到統計（本週有發生才顯示；累計受「顯示累計」勾選控制；初/複→未到/取消→A/B棟）
   (function(){
     var cxWk=_rptCxnStat(wk.mon,wk.sun),cxAll=_rptCxnStat(null,null);
-    if(!cxAll['初'].length&&!cxAll['複'].length&&!cxWk['初'].length&&!cxWk['複'].length)return; // 完全沒有取消/未到就不顯示
+    var wkAny=cxWk['初'].length||cxWk['複'].length;
+    var allShow=(S.rptFc&&S.rptFc.showCxnAll)&&(cxAll['初'].length||cxAll['複'].length);
+    if(!wkAny&&!allShow)return;
     L.push('');L.push(BAR);L.push('');
-    L.push('🚫 取消／未到統計（有排但沒驗成）');
-    L.push('本週（'+_rptMMDD(wk.mon)+'～'+_rptMMDD(wk.sun)+'）');
-    L.push('　'+_rptCxnLine('初驗',cxWk['初']));
-    L.push('　'+_rptCxnLine('複驗',cxWk['複']));
-    L.push('累計');
-    L.push('　'+_rptCxnLine('初驗',cxAll['初']));
-    L.push('　'+_rptCxnLine('複驗',cxAll['複']));
+    L.push('🚫 取消／未到統計');
+    if(wkAny){
+      L.push('本週（'+_rptMMDD(wk.mon)+'～'+_rptMMDD(wk.sun)+'）');
+      ['初','複'].forEach(function(st){if(cxWk[st].length)_rptCxnStageLines(st==='初'?'初驗':'複驗',cxWk[st]).forEach(function(ln){L.push(ln);});});
+    }
+    if(allShow){
+      L.push('累計');
+      ['初','複'].forEach(function(st){if(cxAll[st].length)_rptCxnStageLines(st==='初'?'初驗':'複驗',cxAll[st]).forEach(function(ln){L.push(ln);});});
+    }
   })();
   return L.join('\n');
 }
@@ -9905,6 +9930,7 @@ function renderDailyReport(){
       +'<label style="display:flex;align-items:center;gap:4px">複驗開始<input type="date" value="'+esc(_rptReStartISO()||'')+'" onchange="rptFcStart(\'re\',this.value)" style="font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<span style="color:var(--text3)">｜</span>'
       +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((!S.rptFc||S.rptFc.inReport!==false)?'checked':'')+' onchange="rptFcSet(\'inReport\',this.checked)">納入報告</label>'
+      +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" '+((S.rptFc&&S.rptFc.showCxnAll)?'checked':'')+' onchange="rptFcSet(\'showCxnAll\',this.checked)">顯示累計取消/未到</label>'
       +'<span style="color:var(--text3);flex-basis:100%;font-size:11px">速率留空＝自動用（累計完成 ÷ 初驗開始日至今工作天）；初驗開始日留空＝自動抓最早初驗日；國定假日清單為 2026 年。</span>'
     +'</div>'
     +'<div style="font-size:11px;color:var(--text3);margin-bottom:8px">下方內容可直接點擊修改，改完按「💾 儲存這份」保留你的版面；或複製／截圖。週統計為週一～週日；複驗、交屋僅在有資料時顯示。</div>'
