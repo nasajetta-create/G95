@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 164;  // ← 每次部署新版時遞增（V0706-08 修複驗徽章空殼：A 取消勾複驗完成時空列自動刪、B _rptCalStage 複驗要有日期/排程日才算複）（redeploy：Pages deploy 平台性失敗，推新 commit）
+const CODE_VERSION = 164;  // ← 每次部署新版時遞增（V0706-08 修複驗徽章空殼：A 取消勾複驗完成時空列自動刪、B _rptCalStage 複驗要有日期/排程日才算複）（redeploy：Pages deploy 平台性失敗 #337#338 皆 Failed，推新 commit 第3次觸發）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
