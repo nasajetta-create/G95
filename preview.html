@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 162;  // ← 每次部署新版時遞增（V0706-06 管理人改名同步更新交屋戶接待人員 hu.hosts，修「卡片有徽章但選取對不上」的孤兒問題）（redeploy #333：#332 deploy 平台性失敗 try-again-later，推新 commit）
+const CODE_VERSION = 163;  // ← 每次部署新版時遞增（V0706-07 交屋行事曆批次排程「清潔」下拉新增「標實際清潔完成日 d1-d4」＝批次寫入 cleanDates[N]）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-06</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-07</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -5182,7 +5182,7 @@ function _batchSchedPanelHTML(ns){
       +'<label style="font-size:12px;color:var(--text2)">日期 <input type="date" id="bsl-date-'+ns+'" style="font-size:13px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"></label>'
       +'<label style="font-size:12px;color:var(--text2)">時段 <select id="bsl-slot-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+slotOpts+'</select></label>'
       +'<label style="font-size:12px;color:var(--text2)">委外代驗 <select id="bsl-com-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="add">設為委外代驗</option><option value="remove">取消委外代驗</option></select></label>'
-      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option><option value="clear">清除清潔安排</option></select></label>'
+      +'<label style="font-size:12px;color:var(--text2)">清潔 <select id="bsl-clean-'+ns+'" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><option value="">不變更</option><optgroup label="安排清潔預定日"><option value="p1">安排第1次</option><option value="p2">安排第2次</option><option value="p3">安排第3次</option><option value="p4">安排第4次</option></optgroup><optgroup label="標實際清潔完成日"><option value="d1">標第1次完成</option><option value="d2">標第2次完成</option><option value="d3">標第3次完成</option><option value="d4">標第4次完成</option></optgroup><option value="clear">清除清潔安排</option></select></label>'
       +'<button class="btn btn-sm" onclick="bslFillFromSlot(\''+ns+'\')" title="把目前排在上面這個日期/時段的戶別，帶成可勾選清單（預設全選，正確的取消勾選即可，不用手動打字）" style="font-size:12px">📥 抓取目前戶別</button>'
       +'<button class="btn btn-sm" onclick="bslUndo()" title="還原上一次批次套用（套錯可回復）" style="font-size:12px;margin-left:auto">↩ 還原</button>'
     +'</div>'
@@ -5219,7 +5219,7 @@ function bslFillFromSlot(ns){
   if(!date){toast('請先選日期（時段留空＝抓當天所有時段）','⚠️');return;}
   if(!S.handoverUnits)S.handoverUnits={};
   // 排清潔時抓「清潔預定日」的戶別；否則抓「交屋驗收日」的戶別
-  const _sc=clean&&clean.charAt(0)==='p';const _fld=_sc?'cleanPlanDate':'planDate';const _sfld=_sc?'cleanSlot':'slot';
+  const _sc=clean&&(clean.charAt(0)==='p'||clean.charAt(0)==='d');const _fld=_sc?'cleanPlanDate':'planDate';const _sfld=_sc?'cleanSlot':'slot';
   const keys=Object.entries(S.handoverUnits).filter(([k,hu])=>hu&&hu[_fld]===date&&(!slot||hu[_sfld]===slot)).map(([k])=>k);
   if(!keys.length){toast('該日期'+(slot?'／時段':'')+'目前沒有任何戶別','⚠️');return;}
   keys.sort((a,b)=>String(a).localeCompare(String(b),'zh-TW',{numeric:true}));
@@ -5255,6 +5255,10 @@ function _bslApplyOne(key,date,slot,com,clean){
     if(slot)hu.cleanSlot=slot;
     const N=parseInt(clean.slice(1),10)||0;
     if(N>0){ if(!hu.cleanPlanned)hu.cleanPlanned={}; for(let i=1;i<=N;i++)hu.cleanPlanned[i]=true; if((hu.cleanCount||2)<N)hu.cleanCount=Math.min(4,N); }
+  }else if(clean&&clean.charAt(0)==='d'){
+    // V0706-07：批次標「實際清潔完成日」——寫入該戶 cleanDates[N]（不動清潔預定日/交屋驗收日）
+    const N=parseInt(clean.slice(1),10)||1;
+    if(date){ if(!hu.cleanDates)hu.cleanDates={}; hu.cleanDates[N]=date; if(!hu.cleanPlanned)hu.cleanPlanned={}; hu.cleanPlanned[N]=true; if((hu.cleanCount||2)<N)hu.cleanCount=Math.min(4,N); }
   }else if(clean==='clear'){
     hu.cleanPlanned={}; hu.cleanPlanDate=''; hu.cleanSlot='';
   }else{
@@ -5290,16 +5294,19 @@ function batchSchedByList(ns){
   }
   // 重複時段提醒（排清潔時看清潔預定日、排交屋時看交屋驗收日）
   const _schedClean=clean&&clean.charAt(0)==='p';
-  if(!_schedClean){const _pastN=matched.filter(m=>{const h=S.handoverUnits[m.key];return h&&h.planDate&&h.planDate<todayISO();}).length;if(_pastN&&!_pastGuardBatch(_pastN))return;}
-  const conflicts=_bslConflicts(matched.map(m=>m.key),date,_schedClean?'cleanPlanDate':'planDate');
+  const _cleanDone=clean&&clean.charAt(0)==='d';               // V0706-07：標實際清潔完成
+  const _cleanOp=_schedClean||_cleanDone||clean==='clear';
+  if(_cleanDone&&!date){toast('請先選「日期」＝實際清潔完成日','⚠️');return;}
+  if(!_cleanOp){const _pastN=matched.filter(m=>{const h=S.handoverUnits[m.key];return h&&h.planDate&&h.planDate<todayISO();}).length;if(_pastN&&!_pastGuardBatch(_pastN))return;}
+  const conflicts=_cleanDone?[]:_bslConflicts(matched.map(m=>m.key),date,_schedClean?'cleanPlanDate':'planDate');
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
-  if(!_bslConfirmBig(matched.length,_schedClean?'套用清潔預定日／時段':'套用交屋驗收日／時段／委外代驗'))return;
+  if(!_bslConfirmBig(matched.length,_cleanDone?'標記清潔完成日':(_schedClean?'套用清潔預定日／時段':'套用交屋驗收日／時段／委外代驗')))return;
   _bslSnapForUndo();
   const applied=[];
   matched.forEach(m=>{_bslApplyOne(m.key,date,slot,m.star?'add':com,clean);applied.push(unitDisplayName(m.key));});
   save();reRenderActivePane();
-  logChange('📆 交屋/行事曆',(_schedClean?'批次排清潔 ':'批次排程 ')+applied.length+' 戶'+(date?('→'+date):''),{units:applied.map(m=>unitDisplayName(m.key)).slice(0,50)});
-  let msg=(_schedClean?'已排清潔 ':'已排程 ')+applied.length+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':'');
+  logChange('📆 交屋/行事曆',(_cleanDone?'批次標清潔完成 ':(_schedClean?'批次排清潔 ':'批次排程 '))+applied.length+' 戶'+(date?('→'+date):''),{units:applied.map(m=>unitDisplayName(m.key)).slice(0,50)});
+  let msg=(_cleanDone?'已標清潔完成 ':(_schedClean?'已排清潔 ':'已排程 '))+applied.length+' 戶'+(date?'（'+date+(_cleanDone?'':(slot?' '+slot:''))+'）':'');
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
   toast(msg,'✅');
   if(_schedClean&&date){const _late=matched.filter(m=>{const h=S.handoverUnits[m.key];return h&&h.planDate&&date>h.planDate;});if(_late.length){setTimeout(function(){try{toast('⚠️ '+_late.length+' 戶的清潔預定日晚於交屋驗收日，清潔應在驗收前，請確認','⚠️');}catch(e){}},500);}}
@@ -5646,17 +5653,20 @@ function bslApplyChecked(ns){
   if(!sel.length){toast('請至少勾選一戶','⚠️');return;}
   if(!date&&!slot&&!com&&!clean&&!sel.some(it=>it.star)){toast('請至少選擇日期、時段、委外代驗或清潔','⚠️');return;}
   const _schedClean=clean&&clean.charAt(0)==='p';
-  if(!_schedClean){const _pastN2=sel.filter(it=>{const h=S.handoverUnits[it.key];return h&&h.planDate&&h.planDate<todayISO();}).length;if(_pastN2&&!_pastGuardBatch(_pastN2))return;}
-  const conflicts=_bslConflicts(sel.map(it=>it.key),date,_schedClean?'cleanPlanDate':'planDate');
+  const _cleanDone=clean&&clean.charAt(0)==='d';               // V0706-07：標實際清潔完成
+  const _cleanOp=_schedClean||_cleanDone||clean==='clear';
+  if(_cleanDone&&!date){toast('請先選「日期」＝實際清潔完成日','⚠️');return;}
+  if(!_cleanOp){const _pastN2=sel.filter(it=>{const h=S.handoverUnits[it.key];return h&&h.planDate&&h.planDate<todayISO();}).length;if(_pastN2&&!_pastGuardBatch(_pastN2))return;}
+  const conflicts=_cleanDone?[]:_bslConflicts(sel.map(it=>it.key),date,_schedClean?'cleanPlanDate':'planDate');
   if(conflicts.length&&!_bslConfirmConflicts(conflicts))return;
-  if(!_bslConfirmBig(sel.length,_schedClean?'套用清潔預定日／時段':'套用交屋驗收日／時段／委外代驗'))return;
+  if(!_bslConfirmBig(sel.length,_cleanDone?'標記清潔完成日':(_schedClean?'套用清潔預定日／時段':'套用交屋驗收日／時段／委外代驗')))return;
   if(!S.handoverUnits)S.handoverUnits={};
   _bslSnapForUndo();
   sel.forEach(it=>_bslApplyOne(it.key,date,slot,it.star?'add':com,clean));
   save();
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
-  logChange('📆 交屋/行事曆',(_schedClean?'批次排清潔 ':'批次套用 ')+n+' 戶'+(date?('→'+date):''));
-  toast((_schedClean?'已排清潔 ':'已套用 ')+n+' 戶'+(date?'（'+date+(slot?' '+slot:'')+'）':''),'✅');
+  logChange('📆 交屋/行事曆',(_cleanDone?'批次標清潔完成 ':(_schedClean?'批次排清潔 ':'批次套用 '))+n+' 戶'+(date?('→'+date):''));
+  toast((_cleanDone?'已標清潔完成 ':(_schedClean?'已排清潔 ':'已套用 '))+n+' 戶'+(date?'（'+date+(_cleanDone?'':(slot?' '+slot:''))+'）':''),'✅');
 }
 // ════════════ 廠商派工單 (V0624-20) ════════════
 let _pwoRound='初驗';
