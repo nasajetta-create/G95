@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 160;  // ← 每次部署新版時遞增（V0706-04 Firestore 欄位文件改 gzip 壓縮存放 {z:base64}，解 completed 撞 1MiB 單文件上限；讀取相容舊 {d}）
+const CODE_VERSION = 161;  // ← 每次部署新版時遞增（V0706-05 清潔追蹤網格上方新增「清潔工作分配」常駐區：固定兩天、依日期/依廠商切換、表格化、字體調整、單日截圖/PDF）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-04</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-05</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -8452,6 +8452,96 @@ function applyCleanFix(mode){
   save();toast(mode==='clear'?('已清除 '+targets.length+' 筆清潔日'):('已修正 '+targets.length+' 筆清潔日 → '+nd),mode==='clear'?'🗑':'✅');renderCleanTrack();
 }
 function undoCleanFix(){if(!window._cleanFixUndo){toast('沒有可復原的批次','⚠️');return;}S.handoverUnits=window._cleanFixUndo;window._cleanFixUndo=null;save();toast('已復原上一次清潔日修正','↩');renderCleanTrack();}
+// ── V0706-05 清潔工作分配（清潔追蹤網格上方常駐；固定顯示兩天＝起始日＋次日，可切依日期/依廠商）──
+let _caGroup='date';   // 'date'｜'vendor'
+let _caStart='';       // 起始日 ISO；'' ＝ 明天
+function _dParse(iso){var p=String(iso).split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function _caShift(iso,n){var d=_dParse(iso);d.setDate(d.getDate()+n);return _isoL(d);}
+function _caStartISO(){return _caStart||_datePlus1(todayISO());}
+function _caFontV(){var v=parseInt(localStorage.getItem('g95_caFont')||'',10);return (v>=11&&v<=24)?v:14;}
+function caFont(d){var v=Math.max(11,Math.min(24,_caFontV()+d));try{localStorage.setItem('g95_caFont',String(v));}catch(e){}renderCleanTrack();}
+function caSetGroup(g){_caGroup=g;renderCleanTrack();}
+function caNav(delta){_caStart=(delta===0)?'':_caShift(_caStartISO(),delta);renderCleanTrack();}
+function caSetDate(v){_caStart=v||'';renderCleanTrack();}
+function caShot(i){var d=i?_datePlus1(_caStartISO()):_caStartISO();var el=document.getElementById('ca-exp'+i);if(el)_capEl(el,'清潔工作分配_'+d+'.png');}
+function caPdf(i){var d=i?_datePlus1(_caStartISO()):_caStartISO();var el=document.getElementById('ca-exp'+i);if(el)printSection('清潔工作分配 '+d,el.innerHTML,'清潔工作分配_'+d);}
+function _caMD(iso){var p=String(iso).split('-');return ('0'+(+p[1])).slice(-2)+'/'+('0'+(+p[2])).slice(-2);}
+function _caWk(iso){return ['日','一','二','三','四','五','六'][_dParse(iso).getDay()];}
+function _caRel(iso){var diff=Math.round((_dParse(iso)-_dParse(todayISO()))/86400000);return diff===0?'今天':(diff===1?'明天':(diff===2?'後天':(diff>0?diff+'天後':(-diff)+'天前')));}
+function _caBlk(b){return b==='shop'?{l:'店',c:'#D4A900'}:(b==='B'?{l:'B',c:'#0A6640'}:{l:'A',c:'#185FA5'});}
+function _caStatTxt(o){return o.state==='wait'?('已排待清'+(o.doneN>0?('（已清'+o.doneN+'次）'):'')):'需安排';}
+function _caDayUnits(ds){
+  var hu=S.handoverUnits||{},out=[];
+  Object.keys(hu).forEach(function(k){
+    var h=hu[k];if(!h||h.cleanPlanDate!==ds||h.cancelled||h.noShow)return;
+    var st=_cleanTrackStatus(k);if(st.state==='done')return;   // 已清完不列
+    var vr=_cwExistOpenCleanRow(k)||{};
+    out.push({key:k,name:unitDisplayName(k),slot:h.cleanSlot||'未分時段',block:_unitBlock(k),accept:h.planDate?_caMD(h.planDate):'—',state:st.state,doneN:st.done.length,vendor:(vr.vendor&&String(vr.vendor).trim())||'未指定廠商',ds:ds});
+  });
+  out.sort(function(a,b){var sa=HCAL_SLOTS.indexOf(a.slot),sb=HCAL_SLOTS.indexOf(b.slot);if(sa<0)sa=99;if(sb<0)sb=99;if(sa!==sb)return sa-sb;return String(a.name).localeCompare(String(b.name),'zh-TW',{numeric:true});});
+  return out;
+}
+function _caTableHTML(list,withDate){
+  var cols=withDate?['戶別','清潔日(時段)','棟','驗收','清潔狀態']:['戶別','時段','棟','驗收','清潔狀態'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:1em"><thead><tr>';
+  cols.forEach(function(c){h+='<th style="text-align:left;background:#F3F1FB;border:1px solid #E2DEF3;padding:0.3em 0.5em;color:#555;font-weight:600;white-space:nowrap">'+c+'</th>';});
+  h+='</tr></thead><tbody>';
+  if(!list.length)h+='<tr><td colspan="'+cols.length+'" style="border:1px solid #EEE;padding:0.4em 0.5em;color:#999">（無）</td></tr>';
+  list.forEach(function(o){
+    var bl=_caBlk(o.block),stc=o.state==='wait'?'#EF9F27':'#E24B4A';
+    h+='<tr><td style="border:1px solid #EEE;padding:0.3em 0.5em;white-space:nowrap;font-weight:500">'+esc(o.name)+'</td>';
+    h+=withDate?('<td style="border:1px solid #EEE;padding:0.3em 0.5em;white-space:nowrap;color:#555">'+_caMD(o.ds)+' '+esc(o.slot)+'</td>'):('<td style="border:1px solid #EEE;padding:0.3em 0.5em;white-space:nowrap;color:#555">'+esc(o.slot)+'</td>');
+    h+='<td style="border:1px solid #EEE;padding:0.3em 0.5em;text-align:center"><span style="display:inline-block;min-width:1.3em;background:'+bl.c+';color:#fff;border-radius:3px;padding:0 0.3em;font-size:0.82em">'+bl.l+'</span></td>';
+    h+='<td style="border:1px solid #EEE;padding:0.3em 0.5em;white-space:nowrap;color:#555">'+o.accept+'</td>';
+    h+='<td style="border:1px solid #EEE;padding:0.3em 0.5em;white-space:nowrap"><span style="display:inline-block;width:0.65em;height:0.65em;border-radius:50%;background:'+stc+';margin-right:0.35em;vertical-align:middle"></span>'+_caStatTxt(o)+'</td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function _caExpBlock(id,ds,list){
+  return '<div id="'+id+'" style="position:absolute;left:-99999px;top:0;width:400px;background:#fff;padding:12px;font-size:'+_caFontV()+'px;font-family:var(--font)"><div style="font-weight:700;color:#26215C;margin-bottom:6px">🧹 清潔工作分配｜'+_caMD(ds)+'(週'+_caWk(ds)+') '+_caRel(ds)+'　'+list.length+' 戶</div>'+_caTableHTML(list,false)+'</div>';
+}
+function _cleanAssignHTML(){
+  var d0=_caStartISO(),d1=_datePlus1(d0),u0=_caDayUnits(d0),u1=_caDayUnits(d1),fs=_caFontV(),grp=_caGroup;
+  function pill(t,on,fn){return '<button class="btn btn-sm'+(on?' btn-p':'')+'" onclick="'+fn+'" style="font-size:0.85em">'+t+'</button>';}
+  var h='<div style="border:1px solid var(--pborder);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:#FCFBF7;font-size:'+fs+'px;position:relative">';
+  // 控制列
+  h+='<div class="no-print" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
+    +'<b style="font-size:1.05em;margin-right:4px">🧹 清潔工作分配</b>'
+    +'<span style="color:#888;font-size:0.85em">分組</span>'+pill('依日期',grp==='date',"caSetGroup('date')")+pill('依廠商',grp==='vendor',"caSetGroup('vendor')")
+    +'<span style="color:#888;font-size:0.85em;margin-left:6px">起始日</span>'
+    +'<button class="btn btn-sm" onclick="caNav(-1)" style="font-size:0.85em">◀</button>'
+    +'<input type="date" value="'+esc(d0)+'" onchange="caSetDate(this.value)" style="font-size:0.85em;padding:2px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
+    +'<button class="btn btn-sm" onclick="caNav(1)" style="font-size:0.85em">▶</button>'
+    +'<button class="btn btn-sm" onclick="caNav(0)" style="font-size:0.85em">明天</button>'
+    +'<span style="color:#888;font-size:0.85em;margin-left:6px">字體</span>'
+    +'<button class="btn btn-sm" onclick="caFont(-1)" style="font-size:0.85em">A−</button><span style="font-size:0.85em;color:#777;min-width:1.6em;text-align:center;display:inline-block">'+fs+'</span><button class="btn btn-sm" onclick="caFont(1)" style="font-size:0.85em">A＋</button>'
+  +'</div>';
+  // 匯出列（明天/後天 各一顆）
+  var l0=_caRel(d0)+' '+_caMD(d0),l1=_caRel(d1)+' '+_caMD(d1);
+  h+='<div class="no-print" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;font-size:0.85em">'
+    +'<span style="color:#888">📷 截圖</span>'+pill(l0,false,'caShot(0)')+pill(l1,false,'caShot(1)')
+    +'<span style="color:#888;margin-left:8px">🖨 PDF</span>'+pill(l0,false,'caPdf(0)')+pill(l1,false,'caPdf(1)')
+  +'</div>';
+  // 內容
+  if(grp==='date'){
+    h+='<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">';
+    [[d0,u0],[d1,u1]].forEach(function(p){
+      h+='<div style="flex:1 1 340px;min-width:290px"><div style="font-weight:700;color:#26215C;margin-bottom:6px">'+_caRel(p[0])+' '+_caMD(p[0])+'(週'+_caWk(p[0])+')　<span style="font-weight:400;color:#888;font-size:0.85em">'+p[1].length+' 戶</span></div>'+_caTableHTML(p[1],false)+'</div>';
+    });
+    h+='</div>';
+  }else{
+    var all=u0.concat(u1),groups={},order=[];
+    all.forEach(function(o){if(!groups[o.vendor]){groups[o.vendor]=[];order.push(o.vendor);}groups[o.vendor].push(o);});
+    order.sort(function(a,b){var ua=a==='未指定廠商'?1:0,ub=b==='未指定廠商'?1:0;return ua-ub;});
+    if(!all.length)h+='<div style="color:#999;padding:8px 2px">這兩天（'+_caMD(d0)+'～'+_caMD(d1)+'）沒有需清潔的排程。</div>';
+    order.forEach(function(v){var arr=groups[v];arr.sort(function(a,b){if(a.ds!==b.ds)return a.ds<b.ds?-1:1;var sa=HCAL_SLOTS.indexOf(a.slot),sb=HCAL_SLOTS.indexOf(b.slot);if(sa<0)sa=99;if(sb<0)sb=99;if(sa!==sb)return sa-sb;return String(a.name).localeCompare(String(b.name),'zh-TW',{numeric:true});});
+      h+='<div style="margin-bottom:10px"><div style="background:#EEEDFE;border-radius:4px;padding:0.3em 0.6em;font-weight:700;color:#3C3489;margin-bottom:4px">▶ '+esc(v)+'　'+arr.length+' 戶</div>'+_caTableHTML(arr,true)+'</div>';});
+  }
+  // 隱藏的單日匯出來源（截圖/PDF 用，不受目前分組影響）
+  h+=_caExpBlock('ca-exp0',d0,u0)+_caExpBlock('ca-exp1',d1,u1);
+  h+='</div>';
+  return h;
+}
 function renderCleanTrack(){
   var el=document.getElementById('pane-clean');if(!el)return;
   var todayD=new Date();todayD.setHours(0,0,0,0);var todayStr=_cleanIso(todayD);
@@ -8538,6 +8628,7 @@ function renderCleanTrack(){
       +'<span style="color:#854F0B">已安排待清 <b>'+cWait+'</b></span>'
       +'<span style="color:#3B6D11">已清完 <b>'+cDone+'</b></span>'
     +'</div>'
+    +_cleanAssignHTML()
     +'<div id="cleantrack-cap" style="overflow-x:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
       +(days.length?('<table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr><th style="padding:5px 2px;border:1px solid var(--border);width:42px;font-size:10px;background:var(--surface);color:var(--text2)">時段</th>'+dhdr+'</tr></thead><tbody>'+body+'</tbody></table>'):'<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">這一週都已過去，沒有今天以後的排程。可按「下週 ▶」查看。</div>')
     +'</div>'
