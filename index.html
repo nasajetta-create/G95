@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 164;  // ← 每次部署新版時遞增（V0706-08 修複驗徽章空殼：A 取消勾複驗完成時空列自動刪、B _rptCalStage 複驗要有日期/排程日才算複）（redeploy：Pages deploy 平台性失敗 #337#338 皆 Failed，推新 commit 第3次觸發）
+const CODE_VERSION = 165;  // ← 每次部署新版時遞增（V0706-09 清潔連動：方案3 改驗收日→清潔預定日晚於驗收日跳提示對齊/清掉/維持；方案4 未清潔警示＋清潔工作分配各加批次對齊清潔預定日到驗收日−N天）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-08</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-09</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -5028,7 +5028,7 @@ function toggleHovFloorMenu(btn){const m=document.getElementById('hov-fl-menu');
 function setHuFieldH(u,inspIdx,val){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];S.handoverUnits[u].inspections[inspIdx].date=val;save();}
 function addHuInspH2(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];const _t=nextInspType(S.handoverUnits[u]);S.handoverUnits[u].inspections.push({label:_t,type:_t,date:'',planDate:''});save();_hovExpanded=u;reRenderActivePane();}
 function delHuInspH2(u,i){if(!S.handoverUnits||!S.handoverUnits[u])return;S.handoverUnits[u].inspections.splice(i,1);save();_hovExpanded=u;reRenderActivePane();}
-function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(field==='planDate'||field==='slot')logChange('📆 交屋/行事曆','改'+(field==='planDate'?'驗收日':'時段')+' '+unitDisplayName(u)+' → '+(val||'(清空)'));if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&_hu.cancelled&&val!==_hu.planDate){_hu.cancelled=false;}/* 改成新驗收日＝視為新排程（原取消紀錄已保留在 cancelHistory）*/_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();}
+function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(field==='planDate'||field==='slot')logChange('📆 交屋/行事曆','改'+(field==='planDate'?'驗收日':'時段')+' '+unitDisplayName(u)+' → '+(val||'(清空)'));if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&_hu.cancelled&&val!==_hu.planDate){_hu.cancelled=false;}/* 改成新驗收日＝視為新排程（原取消紀錄已保留在 cancelHistory）*/_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(field==='planDate'&&val)_cleanLinkAsk([u]);}
 function setHuInspType(u,type,checked){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const cur=S.handoverUnits[u].inspTypes||[];if(checked){if(!cur.includes(type))S.handoverUnits[u].inspTypes=[...cur,type];}else{S.handoverUnits[u].inspTypes=cur.filter(t=>t!==type);}save();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(activeTab==='clients')renderClients();}
 function toggleDeliveredH(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderHandover();if(activeTab==='hstats')renderHStats();}
 function toggleDeliveredCl(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderClients();renderHandover();if(activeTab==='hstats'||document.getElementById('pane-hstats').style.display!=='none')renderHStats();if(activeTab==='hcal'||document.getElementById('pane-hcal').style.display!=='none')renderHCal();}
@@ -5310,6 +5310,7 @@ function batchSchedByList(ns){
   if(notfound.length)msg+='；找不到 '+notfound.length+' 戶：'+notfound.slice(0,8).join('、')+(notfound.length>8?'…':'');
   toast(msg,'✅');
   if(_schedClean&&date){const _late=matched.filter(m=>{const h=S.handoverUnits[m.key];return h&&h.planDate&&date>h.planDate;});if(_late.length){setTimeout(function(){try{toast('⚠️ '+_late.length+' 戶的清潔預定日晚於交屋驗收日，清潔應在驗收前，請確認','⚠️');}catch(e){}},500);}}
+  if(!_cleanOp&&date)_cleanLinkAsk(matched.map(m=>m.key));   // V0706-09：批次改驗收日→清潔日晚於驗收日就提示
 }
 // ── 批次清除排程（V0701-05）：修手誤誤排一次清空，沿用還原機制 ──────────
 function batchClearByList(ns){
@@ -5501,6 +5502,7 @@ function addCleanSlot(key){
 // ── V0704-01 未清潔警示（交屋行事曆）：驗收日在「今天之後」(不含今天)且清潔完成 0 次 → 行事曆警示＋一鍵產生清潔工作到追蹤總表（全程不碰 planDate）──
 let _cwOpen=false,_cwDays=14,_cwUnsel={},_cwZonePick={};
 let _cwIssue='全室清潔（交屋前）',_cwVendor='',_cwDmode='prev',_cwMgr='',_cwDoneDate='';
+let _clnkAff=null;  // V0706-09：方案3 清潔連動提示待處理戶
 // V0704-03：全選/取消全選＋依棟別帶入區域（只動面板本地狀態，不寫 S）
 function cwSelAll(on){const list=_cwList();if(on){_cwUnsel={};}else{list.forEach(it=>{_cwUnsel[it.key]=1;});}renderHCal();}
 // V0704-04：批次填區域——未選區域的戶別集中列出，選一個區域→勾戶別→套用，可分批（只動 _cwZonePick，不寫 S）
@@ -5604,6 +5606,7 @@ function _cleanWarnPanelHTML(){
       +'<span style="display:inline-flex;align-items:center;gap:6px;border-left:2px solid #FED7AA;padding-left:10px;margin-left:2px">已清完補登記：<input type="date" value="'+esc(_cwDoneDate||todayISO())+'" onchange="_cwDoneDate=this.value" style="font-size:12px;padding:3px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
       +'<button class="btn btn-sm" onclick="cwMarkDone()" style="font-size:12px;background:#E9F5E1;border-color:#8AB86E;color:#3B6D11;font-weight:600">✓ 勾選戶標第1次清潔完成</button>'
       +'<button class="btn btn-sm" onclick="cwDoneUndo()" style="font-size:12px">↩ 復原標註</button></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:6px;border-left:2px solid #FED7AA;padding-left:10px;margin-left:2px">清潔對齊 驗收日−<input id="cwAlignN" type="number" value="1" min="0" max="10" style="width:44px;font-size:12px;padding:3px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">天<button class="btn btn-sm" onclick="cwAlignClean()" title="把勾選戶的清潔預定日重設為各自「驗收日−N天」（只動清潔預定日）" style="font-size:12px;background:#E1F5EE;border-color:#8AC0AE;color:#085041;font-weight:600">🎯 勾選戶對齊清潔日</button><button class="btn btn-sm" onclick="cwAlignUndo()" style="font-size:12px">↩</button></span>'
       +(_cwNoZoneList().length?('<button class="btn btn-sm" onclick="_cwZbOpen=!_cwZbOpen;renderHCal()" style="font-size:12px;background:#FCEBEB;border-color:#E39B9B;color:#A32D2D;font-weight:600">⚠ 批次填區域（'+_cwNoZoneList().length+'）'+(_cwZbOpen?' ▲':' ▼')+'</button>'):'')
       +'</div>'):'')
     +_cwZbSectionHTML()
@@ -5633,6 +5636,64 @@ function cwGenerate(){
   save();toast('已新增 '+todo.length+' 筆清潔工作到追蹤總表'+(noZone.length?('；'+noZone.length+' 戶未選區域留在清單'):''),'✅');renderHCal();
 }
 function cwUndo(){if(!window._cwUndo){toast('沒有可復原的批次','⚠️');return;}S.rows=window._cwUndo.rows;S.nextId=window._cwUndo.nextId;window._cwUndo=null;save();toast('已復原上一批自動清潔工作','↩');renderHCal();}
+// ══ V0706-09：清潔連動（改驗收日→清潔日晚於驗收日提示；批次對齊清潔預定日到驗收日−N天）══
+function _addDaysISO(iso,delta){if(!iso)return iso;var p=String(iso).split('-');if(p.length<3)return iso;var d=new Date(+p[0],(+p[1]-1),+p[2]+(+delta||0),12,0,0);return _isoL(d);}
+// 方案3：改「驗收日」後，若某戶清潔預定日「晚於」新驗收日就跳提示（不自動改，一律等你選）
+function _cleanLinkAsk(keys){
+  try{
+    if(!Array.isArray(keys))keys=[keys];
+    var aff=[];keys.forEach(function(k){var hu=(S.handoverUnits||{})[k];if(hu&&hu.planDate&&hu.cleanPlanDate&&hu.cleanPlanDate>hu.planDate)aff.push(k);});
+    if(!aff.length)return;
+    _clnkAff=aff;
+    var rows=aff.slice(0,12).map(function(k){var hu=S.handoverUnits[k];return '<div style="font-size:12px;color:#78350f;padding:2px 0">'+esc(unitDisplayName(k))+'　驗收 '+esc(String(hu.planDate).slice(5))+'　·　清潔預定 '+esc(String(hu.cleanPlanDate).slice(5))+'　→ 對齊後 '+esc(String(_addDaysISO(hu.planDate,-1)).slice(5))+'</div>';}).join('');
+    if(aff.length>12)rows+='<div style="font-size:11px;color:#92400e">…等共 '+aff.length+' 戶</div>';
+    var bg=document.getElementById('clnkBg');if(bg)bg.remove();
+    bg=document.createElement('div');bg.id='clnkBg';
+    bg.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:99999;display:flex;align-items:center;justify-content:center';
+    bg.innerHTML='<div style="background:var(--card,#fff);border-radius:14px;max-width:520px;width:90%;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.3);border:2px solid #f59e0b">'
+      +'<div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:8px">⚠ 清潔預定日晚於新驗收日</div>'
+      +'<div style="font-size:12px;color:var(--text2,#555);margin-bottom:10px">清潔應排在驗收前，這 '+aff.length+' 戶的清潔預定日目前排在驗收日之後。要怎麼處理？（不會自動改）</div>'
+      +'<div style="max-height:220px;overflow:auto;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:14px">'+rows+'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+      +'<button class="btn btn-sm" onclick="_clnkClose()" style="font-size:13px">維持不動</button>'
+      +'<button class="btn btn-sm" onclick="_clnkResolve(\'clear\')" style="font-size:13px;background:#fee2e2;border-color:#fca5a5;color:#991b1b">清掉清潔預定日</button>'
+      +'<button class="btn btn-p btn-sm" onclick="_clnkResolve(\'align\')" style="font-size:13px;font-weight:700">對齊到驗收日−1天</button>'
+      +'</div></div>';
+    document.body.appendChild(bg);
+  }catch(e){}
+}
+function _clnkClose(){var bg=document.getElementById('clnkBg');if(bg)bg.remove();_clnkAff=null;}
+function _clnkResolve(op){
+  var aff=_clnkAff||[];var n=0;
+  aff.forEach(function(k){var hu=(S.handoverUnits||{})[k];if(!hu)return;if(op==='align'){if(hu.planDate){hu.cleanPlanDate=_addDaysISO(hu.planDate,-1);n++;}}else if(op==='clear'){hu.cleanPlanDate='';hu.cleanSlot='';n++;}});
+  if(n){logChange('🧹 清潔',(op==='align'?'清潔預定日對齊驗收日−1天 ':'清掉清潔預定日 ')+n+' 戶（改驗收日連動）');save();reRenderActivePane();toast((op==='align'?'已對齊 ':'已清掉 ')+n+' 戶清潔預定日','✅');}
+  _clnkClose();
+}
+// 方案4-A：未清潔警示面板 → 把勾選戶的清潔預定日對齊到「驗收日−N天」
+function cwAlignClean(){
+  var N=parseInt((document.getElementById('cwAlignN')||{}).value,10);if(isNaN(N))N=1;
+  var todo=_cwList().filter(function(it){return !_cwUnsel[it.key]&&it.hu&&it.hu.planDate;});
+  if(!todo.length){toast('沒有勾選（或無驗收日）的戶別','⚠️');return;}
+  if(!confirm('把 '+todo.length+' 戶的清潔預定日對齊到「驗收日−'+N+'天」？\n（只改清潔預定日，不動驗收日；可個別再調、或按 ↩ 復原）'))return;
+  window._cwAlignUndo=JSON.parse(JSON.stringify(S.handoverUnits));
+  var n=0;todo.forEach(function(it){var hu=S.handoverUnits[it.key];if(!hu||!hu.planDate)return;hu.cleanPlanDate=_addDaysISO(hu.planDate,-N);n++;});
+  logChange('🧹 清潔','未清潔警示批次對齊清潔預定日→驗收日−'+N+'天 '+n+' 戶');
+  save();toast('已對齊 '+n+' 戶清潔預定日（驗收日−'+N+'天）','✅');renderHCal();
+}
+function cwAlignUndo(){if(!window._cwAlignUndo){toast('沒有可復原的對齊','⚠️');return;}S.handoverUnits=window._cwAlignUndo;window._cwAlignUndo=null;save();toast('已復原清潔日對齊','↩');renderHCal();}
+// 方案4-B：清潔工作分配區 → 掃全部「清潔預定日晚於驗收日」的戶，一鍵校正到「驗收日−N天」
+function caAlignDrift(){
+  var N=parseInt((document.getElementById('caAlignN')||{}).value,10);if(isNaN(N))N=1;
+  var hu=S.handoverUnits||{};var todo=[];
+  Object.keys(hu).forEach(function(k){var h=hu[k];if(!h||h.cancelled||h.noShow||h.delivered)return;if(h.planDate&&h.cleanPlanDate&&h.cleanPlanDate>h.planDate)todo.push(k);});
+  if(!todo.length){toast('沒有清潔預定日晚於驗收日的戶別 🎉','✅');return;}
+  if(!confirm('偵測到 '+todo.length+' 戶清潔預定日晚於驗收日。\n把它們對齊到「驗收日−'+N+'天」？\n（只改清潔預定日，不動驗收日；可按 ↩ 復原）'))return;
+  window._caAlignUndo=JSON.parse(JSON.stringify(S.handoverUnits));
+  var n=0;todo.forEach(function(k){var h=S.handoverUnits[k];if(!h||!h.planDate)return;h.cleanPlanDate=_addDaysISO(h.planDate,-N);n++;});
+  logChange('🧹 清潔','清潔工作分配校正漂移：對齊清潔預定日→驗收日−'+N+'天 '+n+' 戶');
+  save();toast('已校正 '+n+' 戶清潔預定日','✅');if(typeof renderCleanTrack==='function')renderCleanTrack();
+}
+function caAlignUndo(){if(!window._caAlignUndo){toast('沒有可復原的校正','⚠️');return;}S.handoverUnits=window._caAlignUndo;window._caAlignUndo=null;save();toast('已復原清潔日校正','↩');if(typeof renderCleanTrack==='function')renderCleanTrack();}
 function _cellAccent(key){
   if(isOwnerUnit(key))return'#3C3489';
   if(isBizUnit(key))return'#085041';
@@ -5667,6 +5728,7 @@ function bslApplyChecked(ns){
   const n=sel.length;window._bslOwner=null;reRenderActivePane();
   logChange('📆 交屋/行事曆',(_cleanDone?'批次標清潔完成 ':(_schedClean?'批次排清潔 ':'批次套用 '))+n+' 戶'+(date?('→'+date):''));
   toast((_cleanDone?'已標清潔完成 ':(_schedClean?'已排清潔 ':'已套用 '))+n+' 戶'+(date?'（'+date+(_cleanDone?'':(slot?' '+slot:''))+'）':''),'✅');
+  if(!_cleanOp&&date)_cleanLinkAsk(sel.map(it=>it.key));   // V0706-09：批次改驗收日→清潔日晚於驗收日就提示
 }
 // ════════════ 廠商派工單 (V0624-20) ════════════
 let _pwoRound='初驗';
@@ -8527,6 +8589,7 @@ function _cleanAssignHTML(){
     +'<button class="btn btn-sm" onclick="caNav(0)" style="font-size:0.85em">明天</button>'
     +'<span style="color:#888;font-size:0.85em;margin-left:6px">字體</span>'
     +'<button class="btn btn-sm" onclick="caFont(-1)" style="font-size:0.85em">A−</button><span style="font-size:0.85em;color:#777;min-width:1.6em;text-align:center;display:inline-block">'+fs+'</span><button class="btn btn-sm" onclick="caFont(1)" style="font-size:0.85em">A＋</button>'
+    +'<span style="border-left:1px solid var(--border);padding-left:8px;margin-left:6px;color:#888;font-size:0.85em">清潔對齊 驗收日−</span><input id="caAlignN" type="number" value="1" min="0" max="10" style="width:42px;font-size:0.85em;padding:2px 4px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"><span style="color:#888;font-size:0.85em">天</span><button class="btn btn-sm" onclick="caAlignDrift()" title="掃描所有「清潔預定日晚於驗收日」的戶，一鍵對齊到驗收日−N天（只動清潔預定日）" style="font-size:0.85em;background:#E1F5EE;border-color:#8AC0AE;color:#085041">🎯 校正漂移</button><button class="btn btn-sm" onclick="caAlignUndo()" style="font-size:0.85em">↩</button>'
   +'</div>';
   // 匯出列（明天/後天 各一顆）
   var l0=_caRel(d0)+' '+_caMD(d0),l1=_caRel(d1)+' '+_caMD(d1);
@@ -10134,6 +10197,7 @@ function setHuInspSchedule(key,val){
   const ins=(hu.inspections||[]).find(i=>inspTypeOf(i)==='初驗');
   if(ins&&ins.date)ins.date=val;   // 初驗已完成→完成日跟排程日同步
   save();reRenderActivePane();
+  if(val)_cleanLinkAsk([key]);   // V0706-09：改驗收日→清潔日晚於驗收日就提示
 }
 function toggleInitInsp(key,checked){
   _clGuard(key);
