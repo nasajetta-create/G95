@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 161;  // ← 每次部署新版時遞增（V0706-05 清潔追蹤網格上方新增「清潔工作分配」常駐區：固定兩天、依日期/依廠商切換、表格化、字體調整、單日截圖/PDF）（redeploy #333：#332 deploy 平台性失敗 try-again-later，推新 commit）
+const CODE_VERSION = 162;  // ← 每次部署新版時遞增（V0706-06 管理人改名同步更新交屋戶接待人員 hu.hosts，修「卡片有徽章但選取對不上」的孤兒問題）（redeploy #333：#332 deploy 平台性失敗 try-again-later，推新 commit）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-05</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0706-06</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -2375,9 +2375,11 @@ function editManagerModal(i){
         S.completed.forEach(r=>{if(r.manager===oldName)r.manager=newName;});
         S.alerts.forEach(a=>{if(a.manager===oldName)a.manager=newName;});
         S.events.forEach(e=>{if(e.manager===oldName)e.manager=newName;});
+        // V0706-06：改名同步更新交屋戶「接待人員」hu.hosts（否則舊名變孤兒＝卡片有徽章但選取對不上）
+        Object.values(S.handoverUnits||{}).forEach(h=>{if(h&&Array.isArray(h.hosts)&&h.hosts.includes(oldName)){h.hosts=[...new Set(h.hosts.map(x=>x===oldName?newName:x))];}});
         if(S.managerDetails&&S.managerDetails[oldName]){S.managerDetails[newName]=S.managerDetails[oldName];delete S.managerDetails[oldName];}
       }
-      S.managers[i]=newName;save();renderMgr();toast(`管理人已更名為：${newName}，追蹤總表已同步更新 ✅`);
+      S.managers[i]=newName;save();renderMgr();toast(`管理人已更名為：${newName}，追蹤總表／接待人員已同步更新 ✅`);
     },
     ()=>{S.managers.splice(i,1);save();renderMgr();toast('已刪除管理人','🗑');}
   );
