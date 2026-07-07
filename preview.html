@@ -340,7 +340,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 171;  // ← 每次部署新版時遞增（V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 172;  // ← 每次部署新版時遞增（V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -772,7 +772,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-05</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-06</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -8896,7 +8896,7 @@ function renderTabBar(){
     while(_editSlots.length&&_editSlots[_editSlots.length-1]==null)_editSlots.pop(); // 去尾端空格，稍後量欄數補一整列
     cells=_editSlots;
   }else{
-    cells=(S.tabOrder||[]).map(id=>(id&&TAB_DEFS[id])?id:null).filter(id=>id===null||!_isTabHidden(id));  // V0707-04：正常模式隱藏「本機隱藏」的分頁；保留刻意留白
+    cells=(S.tabOrder||[]).map(id=>(id&&TAB_DEFS[id]&&!_isTabHidden(id))?id:null);  // V0707-06：隱藏的分頁→留空槽（固定位置、不遞補補位）；保留刻意留白
     while(cells.length&&cells[cells.length-1]==null)cells.pop();
   }
   const grip=_tabEditMode?'<span class="tab-grip">⠿</span>':'';
@@ -9011,11 +9011,26 @@ function _annArr(){if(!S.announcements)S.announcements=[];return S.announcements
 function _annById(id){return _annArr().filter(function(a){return a&&a.id===id;})[0];}
 function _annUnreadCount(){var me=_annMe();return _annArr().filter(function(a){return a&&!((a.readBy||[]).indexOf(me)>=0);}).length;}
 function announceUnreadBadge(){var n=_annUnreadCount();return n?('<span style="background:#DC2626;color:#fff;border-radius:10px;font-size:9px;padding:0 5px;margin-left:2px;font-weight:700">'+n+'</span>'):'';}
+// V0707-06：認證碼（沿用系統 MONGA 為預設，可另設公告專用碼 S.annAuthCode）
+function _annAuthCode(){return (S.annAuthCode&&String(S.annAuthCode))||'MONGA';}
+function _annAuthAsk(title,cb){var c=prompt((title||'此操作')+'需要認證碼：');if(c===null)return;if(String(c)!==_annAuthCode()){toast('認證碼錯誤','⚠️');return;}cb();}
+function annSetAuthCode(){_annAuthAsk('設定公告認證碼',function(){var n=prompt('新的公告認證碼（留空＝恢復預設 MONGA）：',S.annAuthCode||'');if(n===null)return;S.annAuthCode=String(n).trim();save();toast('已更新公告認證碼','🔑');});}
+// V0707-06④：強制簽收預設「開」（undefined 視為開；關掉才是 false）
+function _annForceOn(){return S.annForce!==false;}
+// V0707-06⑤：發布 3 分鐘內、且是本人＝可自由編輯/刪除；否則需認證碼
+function _annCanFreeEdit(a){if(!a)return false;if(String(a.author||'')!==_annMe())return false;var t=a.ts?new Date(a.ts).getTime():0;return (Date.now()-t)<180000;}
+// V0707-06⑤：週分組（週一為界，民國年命名 例 115/07/06-07/12）
+function _annMondayISO(dLike){var d=dLike?new Date(dLike):new Date();d.setHours(12,0,0,0);var wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);return _isoL(d);}
+function _annThisMonday(){return _annMondayISO(new Date());}
+function _annWeekKeyOf(ts){return _annMondayISO(ts?new Date(ts):new Date());}
+function _annWeekLabel(mondayISO){var p=String(mondayISO).split('-');var mon=new Date(+p[0],+p[1]-1,+p[2],12,0,0);var sun=new Date(mon);sun.setDate(mon.getDate()+6);var roc=mon.getFullYear()-1911;var mm=function(x){return String(x.getMonth()+1).padStart(2,'0')+'/'+String(x.getDate()).padStart(2,'0');};return roc+'/'+mm(mon)+'-'+mm(sun);}
+var _annOpenWeeks={};
+function annToggleWeek(k){if(_annOpenWeeks[k])delete _annOpenWeeks[k];else _annOpenWeeks[k]=1;renderAnnounce();}
 function _annTM(t){return t==='task'?{lbl:'⏰ 交辦',bg:'#F59E0B',cb:'#FFFBEB',bd:'#FCD34D'}:t==='qa'?{lbl:'❓ 疑問',bg:'#2563EB',cb:'#EFF6FF',bd:'#93C5FD'}:{lbl:'📌 公告',bg:'#7C3AED',cb:'#FAF5FF',bd:'#D8B4FE'};}
 function _annStatusMeta(s){return s==='done'?{lbl:'✅ 完成',bg:'#DCFCE7',fg:'#166534',bd:'#86EFAC'}:s==='doing'?{lbl:'⏳ 進行中',bg:'#FEF9C3',fg:'#854D0E',bd:'#FDE047'}:{lbl:'⭕ 待辦',bg:'#F1F5F9',fg:'#475569',bd:'#CBD5E1'};}
 function _annDueTag(due){if(!due)return '';var today=todayISO();var diff=Math.round((new Date(due+'T12:00:00')-new Date(today+'T12:00:00'))/86400000);var over=diff<0;var soon=diff>=0&&diff<=3;var bg=over?'#FEE2E2':(soon?'#FEF3C7':'#F1F5F9'),fg=over?'#991B1B':(soon?'#92400E':'#475569'),bd=over?'#F87171':(soon?'#FCD34D':'#CBD5E1');return '<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:'+bg+';color:'+fg+';border:1px solid '+bd+'">期限 '+esc(_mdL(due))+'（'+(over?('逾期'+Math.abs(diff)+'天'):(diff===0?'今天':diff+'天'))+'）</span>';}
 function annNew(t){_annEditId='new:'+(t||'task');renderAnnounce();}
-function annEdit(id){_annEditId=id;renderAnnounce();}
+function annEdit(id){var a=_annById(id);if(a&&!_annCanFreeEdit(a)){_annAuthAsk('編輯已鎖定的公告',function(){_annEditId=id;renderAnnounce();});return;}_annEditId=id;renderAnnounce();}
 function annCancelEdit(){_annEditId=null;renderAnnounce();}
 function _annV(id){var e=document.getElementById(id);return e?String(e.value||'').trim():'';}
 function annSave(){
@@ -9031,7 +9046,7 @@ function annSave(){
   logChange('📢 公告',(editing?'編輯':'新增')+_annTM(type).lbl+'：'+title);
   _annEditId=null;save();renderAnnounce();toast(editing?'已更新公告':'已發布公告','📢');
 }
-function delAnnounce(id){var a=_annById(id);if(!a)return;if(!confirm('刪除這則「'+esc(a.title)+'」？'))return;S.announcements=_annArr().filter(function(x){return x.id!==id;});logChange('📢 公告','刪除：'+a.title);save();renderAnnounce();toast('已刪除','🗑');}
+function delAnnounce(id){var a=_annById(id);if(!a)return;var _do=function(){if(!confirm('刪除這則「'+esc(a.title)+'」？'))return;S.announcements=_annArr().filter(function(x){return x.id!==id;});logChange('📢 公告','刪除：'+a.title);save();renderAnnounce();toast('已刪除','🗑');};if(!_annCanFreeEdit(a)){_annAuthAsk('刪除已鎖定的公告',_do);return;}_do();}
 function togglePinAnnounce(id){var a=_annById(id);if(!a)return;a.pinned=!a.pinned;save();renderAnnounce();}
 function setAnnStatus(id,st){var a=_annById(id);if(!a)return;a.status=st;logChange('📢 公告','交辦「'+a.title+'」狀態→'+_annStatusMeta(st).lbl);save();renderAnnounce();}
 function setAnnAnswered(id,v){var a=_annById(id);if(!a)return;a.answered=!!v;save();renderAnnounce();}
@@ -9040,8 +9055,8 @@ function annMarkRead(id){var a=_annById(id);if(!a)return;var me=_annMe();if(!a.r
 function _annShortAll(){return LOGIN_ALLOW.map(function(e){return String(e).replace(/@gmail\.com$/,'');});}
 function _annUnreadNames(a){var rb=a.readBy||[];return _annShortAll().filter(function(n){return rb.indexOf(n)<0;});}
 function _annMustUnsigned(){var me=_annMe();return _annArr().filter(function(a){return a&&a.mustRead&&!((a.readBy||[]).indexOf(me)>=0);});}
-function toggleAnnForce(){S.annForce=!S.annForce;save();renderAnnounce();toast(S.annForce?'已開啟：必讀未簽收前擋其他分頁':'已關閉強制簽收','⚙️');}
-function _annGateBlock(target){if(target==='announce')return false;if(!S.annForce)return false;var u=_annMustUnsigned();if(!u.length)return false;toast('有 '+u.length+' 則必讀公告未簽收，請先到公告欄按「我已讀」','📢');switchTab('announce');return true;}
+function toggleAnnForce(){_annAuthAsk('切換強制簽收',function(){S.annForce=!_annForceOn();save();renderAnnounce();toast(_annForceOn()?'已開啟：必讀未簽收前擋其他分頁':'已關閉強制簽收','⚙️');});}
+function _annGateBlock(target){if(target==='announce')return false;if(!_annForceOn())return false;var u=_annMustUnsigned();if(!u.length)return false;toast('有 '+u.length+' 則必讀公告未簽收，請先到公告欄按「我已讀」','📢');switchTab('announce');return true;}
 function annGoUnit(u){if(!u)return;switchTab('main');setTimeout(function(){try{var s=document.getElementById('search');if(s){s.value=u;if(typeof searchTerm!=='undefined')searchTerm=u;renderMain();}}catch(e){}},60);}
 function annFont(d){_annFont=Math.max(11,Math.min(22,_annFont+d));renderAnnounce();}
 function annGap(d){_annGap=Math.max(0,Math.min(3,_annGap+d));renderAnnounce();}
@@ -9056,6 +9071,7 @@ function _annCardHTML(a){
   if(a.mustRead)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#FEE2E2;color:#B91C1C;border:1px solid #F87171;font-weight:700">⭐ 必讀</span>';
   if(a.pinned)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#F3E8FF;color:#6B21A8;border:1px solid #C4B5FD">📌 置頂</span>';
   if(!read)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#DC2626;color:#fff;font-weight:700">● 未讀</span>';
+  if(!_annCanFreeEdit(a))head+='<span title="已鎖定：編輯／刪除需認證碼" style="font-size:'+(_annFont-3)+'px;color:var(--text3)">🔒</span>';
   head+='</div>';
   var body='';
   if(a.type==='qa'){
@@ -9117,7 +9133,8 @@ function renderAnnounce(){
     +'<button class="btn btn-sm" onclick="annShot()" style="font-size:12px">📷 截圖</button><button class="btn btn-sm" onclick="annPdf()" style="font-size:12px">🖨 PDF</button>'
     +'<span style="width:1px;height:20px;background:var(--border);margin:0 2px"></span>'
     +'<button class="btn btn-sm" onclick="_annMarkAllRead()" style="font-size:12px">✅ 全部標已讀</button>'
-    +'<button class="btn btn-sm" onclick="toggleAnnForce()" title="開啟後：有必讀公告未簽收前，會被擋在公告欄不能切去其他分頁" style="font-size:12px;'+(S.annForce?'background:#FEE2E2;border-color:#F87171;color:#B91C1C;':'')+'">'+(S.annForce?'🔒 強制簽收：開':'🔓 強制簽收：關')+'</button>'
+    +'<button class="btn btn-sm" onclick="toggleAnnForce()" title="開啟後：有必讀公告未簽收前，會被擋在公告欄不能切去其他分頁（切換需認證碼）" style="font-size:12px;'+(_annForceOn()?'background:#FEE2E2;border-color:#F87171;color:#B91C1C;':'')+'">'+(_annForceOn()?'🔒 強制簽收：開':'🔓 強制簽收：關')+'</button>'
+    +'<button class="btn btn-sm" onclick="annSetAuthCode()" title="設定公告專用認證碼（預設沿用系統碼 MONGA）" style="font-size:12px">🔑 認證碼</button>'
     +'<span class="spacer" style="flex:1"></span>'
     +'<button class="btn btn-sm" onclick="annNew(\'task\')" style="font-size:12px;background:#F59E0B;color:#fff;border-color:#F59E0B">＋ 交辦</button>'
     +'<button class="btn btn-sm" onclick="annNew(\'qa\')" style="font-size:12px;background:#2563EB;color:#fff;border-color:#2563EB">＋ 疑問</button>'
@@ -9125,7 +9142,23 @@ function renderAnnounce(){
     +'</div>';
   var cap='<div id="ann-capzone">';
   if(pinned.length)cap+='<div style="font-size:12px;font-weight:700;color:#6B21A8;margin:2px 0 6px">📌 置頂</div>'+pinned.map(_annCardHTML).join('')+'<div style="height:6px"></div>';
-  cap+=(rest.length?rest.map(_annCardHTML).join(''):(pinned.length?'':'<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">目前沒有'+(_annFilter==='all'?'':_annTM(_annFilter).lbl)+'公告。用右上「＋」新增。</div>'));
+  // V0707-06⑤：本週正常顯示；一週前（上週以前）依週收折成群組（置頂不受影響）
+  var thisMon=_annThisMonday();
+  var recent=rest.filter(function(a){return _annWeekKeyOf(a.ts)>=thisMon;});
+  var older=rest.filter(function(a){return _annWeekKeyOf(a.ts)<thisMon;});
+  if(recent.length)cap+=recent.map(_annCardHTML).join('');
+  var wmap={};older.forEach(function(a){var wk=_annWeekKeyOf(a.ts);(wmap[wk]=wmap[wk]||[]).push(a);});
+  var wkeys=Object.keys(wmap).sort().reverse();
+  if(wkeys.length){
+    cap+='<div style="font-size:11px;color:var(--text3);margin:14px 0 5px">— 一週前的公告（自動收折，點週次展開；置頂不受影響）—</div>';
+    wkeys.forEach(function(wk){var arr=wmap[wk];var op=!!_annOpenWeeks[wk];
+      cap+='<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden">'
+        +'<div onclick="annToggleWeek(\''+wk+'\')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);font-size:13px;font-weight:600"><span style="color:var(--text3)">'+(op?'▾':'▸')+'</span>📅 '+esc(_annWeekLabel(wk))+' <span style="font-weight:400;color:var(--text3);font-size:12px">（'+arr.length+' 則）</span></div>'
+        +(op?('<div style="padding:8px 10px">'+arr.map(_annCardHTML).join('')+'</div>'):'')
+        +'</div>';
+    });
+  }
+  if(!pinned.length&&!recent.length&&!wkeys.length)cap+='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">目前沒有'+(_annFilter==='all'?'':_annTM(_annFilter).lbl)+'公告。用右上「＋」新增。</div>';
   cap+='</div>';
   el.innerHTML=bar+_annFormHTML()+cap;
 }
