@@ -338,7 +338,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 168;  // ← 每次部署新版時遞增（V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 169;  // ← 每次部署新版時遞增（V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -770,7 +770,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-02</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-03</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -8953,6 +8953,7 @@ function annSave(){
   var title=_annV('ann-title');if(!title){toast('請填標題','⚠️');return;}
   var o=editing?_annById(_annEditId):{id:'a'+Date.now()+Math.floor(Math.random()*1000),type:type,author:_annMe(),ts:new Date().toISOString(),readBy:[_annMe()],pinned:false};
   o.title=title;o.content=_annV('ann-content');o.unit=_annV('ann-unit');
+  var _mr=document.getElementById('ann-mustread');o.mustRead=!!(_mr&&_mr.checked);
   if(type==='task'){o.assignee=_annV('ann-assignee');o.due=_annV('ann-due');o.status=_annV('ann-status')||'todo';}
   if(type==='qa'){o.answer=_annV('ann-answer');o.answered=!!o.answer;}
   if(!editing)_annArr().unshift(o);
@@ -8963,7 +8964,13 @@ function delAnnounce(id){var a=_annById(id);if(!a)return;if(!confirm('刪除這�
 function togglePinAnnounce(id){var a=_annById(id);if(!a)return;a.pinned=!a.pinned;save();renderAnnounce();}
 function setAnnStatus(id,st){var a=_annById(id);if(!a)return;a.status=st;logChange('📢 公告','交辦「'+a.title+'」狀態→'+_annStatusMeta(st).lbl);save();renderAnnounce();}
 function setAnnAnswered(id,v){var a=_annById(id);if(!a)return;a.answered=!!v;save();renderAnnounce();}
-function _annMarkAllRead(){var me=_annMe();var ch=false;_annArr().forEach(function(a){if(a&&!((a.readBy||[]).indexOf(me)>=0)){if(!a.readBy)a.readBy=[];a.readBy.push(me);ch=true;}});if(ch)save();}
+function _annMarkAllRead(){var me=_annMe();var ch=false;_annArr().forEach(function(a){if(a&&!((a.readBy||[]).indexOf(me)>=0)){if(!a.readBy)a.readBy=[];a.readBy.push(me);ch=true;}});if(ch){save();renderAnnounce();toast('已全部標為已讀','✅');}}
+function annMarkRead(id){var a=_annById(id);if(!a)return;var me=_annMe();if(!a.readBy)a.readBy=[];if(a.readBy.indexOf(me)<0){a.readBy.push(me);save();}renderAnnounce();renderTabBar();}
+function _annShortAll(){return LOGIN_ALLOW.map(function(e){return String(e).replace(/@gmail\.com$/,'');});}
+function _annUnreadNames(a){var rb=a.readBy||[];return _annShortAll().filter(function(n){return rb.indexOf(n)<0;});}
+function _annMustUnsigned(){var me=_annMe();return _annArr().filter(function(a){return a&&a.mustRead&&!((a.readBy||[]).indexOf(me)>=0);});}
+function toggleAnnForce(){S.annForce=!S.annForce;save();renderAnnounce();toast(S.annForce?'已開啟：必讀未簽收前擋其他分頁':'已關閉強制簽收','⚙️');}
+function _annGateBlock(target){if(target==='announce')return false;if(!S.annForce)return false;var u=_annMustUnsigned();if(!u.length)return false;toast('有 '+u.length+' 則必讀公告未簽收，請先到公告欄按「我已讀」','📢');switchTab('announce');return true;}
 function annGoUnit(u){if(!u)return;switchTab('main');setTimeout(function(){try{var s=document.getElementById('search');if(s){s.value=u;if(typeof searchTerm!=='undefined')searchTerm=u;renderMain();}}catch(e){}},60);}
 function annFont(d){_annFont=Math.max(11,Math.min(22,_annFont+d));renderAnnounce();}
 function annGap(d){_annGap=Math.max(0,Math.min(3,_annGap+d));renderAnnounce();}
@@ -8975,7 +8982,9 @@ function _annCardHTML(a){
   var head='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px"><span style="font-size:'+(_annFont-1)+'px;padding:2px 9px;border-radius:8px;background:'+tm.bg+';color:#fff;font-weight:700;white-space:nowrap">'+tm.lbl+'</span><span style="font-size:'+(_annFont+3)+'px;font-weight:700;color:var(--text)">'+esc(a.title)+'</span>';
   if(a.type==='task'){var sm=_annStatusMeta(a.status||'todo');head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:'+sm.bg+';color:'+sm.fg+';border:1px solid '+sm.bd+'">'+sm.lbl+'</span>'+(a.due?_annDueTag(a.due):'');}
   if(a.type==='qa'){head+=(a.answered?'<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✅ 已解答</span>':'<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#FEE2E2;color:#991B1B;border:1px solid #F87171">🔴 待解答</span>');}
+  if(a.mustRead)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#FEE2E2;color:#B91C1C;border:1px solid #F87171;font-weight:700">⭐ 必讀</span>';
   if(a.pinned)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#F3E8FF;color:#6B21A8;border:1px solid #C4B5FD">📌 置頂</span>';
+  if(!read)head+='<span style="font-size:'+(_annFont-2)+'px;padding:2px 8px;border-radius:8px;background:#DC2626;color:#fff;font-weight:700">● 未讀</span>';
   head+='</div>';
   var body='';
   if(a.type==='qa'){
@@ -8986,9 +8995,11 @@ function _annCardHTML(a){
   if(a.type==='task'&&a.assignee)meta+='<span>👤 負責：'+esc(a.assignee)+'</span>';
   if(a.unit)meta+='<span onclick="annGoUnit(\''+esc(a.unit)+'\')" style="cursor:pointer;color:#2563EB;text-decoration:underline">🔗 關聯 '+esc(a.unit)+'</span>';
   meta+='<span>發布：'+esc(a.author||'')+' · '+esc(String(a.ts||'').slice(5,16).replace('T',' '))+'</span>';
-  meta+='<span title="已讀人數">👁 '+((a.readBy||[]).length)+'/'+LOGIN_ALLOW.length+'</span>';
+  meta+='<span title="已簽收人數">👁 已讀 '+((a.readBy||[]).length)+'/'+LOGIN_ALLOW.length+'</span>';
+  var _un=_annUnreadNames(a);if(a.mustRead&&_un.length)meta+='<span style="color:#B91C1C">未簽收：'+esc(_un.join('、'))+'</span>';
   meta+='</div>';
   var acts='<div class="no-print" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">';
+  if(!read)acts+='<button class="btn btn-sm" onclick="annMarkRead(\''+a.id+'\')" style="font-size:12px;background:#16A34A;color:#fff;border-color:#16A34A;font-weight:700">✅ 我已讀</button>';
   if(a.type==='task'){acts+='<button class="btn btn-sm" onclick="setAnnStatus(\''+a.id+'\',\'todo\')" style="font-size:11px">待辦</button><button class="btn btn-sm" onclick="setAnnStatus(\''+a.id+'\',\'doing\')" style="font-size:11px">進行中</button><button class="btn btn-sm" onclick="setAnnStatus(\''+a.id+'\',\'done\')" style="font-size:11px;background:#E9F5E1;border-color:#8AB86E;color:#3B6D11">標完成</button>';}
   if(a.type==='qa'){acts+=(a.answered?'<button class="btn btn-sm" onclick="setAnnAnswered(\''+a.id+'\',false)" style="font-size:11px">標未解答</button>':'<button class="btn btn-sm" onclick="annEdit(\''+a.id+'\')" style="font-size:11px;background:#DBEAFE;border-color:#93C5FD;color:#1D4ED8">填解答</button>');}
   acts+='<button class="btn btn-sm" onclick="togglePinAnnounce(\''+a.id+'\')" style="font-size:11px">'+(a.pinned?'取消置頂':'置頂')+'</button><button class="btn btn-sm" onclick="annEdit(\''+a.id+'\')" style="font-size:11px">編輯</button><button class="btn btn-sm" onclick="delAnnounce(\''+a.id+'\')" style="font-size:11px;color:#A32D2D">刪除</button></div>';
@@ -9008,20 +9019,20 @@ function _annFormHTML(){
   if(type==='task'){h+='<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px"><select id="ann-assignee" style="font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font)">'+mgrOpts+'</select>';
     h+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px">期限 <input id="ann-due" type="date" value="'+esc(a.due||'')+'" style="font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font)"></span>';
     h+='<select id="ann-status" style="font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font)"><option value="todo"'+(st==='todo'?' selected':'')+'>⭕ 待辦</option><option value="doing"'+(st==='doing'?' selected':'')+'>⏳ 進行中</option><option value="done"'+(st==='done'?' selected':'')+'>✅ 完成</option></select></div>';}
-  h+='<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:9px"><input id="ann-unit" value="'+esc(a.unit||'')+'" placeholder="關聯戶別（選填，例 A5-21）" style="font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font);width:220px"></div>';
+  h+='<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:9px"><input id="ann-unit" value="'+esc(a.unit||'')+'" placeholder="關聯戶別（選填，例 A5-21）" style="font-size:13px;padding:6px 8px;border:1px solid var(--pborder);border-radius:6px;font-family:var(--font);width:220px"><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#B91C1C;cursor:pointer"><input type="checkbox" id="ann-mustread" '+(a.mustRead?'checked':'')+' style="width:16px;height:16px;accent-color:#DC2626">⭐ 必讀（要求所有人簽收）</label></div>';
   h+='<div style="display:flex;gap:7px"><button class="btn btn-p btn-sm" onclick="annSave()">'+(editing?'儲存':'發布')+'</button><button class="btn btn-sm" onclick="annCancelEdit()">取消</button></div>';
   h+='</div>';return h;
 }
 function renderAnnounce(){
   var el=document.getElementById('pane-announce');if(!el)return;
-  _annMarkAllRead();
   var all=_annArr().slice();
   var byType=function(a){return _annFilter==='all'||a.type===_annFilter;};
   var open=function(a){return !_annUnreadOnly?true:(a.type==='task'?a.status!=='done':(a.type==='qa'?!a.answered:false));};
   var list=all.filter(function(a){return a&&byType(a)&&open(a);});
-  var _rank={task:0,qa:1,notice:2};
-  var pinned=list.filter(function(a){return a.pinned;});
-  var rest=list.filter(function(a){return !a.pinned;});
+  var _me2=_annMe();
+  var _top=function(a){return a.pinned||(a.mustRead&&!((a.readBy||[]).indexOf(_me2)>=0));};
+  var pinned=list.filter(_top);
+  var rest=list.filter(function(a){return !_top(a);});
   var cmp=function(a,b){var ta=a.type==='task'&&a.due?a.due:'',tb=b.type==='task'&&b.due?b.due:'';if(ta&&tb&&ta!==tb)return ta<tb?-1:1;if(ta&&!tb)return -1;if(!ta&&tb)return 1;return String(b.ts||'').localeCompare(String(a.ts||''));};
   pinned.sort(cmp);rest.sort(cmp);
   var chip=function(k,lbl){return '<button class="btn btn-sm" onclick="_annFilter=\''+k+'\';renderAnnounce()" style="font-size:12px;'+(_annFilter===k?'background:#4F46E5;color:#fff;border-color:#4F46E5;':'')+'">'+lbl+'</button>';};
@@ -9033,6 +9044,9 @@ function renderAnnounce(){
     +'<span style="font-size:12px;color:var(--text3)">字體</span><button class="btn btn-sm" onclick="annFont(-1)" style="font-size:12px">A−</button><button class="btn btn-sm" onclick="annFont(1)" style="font-size:12px">A＋</button>'
     +'<span style="font-size:12px;color:var(--text3)">行距</span><button class="btn btn-sm" onclick="annGap(-1)" style="font-size:12px">−</button><button class="btn btn-sm" onclick="annGap(1)" style="font-size:12px">＋</button>'
     +'<button class="btn btn-sm" onclick="annShot()" style="font-size:12px">📷 截圖</button><button class="btn btn-sm" onclick="annPdf()" style="font-size:12px">🖨 PDF</button>'
+    +'<span style="width:1px;height:20px;background:var(--border);margin:0 2px"></span>'
+    +'<button class="btn btn-sm" onclick="_annMarkAllRead()" style="font-size:12px">✅ 全部標已讀</button>'
+    +'<button class="btn btn-sm" onclick="toggleAnnForce()" title="開啟後：有必讀公告未簽收前，會被擋在公告欄不能切去其他分頁" style="font-size:12px;'+(S.annForce?'background:#FEE2E2;border-color:#F87171;color:#B91C1C;':'')+'">'+(S.annForce?'🔒 強制簽收：開':'🔓 強制簽收：關')+'</button>'
     +'<span class="spacer" style="flex:1"></span>'
     +'<button class="btn btn-sm" onclick="annNew(\'task\')" style="font-size:12px;background:#F59E0B;color:#fff;border-color:#F59E0B">＋ 交辦</button>'
     +'<button class="btn btn-sm" onclick="annNew(\'qa\')" style="font-size:12px;background:#2563EB;color:#fff;border-color:#2563EB">＋ 疑問</button>'
@@ -9045,6 +9059,7 @@ function renderAnnounce(){
   el.innerHTML=bar+_annFormHTML()+cap;
 }
 function switchTab(id){
+  if(typeof _annGateBlock==='function'&&_annGateBlock(id))return;   // V0707-03：必讀未簽收擋門（可設定）
   activeTab=id;
   const mc=document.getElementById('mainCard');
   mc.className='card '+(TAB_BG[id]||'card-main');
@@ -11667,7 +11682,7 @@ function _loginOnAuth(user){
     if(location.search.indexOf('mode=view')<0){location.replace(location.pathname+'?mode=view');return;}
     _loginHide();return;
   }
-  if(_loginAllowed(user.email)){window._authEmail=user.email;_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';return;}
+  if(_loginAllowed(user.email)){window._authEmail=user.email;_loginHide();const lb=document.getElementById('logout-btn');if(lb)lb.style.display='';if(!window._annLanded){window._annLanded=true;setTimeout(function(){try{if(!window._VIEW_ONLY&&typeof switchTab==='function')switchTab('announce');}catch(e){}},1400);}return;}   // V0707-03：登入後一律先落公告欄
   _loginOverlay();_loginMsg('此帳號（'+(user.email||'')+'）不在可用名單，請聯絡管理者');
   const g=document.getElementById('login-google');if(g)g.textContent='換帳號登入';
 }
