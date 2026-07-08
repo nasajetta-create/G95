@@ -340,7 +340,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 175;  // ← 每次部署新版時遞增（V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 176;  // ← 每次部署新版時遞增（V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -772,7 +772,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-09</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-10</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1067,6 +1067,7 @@ async function _doSave(){
 
   // 計算變動欄位
   const dirtyKeys = _computeDirtyFields();
+  const _dmkAtSave = dirtyKeys.has('meta') ? _dirtyMetaKeys() : null; // V0707-10：本次要寫的 meta 欄位，存完給 15 秒保護窗
   if(dirtyKeys.size === 0){
     _saving=false; _saveTimer=null;
     setSyncStatus('online');
@@ -1080,6 +1081,7 @@ async function _doSave(){
     try{
       await window._fbSave(S, dirtyKeys);
       _savedSnapshot=_takeSnapshot();
+      if(_dmkAtSave && _dmkAtSave.size){ if(!window._metaGuard)window._metaGuard={}; const _ge=Date.now()+15000; _dmkAtSave.forEach(k=>{window._metaGuard[k]=_ge;}); } // V0707-10：剛存的 meta 欄位保護 15 秒，避免舊快照跳回
       _saveTimer=null;
       _saving=false;
       // 寫入期間有新變更？立即再存一次
@@ -1182,6 +1184,24 @@ function throttledRenderAll(){
 }
 
 function _isFieldEditing(){try{const el=document.activeElement;if(!el)return false;const tag=el.tagName;if(tag==='TEXTAREA'||tag==='SELECT')return true;if(tag==='INPUT'){if(el.readOnly||el.disabled)return false;const t=(el.type||'text').toLowerCase();return ['text','number','date','search','tel','email',''].includes(t);}return el.isContentEditable===true;}catch(e){return false;}}
+// ── V0707-10：meta 欄位（使照/事件/預警等，非逐列/逐戶合併的整包欄位）同步保護 ──
+// 問題：applyRemote 舊邏輯只看 rows/completed 是否 dirty；只改 meta 欄位時 hasDirty=false → S=remote 整包覆蓋，
+// 導致剛新增的使照節點/里程碑事件被別台裝置的舊快照蓋掉（存了 5-15 秒又跳回）。
+// 解：偵測「本機未同步的 meta 欄位」＋「剛存檔後 15 秒保護窗」，這些欄位一律保留本機、不採用遠端。
+// 注意：handoverUnits/clientData 走各自逐戶合併(_mergeKeyedMeta)、rows/completed 走逐列合併，皆不在此範圍。
+function _dirtyMetaKeys(){
+  const out=new Set();const snap=_savedSnapshot;if(!snap)return out;
+  const SKIP={rows:1,completed:1,trash:1,changelog:1,handoverUnits:1,clientData:1};
+  const keys=new Set([...Object.keys(S),...Object.keys(snap)]);
+  keys.forEach(k=>{if(SKIP[k])return;try{if(JSON.stringify(S[k])!==JSON.stringify(snap[k]))out.add(k);}catch(e){out.add(k);}});
+  return out;
+}
+function _protectedMetaKeys(){
+  const s=_dirtyMetaKeys();
+  const g=window._metaGuard||{};const now=Date.now();
+  Object.keys(g).forEach(k=>{if(g[k]>now)s.add(k);else delete g[k];});
+  return s;
+}
 function applyRemote(d){
   // 若 save 正在進行，排隊等完成後處理（不丟棄）
   if(_saveTimer){_pendingRemote=d;return;}
@@ -1196,7 +1216,8 @@ function applyRemote(d){
   const snap=_savedSnapshot;
   const dirtyRowIds=snap?_findDirtyIds(S.rows, snap.rows, 'id'):new Set();
   const dirtyCompIds=snap?_findDirtyIds(S.completed, snap.completed, 'compId'):new Set();
-  const hasDirty=dirtyRowIds.size>0||dirtyCompIds.size>0;
+  const protMeta=_protectedMetaKeys();
+  const hasDirty=dirtyRowIds.size>0||dirtyCompIds.size>0||protMeta.size>0;
   // 交屋日期/時段(handoverUnits)與客戶資料(clientData)：逐戶合併，避免被遠端整包覆蓋
   const mHU=_mergeKeyedMeta(S.handoverUnits, remote.handoverUnits, snap?snap.handoverUnits:null, 'handoverUnits');
   const mCD=_mergeKeyedMeta(S.clientData, remote.clientData, snap?snap.clientData:null, 'clientData');
@@ -1208,12 +1229,12 @@ function applyRemote(d){
     S.trash=mergeTrash(S.trash, remote.trash);
     S.vendors=mergeList(S.vendors, remote.vendors);
     S.managers=mergeList(S.managers, remote.managers);
-    S.alerts=remote.alerts||S.alerts;
-    S.events=remote.events||S.events;
-    // 其他 meta 採用遠端
+    S.alerts=protMeta.has('alerts')?S.alerts:(remote.alerts||S.alerts);
+    S.events=protMeta.has('events')?S.events:(remote.events||S.events);
+    // 其他 meta 採用遠端（本機剛改過/剛存 15 秒內的欄位＝protMeta 則保留本機，不被遠端整包蓋掉）
     ['zones','zoneUnits','zoneFloors','floorConfig',
      'unitConfig','publicAreaList','unitFloorLock','managerDetails','tabOrder','uso'].forEach(k=>{
-      if(k in remote) S[k]=remote[k];
+      if(!protMeta.has(k) && k in remote) S[k]=remote[k];
     });
     S.handoverUnits=mHU; S.clientData=mCD;
     S.nextId=Math.max(S.nextId||0, remote.nextId||0);
@@ -11283,6 +11304,10 @@ function usoRenderStats(){
  U.nodes.forEach(function(n){grp[usoStatus(n)].push(n);});
  window._usoStatOpen=window._usoStatOpen||{};
  function col(title,color,arr,kind){
+  // V0707-10：三欄看板依日期排序，連動工具列「近→遠／遠→近」；已完成用實際日、進行中/未開始用預定日；無日期排最後
+  arr=arr.slice();var _mul=(_usoRptDirV()==='desc')?-1:1;
+  var _kOf=function(n){return kind==='done'?(n.actual||''):(usoPlanOf(n)||usoDateOf(n)||'');};
+  arr.sort(function(a,b){var ka=_kOf(a),kb=_kOf(b);if(ka===kb)return 0;if(!ka)return 1;if(!kb)return -1;return (ka<kb?-1:1)*_mul;});
   var h='<div class="uso-scol"><h3><span class="uso-dot" style="background:'+color+'"></span>'+title+'（'+arr.length+'）</h3>';
   if(!arr.length)h+='<div class="uso-muted">－</div>';
   var open=!!window._usoStatOpen[kind];
