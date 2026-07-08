@@ -340,7 +340,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 173;  // ← 每次部署新版時遞增（V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 175;  // ← 每次部署新版時遞增（V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -772,7 +772,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-07</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-09</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1737,6 +1737,106 @@ function renumberEvents(){
 
 // ── 新增行：先在匯入欄下方顯示快速編輯列，確認後再寫入 ──────────────────
 let _pendingRow=null;
+// ── V0707-08：廠商快速鈕＋自訂搜尋下拉（僅「新增缺失」用）──────────────────
+let _iaVendorActiveIdx=-1;
+function _iaVendorQuickN(){let n=parseInt(localStorage.getItem('g95_vendorQuickN'),10);if(!(n>=1))n=1;if(n>10)n=10;return n;}
+function _iaVendorSetQuickN(n){n=Math.max(1,Math.min(10,n));localStorage.setItem('g95_vendorQuickN',n);_iaRenderVendorChips();}
+function _vendorUsageMap(){
+  const m=new Map();
+  const bump=v=>{if(v){v=String(v).trim();if(v)m.set(v,(m.get(v)||0)+1);}};
+  (S.rows||[]).forEach(r=>bump(r.vendor));
+  (S.completed||[]).forEach(r=>bump(r.vendor));
+  return m;
+}
+function _vendorTopUsed(n){
+  const m=_vendorUsageMap();
+  const list=(S.vendors||[]).slice();
+  list.sort((a,b)=>{const ca=m.get(a)||0,cb=m.get(b)||0;if(cb!==ca)return cb-ca;return S.vendors.indexOf(a)-S.vendors.indexOf(b);});
+  return list.slice(0,n);
+}
+function _iaRenderVendorChips(){
+  const wrap=document.getElementById('ia-vendor-chips');if(!wrap)return;
+  const n=_iaVendorQuickN();const tops=_vendorTopUsed(n);
+  const cur=_pendingRow?String(_pendingRow.vendor||''):'';
+  let h='';
+  tops.forEach(v=>{
+    const on=(v===cur);const col=vColor(v);
+    h+='<button type="button" onclick="_iaVendorPick(\''+esc(v)+'\')" title="'+esc(v)+'" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;white-space:nowrap;'+(on?'background:#EEEDFE;color:var(--purple);border:2px solid var(--purple)':'background:#fff;color:var(--text);border:1px solid var(--pborder)')+'">'
+      +(on?'✓':'<span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:'+col+'"></span>')
+      +'<span style="overflow:hidden;text-overflow:ellipsis;max-width:120px">'+esc(v)+'</span></button>';
+  });
+  h+='<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px;font-size:10px;color:var(--text2)">常用<button type="button" onclick="_iaVendorSetQuickN('+(n-1)+')" title="少一個" style="width:18px;height:18px;line-height:1;padding:0;border:1px solid var(--pborder);border-radius:4px;background:#fff;cursor:pointer">－</button>'+n+'<button type="button" onclick="_iaVendorSetQuickN('+(n+1)+')" title="多一個" style="width:18px;height:18px;line-height:1;padding:0;border:1px solid var(--pborder);border-radius:4px;background:#fff;cursor:pointer">＋</button></span>';
+  wrap.innerHTML=h;
+}
+function _iaVendorInput(v){if(_pendingRow)_pendingRow.vendor=v;_iaVendorSearch(v);_iaRenderVendorChips();}
+function _iaVendorCloseDrop(){const d=document.getElementById('ia-vendor-drop');if(d)d.style.display='none';_iaVendorActiveIdx=-1;}
+function _iaVendorMatches(q){
+  q=String(q||'').trim().toLowerCase();
+  const m=_vendorUsageMap();
+  let arr=(S.vendors||[]).slice();
+  if(q)arr=arr.filter(v=>String(v).toLowerCase().includes(q));
+  arr.sort((a,b)=>{const ca=m.get(a)||0,cb=m.get(b)||0;if(cb!==ca)return cb-ca;return S.vendors.indexOf(a)-S.vendors.indexOf(b);});
+  return arr.slice(0,60);
+}
+function _iaHi(v,q){
+  const s=String(v);q=String(q||'').trim();
+  if(!q)return esc(s);
+  const i=s.toLowerCase().indexOf(q.toLowerCase());
+  if(i<0)return esc(s);
+  return esc(s.slice(0,i))+'<mark style="background:#FAC775;color:#633806;padding:0 1px;border-radius:2px">'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length));
+}
+function _iaVendorSearch(q){
+  const d=document.getElementById('ia-vendor-drop');if(!d)return;
+  const m=_vendorUsageMap();const tops=new Set(_vendorTopUsed(_iaVendorQuickN()));
+  const arr=_iaVendorMatches(q);
+  _iaVendorActiveIdx=-1;
+  if(!arr.length){
+    d.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--text2)">找不到符合的廠商</div>'
+      +(String(q||'').trim()?'<div onmousedown="event.preventDefault();_iaVendorAddNew()" style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--pborder);cursor:pointer;color:var(--purple);font-size:12px">＋ 新增廠商…</div>':'');
+    d.style.display='block';return;
+  }
+  let h='';
+  arr.forEach((v,idx)=>{
+    const cnt=m.get(v)||0;const col=vColor(v);const isTop=tops.has(v);
+    h+='<div data-idx="'+idx+'" onmousedown="event.preventDefault();_iaVendorPick(\''+esc(v)+'\')" onmouseenter="_iaVendorHover('+idx+')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-top:'+(idx?'1px solid var(--pborder)':'none')+'">'
+      +'<span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+col+'"></span>'
+      +'<span style="font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_iaHi(v,q)+'</span>'
+      +'<span style="font-size:10px;color:var(--text2);flex-shrink:0">'+(isTop?'常用 · ':'')+cnt+' 筆</span></div>';
+  });
+  h+='<div onmousedown="event.preventDefault();_iaVendorAddNew()" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px solid var(--pborder);cursor:pointer;color:var(--purple);font-size:12px;background:#FAFAFF">＋ 新增廠商…</div>';
+  d.innerHTML=h;d.style.display='block';
+}
+function _iaVendorHover(idx){_iaVendorActiveIdx=idx;_iaVendorPaintActive();}
+function _iaVendorPaintActive(){
+  const d=document.getElementById('ia-vendor-drop');if(!d)return;
+  d.querySelectorAll('[data-idx]').forEach(el=>{const on=(parseInt(el.getAttribute('data-idx'),10)===_iaVendorActiveIdx);el.style.background=on?'#EEEDFE':'';});
+}
+function _iaVendorScrollActive(){const d=document.getElementById('ia-vendor-drop');if(!d)return;const el=d.querySelector('[data-idx="'+_iaVendorActiveIdx+'"]');if(el&&el.scrollIntoView)el.scrollIntoView({block:'nearest'});}
+function _iaVendorKey(e){
+  const d=document.getElementById('ia-vendor-drop');
+  const inp=document.getElementById('ia-vendor');
+  const open=d&&d.style.display!=='none';
+  if(e.key==='ArrowDown'){e.preventDefault();if(!open){_iaVendorSearch(inp?inp.value:'');}const items=d.querySelectorAll('[data-idx]');if(!items.length)return;_iaVendorActiveIdx=Math.min((_iaVendorActiveIdx<0?-1:_iaVendorActiveIdx)+1,items.length-1);_iaVendorPaintActive();_iaVendorScrollActive();}
+  else if(e.key==='ArrowUp'){e.preventDefault();if(!open)return;const items=d.querySelectorAll('[data-idx]');if(!items.length)return;_iaVendorActiveIdx=Math.max((_iaVendorActiveIdx<0?0:_iaVendorActiveIdx)-1,0);_iaVendorPaintActive();_iaVendorScrollActive();}
+  else if(e.key==='Enter'){
+    if(open&&_iaVendorActiveIdx>=0){e.preventDefault();const arr=_iaVendorMatches(inp?inp.value:'');const v=arr[_iaVendorActiveIdx];if(v)_iaVendorPick(v);}
+    else{_iaVendorCloseDrop();}
+  }
+  else if(e.key==='Escape'){_iaVendorCloseDrop();}
+}
+function _iaVendorPick(v){
+  if(_pendingRow)_pendingRow.vendor=v;
+  const inp=document.getElementById('ia-vendor');if(inp)inp.value=v;
+  _iaVendorCloseDrop();_iaRenderVendorChips();
+}
+function _iaVendorAddNew(){
+  const n=prompt('新廠商名稱（需以合約代號開頭，如 025B、D306）');
+  if(!n||!n.trim())return;
+  const nm=n.trim();
+  if(!/^[0-9A-Za-z]/.test(nm)){toast('請在前面加合約代號（數字或英文字母開頭）','⚠️');return;}
+  if(!S.vendors.includes(nm))S.vendors.push(nm);
+  save();_iaVendorPick(nm);toast('已新增廠商：'+nm,'🏢');
+}
 function showInlineAdd(){
   const zoneOpts=[...S.zones].sort((a,b)=>a.label.localeCompare(b.label,'zh-TW-u-co-stroke')).map(z=>`<option value="${z.id}">${esc(z.label)}</option>`).join('');
   const vendorOpts=S.vendors.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
@@ -1819,10 +1919,11 @@ function showInlineAdd(){
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text2)">廠商</span>
-        <div style="display:flex;gap:3px;align-items:center">
-          <input id="ia-vendor" type="text" list="ia-vendor-list" placeholder="輸入關鍵字搜尋廠商" value="${esc(S.vendors[0]||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:120px" oninput="_pendingRow.vendor=this.value">
-          <datalist id="ia-vendor-list">${vendorOpts}</datalist>
-          <button class="btn btn-sm" onclick="(function(){const n=prompt('新廠商名稱（需以合約代號開頭，如 025B、D306）');if(!n||!n.trim())return;if(!/^[0-9A-Za-z]/.test(n.trim())){toast('請在前面加合約代號（數字或英文字母開頭）','⚠️');return;}S.vendors.push(n.trim());save();const dl=document.getElementById('ia-vendor-list');const opt=document.createElement('option');opt.value=n.trim();dl.appendChild(opt);const inp=document.getElementById('ia-vendor');inp.value=n.trim();_pendingRow.vendor=n.trim();toast('已新增廠商：'+n.trim())})()" style="padding:3px 7px;font-size:11px;flex-shrink:0">＋</button>
+        <div id="ia-vendor-chips" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;max-width:360px"></div>
+        <div style="display:flex;gap:3px;align-items:center;position:relative">
+          <input id="ia-vendor" type="text" autocomplete="off" placeholder="🔍 打代號或工種" value="${esc(_pendingRow.vendor||'')}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:150px" oninput="_iaVendorInput(this.value)" onfocus="this.select();_iaVendorSearch('')" onkeydown="_iaVendorKey(event)" onblur="setTimeout(_iaVendorCloseDrop,180)">
+          <button class="btn btn-sm" onclick="_iaVendorAddNew()" title="新增廠商" style="padding:3px 7px;font-size:11px;flex-shrink:0">＋</button>
+          <div id="ia-vendor-drop" style="display:none;position:absolute;top:100%;left:0;z-index:60;min-width:240px;max-height:240px;overflow-y:auto;background:#fff;border:1px solid var(--purple);border-radius:var(--rs);box-shadow:0 4px 14px rgba(0,0,0,.15);margin-top:2px"></div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px">
@@ -1846,6 +1947,7 @@ function showInlineAdd(){
       <button class="btn" onclick="document.getElementById('inline-add-area').innerHTML='';_pendingRow=null;applyPendingRemoteIfAny()">取消</button>
     </div>
   </div>`;
+  _iaRenderVendorChips();
   setTimeout(()=>{const el=document.getElementById('ia-issue');if(el)el.focus();},50);
 }
 function _ensureMultiSets(){
@@ -1883,6 +1985,7 @@ function resetMultiSelection(){
   setVal('ia-planIn','');
   setVal('ia-planDone','');
   const owner=document.getElementById('ia-owner');if(owner)owner.checked=false;
+  _iaRenderVendorChips();
   updateMultiUnitCount();
   toast('已重置','🔄');
 }
@@ -5076,7 +5179,7 @@ function toggleHovFloorMenu(btn){const m=document.getElementById('hov-fl-menu');
 function setHuFieldH(u,inspIdx,val){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];S.handoverUnits[u].inspections[inspIdx].date=val;save();}
 function addHuInspH2(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};if(!S.handoverUnits[u].inspections)S.handoverUnits[u].inspections=[];const _t=nextInspType(S.handoverUnits[u]);S.handoverUnits[u].inspections.push({label:_t,type:_t,date:'',planDate:''});save();_hovExpanded=u;reRenderActivePane();}
 function delHuInspH2(u,i){if(!S.handoverUnits||!S.handoverUnits[u])return;S.handoverUnits[u].inspections.splice(i,1);save();_hovExpanded=u;reRenderActivePane();}
-function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(field==='planDate'||field==='slot')logChange('📆 交屋/行事曆','改'+(field==='planDate'?'驗收日':'時段')+' '+unitDisplayName(u)+' → '+(val||'(清空)'));if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&_hu.cancelled&&val!==_hu.planDate){_hu.cancelled=false;}/* 改成新驗收日＝視為新排程（原取消紀錄已保留在 cancelHistory）*/_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(field==='planDate'&&val)_cleanLinkAsk([u]);}
+function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_pastGuard(u)){reRenderActivePane();return;}if(field==='planDate'||field==='slot')logChange('📆 交屋/行事曆','改'+(field==='planDate'?'驗收日':'時段')+' '+unitDisplayName(u)+' → '+(val||'(清空)'));if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const _hu=S.handoverUnits[u];if(field==='planDate'&&val&&val!==_hu.planDate){_hu.cancelled=false;_hu.noShow=false;}/* 改成新驗收日＝視為新排程；取消/未到旗標清掉，但歷史已保留在 cancelHistory/noShowHistory */_hu[field]=val;save();renderHandover();if(activeTab==='clients')renderClients();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(field==='planDate'&&val)_cleanLinkAsk([u]);}
 function setHuInspType(u,type,checked){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const cur=S.handoverUnits[u].inspTypes||[];if(checked){if(!cur.includes(type))S.handoverUnits[u].inspTypes=[...cur,type];}else{S.handoverUnits[u].inspTypes=cur.filter(t=>t!==type);}save();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(activeTab==='clients')renderClients();}
 function toggleDeliveredH(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderHandover();if(activeTab==='hstats')renderHStats();}
 function toggleDeliveredCl(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderClients();renderHandover();if(activeTab==='hstats'||document.getElementById('pane-hstats').style.display!=='none')renderHStats();if(activeTab==='hcal'||document.getElementById('pane-hcal').style.display!=='none')renderHCal();}
@@ -5462,7 +5565,21 @@ function _pastGuardBatch(n){
   if(c!==null){try{toast('認證碼錯誤','⚠️');}catch(e){}}
   return false;
 }
-function toggleNoShow(key){if(!_pastGuard(key)){reRenderActivePane();return;}if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};S.handoverUnits[key].noShow=!S.handoverUnits[key].noShow;logChange('📆 交屋/行事曆',(S.handoverUnits[key].noShow?'標記未到 ':'取消未到 ')+unitDisplayName(key));save();renderHCal();}
+function toggleNoShow(key){
+  if(!_pastGuard(key)){reRenderActivePane();return;}
+  if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
+  const hu=S.handoverUnits[key];
+  hu.noShow=!hu.noShow;
+  logChange('📆 交屋/行事曆',(hu.noShow?'標記未到 ':'取消未到 ')+unitDisplayName(key));
+  if(hu.noShow){
+    // V0707-09：記下這次未到的排程（改期後永久保留，可在紀錄看板查）
+    if(!Array.isArray(hu.noShowHistory))hu.noShowHistory=[];
+    hu.noShowHistory.push({date:hu.planDate||'',slot:hu.slot||'',at:todayISO(),by:_cxnWho(),reason:_cxnAskReason('未到',unitDisplayName(key))});
+  }else{
+    if(Array.isArray(hu.noShowHistory)&&hu.noShowHistory.length){const last=hu.noShowHistory[hu.noShowHistory.length-1];if(last&&last.date===(hu.planDate||''))hu.noShowHistory.pop();}
+  }
+  save();renderHCal();
+}
 function toggleCancel(key){
   if(!_pastGuard(key)){reRenderActivePane();return;}
   if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
@@ -5472,12 +5589,97 @@ function toggleCancel(key){
   if(hu.cancelled){
     // 記下這次被取消的排程（日期／時段），日後改成新日期也不會遺失這筆取消紀錄
     if(!Array.isArray(hu.cancelHistory))hu.cancelHistory=[];
-    hu.cancelHistory.push({date:hu.planDate||'',slot:hu.slot||'',at:todayISO()});
+    hu.cancelHistory.push({date:hu.planDate||'',slot:hu.slot||'',at:todayISO(),by:_cxnWho(),reason:_cxnAskReason('取消',unitDisplayName(key))});
   }else{
     // 撤回「已取消」＝移除剛剛那筆（僅當與目前排程相符時）
     if(Array.isArray(hu.cancelHistory)&&hu.cancelHistory.length){const last=hu.cancelHistory[hu.cancelHistory.length-1];if(last&&last.date===(hu.planDate||''))hu.cancelHistory.pop();}
   }
   save();renderHCal();
+}
+// ── V0707-09：取消／未到 紀錄看板（cancelHistory＋noShowHistory 彙整、可搜尋、改期保留、原因可補改）──
+function _cxnWho(){return String(window._authEmail||'').replace(/@gmail\.com$/,'')||'';}
+function _cxnAskReason(label,name){var r=prompt('「'+name+'」標記'+label+' — 原因／備註（可留空，日後可在看板補改）：','');return (r==null?'':String(r).trim());}
+var _cxnQ='',_cxnType='all',_cxnDir='new',_cxnFont=null;
+function _cxnFontV(){if(_cxnFont!=null)return _cxnFont;var v=parseInt(localStorage.getItem('g95_cxnFont')||'',10);_cxnFont=(v>=11&&v<=24)?v:13;return _cxnFont;}
+function _cxnFontAdj(d){var v=Math.max(11,Math.min(24,_cxnFontV()+d));_cxnFont=v;try{localStorage.setItem('g95_cxnFont',String(v));}catch(e){}_cxnPaintAll();}
+function _cxnStatusOf(key){var hu=(S.handoverUnits||{})[key]||{};if(hu.cancelled)return {t:'仍取消',c:'#A32D2D'};if(hu.noShow)return {t:'仍未到（待改期）',c:'#A32D2D'};if(hu.planDate)return {t:'已改期 → '+_rptMMDD(hu.planDate),c:'#0F6E56'};return {t:'仍未重新排期',c:'#A35200'};}
+function _cxnCollect(){
+  var hu=S.handoverUnits||{};var out=[];
+  Object.keys(hu).forEach(function(u){
+    var h=hu[u];if(!h)return;
+    (Array.isArray(h.cancelHistory)?h.cancelHistory:[]).forEach(function(e,i){out.push({key:u,name:unitDisplayName(u),type:'cancel',idx:i,date:e.date||'',slot:e.slot||'',at:e.at||'',by:e.by||'',reason:e.reason||''});});
+    (Array.isArray(h.noShowHistory)?h.noShowHistory:[]).forEach(function(e,i){out.push({key:u,name:unitDisplayName(u),type:'noshow',idx:i,date:e.date||'',slot:e.slot||'',at:e.at||'',by:e.by||'',reason:e.reason||''});});
+  });
+  return out;
+}
+function _cxnRows(){
+  var arr=_cxnCollect();
+  if(_cxnType!=='all')arr=arr.filter(function(o){return o.type===_cxnType;});
+  var q=_cxnQ.trim().toLowerCase();
+  if(q)arr=arr.filter(function(o){return (o.name+' '+o.date+' '+o.slot+' '+o.at+' '+o.by+' '+o.reason+' '+(o.type==='cancel'?'取消':'未到')).toLowerCase().indexOf(q)>=0;});
+  arr.sort(function(a,b){var ka=(a.at||a.date||''),kb=(b.at||b.date||'');if(ka!==kb)return _cxnDir==='new'?(ka<kb?1:-1):(ka<kb?-1:1);return a.name<b.name?-1:1;});
+  return arr;
+}
+function _cxnListHTML(){
+  var rows=_cxnRows();var fs=_cxnFontV();
+  var head='<div style="display:grid;grid-template-columns:82px 58px 104px 1fr 132px;gap:8px;padding:7px 12px;background:var(--surface);font-size:'+(fs-2)+'px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--pborder)"><span>戶別</span><span>類型</span><span>原本日期</span><span>目前狀態／原因</span><span>標記</span></div>';
+  if(!rows.length)return head+'<div style="padding:20px;text-align:center;color:var(--text3);font-size:'+fs+'px">目前沒有取消／未到紀錄</div>';
+  var body=rows.map(function(o){
+    var isC=(o.type==='cancel');
+    var badge='<span style="font-size:'+(fs-2)+'px;padding:2px 8px;border-radius:20px;text-align:center;'+(isC?'background:#FCEBEB;color:#791F1F':'background:#FAEEDA;color:#633806')+'">'+(isC?'取消':'未到')+'</span>';
+    var st=_cxnStatusOf(o.key);
+    var orig=(o.date?_rptMMDD(o.date):'(未排)')+(o.slot?' '+esc(o.slot):'');
+    var reason=o.reason?(' <span style="color:var(--text3)">· '+esc(o.reason)+'</span>'):' <span style="color:var(--text3)">· （未填原因）</span>';
+    var mark=(o.at?_rptMMDD(o.at):'')+(o.by?(' '+esc(o.by)):'');
+    return '<div style="display:grid;grid-template-columns:82px 58px 104px 1fr 132px;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);align-items:center;font-size:'+fs+'px">'
+      +'<span><a href="javascript:void(0)" onclick="_cxnJump(\''+esc(o.key)+'\')" style="color:#3C3489;text-decoration:none;font-weight:500">'+esc(o.name)+'</a></span>'
+      +badge
+      +'<span style="color:var(--text2)">'+orig+'</span>'
+      +'<span><span style="color:'+st.c+'">'+esc(st.t)+'</span>'+reason+'</span>'
+      +'<span style="color:var(--text3);font-size:'+(fs-2)+'px">'+mark
+        +' <button class="btn btn-sm no-print" onclick="_cxnEditReason(\''+esc(o.key)+'\',\''+o.type+'\','+o.idx+')" title="編輯原因" style="padding:1px 5px;font-size:'+(fs-3)+'px">✏️</button>'
+        +'<button class="btn btn-sm no-print" onclick="_cxnDelEntry(\''+esc(o.key)+'\',\''+o.type+'\','+o.idx+')" title="刪除此筆" style="padding:1px 5px;font-size:'+(fs-3)+'px">🗑</button>'
+      +'</span></div>';
+  }).join('');
+  return head+body;
+}
+function _cxnInner(cid){
+  var chip=function(v,lab){return '<button class="btn btn-sm" onclick="_cxnSetType(\''+v+'\')" style="font-size:11px;padding:4px 10px;border-radius:20px;'+(_cxnType===v?'background:#EEEDFE;color:var(--purple);border-color:var(--purple)':'')+'">'+lab+'</button>';};
+  var dirBtn=function(v,lab){return '<button class="btn btn-sm" onclick="_cxnSetDir(\''+v+'\')" style="font-size:11px;padding:4px 9px;'+(_cxnDir===v?'background:#EEEDFE;color:var(--purple);border-color:var(--purple)':'')+'">'+lab+'</button>';};
+  var h='<div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'
+    +'<input type="text" value="'+esc(_cxnQ)+'" oninput="_cxnSetQ(this.value)" placeholder="🔍 搜尋 戶別／日期／原因" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:200px">'
+    +chip('all','全部')+chip('cancel','只看取消')+chip('noshow','只看未到')
+    +'<span style="font-size:11px;color:var(--text2);margin-left:4px">標記日</span>'+dirBtn('new','新→舊')+dirBtn('old','舊→新')
+    +'<span style="margin-left:auto"></span>'
+    +'<span style="font-size:11px;color:var(--text2)">字體</span><button class="btn btn-sm" onclick="_cxnFontAdj(-1)" style="font-size:11px">A−</button><button class="btn btn-sm" onclick="_cxnFontAdj(1)" style="font-size:11px">A＋</button>'
+    +'<button class="btn btn-sm" onclick="_cxnCap()" style="font-size:11px">📷 截圖</button>'
+    +'<button class="btn btn-sm" onclick="_cxnPdf()" style="font-size:11px">🖨 PDF</button>'
+  +'</div>'
+  +'<div id="cxn-list-'+cid+'" style="border:1px solid var(--pborder);border-radius:10px;overflow:hidden;background:#fff">'+_cxnListHTML()+'</div>';
+  return h;
+}
+function _cxnBoardHTML(cid){return '<div data-cxn-cid="'+cid+'">'+_cxnInner(cid)+'</div>';}
+function _cxnPaintAll(){document.querySelectorAll('[data-cxn-cid]').forEach(function(w){w.innerHTML=_cxnInner(w.getAttribute('data-cxn-cid'));});}
+function _cxnPaintLists(){document.querySelectorAll('[id^="cxn-list-"]').forEach(function(l){l.innerHTML=_cxnListHTML();});}
+function _cxnSetQ(v){_cxnQ=v;_cxnPaintLists();}
+function _cxnSetType(v){_cxnType=v;_cxnPaintAll();}
+function _cxnSetDir(v){_cxnDir=v;_cxnPaintAll();}
+function _cxnEntryOf(key,type,idx){var hu=(S.handoverUnits||{})[key];if(!hu)return null;var arr=type==='cancel'?hu.cancelHistory:hu.noShowHistory;if(!Array.isArray(arr)||!arr[idx])return null;return arr[idx];}
+function _cxnEditReason(key,type,idx){var e=_cxnEntryOf(key,type,idx);if(!e)return;var r=prompt('編輯原因／備註（可留空）：',e.reason||'');if(r==null)return;e.reason=String(r).trim();save();_cxnPaintAll();try{toast('已更新原因','✏️');}catch(x){}}
+function _cxnDelEntry(key,type,idx){var e=_cxnEntryOf(key,type,idx);if(!e)return;if(!confirm('確定刪除這筆'+(type==='cancel'?'取消':'未到')+'紀錄？（'+unitDisplayName(key)+'　'+(e.date?_rptMMDD(e.date):'未排日期')+'）\n刪除後無法復原。'))return;var hu=S.handoverUnits[key];var arr=type==='cancel'?hu.cancelHistory:hu.noShowHistory;arr.splice(idx,1);logChange('📆 交屋/行事曆','刪除'+(type==='cancel'?'取消':'未到')+'紀錄 '+unitDisplayName(key));save();_cxnPaintAll();try{toast('已刪除','🗑');}catch(x){}}
+function _cxnJump(key){var ov=document.getElementById('cxn-board-ov');if(ov)ov.style.display='none';try{_hcalExpanded=key;}catch(e){}switchTab('hcal');try{toast('已跳到交屋行事曆：'+unitDisplayName(key),'📆');}catch(x){}}
+function _cxnCap(){var l=document.querySelector('[id^="cxn-list-"]');if(!l)return;try{toast('產生截圖中…','📷');}catch(e){}_capEl(l,'取消未到紀錄_'+todayISO()+'.png');}
+function _cxnPdf(){printSection('取消／未到紀錄',_cxnListHTML(),'取消未到紀錄_'+todayISO());}
+function _cxnBoardOpen(){
+  var ov=document.getElementById('cxn-board-ov');
+  if(!ov){ov=document.createElement('div');ov.id='cxn-board-ov';ov.className='no-print';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px';
+    ov.onclick=function(e){if(e.target===ov)ov.style.display='none';};
+    document.body.appendChild(ov);}
+  ov.style.display='flex';
+  ov.innerHTML='<div style="background:#fff;border-radius:12px;max-width:820px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.3);padding:16px 18px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><b style="font-size:16px;flex:1">🚫 取消／未到 紀錄看板</b><span style="font-size:11px;color:var(--text3)">改期後永久保留，可搜尋</span><button class="btn btn-sm" onclick="document.getElementById(\'cxn-board-ov\').style.display=\'none\'">✕ 關閉</button></div>'
+    +_cxnBoardHTML('modal')+'</div>';
 }
 
 // ── 清潔狀態（V0701-03）：預設兩次，可加開到 4 次；每次記勾選＋完成日期 ──────
@@ -7666,6 +7868,7 @@ function renderHCal(){
       <span style="font-size:12px;color:var(--text2)">${fmtDate(week1Days[0])} – ${fmtDate(week2Days[6])}</span>
       ${_cwBtnHTML()}
       ${_recepWarnBtnHTML()}
+      <button class="btn btn-sm no-print" onclick="_cxnBoardOpen()" title="取消／未到 紀錄看板（改期後永久保留、可搜尋）" style="padding:5px 10px;font-size:12px">🚫 取消/未到紀錄</button>
       <label class="no-print" style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" checked onchange="_hcalPrintMode=this.checked?'split':'full'">上下午分頁</label><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_(${w1tag}).png')" style="padding:5px 10px;font-size:12px">📷 單週</button><button class="btn btn-sm no-print" onclick="_capEl(document.getElementById('hcal-week1'),'行事曆_(${w1tag}).png');setTimeout(function(){_capEl(document.getElementById('hcal-week2'),'行事曆_(${w2tag}).png')},1300)" style="padding:5px 10px;font-size:12px">📷 雙週</button><button class="btn btn-sm no-print" onclick="capCustom()" style="padding:5px 10px;font-size:12px">✂️ 自訂</button><button class="btn btn-pdf no-print" onclick="printHCal()" style="padding:6px 16px;font-size:13px;font-weight:600">🖨 PDF</button>
     </div>
     ${_batchSchedPanelHTML('hc')}
@@ -10438,7 +10641,8 @@ function renderDailyReport(){
     +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_rptFontV()+'px;line-height:'+_rptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:10px;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
   +'</div>'
   +'<div id="uso-rpt-card2-cardc"></div>'
-  +'</div>';
+  +'</div>'
+  +'<div style="padding:0 20px 22px"><div style="font-weight:600;font-size:16px;margin:6px 0 10px;color:#26215C">🚫 取消／未到 紀錄看板</div>'+_cxnBoardHTML('rpt')+'</div>';
  var _uec=document.getElementById('uso-rpt-card2-cardc');if(_uec)usoRptReflow('uso-rpt-card2');
 }
 function saveDailyReport(){
@@ -10503,7 +10707,7 @@ function setHuInspSchedule(key,val){
   _clGuard(key);
   if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[key])S.handoverUnits[key]={};
   const hu=S.handoverUnits[key];
-  if(val&&hu.cancelled&&val!==hu.planDate)hu.cancelled=false;   // 改期＝新排程（取消歷史已保留）
+  if(val&&val!==hu.planDate){hu.cancelled=false;hu.noShow=false;}   // 改期＝新排程（取消/未到歷史已保留）
   hu.planDate=val;
   const ins=(hu.inspections||[]).find(i=>inspTypeOf(i)==='初驗');
   if(ins&&ins.date)ins.date=val;   // 初驗已完成→完成日跟排程日同步
@@ -10991,6 +11195,9 @@ function usoLinked(n){
 }
 function usoGoalNode(){var U=_USO();for(var i=0;i<U.nodes.length;i++){if(U.nodes[i].id===U.goalId)return U.nodes[i];}return U.nodes[U.nodes.length-1]||null;}
 function usoSorted(){var U=_USO();var a=U.nodes.filter(function(n){return usoDateOf(n);}).slice();a.sort(function(x,y){return usoDateOf(x)<usoDateOf(y)?-1:1;});return a;}
+// V0707-09：使照日期排序方向（近→遠 asc／遠→近 desc）——只影響里程碑總表與文字日報，不動串珠/月列等時間軸圖
+function _usoRptDirV(){var v=localStorage.getItem('g95_usoRptDir');return v==='desc'?'desc':'asc';}
+function usoSetRptDir(v){try{localStorage.setItem('g95_usoRptDir',v==='desc'?'desc':'asc');}catch(e){}if(document.getElementById('pane-uso'))renderUso();if(typeof activeTab!=='undefined'&&activeTab==='rpt'&&document.getElementById('pane-rpt'))renderDailyReport();var ov=document.getElementById('uso-rpt-ov');if(ov&&ov.style.display!=='none')usoRptReflow('uso-rpt-card');}
 function usoNoDate(){
  var U=_USO();var nd=U.nodes.filter(function(n){return !usoDateOf(n);});
  if(!nd.length)return'';
@@ -11023,7 +11230,9 @@ function renderUso(){
  h+='<button class="'+(U.view==='flag'?'on':'')+'" onclick="usoSetView(\'flag\')">旗標圖</button>';
  h+='<button class="'+(U.view==='table'?'on':'')+'" onclick="usoSetView(\'table\')">里程碑總表</button>';
  h+='<button class="'+(U.view==='months'?'on':'')+'" onclick="usoSetView(\'months\')">月份帶</button>';
- h+='</span></div><div id="uso-tl"></div></div>';
+ h+='</span>';
+ h+='<span class="uso-seg no-print" style="margin-left:8px" title="日期排序方向（影響里程碑總表與文字日報；串珠/月列時間軸不受影響）"><button class="'+(_usoRptDirV()==='asc'?'on':'')+'" onclick="usoSetRptDir(\'asc\')">近→遠</button><button class="'+(_usoRptDirV()==='desc'?'on':'')+'" onclick="usoSetRptDir(\'desc\')">遠→近</button></span>';
+ h+='</div><div id="uso-tl"></div></div>';
  h+='<div class="uso-stats" id="uso-stats"></div>';
  h+='<div class="uso-card no-print"><div class="uso-tbar"><b style="font-size:16px">節點編輯</b><span class="uso-muted">拖曳排序｜「前置＋工作天」自動推算（🔗紫底），手動改日期解除串聯｜資料全員同步</span><span style="flex:1"></span><button class="uso-ebtn" id="uso-ed-tgl" onclick="usoEdTgl()">▸ 展開</button></div><div style="overflow-x:auto;display:none" id="uso-ed"></div></div>';
  el.innerHTML=h;
@@ -11327,11 +11536,14 @@ function usoTableV(){
  var U=_USO();
  var base=U.start||usoDateOf(arr[0]);
  var h='<table class="uso-mt"><tr><th>節點</th><th>預定日</th><th>實際日</th><th style="text-align:right">區間工作天</th><th style="text-align:right">累計工作天</th><th style="text-align:center">狀態</th></tr>';
- var prev=null;
- arr.forEach(function(n){
+ // 先以時間順序算好區間／累計工作天，再依方向決定顯示排序（避免反向後累計錯亂）
+ var rows=[],prev=null;
+ arr.forEach(function(n){var d=usoDateOf(n);rows.push({n:n,d:d,seg:(prev?usoWDN(prev,d):'—'),cum:usoWDN(base,d)});prev=d;});
+ if(_usoRptDirV()==='desc')rows.reverse();
+ rows.forEach(function(r){
+  var n=r.n,d=r.d;
   var st=usoStatus(n),isG=g&&n.id===g.id;
   var col=isG?USO_C.goal:USO_C[st],tcol=isG?USO_CT.goal:USO_CT[st];
-  var d=usoDateOf(n);
   var rowbg=n.hl?' style="background:#FFF3B0"':(isG?' style="background:#EEEDFE"':(st==='doing'?' style="background:#E6F1FB"':''));
   h+='<tr'+rowbg+'>';
   h+='<td style="font-weight:500;color:'+tcol+'"><span class="uso-dot" style="background:'+col+'"></span>'+esc(n.name)+(isG?'（目標）':'');
@@ -11345,11 +11557,10 @@ function usoTableV(){
     if(df>0)ac+=' <span style="font-size:11px;color:#A32D2D">+'+df+'</span>';
     else if(df<0)ac+=' <span style="font-size:11px;color:#3B6D11">'+df+'</span>';}}
   h+='<td>'+ac+'</td>';
-  h+='<td style="text-align:right">'+(prev?usoWDN(prev,d):'—')+'</td>';
-  h+='<td style="text-align:right'+(isG?';font-weight:700;color:#26215C':'')+'">'+usoWDN(base,d)+'</td>';
+  h+='<td style="text-align:right">'+r.seg+'</td>';
+  h+='<td style="text-align:right'+(isG?';font-weight:700;color:#26215C':'')+'">'+r.cum+'</td>';
   h+='<td style="text-align:center">'+usoChipSt(n,g)+'</td>';
   h+='</tr>';
-  prev=d;
  });
  h+='</table>';
  return h+usoNoDate();
@@ -11547,6 +11758,7 @@ function buildUsoReportText(){
  var doneArr=grp.done.filter(function(n){return n.actual;}).sort(function(a,b){return a.actual<b.actual?-1:1;});
  var shown=doneArr,trunc=false;
  if(!_usoRptAll&&doneArr.length>_usoRptRecent){shown=doneArr.slice(doneArr.length-_usoRptRecent);trunc=true;}
+ if(_usoRptDirV()==='desc')shown=shown.slice().reverse();
  L.push('');L.push(BAR);L.push('');
  L.push('✅ 已完成（共 '+doneArr.length+' 項'+(trunc?('，顯示最近 '+shown.length+' 筆'):'')+'）');
  var lastM='';
@@ -11556,9 +11768,10 @@ function buildUsoReportText(){
  L.push('');L.push(BAR);L.push('');
  L.push('▶ 進行中（'+grp.doing.length+' 項）');
  if(!grp.doing.length)L.push('（無）');
+ grp.doing.sort(function(a,b){var pa=usoPlanOf(a)||'zzzz',pb=usoPlanOf(b)||'zzzz';var r=pa<pb?-1:(pa>pb?1:0);return _usoRptDirV()==='desc'?-r:r;});
  grp.doing.forEach(function(n){var p=usoPlanOf(n);L.push(n.name+(p?('（預計完成 '+usoMDW(p)+'）'):''));});
  // ⏳ 接下來（串聯推算＊）
- var up=grp.wait.concat(grp.todo).filter(function(n){return usoDateOf(n);}).sort(function(a,b){return usoDateOf(a)<usoDateOf(b)?-1:1;});
+ var up=grp.wait.concat(grp.todo).filter(function(n){return usoDateOf(n);}).sort(function(a,b){var r=usoDateOf(a)<usoDateOf(b)?-1:1;return _usoRptDirV()==='desc'?-r:r;});
  var upNo=grp.wait.concat(grp.todo).filter(function(n){return !usoDateOf(n);});
  L.push('');L.push(BAR);L.push('');
  L.push('⏳ 後續作業（'+up.length+' 項）');
@@ -11581,6 +11794,7 @@ function usoRptControlsHTML(cid){
    +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">已完成顯示</span><div style="display:flex;gap:4px;align-items:center;font-size:12px;color:var(--text2)">最近 <input type="number" min="1" value="'+_usoRptRecent+'" '+(_usoRptAll?'disabled':'')+' onchange="usoRptSetRecent(this.value,\''+cid+'\')" style="width:46px;font-size:12px;padding:4px 5px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)"> 筆<label style="display:flex;align-items:center;gap:3px;cursor:pointer;margin-left:6px"><input type="checkbox" '+(_usoRptAll?'checked':'')+' onchange="usoRptToggleAll(this.checked,\''+cid+'\')">全部</label></div></div>'
    +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">字體大小</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm" onclick="usoRptFont(-1,\''+cid+'\')" style="font-size:13px;padding:3px 10px">A−</button><span style="font-size:12px;color:var(--text2);min-width:38px;text-align:center">'+fs+'px</span><button class="btn btn-sm" onclick="usoRptFont(1,\''+cid+'\')" style="font-size:13px;padding:3px 10px">A＋</button></div></div>'
    +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">行距</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm" onclick="usoRptLineH(-1,\''+cid+'\')" style="font-size:13px;padding:3px 10px">−</button><span style="font-size:12px;color:var(--text2);min-width:30px;text-align:center">'+lh.toFixed(1)+'</span><button class="btn btn-sm" onclick="usoRptLineH(1,\''+cid+'\')" style="font-size:13px;padding:3px 10px">＋</button></div></div>'
+   +'<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:var(--text2)">日期排序</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-sm'+(_usoRptDirV()==='asc'?' btn-p':'')+'" onclick="usoSetRptDir(\'asc\')" style="font-size:12px;padding:3px 10px">近→遠</button><button class="btn btn-sm'+(_usoRptDirV()==='desc'?' btn-p':'')+'" onclick="usoSetRptDir(\'desc\')" style="font-size:12px;padding:3px 10px">遠→近</button></div></div>'
    +'<button class="btn btn-sm btn-p" onclick="usoRptCopy(\''+cid+'\')" style="font-size:12px">📋 複製到剪貼簿</button>'
    +'<button class="btn btn-sm" onclick="usoRptCap(\''+cid+'\')" style="font-size:12px">📷 截圖</button>'
    +'<button class="btn btn-sm btn-p" onclick="usoRptSave(\''+cid+'\')" style="font-size:12px">💾 儲存這份</button>'
