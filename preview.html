@@ -340,7 +340,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 177;  // ← 每次部署新版時遞增（V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 178;  // ← 每次部署新版時遞增（V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -801,7 +801,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-11</span><!-- pages-redeploy r2 -->
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0707-12</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="shareData()" style="margin-left:auto">🔗 產生分享連結</button><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -4255,6 +4255,33 @@ function g95FullBackup(){
     try{localStorage.setItem('g95_bkWeek',_bkWeekKey());var _bb=document.getElementById('g95BkBanner');if(_bb)_bb.style.display='none';}catch(e){}
   }catch(e){toast('備份失敗：'+(e&&e.message||e),'⚠️');}
 }
+// V0707-12：從「完整備份 JSON」還原＝用備份覆蓋雲端目前全部資料（重大操作：驗證＋顯示摘要＋MONGA＋二次確認）
+function g95FullRestore(file){
+  if(!file)return;
+  if(window._VIEW_ONLY){toast('唯讀模式不可還原','⚠️');return;}
+  var rd=new FileReader();
+  rd.onload=function(){
+    var data;
+    try{data=JSON.parse(rd.result);}catch(e){toast('檔案格式錯誤，請選正確的備份 JSON','⚠️');return;}
+    var st=(data&&data._type==='g95-full-backup')?data.state:((data&&data.rows)?data:null);
+    if(!st||!st.rows){toast('這不是有效的「完整備份」JSON','⚠️');return;}
+    var when=(data&&data.exportedAt)?String(data.exportedAt).slice(0,19).replace('T',' '):'未知時間';
+    var info='備份時間：'+when+'\n缺失 '+((st.rows&&st.rows.length)||0)+' 筆　已完成 '+((st.completed&&st.completed.length)||0)+' 筆　交屋戶 '+(st.handoverUnits?Object.keys(st.handoverUnits).length:0)+' 戶';
+    if(!confirm('⚠️ 還原完整備份\n\n'+info+'\n\n這會用這份備份「覆蓋雲端目前全部資料」，蓋掉備份之後所有人的新輸入，且無法復原。\n\n確定要繼續嗎？'))return;
+    var code=prompt('這是重大操作。請輸入解鎖碼確認還原（提示：MONGA）：');
+    if(code==null)return;
+    if(String(code).trim().toUpperCase()!=='MONGA'){toast('解鎖碼錯誤，已取消還原','⚠️');return;}
+    if(!confirm('最後確認：真的要用這份備份（'+when+'）覆蓋雲端全部資料嗎？'))return;
+    try{
+      S=migrateState(st);applyUnitConfig();
+      try{logChange('♻️ 還原完整備份','來源備份時間 '+when+'，缺失 '+((S.rows&&S.rows.length)||0)+' 筆');}catch(e){}
+      save();renderAll();
+      toast('已還原並開始同步到雲端，請通知大家重整一次','♻️');
+    }catch(e){toast('還原失敗：'+(e&&e.message||e),'⚠️');}
+  };
+  rd.onerror=function(){toast('讀取檔案失敗','⚠️');};
+  rd.readAsText(file);
+}
 // V0705-02：週一備份提醒（本週鍵=週一日期；備份過就記住，整週不再提醒）
 function _bkWeekKey(){var d=new Date();var m=new Date(d);m.setDate(d.getDate()-((d.getDay()+6)%7));return _isoL(m);}
 (function(){try{
@@ -4361,6 +4388,8 @@ function renderMgr(){
     <div class="no-print" style="background:#fff;border:1px solid var(--pborder);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <b>💾 完整備份</b><span style="font-size:12px;color:var(--text2)">將全部資料（缺失／交屋／設定／使照進度）匯出 JSON 存到電腦，建議每週一次、結案必做</span>
       <button class="btn" onclick="g95FullBackup()" style="margin-left:auto">⬇ 匯出完整備份</button>
+      <button class="btn" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）" style="border-color:#E24B4A;color:#791F1F">⬆ 還原完整備份</button>
+      <input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''">
     </div>
     ${_vcfgHTML}
     <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
@@ -12299,4 +12328,15 @@ function _loginOnAuth(user){
     if('serviceWorker' in navigator){
       navigator.serviceWorker.getRegistrations().then(function(rs){
         rs.forEach(function(r){ r.unregister(); });
-      }).catch(function
+      }).catch(function(){});
+    }
+    if(window.caches && caches.keys){
+      caches.keys().then(function(ks){
+        ks.forEach(function(k){ if(k.indexOf('dispatch')===0) caches.delete(k); });
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
