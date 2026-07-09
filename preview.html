@@ -1108,6 +1108,9 @@ function logChange(type, detail, extra){
   if(S.changelog.length>500)S.changelog=S.changelog.slice(0,500);
 }
 
+// V0709-10 修：module 的 const SAVE_FIELDS/_RECEP_SPLIT 是 module scope，classic（_computeDirtyFields／applyRemote）看不到＝會 ReferenceError（V0709-09 起的隱藏 bug：即時同步/存檔壞掉）。classic 端補一份同名清單。
+var _RECEP_SPLIT=['recepOrder','recepMgrOrder','recepMode','recepOff','recepMgrOff'];
+var SAVE_FIELDS=['rows','completed','trash','changelog','uso','events','mgrFixedBusy','mgrSupport','recepOrder','recepMgrOrder','recepMode','recepOff','recepMgrOff','meta'];
 // ── 比對 state 變動欄位（供差異儲存用）──
 function _computeDirtyFields(){
   if(!_savedSnapshot) return new Set(SAVE_FIELDS);
@@ -12728,3 +12731,4 @@ function _loginOnAuth(user){
 </script>
 </body>
 </html>
+<!-- v10 fix _RECEP_SPLIT classic scope -->>
