@@ -343,7 +343,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 189;  // ← 每次部署新版時遞增（V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 190;  // ← 每次部署新版時遞增（V0713-02 八合一：①缺失「代工/幫手」欄(廠商欄維持歸責、排行只認廠商、代工不計統計) ②空白缺失(issue 空)不進統計/排行/計數/匯出(_voidRow，結構操作不受影響) ③戶別下拉可複選(改用 filterMainKeyword 不收合)+特殊項排序(梯廳A>梯廳B>甲>乙>丙>丁 移最下) ④公告「已讀X/Y」可點展開已讀/未讀名單(一般公告也適用) ⑤取消/未到看板依「標記日的週」分組(本週展開其他週收合，截圖/PDF全展開)+原本日期不換行省空白 ⑥戶況總表新分頁 ustat(依戶別/依廠商雙視圖；約定複驗區 hu.reCheckDate 依日期倒數+紅≤3天且未完成>5；四類分區停滯/可複驗/快好了(門檻≤5可調)/進行中收合；只給戶別/廠商名上色；展開內嵌 #ID跳轉+完成勾選+預計進場/完成日即存+未排空紅框；約定複驗日同步交屋行事曆獨立面板不碰 planDate) ⑦廠商派工單每家第一頁「進度成績單」封面(未完成/已完成/進度天數+全工地&本廠商起算日=該廠商各戶最早 hu.planDate+完成效率週日不計+推估完成日週日不計) ⑧CODE_VERSION 190。V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -853,7 +853,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0713-01</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0713-02</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）" style="margin-left:auto;font-size:12px">⬇ 匯出備份</button><button class="btn no-print" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）" style="margin-left:6px;font-size:12px;border-color:#E24B4A;color:#791F1F">⬆ 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -893,6 +893,7 @@ if(window._LOGIN_GATE){
     <div id="pane-hreport"   style="display:none"></div>
     <div id="pane-rpt"       style="display:none"></div>
     <div id="pane-pwo"       style="display:none"></div>
+    <div id="pane-ustat"     style="display:none"></div>
     <div id="pane-announce"  style="display:none"></div>
     <div id="pane-clean"     style="display:none"></div>
     <div id="pane-uso"       style="display:none"></div>
@@ -1430,6 +1431,7 @@ function migrateState(d){
   if(!d.tabOrder.includes('clients'))d.tabOrder.push('clients');
   if(!d.tabOrder.includes('hcal'))d.tabOrder.push('hcal');
   if(!d.tabOrder.includes('clean'))d.tabOrder.push('clean');
+  if(!d.tabOrder.includes('ustat'))d.tabOrder.push('ustat');
   if(!d.tabOrder.includes('uso'))d.tabOrder.push('uso');
   if(!d.tabOrder.includes('pubarea'))d.tabOrder.push('pubarea');
   if(!d.tabOrder.includes('dupes'))d.tabOrder.push('dupes');
@@ -2811,7 +2813,7 @@ function shareData(){
 }
 function exportCSV(){
   const h=['#','管理人','區域','戶別','樓層','廠商','缺失內容','備註','預計進場','預計完成','實際進場','實際完成','狀態'];
-  const lines=[h.join(','),...S.rows.map(r=>[r.id,r.manager,zLabel(r.zone),r.unit,r.floor,r.vendor,`"${r.issue}"`,`"${r.note}"`,fmtMD(r.planIn),fmtMD(r.planDone),fmtMD(r.actualIn),fmtMD(r.actualDone),getStatus(r)].join(','))];
+  const lines=[h.join(','),...S.rows.filter(r=>!_voidRow(r)).map(r=>[r.id,r.manager,zLabel(r.zone),r.unit,r.floor,r.vendor,`"${r.issue}"`,`"${r.note}"`,fmtMD(r.planIn),fmtMD(r.planDone),fmtMD(r.actualIn),fmtMD(r.actualDone),getStatus(r)].join(','))];
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(lines.join('\n'));
   a.download='工程追蹤_'+todayISO()+'.csv';a.click();toast('CSV已匯出','📁');
@@ -2878,6 +2880,7 @@ function pdfRows(data,showZone){
   }).join('');
 }
 function pdfTable(data,showZone){
+  data=(data||[]).filter(r=>!_voidRow(r));
   if(!data.length)return'<div style="padding:16px;text-align:center;color:#888">無資料</div>';
   const zc=showZone?'<th>區域</th>':'';
   return`<table><thead><tr><th>#</th><th></th><th>管理人</th>${zc}<th>戶別</th><th>樓層</th><th>廠商</th>
@@ -2952,7 +2955,7 @@ function rowHTML(r,showZone,visIds){
     ${showZone?`<td style="width:96px"><select onchange="upd(${r.id},'zone',this.value)" onclick="event.stopPropagation()">${zOpts(r.zone)}</select></td>`:''}
     <td style="width:72px"><div style="display:flex;align-items:center;gap:1px"><input type="text" value="${esc(r.unit)}" onblur="upd(${r.id},'unit',this.value)" onclick="event.stopPropagation()" style="width:100%;min-width:0"><span title="${r.isOwner?'地主戶（點擊取消）':'設為地主戶'}" onclick="event.stopPropagation();upd(${r.id},'isOwner',!r.isOwner)" style="cursor:pointer;font-size:10px;flex-shrink:0;opacity:${r.isOwner?'1':'.18'}">🏠</span></div></td>
     <td style="width:44px"><input type="text" value="${esc(r.floor)}" onblur="upd(${r.id},'floor',this.value)" onclick="event.stopPropagation()"></td>
-    <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()">${vOpts(r.vendor)}</select></td>
+    <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()">${vOpts(r.vendor)}</select>${helperTag(r)}</td>
     <td style="width:40px;text-align:center;vertical-align:top;padding-top:5px" onclick="event.stopPropagation()">${roundBadgeClick(r)}</td>
     <td class="td-issue" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'issue',this.value)" onclick="event.stopPropagation()" placeholder="缺失內容" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.issue||'').replace(/^\s+/,''))}</textarea></td>
     <td class="td-txt" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'note',this.value)" onclick="event.stopPropagation()" placeholder="備註說明" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.note||'').replace(/^\s+/,''))}</textarea></td>
@@ -2963,6 +2966,16 @@ function rowHTML(r,showZone,visIds){
     <td style="width:22px;vertical-align:top"><button class="del-btn no-print" onclick="delRow(${r.id});event.stopPropagation()">🗑</button></td>
   </tr>`;
 }
+
+// ── 代工／幫手（選填；廠商欄維持歸責，排行只認廠商欄，代工不計入統計）──
+function helperTag(r){
+  var h=(r.helper||'').trim();
+  if(h)return `<div onclick="event.stopPropagation();_editHelper(${r.id})" title="代工／幫手（點擊修改；不計入缺失排行）" style="margin-top:2px;font-size:10px;color:#5F5E5A;background:#F1EFE8;border:1px solid #D3D1C7;border-radius:8px;padding:1px 6px;cursor:pointer;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">代工：${esc(h)}</div>`;
+  return `<div class="no-print" onclick="event.stopPropagation();_editHelper(${r.id})" title="設定代工／幫手（不計入缺失排行）" style="margin-top:2px;font-size:10px;color:var(--text3);cursor:pointer">＋代工</div>`;
+}
+function _editHelper(id){var r=S.rows.find(function(x){return x.id===id;});if(!r)return;var v=prompt('代工／幫手（實際去做的人，不計入缺失排行；留空清除）：',r.helper||'');if(v===null)return;v=v.trim();if((r.helper||'')!==v){r.helper=v;save();toast(v?('已設代工：'+v):'已清除代工','🤝');}renderMain();}
+// 缺失內容空白＝未填完的暫存列：不進統計/排行/計數、不匯出（結構性操作不受此影響）
+function _voidRow(r){return !((r&&r.issue||'').trim());}
 
 // ── 分頁工具函式 ────────────────────────────────────────────────────────────
 function pgBarHTML(total, page, onClickFn){
@@ -3423,6 +3436,11 @@ function toggleMainUnitMenu(){
     if(!m.contains(e.target)&&e.target!==btn){m.style.display='none';document.removeEventListener('click',h);}
   },{once:true}),50);
 }
+// 戶別下拉：特殊項排序（梯廳A>梯廳B>甲>乙>丙>丁）移到最下面
+const _FUNIT_BOTTOM=['梯廳A','梯廳B','甲梯A','乙梯A','丙梯B','丁梯B'];
+function _fUnitOrder(arr){var rest=[],bot=[];arr.forEach(function(u){if(_FUNIT_BOTTOM.indexOf(u)<0)rest.push(u);});_FUNIT_BOTTOM.forEach(function(u){if(arr.indexOf(u)>=0)bot.push(u);});return rest.concat(bot);}
+// 複選時只更新清單、不重建篩選列，故按鈕標籤/高亮手動同步
+function _fUnitSyncBtn(){var b=document.getElementById('fUnit-btn');if(!b)return;var s=window._fUnitSet||new Set();b.textContent=(s.size===0?'全部戶別':s.size===1?[...s][0]:('戶別（'+s.size+'）'))+' ▾';s.size>0?b.classList.add('btn-p'):b.classList.remove('btn-p');}
 // ── PANE: Main ────────────────────────────────────────────────────────────
 if(!window._fUnitSet)window._fUnitSet=new Set();
 // 只更新表格內容區域，不重建篩選列（保護搜尋輸入框的 IME 狀態）
@@ -3450,7 +3468,8 @@ function filterMainKeyword(){
   if(window._fMissingVendor){data=data.filter(r=>!r.vendor);}
   const grp=r=>{const st=getStatus(r);if(st==='overdue')return 0;if(st==='done')return 2;return 1;};
   data.sort((a,b)=>grp(a)-grp(b)||a.id-b.id);
-  const total=data.length,done=data.filter(r=>getStatus(r)==='done').length,over=data.filter(r=>getStatus(r)==='overdue').length,w3=data.filter(r=>getStatus(r)==='warn3').length;
+  const _real=data.filter(r=>!_voidRow(r));const _voidN=data.length-_real.length;const voidCard=_voidN?('<div class="stat" style="opacity:.7" title="缺失內容空白、未計入統計">'+'<div class="stat-l">未填內容</div><div class="stat-v" style="color:var(--text3)">'+_voidN+'</div></div>'):'';
+  const total=_real.length,done=_real.filter(r=>getStatus(r)==='done').length,over=_real.filter(r=>getStatus(r)==='overdue').length,w3=_real.filter(r=>getStatus(r)==='warn3').length;
   const totalFiltered=data.length,totalPages=Math.ceil(totalFiltered/PAGE_SIZE)||1;
   if(mainPage>=totalPages)mainPage=0;
   const pageData=data.slice(mainPage*PAGE_SIZE,(mainPage+1)*PAGE_SIZE);
@@ -3462,6 +3481,7 @@ function filterMainKeyword(){
       <div class="stat"><div class="stat-l">已完成</div><div class="stat-v" style="color:var(--green)">${done}</div></div>
       <div class="stat"><div class="stat-l">逾期</div><div class="stat-v" style="color:var(--red)">${over}</div></div>
       <div class="stat"><div class="stat-l">3天警示</div><div class="stat-v" style="color:var(--amber)">${w3}</div></div>
+      ${voidCard}
     </div>
     ${bulkBarHTML(visIds,allFilteredIds)}
     ${pgBarHTML(totalFiltered,mainPage,'setMainPage')}${tblHTML(pageData,true,allFilteredIds)}${pgBarHTML(totalFiltered,mainPage,'setMainPage')}
@@ -3527,17 +3547,18 @@ function renderMain(){
   });
   // ────────────────────────────────────────────────────────────────────
 
-  const total=S.rows.length,done=S.rows.filter(r=>r.actualDone).length;
-  const over=S.rows.filter(r=>getStatus(r)==='overdue').length;
-  const w3=S.rows.filter(r=>{const d=du(r.planDone);return d!==null&&d>=0&&d<=3&&!r.actualDone}).length;
+  const _real=S.rows.filter(r=>!_voidRow(r));const _voidN=S.rows.length-_real.length;const voidCard=_voidN?('<div class="stat" style="opacity:.7" title="缺失內容空白、未計入統計">'+'<div class="stat-l">未填內容</div><div class="stat-v" style="color:var(--text3)">'+_voidN+'</div></div>'):'';
+  const total=_real.length,done=_real.filter(r=>r.actualDone).length;
+  const over=_real.filter(r=>getStatus(r)==='overdue').length;
+  const w3=_real.filter(r=>{const d=du(r.planDone);return d!==null&&d>=0&&d<=3&&!r.actualDone}).length;
   const units=uniqueUnits();
   const floors=[...new Set(S.rows.map(r=>r.floor).filter(Boolean))].sort((a,b)=>_floorRank(a)-_floorRank(b));
   const unitBtnLabel=fUnitSet.size===0?'全部戶別':fUnitSet.size===1?[...fUnitSet][0]:`戶別（${fUnitSet.size}）`;
-  const uCheckboxes=units.map(u=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;cursor:pointer;white-space:nowrap" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.has(u)?'checked':''} onclick="event.stopPropagation()" onchange="window._fUnitSet=window._fUnitSet||new Set();this.checked?window._fUnitSet.add('${esc(u).replace(/'/g,"\\'")}'):window._fUnitSet.delete('${esc(u).replace(/'/g,"\\'")}');mainPage=0;renderMain()"> ${esc(u)}</label>`).join('');
+  const uCheckboxes=_fUnitOrder(units).map(u=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;cursor:pointer;white-space:nowrap" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.has(u)?'checked':''} onclick="event.stopPropagation()" onchange="window._fUnitSet=window._fUnitSet||new Set();this.checked?window._fUnitSet.add('${esc(u).replace(/'/g,"\\'")}'):window._fUnitSet.delete('${esc(u).replace(/'/g,"\\'")}');var _a=document.getElementById('fUnit-all');if(_a)_a.checked=window._fUnitSet.size===0;mainPage=0;filterMainKeyword();_fUnitSyncBtn()"> ${esc(u)}</label>`).join('');
   const uDropdown=`<div style="position:relative;display:inline-block">
     <button class="btn${fUnitSet.size>0?' btn-p':''}" id="fUnit-btn" onclick="toggleMainUnitMenu()" style="font-size:12px;padding:5px 10px;min-width:110px;text-align:left">${unitBtnLabel} ▾</button>
     <div id="fUnit-menu" style="display:none;position:absolute;top:calc(100% + 2px);left:0;background:var(--card);border:1px solid var(--pborder);border-radius:var(--r);z-index:200;min-width:150px;max-height:280px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)">
-      <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-bottom:1px solid var(--border2)" onclick="event.stopPropagation()" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" ${fUnitSet.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){window._fUnitSet=new Set();mainPage=0;renderMain();}"> 全部</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 8px;cursor:pointer;border-bottom:1px solid var(--border2)" onclick="event.stopPropagation()" onmouseenter="this.style.background='#F0EEFF'" onmouseleave="this.style.background=''"><input type="checkbox" id="fUnit-all" ${fUnitSet.size===0?'checked':''} onclick="event.stopPropagation()" onchange="if(this.checked){window._fUnitSet=new Set();var _m=document.getElementById('fUnit-menu');if(_m)_m.querySelectorAll('input[type=checkbox]').forEach(function(c){if(c.id!=='fUnit-all')c.checked=false;});mainPage=0;filterMainKeyword();_fUnitSyncBtn();}"> 全部</label>
       ${uCheckboxes}
     </div>
   </div>`;
@@ -3590,6 +3611,7 @@ function renderMain(){
       <div class="stat"><div class="stat-l">已完成</div><div class="stat-v" style="color:var(--green)">${done}</div></div>
       <div class="stat"><div class="stat-l">逾期</div><div class="stat-v" style="color:var(--red)">${over}</div></div>
       <div class="stat"><div class="stat-l">3天警示</div><div class="stat-v" style="color:var(--amber)">${w3}</div></div>
+      ${voidCard}
     </div>
     ${bulkBarHTML(visIds,allFilteredIds)}
     ${pgBarHTML(totalFiltered,mainPage,'setMainPage')}${tblHTML(pageData,true,allFilteredIds)}${pgBarHTML(totalFiltered,mainPage,'setMainPage')}
@@ -3801,7 +3823,7 @@ function setVendorFlag(v,on){
 }
 function vendorEditorHTML(){
   const sorted=[...S.vendors].sort((a,b)=>a.localeCompare(b,'zh-TW'));
-  const countBadge=v=>{const c=S.rows.filter(r=>r.vendor===v).length;return c?`<span style="font-size:10px;color:var(--text3);margin-left:4px">(${c}項)</span>`:'';}
+  const countBadge=v=>{const c=S.rows.filter(r=>r.vendor===v&&!_voidRow(r)).length;return c?`<span style="font-size:10px;color:var(--text3);margin-left:4px">(${c}項)</span>`:'';}
   const pills=sorted.map(v=>{
     const col=vColor(v);
     const isPW=!!(S.vendorFlags&&S.vendorFlags[v]);
@@ -3891,7 +3913,7 @@ function mgrEditorHTML(statsMap){
   const pills=sorted.map(m=>{
     const i=S.managers.indexOf(m);
     const col=vColor(m);
-    const mCount=(statsMap||{})[m]?statsMap[m].total:S.rows.filter(r=>r.manager===m).length;
+    const mCount=(statsMap||{})[m]?statsMap[m].total:S.rows.filter(r=>r.manager===m&&!_voidRow(r)).length;
     const det=S.managerDetails[m]||{title:'',duty:''};
     const isSel=selMgr===m;const rs=_mgrResigned(m);const sp=_mgrIsSupport(m)&&!rs;
     let divider='';
@@ -3973,7 +3995,7 @@ function renderVendor(){
   // S.completed 優先（有 compId），S.rows 補充未完成項
   const allVendorRows=[...(S.completed||[]),...S.rows];
   const seenV=new Set();
-  const uniqVendorRows=allVendorRows.filter(r=>{if(seenV.has(r.id))return false;seenV.add(r.id);return true;});
+  const uniqVendorRows=allVendorRows.filter(r=>{if(seenV.has(r.id))return false;seenV.add(r.id);if(_voidRow(r))return false;return true;});
   uniqVendorRows.forEach(r=>{
     const v=r.vendor||'（未指定）';
     if(!map[v])map[v]={total:0,done:0,overdue:0,ongoing:0,pending:0};
@@ -4057,9 +4079,9 @@ function renderVendor(){
 
 // ── PANE: Warn ────────────────────────────────────────────────────────────
 function renderWarn(){
-  const ov=S.rows.filter(r=>getStatus(r)==='overdue').sort((a,b)=>du(a.planDone)-du(b.planDone));
-  const w3=S.rows.filter(r=>{const d=du(r.planDone);return d!==null&&d>=0&&d<=3&&!r.actualDone}).sort((a,b)=>du(a.planDone)-du(b.planDone));
-  const w7=S.rows.filter(r=>{const d=du(r.planDone);return d!==null&&d>3&&d<=7&&!r.actualDone}).sort((a,b)=>du(a.planDone)-du(b.planDone));
+  const ov=S.rows.filter(r=>!_voidRow(r)&&getStatus(r)==='overdue').sort((a,b)=>du(a.planDone)-du(b.planDone));
+  const w3=S.rows.filter(r=>{if(_voidRow(r))return false;const d=du(r.planDone);return d!==null&&d>=0&&d<=3&&!r.actualDone}).sort((a,b)=>du(a.planDone)-du(b.planDone));
+  const w7=S.rows.filter(r=>{if(_voidRow(r))return false;const d=du(r.planDone);return d!==null&&d>3&&d<=7&&!r.actualDone}).sort((a,b)=>du(a.planDone)-du(b.planDone));
   function vGroup(items){
     if(!items.length)return`<div class="empty">無項目 ✓</div>`;
     const vm={};items.forEach(r=>{const v=r.vendor||'（未指定）';if(!vm[v])vm[v]=[];vm[v].push(r);});
@@ -4110,7 +4132,7 @@ function renderCal(){
   const dateMap={};
   const addEv=(ds,type,r)=>{if(!ds)return;const k=ds.slice(0,10);if(!dateMap[k])dateMap[k]=[];dateMap[k].push({type,r});};
   S.rows.forEach(r=>{addEv(r.planIn,'in',r);addEv(r.planDone,'done',r);addEv(r.actualDone,'ad',r);});
-  const ovRows=S.rows.filter(r=>getStatus(r)==='overdue');
+  const ovRows=S.rows.filter(r=>!_voidRow(r)&&getStatus(r)==='overdue');
   const ovByV={};ovRows.forEach(r=>{const v=r.vendor||'（未指定）';if(!ovByV[v])ovByV[v]=[];ovByV[v].push(r);});
   let cal=`<div class="tbl-wrap">
     <div class="cal-nav">
@@ -4217,7 +4239,7 @@ function renderZones(){
   const isCompZ=r=>r.compId!=null;
   const allZoneRows=[...(S.completed||[]),...S.rows].filter(r=>r.zone===activeZone);
   const seenZ=new Set();
-  const uniqZoneRows=allZoneRows.filter(r=>{if(seenZ.has(r.id))return false;seenZ.add(r.id);return true;});
+  const uniqZoneRows=allZoneRows.filter(r=>{if(seenZ.has(r.id))return false;seenZ.add(r.id);if(_voidRow(r))return false;return true;});
   const vmap={};
   uniqZoneRows.forEach(r=>{
     const v=r.vendor||'（未指定）';
@@ -4313,6 +4335,7 @@ function _buildMgrStats(){
   const map={};
   S.managers.forEach(m=>{map[m]={total:0,done:0,overdue:0};});
   S.rows.forEach(r=>{
+    if(_voidRow(r))return;
     const m=r.manager;
     if(!m||!map[m])return;
     map[m].total++;
@@ -4824,7 +4847,7 @@ function renderDone(){
 function hoUnitPct(unit){
   // 確保 cache 包含 completed rows
   if(!_defectCache)_buildDefectCache();
-  const rows=getDefectRows(unit);
+  const rows=getDefectRows(unit).filter(r=>!_voidRow(r));
   if(!rows.length)return null;
   // 完成定義：已移入完成看板(compId存在) OR 明確填入實際完成日期(actualDone)
   const completedCnt=rows.filter(r=>r.compId!=null).length;
@@ -5361,7 +5384,7 @@ function setHuField(u,field,val){if((field==='planDate'||field==='slot')&&!_past
 function setHuInspType(u,type,checked){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};const cur=S.handoverUnits[u].inspTypes||[];if(checked){if(!cur.includes(type))S.handoverUnits[u].inspTypes=[...cur,type];}else{S.handoverUnits[u].inspTypes=cur.filter(t=>t!==type);}save();if(activeTab==='hstats')renderHStats();if(activeTab==='hcal')renderHCal();if(activeTab==='clients')renderClients();}
 function toggleDeliveredH(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderHandover();if(activeTab==='hstats')renderHStats();}
 function toggleDeliveredCl(u){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].delivered=!S.handoverUnits[u].delivered;if(S.handoverUnits[u].delivered){if(!S.handoverUnits[u].deliveredDate)S.handoverUnits[u].deliveredDate=todayISO();}else{S.handoverUnits[u].deliveredDate='';}toast(S.handoverUnits[u].delivered?`${u} 已標記為交屋 🏠`:`${u} 已取消交屋`);save();renderClients();renderHandover();if(activeTab==='hstats'||document.getElementById('pane-hstats').style.display!=='none')renderHStats();if(activeTab==='hcal'||document.getElementById('pane-hcal').style.display!=='none')renderHCal();}
-function printHandoverPdf(){const units=[...new Set(S.rows.map(r=>r.unit).filter(Boolean))].sort();const rows=units.map(u=>{const rs=S.rows.filter(r=>r.unit===u);const pct=hoUnitPct(u);const g=hoGrade(pct);const hu=S.handoverUnits&&S.handoverUnits[u]||{};const flr=[...new Set(rs.map(r=>String(r.floor||'').replace(/F$/i,'')).filter(Boolean))].join('/');return`<tr><td>${esc(u)}</td><td>${flr}F</td><td style="color:${g.color}">${g.label}</td><td style="text-align:center">${pct??'—'}%</td><td>${rs.filter(r=>r.actualDone).length}/${rs.length}</td><td>${hu.planDate||'—'}</td><td>${hu.delivered?'✓':'—'}</td></tr>`;}).join('');printSection('交屋狀態表',`<table><thead><tr><th>戶別</th><th>樓層</th><th>等級</th><th>完成度</th><th>項目</th><th>預定驗收</th><th>已交屋</th></tr></thead><tbody>${rows}</tbody></table>`);}
+function printHandoverPdf(){const units=[...new Set(S.rows.map(r=>r.unit).filter(Boolean))].sort();const rows=units.map(u=>{const rs=S.rows.filter(r=>r.unit===u&&!_voidRow(r));const pct=hoUnitPct(u);const g=hoGrade(pct);const hu=S.handoverUnits&&S.handoverUnits[u]||{};const flr=[...new Set(rs.map(r=>String(r.floor||'').replace(/F$/i,'')).filter(Boolean))].join('/');return`<tr><td>${esc(u)}</td><td>${flr}F</td><td style="color:${g.color}">${g.label}</td><td style="text-align:center">${pct??'—'}%</td><td>${rs.filter(r=>r.actualDone).length}/${rs.length}</td><td>${hu.planDate||'—'}</td><td>${hu.delivered?'✓':'—'}</td></tr>`;}).join('');printSection('交屋狀態表',`<table><thead><tr><th>戶別</th><th>樓層</th><th>等級</th><th>完成度</th><th>項目</th><th>預定驗收</th><th>已交屋</th></tr></thead><tbody>${rows}</tbody></table>`);}
 
 // ══════════════════════════════════════════════════════════════════════════
 //  HANDOVER STATS  ── 交屋驗收統計
@@ -5799,28 +5822,45 @@ function _cxnRows(){
   arr.sort(function(a,b){var ka=(a.at||a.date||''),kb=(b.at||b.date||'');if(ka!==kb)return _cxnDir==='new'?(ka<kb?1:-1):(ka<kb?-1:1);return a.name<b.name?-1:1;});
   return arr;
 }
+// 週分組（依標記日 at）：本週展開、其他週收合（沿用公告欄「滿週收折」精神）
+var _cxnWeekOpen={};var _cxnPrintAll=false;
+function _cxnMonday(iso){if(!iso||iso.length<10)return '';var d=new Date(iso+'T00:00:00');if(isNaN(d))return '';var wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);return _isoL(d);}
+function _cxnWeekKey(o){return _cxnMonday(o.at||o.date||'');}
+function _cxnWeekLabel(mon){if(!mon)return '未標記日期';var d=new Date(mon+'T00:00:00');var e=new Date(d);e.setDate(e.getDate()+6);return _rptMMDD(mon)+'–'+_rptMMDD(_isoL(e));}
+function _cxnWeekIsOpen(k){if(Object.prototype.hasOwnProperty.call(_cxnWeekOpen,k))return _cxnWeekOpen[k];return k===_cxnMonday(todayISO());}
+function _cxnToggleWeek(k){_cxnWeekOpen[k]=!_cxnWeekIsOpen(k);_cxnPaintLists();}
 function _cxnListHTML(){
   var rows=_cxnRows();var fs=_cxnFontV();
-  var head='<div style="display:grid;grid-template-columns:82px 58px 104px 1fr 132px;gap:8px;padding:7px 12px;background:var(--surface);font-size:'+(fs-2)+'px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--pborder)"><span>戶別</span><span>類型</span><span>原本日期</span><span>目前狀態／原因</span><span>標記</span></div>';
+  var gc='grid-template-columns:70px 52px 132px 1fr 118px';
+  var head='<div style="display:grid;'+gc+';gap:8px;padding:6px 12px;background:var(--surface);font-size:'+(fs-2)+'px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--pborder)"><span>戶別</span><span>類型</span><span>原本日期</span><span>目前狀態／原因</span><span>標記</span></div>';
   if(!rows.length)return head+'<div style="padding:20px;text-align:center;color:var(--text3);font-size:'+fs+'px">目前沒有取消／未到紀錄</div>';
-  var body=rows.map(function(o){
+  var rowHtml=function(o){
     var isC=(o.type==='cancel');
     var badge='<span style="font-size:'+(fs-2)+'px;padding:2px 8px;border-radius:20px;text-align:center;'+(isC?'background:#FCEBEB;color:#791F1F':'background:#FAEEDA;color:#633806')+'">'+(isC?'取消':'未到')+'</span>';
     var st=_cxnStatusOf(o.key);
     var orig=(o.date?_rptMMDD(o.date):'(未排)')+(o.slot?' '+esc(o.slot):'');
     var reason=o.reason?(' <span style="color:var(--text3)">· '+esc(o.reason)+'</span>'):' <span style="color:var(--text3)">· （未填原因）</span>';
     var mark=(o.at?_rptMMDD(o.at):'')+(o.by?(' '+esc(o.by)):'');
-    return '<div style="display:grid;grid-template-columns:82px 58px 104px 1fr 132px;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);align-items:center;font-size:'+fs+'px">'
+    return '<div style="display:grid;'+gc+';gap:8px;padding:5px 12px;border-bottom:1px solid var(--border);align-items:center;font-size:'+fs+'px">'
       +'<span><a href="javascript:void(0)" onclick="_cxnJump(\''+esc(o.key)+'\')" style="color:#3C3489;text-decoration:none;font-weight:500">'+esc(o.name)+'</a></span>'
       +badge
-      +'<span style="color:var(--text2)">'+orig+'</span>'
+      +'<span style="color:var(--text2);white-space:nowrap">'+orig+'</span>'
       +'<span><span style="color:'+st.c+'">'+esc(st.t)+'</span>'+reason+'</span>'
-      +'<span style="color:var(--text3);font-size:'+(fs-2)+'px">'+mark
+      +'<span style="color:var(--text3);font-size:'+(fs-2)+'px;white-space:nowrap">'+mark
         +' <button class="btn btn-sm no-print" onclick="_cxnEditReason(\''+esc(o.key)+'\',\''+o.type+'\','+o.idx+')" title="編輯原因" style="padding:1px 5px;font-size:'+(fs-3)+'px">✏️</button>'
         +'<button class="btn btn-sm no-print" onclick="_cxnDelEntry(\''+esc(o.key)+'\',\''+o.type+'\','+o.idx+')" title="刪除此筆" style="padding:1px 5px;font-size:'+(fs-3)+'px">🗑</button>'
       +'</span></div>';
-  }).join('');
-  return head+body;
+  };
+  var curWk=_cxnMonday(todayISO());var out='';var i=0;
+  while(i<rows.length){
+    var wk=_cxnWeekKey(rows[i]);var grp=[];
+    while(i<rows.length&&_cxnWeekKey(rows[i])===wk){grp.push(rows[i]);i++;}
+    var isCur=(wk===curWk&&wk!=='');var open=(_cxnPrintAll||_cxnWeekIsOpen(wk));
+    var lbl=(wk?_cxnWeekLabel(wk):'未標記日期')+(isCur?'（本週）':'');
+    out+='<div class="no-print" onclick="_cxnToggleWeek(\''+wk+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 12px;background:'+(isCur?'#EBF4FF':'var(--surface)')+';border-bottom:1px solid var(--pborder);font-size:'+(fs-1)+'px;font-weight:600;color:var(--text2)"><span style="width:12px">'+(open?'▾':'▸')+'</span><span>'+esc(lbl)+'</span><span style="margin-left:auto;font-weight:400;color:var(--text3)">'+grp.length+' 筆</span></div>';
+    if(open)out+=grp.map(rowHtml).join('');
+  }
+  return head+out;
 }
 function _cxnInner(cid){
   var chip=function(v,lab){return '<button class="btn btn-sm" onclick="_cxnSetType(\''+v+'\')" style="font-size:11px;padding:4px 10px;border-radius:20px;'+(_cxnType===v?'background:#EEEDFE;color:var(--purple);border-color:var(--purple)':'')+'">'+lab+'</button>';};
@@ -5847,8 +5887,8 @@ function _cxnEntryOf(key,type,idx){var hu=(S.handoverUnits||{})[key];if(!hu)retu
 function _cxnEditReason(key,type,idx){var e=_cxnEntryOf(key,type,idx);if(!e)return;var r=prompt('編輯原因／備註（可留空）：',e.reason||'');if(r==null)return;e.reason=String(r).trim();save();_cxnPaintAll();try{toast('已更新原因','✏️');}catch(x){}}
 function _cxnDelEntry(key,type,idx){var e=_cxnEntryOf(key,type,idx);if(!e)return;if(!confirm('確定刪除這筆'+(type==='cancel'?'取消':'未到')+'紀錄？（'+unitDisplayName(key)+'　'+(e.date?_rptMMDD(e.date):'未排日期')+'）\n刪除後無法復原。'))return;var hu=S.handoverUnits[key];var arr=type==='cancel'?hu.cancelHistory:hu.noShowHistory;arr.splice(idx,1);logChange('📆 交屋/行事曆','刪除'+(type==='cancel'?'取消':'未到')+'紀錄 '+unitDisplayName(key));save();_cxnPaintAll();try{toast('已刪除','🗑');}catch(x){}}
 function _cxnJump(key){var ov=document.getElementById('cxn-board-ov');if(ov)ov.style.display='none';try{_hcalExpanded=key;}catch(e){}switchTab('hcal');try{toast('已跳到交屋行事曆：'+unitDisplayName(key),'📆');}catch(x){}}
-function _cxnCap(){var l=document.querySelector('[id^="cxn-list-"]');if(!l)return;try{toast('產生截圖中…','📷');}catch(e){}_capEl(l,'取消未到紀錄_'+todayISO()+'.png');}
-function _cxnPdf(){printSection('取消／未到紀錄',_cxnListHTML(),'取消未到紀錄_'+todayISO());}
+function _cxnCap(){var l=document.querySelector('[id^="cxn-list-"]');if(!l)return;try{toast('產生截圖中…','📷');}catch(e){}_cxnPrintAll=true;l.innerHTML=_cxnListHTML();_cxnPrintAll=false;_capEl(l,'取消未到紀錄_'+todayISO()+'.png');setTimeout(function(){try{l.innerHTML=_cxnListHTML();}catch(e){}},1500);}
+function _cxnPdf(){_cxnPrintAll=true;var h=_cxnListHTML();_cxnPrintAll=false;printSection('取消／未到紀錄',h,'取消未到紀錄_'+todayISO());}
 function _cxnBoardOpen(){
   var ov=document.getElementById('cxn-board-ov');
   if(!ov){ov=document.createElement('div');ov.id='cxn-board-ov';ov.className='no-print';
@@ -6256,6 +6296,119 @@ function _pwoPdfRowsArr(list){
     return '<tr><td>#'+r.id+'</td><td>'+esc(unitDisplayName(r.unit))+'</td><td>'+(_pwoFloorNum(r)>-999?_pwoFloorNum(r)+'F':'')+'</td><td>'+esc(_zoneLabelOf(r.zone))+'</td><td>'+esc(r.issue||'')+(r.note?'　'+esc(r.note):'')+'</td><td>'+hostText(r)+'</td><td>'+_pwoMD(lim)+'</td><td'+bc(r.planIn)+'>'+dc(r.planIn)+'</td><td'+bc(r.planDone)+'>'+dc(r.planDone)+'</td><td'+bc(r.actualIn)+'>'+dc(r.actualIn)+'</td><td'+bc(r.actualDone)+'>'+dc(r.actualDone)+'</td></tr>';
   });
 }
+// V0713-02：廠商派工單「第一頁封面成績單」——起算日＝該廠商各戶最早初驗日；週日不計工作日
+function _pwoDaysBetween(a,b){var d=new Date(a+'T00:00:00'),e=new Date(b+'T00:00:00');if(isNaN(d)||isNaN(e)||d>e)return null;return Math.floor((e-d)/86400000)+1;}
+function _pwoWorkdays(fromIso,toIso){if(!fromIso||!toIso)return 0;var d=new Date(fromIso+'T00:00:00'),e=new Date(toIso+'T00:00:00');if(isNaN(d)||isNaN(e)||d>e)return 0;var n=0;while(d<=e){if(d.getDay()!==0)n++;d.setDate(d.getDate()+1);}return n;}
+function _pwoAddWorkdays(startIso,nWork){var d=new Date(startIso+'T00:00:00');var added=0;var guard=0;while(added<nWork&&guard<4000){d.setDate(d.getDate()+1);if(d.getDay()!==0)added++;guard++;}return _isoL(d);}
+function _pwoWk(iso){var d=new Date(iso+'T00:00:00');if(isNaN(d))return '';return '日一二三四五六'.charAt(d.getDay());}
+function _pwoVendorStats(vendor){
+  var hu=S.handoverUnits||{};
+  var seen=new Set();
+  var all=[].concat(S.rows||[],S.completed||[]).filter(function(r){if(r.vendor!==vendor||_voidRow(r))return false;if(r.id!=null){if(seen.has(r.id))return false;seen.add(r.id);}return true;});
+  var done=all.filter(function(r){return r.compId!=null||r.actualDone;}).length;
+  var undone=all.length-done;
+  var overdue=all.filter(function(r){return !(r.compId!=null||r.actualDone)&&getStatus(r)==='overdue';}).length;
+  var units=new Set();all.forEach(function(r){if(r.unit)units.add(String(r.unit).trim());});
+  var startIso='';units.forEach(function(k){var h=hu[k]||hu[unitDisplayName(k)]||{};if(h.planDate&&(!startIso||h.planDate<startIso))startIso=h.planDate;});
+  var siteStart='';Object.keys(hu).forEach(function(k){var h=hu[k];if(h&&h.planDate&&(!siteStart||h.planDate<siteStart))siteStart=h.planDate;});
+  var today=todayISO();
+  var days=startIso?_pwoDaysBetween(startIso,today):null;
+  var wd=startIso?_pwoWorkdays(startIso,today):0;
+  var rate=(wd>0)?(done/wd):0;
+  var remWd=null,estIso='';
+  if(rate>0&&undone>0){remWd=Math.ceil(undone/rate);estIso=_pwoAddWorkdays(today,remWd);}
+  return {done:done,undone:undone,overdue:overdue,startIso:startIso,siteStart:siteStart,days:days,wd:wd,rate:rate,remWd:remWd,estIso:estIso};
+}
+function _pwoCoverPageHTML(vendor,ver){
+  var s=_pwoVendorStats(vendor);
+  var rate=s.rate>0?(Math.round(s.rate*10)/10):0;
+  var estLine=(s.rate>0&&s.undone>0)?('依目前速度，剩 '+s.undone+' 筆約需 <b>'+s.remWd+'</b> 個工作日 → 推估修繕完成日 <b style="font-size:22px;color:#185FA5">'+_pwoMD(s.estIso)+'（'+_pwoWk(s.estIso)+'）</b>'):(s.undone>0?'<span style="color:#A35200">尚無完成紀錄，無法推估完成日</span>':'<span style="color:#2E6B26">已全部完成，無待修</span>');
+  var card=function(lab,val,bg,fg){return '<div style="flex:1;background:'+bg+';border-radius:10px;padding:16px 14px;text-align:center"><div style="font-size:15px;color:'+fg+'">'+lab+'</div><div style="font-size:34px;font-weight:700;color:'+fg+'">'+val+'</div></div>';};
+  return '<div style="font-family:\'Noto Sans TC\',\'Microsoft JhengHei\',sans-serif;background:#fff;color:#1E1D1B;padding:26px 30px;width:1100px;box-sizing:border-box">'
+    +'<div style="border-bottom:2px solid #3C3489;padding-bottom:10px;margin-bottom:16px;overflow:hidden"><span style="font-size:23px;font-weight:700;color:#3C3489">工程缺失追蹤系統 — 廠商派工單 · 進度成績單</span><span style="float:right;font-size:15px;color:#888">版次 '+ver+'　列印 '+_pwoMD(todayISO())+'</span></div>'
+    +'<div style="font-size:30px;font-weight:700;margin-bottom:16px">'+esc(vendor)+'</div>'
+    +'<div style="display:flex;gap:16px;margin-bottom:20px">'+card('未完成缺失',s.undone+' 筆','#FFF0F0','#A32D2D')+card('已完成',s.done+' 筆','#EAF6E7','#2E6B26')+card('進度天數',(s.days!=null?s.days:'—')+' 天','#F1EFE8','#1E1D1B')+'</div>'
+    +'<div style="font-size:17px;line-height:2.2;border-top:1px solid #ddd;padding-top:14px">'
+      +'<div>全工地初驗開始：<b>'+(s.siteStart?_pwoMD(s.siteStart):'—')+'</b>（參考）</div>'
+      +'<div>本廠商起算日 → 今天：<b>'+(s.startIso?_pwoMD(s.startIso):'—')+'</b> → <b>'+_pwoMD(todayISO())+'</b>　共計 <b style="font-size:20px">'+(s.days!=null?s.days:'—')+'</b> 天　<span style="color:#185FA5;font-size:14px">★計算基準</span></div>'
+      +'<div>完成效率（週一～六，週日不計）：'+s.done+' 筆 ÷ '+s.wd+' 工作日 = 平均 <b style="font-size:20px">'+rate+'</b> 筆／工作日</div>'
+      +'<div style="margin-top:6px">'+estLine+'</div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:#999;margin-top:18px">＊進度天數／效率／推估皆以「本廠商起算日＝該廠商各戶最早初驗日」計算；週日不計工作日；無完成紀錄則不推估。</div>'
+  +'</div>';
+}
+// V0713-02b：成績單總覽（一次看全部廠商封面、可排序、可複選、輸出 PDF(封面)或每家 PNG）
+var _pwoCoverMode=false;var _pwoCoverSort='undoneDesc';
+function _pwoModeToggleHTML(){
+  var b=function(on,lab,v){return '<button class="btn btn-sm no-print" onclick="pwoSetCoverMode('+v+')" style="font-size:12px;'+(on?'background:#EEEDFE;color:var(--purple);border-color:var(--purple)':'')+'">'+lab+'</button>';};
+  return '<span style="display:inline-flex;gap:4px">'+b(!_pwoCoverMode,'📋 派工單清單',0)+b(_pwoCoverMode,'📊 成績單總覽',1)+'</span>';
+}
+function pwoSetCoverMode(v){_pwoCoverMode=!!(+v);renderPWO();}
+function pwoCoverSetSort(v){_pwoCoverSort=v;renderPWO();}
+function pwoCoverSelAll(on){var vs=_pwoCurrentVendors();if(+on){vs.forEach(function(v){_pwoSel.add(v);});}else{_pwoSel.clear();}renderPWO();}
+function _pwoCoverSortVendors(vs){
+  var st={};vs.forEach(function(v){st[v]=_pwoVendorStats(v);});var by=_pwoCoverSort;
+  return vs.slice().sort(function(a,b){var A=st[a],B=st[b];
+    if(by==='undoneDesc')return (B.undone-A.undone)||a.localeCompare(b,'zh-Hant');
+    if(by==='undoneAsc')return (A.undone-B.undone)||a.localeCompare(b,'zh-Hant');
+    if(by==='overdueDesc')return (B.overdue-A.overdue)||(B.undone-A.undone)||a.localeCompare(b,'zh-Hant');
+    if(by==='doneDesc')return (B.done-A.done)||a.localeCompare(b,'zh-Hant');
+    if(by==='estAsc'){var ea=A.estIso||'9999-99',eb=B.estIso||'9999-99';return ea<eb?-1:ea>eb?1:a.localeCompare(b,'zh-Hant');}
+    return a.localeCompare(b,'zh-Hant');
+  });
+}
+function _pwoCoverCardHTML(v){
+  var s=_pwoVendorStats(v);var sel=_pwoSel.has(v);var key=_jsq(v);
+  var rate=s.rate>0?(Math.round(s.rate*10)/10):0;
+  var est=(s.rate>0&&s.undone>0)?(_pwoMD(s.estIso)+'（'+_pwoWk(s.estIso)+'）'):'—';
+  return '<div style="background:var(--card);border:'+(sel?'2px solid #3C3489':'1px solid var(--border)')+';border-radius:12px;padding:11px 13px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="checkbox" '+(sel?'checked':'')+' onclick="pwoToggleSel(\''+key+'\')" style="width:16px;height:16px;flex-shrink:0"><b style="font-size:15px">'+esc(v)+'</b>'+(s.overdue?('<span style="margin-left:auto;background:#FFF0F0;color:#A32D2D;font-size:12px;padding:2px 8px;border-radius:20px">逾期 '+s.overdue+'</span>'):'<span style="margin-left:auto;font-size:12px;color:var(--text3)">逾期 0</span>')+'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px">'
+      +'<div style="flex:1;background:#FFF0F0;border-radius:8px;padding:6px;text-align:center"><div style="font-size:11px;color:#A32D2D">未完成</div><div style="font-size:20px;font-weight:700;color:#A32D2D">'+s.undone+'</div></div>'
+      +'<div style="flex:1;background:#EAF6E7;border-radius:8px;padding:6px;text-align:center"><div style="font-size:11px;color:#2E6B26">已完成</div><div style="font-size:20px;font-weight:700;color:#2E6B26">'+s.done+'</div></div>'
+      +'<div style="flex:1;background:var(--surface);border-radius:8px;padding:6px;text-align:center"><div style="font-size:11px;color:var(--text2)">天數</div><div style="font-size:20px;font-weight:700">'+(s.days!=null?s.days:'—')+'</div></div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--text2)">平均 '+rate+' 筆／日 · 推估 <b style="color:#185FA5">'+est+'</b></div>'
+  +'</div>';
+}
+function _pwoRenderCoverOverview(el){
+  var vs=_pwoCoverSortVendors(_pwoCurrentVendors());
+  var sortSel=[['undoneDesc','未完成 多→少'],['undoneAsc','未完成 少→多'],['overdueDesc','逾期 多→少'],['doneDesc','已完成 多→少'],['estAsc','推估完成日 近→遠'],['name','廠商名']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===_pwoCoverSort?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  var selN=vs.filter(function(v){return _pwoSel.has(v);}).length;
+  var cards=vs.length?vs.map(function(v){return _pwoCoverCardHTML(v);}).join(''):'<div style="padding:20px;color:var(--text3)">目前沒有未完成缺失的廠商</div>';
+  el.innerHTML='<div style="padding:16px 18px">'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
+      +_pwoModeToggleHTML()
+      +'<label style="font-size:12px;color:var(--text2)">排序 <select onchange="pwoCoverSetSort(this.value)" style="height:32px;font-size:13px;padding:0 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+sortSel+'</select></label>'
+      +'<span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+        +'<button class="btn btn-sm no-print" onclick="pwoCoverSelAll(1)" style="font-size:12px">全選</button>'
+        +'<button class="btn btn-sm no-print" onclick="pwoCoverSelAll(0)" style="font-size:12px">全不選</button>'
+        +'<button class="btn btn-p no-print" onclick="pwoCoverPdf()" style="font-size:12px;height:32px;padding:0 12px">🖨 PDF成績單（'+(selN?('選取'+selN):'全部')+'）</button>'
+        +'<button class="btn no-print" onclick="pwoCoverPng()" style="font-size:12px;height:32px;padding:0 12px">📷 圖片各家（'+(selN?('選取'+selN):'全部')+'）</button>'
+      +'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:10px">勾選卡片＝只輸出選取的那幾家（不勾＝全部）。PDF＝只出各家成績單封面；圖片＝每家一張 PNG。完整派工單（封面＋缺失明細）請用「派工單清單」的匯出。</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">'+cards+'</div>'
+  +'</div>';
+}
+async function pwoCoverPdf(){
+  var vs=_pwoCoverSortVendors(_pwoCurrentVendors());var sel=vs.filter(function(v){return _pwoSel.has(v);});if(sel.length)vs=sel;
+  if(!vs.length){toast('沒有可輸出的廠商','⚠️');return;}
+  toast('產生成績單 PDF 中…請稍候','📄');
+  try{await _pwoEnsureLibs();var jsPDF=window.jspdf.jsPDF;var ver=_pwoVerNext();var pdf=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});var first=true;
+    for(const v of vs){if(!first)pdf.addPage('a4','landscape');first=false;var cv=await _pwoRenderCanvas(_pwoCoverPageHTML(v,ver));var pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();var iw=pw-40;var ih=cv.height*(iw/cv.width);if(ih>ph-40)ih=ph-40;pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',20,20,iw,ih);}
+    pdf.save('派工單成績單_共'+vs.length+'家_'+_pwoFileTag()+'.pdf');toast('已產生成績單 PDF','📦');
+  }catch(e){console.error(e);toast('PDF 產生失敗：'+((e&&e.message)||e),'⚠️');}
+}
+async function pwoCoverPng(){
+  var vs=_pwoCoverSortVendors(_pwoCurrentVendors());var sel=vs.filter(function(v){return _pwoSel.has(v);});if(sel.length)vs=sel;
+  if(!vs.length){toast('沒有可輸出的廠商','⚠️');return;}
+  toast('產生成績單圖片中…請稍候','📷');
+  try{await _pwoEnsureLibs();var tag=_pwoFileTag();var ver=_pwoVerNext();
+    for(const v of vs){var cv=await _pwoRenderCanvas(_pwoCoverPageHTML(v,ver));var a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='成績單_'+v+'_'+tag+'.png';document.body.appendChild(a);a.click();document.body.removeChild(a);await new Promise(function(r){setTimeout(r,300);});}
+    toast('已產生 '+vs.length+' 張圖片（若提示請允許多個下載）','🗂');
+  }catch(e){console.error(e);toast('圖片產生失敗：'+((e&&e.message)||e),'⚠️');}
+}
 function _pwoPageHTML(vendor,sub,colHead,rowsHtml,pageTag){
   return '<div style="font-family:\'Noto Sans TC\',\'Microsoft JhengHei\',sans-serif;background:#fff;color:#1E1D1B;padding:16px;width:1100px;box-sizing:border-box">'
     +'<style>.pwopdf{width:100%;border-collapse:collapse}.pwopdf td{border:1px solid #D6D6D6;padding:6px 8px;font-size:14px;vertical-align:top}.pwopdf th{border:1px solid #C8C5C0;padding:6px 8px;font-size:13px;color:#5F5E5A;text-align:left}</style>'
@@ -6272,6 +6425,9 @@ async function _pwoFillPdf(pdf,vendors,byV,ver){
     const N=chunks.length;
     const sub=esc(v)+'　'+_pwoRound+' 未完成缺失　共 '+byV[v].length+' 筆　版次 '+ver;
     const colHead=_pwoPdfColHead();
+    // 每家第一頁＝進度成績單封面
+    if(!first)pdf.addPage('a4','landscape');first=false;
+    {const _cvc=await _pwoRenderCanvas(_pwoCoverPageHTML(v,ver));const _pw=pdf.internal.pageSize.getWidth(),_ph=pdf.internal.pageSize.getHeight();const _iw=_pw-40;let _ih=_cvc.height*(_iw/_cvc.width);if(_ih>_ph-40)_ih=_ph-40;pdf.addImage(_cvc.toDataURL('image/jpeg',0.92),'JPEG',20,20,_iw,_ih);}
     for(let p=0;p<N;p++){
       if(!first)pdf.addPage('a4','landscape');first=false;
       const cv=await _pwoRenderCanvas(_pwoPageHTML(v,sub,colHead,chunks[p].join(''),(p+1)+'/'+N));
@@ -6356,10 +6512,147 @@ function _pwoVendorBlock(v,list){
     +body
   +'</div>';
 }
+// ══ V0713-02：戶況總表（依戶別／依廠商雙視圖；約定複驗；展開內嵌編輯；不動資料結構）══
+var _usView='unit';var _usThr=5;var _usOpen={};
+function _usDone(r){return r.compId!=null||!!r.actualDone;}
+function _usNoCrew(rows){return rows.filter(function(r){return !_usDone(r);}).every(function(r){if(r.actualIn)return false;if(r.planIn)return du(r.planIn)<0;return true;});}
+function _usPillColors(kind){return kind==='danger'?['#FFF0F0','#A32D2D']:kind==='success'?['#EAF6E7','#2E6B26']:kind==='warning'?['#FFF4E0','#7A4200']:['#EBF4FF','#185FA5'];}
+function _usRowSort(a,b){var da=_usDone(a)?1:0,db=_usDone(b)?1:0;if(da!==db)return da-db;return (a.id||0)-(b.id||0);}
+function _usUnitList(){
+  var hu=S.handoverUnits||{};var map={};var seen=new Set();
+  [].concat(S.rows||[],S.completed||[]).forEach(function(r){
+    if(!r.unit||_voidRow(r))return;
+    if(r.id!=null){if(seen.has(r.id))return;seen.add(r.id);}
+    var k=String(r.unit).trim();if(!map[k])map[k]={unit:k,rows:[]};map[k].rows.push(r);
+  });
+  return Object.keys(map).map(function(k){
+    var o=map[k];var h=hu[k]||hu[unitDisplayName(k)]||{};
+    o.planDate=h.planDate||'';o.recheck=h.reCheckDate||'';
+    o.total=o.rows.length;o.done=o.rows.filter(_usDone).length;o.remaining=o.total-o.done;
+    o.stalled=(!!o.planDate)&&(du(o.planDate)<=-14)&&(o.remaining>0)&&_usNoCrew(o.rows);
+    return o;
+  });
+}
+function _usDefectRowHTML(r,showUnit){
+  var done=_usDone(r);
+  var idLink='<a href="javascript:void(0)" onclick="_usJump('+r.id+')" title="跳回追蹤總表定位" style="font-family:monospace;font-size:11px;color:#3C3489;text-decoration:underline">#'+r.id+'</a>';
+  var unitTag=showUnit?('<b style="font-size:12px;min-width:56px">'+esc(unitDisplayName(r.unit))+'</b>'):'';
+  var issue='<span style="font-size:13px;'+(done?'text-decoration:line-through;color:var(--text3)':'color:var(--text)')+'">'+esc(r.issue||'')+'</span>';
+  var vendor=r.vendor?('<span style="color:var(--text3);font-size:11px">· '+esc(r.vendor)+'</span>'):'';
+  var chk='<input type="checkbox" '+(done?'checked':'')+' onclick="_usToggleDone('+r.id+',this.checked)" title="勾選＝標記完成（帶今日完成日）" style="width:16px;height:16px;flex-shrink:0">';
+  var planRed=(!r.planIn&&!done);
+  var planIn='<input type="date" value="'+(r.planIn||'')+'" onchange="_usSetDate('+r.id+',\'planIn\',this.value)" title="預計進場（空紅框＝未排）" style="height:29px;font-size:12px;padding:1px 5px'+(planRed?';border:2px solid #E24B4A':'')+'">';
+  var doneIn='<input type="date" value="'+(r.actualDone||'')+'" onchange="_usSetDate('+r.id+',\'actualDone\',this.value)" title="完成日" style="height:29px;font-size:12px;padding:1px 5px'+(r.actualDone?';border-color:#3B6D11':'')+'">';
+  return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 4px;border-top:1px solid var(--border)">'+chk+idLink+unitTag+issue+vendor
+    +'<span style="margin-left:auto;display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--text3)">進場</span>'+planIn+'<span style="font-size:11px;color:var(--text3)">完成</span>'+doneIn+'</span></div>';
+}
+function _usApptEditor(o){
+  var key=esc(o.unit).replace(/'/g,"\\'");
+  return '<div style="display:flex;align-items:center;gap:6px;padding:6px 2px;font-size:12px;color:var(--text3)">📅 約定複驗日：<input type="date" value="'+(o.recheck||'')+'" onchange="_usSetRecheck(\''+key+'\',this.value)" style="height:28px;font-size:12px;padding:1px 5px"><span style="font-size:11px">（設定後同步顯示於交屋行事曆）</span></div>';
+}
+function _usUnitRow(o,kind,rightHtml){
+  var c=_usPillColors(kind);var open=!!_usOpen['u:'+o.unit];var key=esc(o.unit).replace(/'/g,"\\'");
+  var h='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;overflow:hidden">'
+    +'<div onclick="_usToggleUnit(\''+key+'\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;flex-wrap:wrap">'
+    +'<span style="width:12px;color:var(--text3)">'+(open?'▾':'▸')+'</span>'
+    +'<span style="background:'+c[0]+';color:'+c[1]+';font-size:13px;font-weight:600;padding:3px 12px;border-radius:8px">'+esc(unitDisplayName(o.unit))+'</span>'
+    +'<span style="font-size:12px;color:var(--text2)">'+(o.remaining===0?('完成 '+o.done+'/'+o.total):('未完成 '+o.remaining+'/'+o.total))+'</span>'
+    +(o.planDate?('<span style="font-size:11px;color:var(--text3)">初驗 '+_rptMMDD(o.planDate)+'</span>'):'')
+    +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px">'+(rightHtml||'')+'</span></div>';
+  if(open)h+='<div style="padding:2px 10px 8px">'+_usApptEditor(o)+o.rows.slice().sort(_usRowSort).map(function(r){return _usDefectRowHTML(r,false);}).join('')+'</div>';
+  return h+'</div>';
+}
+function _usUnitRight(o,kind){
+  if(kind==='danger'){var ds=o.planDate?(-du(o.planDate)):0;return '<span style="font-size:12px;color:#A32D2D;font-weight:600">停滯 '+ds+' 天</span><span style="font-size:11px;color:var(--text3)">無工班進場</span>';}
+  if(kind==='success')return '<span style="font-size:12px;color:#2E6B26;font-weight:600">可排複驗</span>';
+  if(kind==='warning')return '<span style="font-size:12px;color:#7A4200;font-weight:600">剩 '+o.remaining+' 筆</span>';
+  return '<span style="font-size:11px;color:var(--text3)">未完成 '+o.remaining+'</span>';
+}
+function _usApptRow(o){
+  var dl=o.recheck?du(o.recheck):null;var kind,label;
+  if(o.remaining===0){kind='success';label='已可複驗';}
+  else if(dl!==null&&dl<=3&&o.remaining>5){kind='danger';label='⚠ 來不及';}
+  else{kind='warning';label='趕一下';}
+  var dtxt=dl===null?'':(dl<0?('逾'+(-dl)+'天'):dl===0?'今天':('剩'+dl+'天'));
+  var right='<span style="font-size:12px;color:'+_usPillColors(kind)[1]+';font-weight:600">'+label+'</span><span style="font-size:11px;color:var(--text3)">約定 '+_rptMMDD(o.recheck)+(dtxt?(' · '+dtxt):'')+'</span>';
+  return _usUnitRow(o,kind,right);
+}
+function _usToggleSec(id){var k='s:'+id;var cur=_usOpen.hasOwnProperty(k)?_usOpen[k]:(id!=='ongoing');_usOpen[k]=!cur;renderUStat();}
+function _usSec(id,title,kind,list,defOpen){
+  if(!list.length)return '';var c=_usPillColors(kind);
+  var open=_usOpen.hasOwnProperty('s:'+id)?_usOpen['s:'+id]:defOpen;
+  var h='<div onclick="_usToggleSec(\''+id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+c[0]+';border-radius:10px;margin:10px 0 6px"><span style="width:12px;color:'+c[1]+'">'+(open?'▾':'▸')+'</span><b style="font-size:13px;color:'+c[1]+'">'+title+'</b><span style="margin-left:auto;font-size:12px;color:'+c[1]+'">'+list.length+' 戶</span></div>';
+  if(open)h+=list.map(function(o){return _usUnitRow(o,kind,_usUnitRight(o,kind));}).join('');
+  return h;
+}
+function _usUnitViewHTML(units){
+  if(!units.length)return '<div style="padding:20px;color:var(--text3)">目前沒有戶別資料</div>';
+  var appt=units.filter(function(o){return o.recheck;}).sort(function(a,b){return a.recheck<b.recheck?-1:1;});
+  var rest=units.filter(function(o){return !o.recheck;});
+  var stalled=rest.filter(function(o){return o.stalled;}).sort(function(a,b){return (a.planDate||'9999')<(b.planDate||'9999')?-1:1;});
+  var ready=rest.filter(function(o){return o.remaining===0&&o.total>0;});
+  var almost=rest.filter(function(o){return !o.stalled&&o.remaining>=1&&o.remaining<=_usThr;});
+  var ongoing=rest.filter(function(o){return !o.stalled&&o.remaining>_usThr;});
+  var out='';
+  if(appt.length){out+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#EBF4FF;border-radius:10px;margin-bottom:6px"><b style="font-size:13px;color:#185FA5">📅 約定複驗（依日期倒數）</b><span style="margin-left:auto;font-size:11px;color:#185FA5">'+appt.length+' 戶 · 同步交屋行事曆</span></div>';out+=appt.map(_usApptRow).join('');}
+  out+='<div style="display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px;color:var(--text2)">🟡「快好了」門檻：剩 ≤ <select onchange="_usSetThr(this.value)" style="height:26px;font-size:12px">'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+(n===_usThr?' selected':'')+'>'+n+'</option>';}).join('')+'</select> 筆</div>';
+  out+=_usSec('stalled','🔴 停滯 >2週（要盯）','danger',stalled,true);
+  out+=_usSec('ready','🟢 可安排複驗','success',ready,true);
+  out+=_usSec('almost','🟡 快好了 剩≤'+_usThr,'warning',almost,true);
+  out+=_usSec('ongoing','⚪ 進行中 剩>'+_usThr,'neutral',ongoing,false);
+  return out;
+}
+function _usVendorViewHTML(units){
+  var vmap={};
+  units.forEach(function(o){o.rows.forEach(function(r){
+    if(_usDone(r))return;var v=r.vendor||'（未指定）';
+    if(!vmap[v])vmap[v]={vendor:v,rows:[],units:new Set(),overdue:0};
+    vmap[v].rows.push(r);vmap[v].units.add(o.unit);if(getStatus(r)==='overdue')vmap[v].overdue++;
+  });});
+  var list=Object.keys(vmap).map(function(v){var o=vmap[v];o.remaining=o.rows.length;o.unitN=o.units.size;return o;});
+  list.sort(function(a,b){return (b.overdue-a.overdue)||(b.remaining-a.remaining);});
+  if(!list.length)return '<div style="padding:20px;color:var(--text3)">目前沒有未完成缺失</div>';
+  return '<div style="font-size:12px;color:var(--text3);margin:2px 0 8px">依逾期／未完成多的排最上</div>'+list.map(function(o){
+    var kind=o.overdue>0?'danger':'neutral';var c=_usPillColors(kind);var open=!!_usOpen['v:'+o.vendor];var key=esc(o.vendor).replace(/'/g,"\\'");
+    var h='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;overflow:hidden"><div onclick="_usToggleVendor(\''+key+'\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;flex-wrap:wrap"><span style="width:12px;color:var(--text3)">'+(open?'▾':'▸')+'</span><span style="background:'+c[0]+';color:'+c[1]+';font-size:13px;font-weight:600;padding:3px 12px;border-radius:8px">'+esc(o.vendor)+'</span><span style="font-size:12px;color:var(--text2)">未完成 '+o.remaining+'</span>'+(o.overdue?('<span style="font-size:12px;color:#A32D2D">逾期 '+o.overdue+'</span>'):'')+'<span style="margin-left:auto;font-size:11px;color:var(--text3)">跨 '+o.unitN+' 戶</span></div>';
+    if(open)h+='<div style="padding:2px 10px 8px">'+o.rows.slice().sort(function(a,b){return (a.id||0)-(b.id||0);}).map(function(r){return _usDefectRowHTML(r,true);}).join('')+'</div>';
+    return h+'</div>';
+  }).join('');
+}
+function _usViewBtn(v,lab){var on=_usView===v;return '<button class="btn btn-sm" onclick="_usSetView(\''+v+'\')" style="font-size:12px;padding:5px 14px;border-radius:20px;'+(on?'background:#EEEDFE;color:var(--purple);border-color:var(--purple)':'background:transparent;border-color:transparent;color:var(--text2)')+'">'+lab+'</button>';}
+function renderUStat(){
+  var pane=document.getElementById('pane-ustat');if(!pane)return;
+  var units=_usUnitList();
+  var body=_usView==='vendor'?_usVendorViewHTML(units):_usUnitViewHTML(units);
+  pane.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><b style="font-size:16px">📊 戶況總表</b><span style="font-size:11px;color:var(--text3)">共 '+units.length+' 戶</span><span style="margin-left:auto;display:inline-flex;background:var(--surface);border-radius:20px;padding:3px">'+_usViewBtn('unit','依戶別')+_usViewBtn('vendor','依廠商')+'</span></div>'+body;
+}
+function _usSetView(v){_usView=v;renderUStat();}
+function _usSetThr(v){_usThr=Math.max(1,Math.min(5,parseInt(v,10)||5));renderUStat();}
+function _usToggleUnit(k){_usOpen['u:'+k]=!_usOpen['u:'+k];renderUStat();}
+function _usToggleVendor(v){_usOpen['v:'+v]=!_usOpen['v:'+v];renderUStat();}
+function _usToggleDone(id,ch){var r=(S.rows||[]).find(function(x){return x.id===id;});if(!r){toast('此筆已在完成看板，請至該處調整','ℹ️');return;}if(ch){if(!r.actualDone)upd(id,'actualDone',todayISO(),true);}else{if(r.actualDone)upd(id,'actualDone','',true);}renderUStat();}
+function _usSetDate(id,f,v){upd(id,f,v);if(activeTab==='ustat')renderUStat();}
+function _usJump(id){var r=(S.rows||[]).find(function(x){return x.id===id;});switchTab('main');setTimeout(function(){try{var el=document.getElementById('main-row-'+id);if(el){el.scrollIntoView({block:'center'});var o=el.style.background;el.style.transition='background .3s';el.style.background='#FFF4C2';setTimeout(function(){el.style.background=o||'';},1600);}else if(r){annGoUnit(r.unit);}}catch(e){}},140);}
+function _usSetRecheck(u,val){if(!S.handoverUnits)S.handoverUnits={};if(!S.handoverUnits[u])S.handoverUnits[u]={};S.handoverUnits[u].reCheckDate=val||'';save();toast(val?('已設約定複驗日 '+_rptMMDD(val)):'已清除約定複驗日','📅');renderUStat();if(activeTab==='hcal')renderHCal();}
+// 交屋行事曆用：約定複驗提醒面板（display-only，讀 hu.reCheckDate，絕不碰 planDate 排格）
+function _usApptPanelHTML(){
+  var hu=S.handoverUnits||{};var list=[];
+  Object.keys(hu).forEach(function(k){var h=hu[k];if(h&&h.reCheckDate)list.push({key:k,date:h.reCheckDate});});
+  if(!list.length)return '';
+  list.sort(function(a,b){return a.date<b.date?-1:1;});
+  var items=list.map(function(o){
+    var dl=du(o.date);var dtxt=dl<0?('逾'+(-dl)+'天'):dl===0?'今天':('剩'+dl+'天');
+    var col=dl<0?'#A32D2D':dl<=3?'#7A4200':'#185FA5';
+    return '<span onclick="switchTab(\'ustat\')" title="點看戶況總表" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:11px"><b>'+esc(unitDisplayName(o.key))+'</b> <span style="color:var(--text3)">'+_rptMMDD(o.date)+'</span> <span style="color:'+col+';font-weight:600">'+dtxt+'</span></span>';
+  }).join('');
+  return '<div class="no-print" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#EBF4FF;border-radius:var(--rs);margin-bottom:8px"><b style="font-size:12px;color:#185FA5;white-space:nowrap">📅 約定複驗</b>'+items+'</div>';
+}
+
 function renderPWO(){
   const el=document.getElementById('pane-pwo');if(!el)return;
   if(!S.rows)S.rows=[];
   _pwoKeyMap=null;
+  if(_pwoCoverMode){return _pwoRenderCoverOverview(el);}
   const rows=_pwoRows();
   const dayset=new Set();rows.forEach(r=>{const d=_pwoRoundDate(r);if(d)dayset.add(d);});
   const days=Array.from(dayset).sort();
@@ -6370,6 +6663,7 @@ function renderPWO(){
   el.innerHTML='<div style="padding:16px 18px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
       +'<span style="font-size:15px;font-weight:700">📋 廠商派工單</span>'
+      +_pwoModeToggleHTML()
       +'<label style="font-size:12px;color:var(--text2)">輪次 <select onchange="pwoSetRound(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+roundOpts+'</select></label>'
       +'<label style="font-size:12px;color:var(--text2)">驗屋日 <select onchange="pwoSetDay(this.value)" style="font-size:12px;padding:4px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+dayOpts+'</select></label>'
       +'<input type="text" value="'+esc(_pwoSearch)+'" oninput="pwoSearch(this.value)" placeholder="🔍 搜尋廠商/戶別/缺失/#編號" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:190px">'
@@ -8352,6 +8646,7 @@ function renderHCal(){
     ${_recepWarnPanelHTML()}
     ${_recepOrderPanelHTML()}
     ${_cleanWarnPanelHTML()}
+    ${_usApptPanelHTML()}
     <div id="hcal-week1">${buildWeekTable(week1Days,w1Title)}</div>
     <div id="hcal-week2">${buildWeekTable(week2Days,w2Title)}</div>
     <div style="padding:7px 10px;background:var(--surface);border-radius:var(--rs);font-size:11px;color:var(--text3)">
@@ -9516,6 +9811,7 @@ function renderCleanTrack(){
 const TAB_DEFS={
   events:    {label:'📌 進度里程碑',       row:1},
   main:      {label:'📋 追蹤總表',         row:1},
+  ustat:     {label:'📊 戶況總表',         row:1},
   zones:     {label:'🗂 分區工作表',       row:1},
   vendor:    {label:'🏢 廠商分類',         row:1},
   warn:      {label:'⚠️ 預警看板',         row:2},
@@ -9751,6 +10047,7 @@ function _annMarkAllRead(){var me=_annMe();var ch=false;_annArr().forEach(functi
 function annMarkRead(id){var a=_annById(id);if(!a)return;var me=_annMe();if(!a.readBy)a.readBy=[];if(a.readBy.indexOf(me)<0){a.readBy.push(me);save();}renderAnnounce();renderTabBar();}
 function _annShortAll(){return LOGIN_ALLOW.map(function(e){return String(e).replace(/@gmail\.com$/,'');});}
 function _annUnreadNames(a){var rb=a.readBy||[];return _annShortAll().filter(function(n){return rb.indexOf(n)<0;});}
+function _annReadersToggle(el){try{var n=el.nextElementSibling;if(n){n.style.display=(!n.style.display||n.style.display==='none')?'inline':'none';}}catch(e){}}
 function _annMustUnsigned(){var me=_annMe();return _annArr().filter(function(a){return a&&a.mustRead&&!((a.readBy||[]).indexOf(me)>=0);});}
 function toggleAnnForce(){_annAuthAsk('切換強制簽收',function(){S.annForce=!_annForceOn();save();renderAnnounce();toast(_annForceOn()?'已開啟：必讀未簽收前擋其他分頁':'已關閉強制簽收','⚙️');});}
 function _annGateBlock(target){if(target==='announce')return false;if(!_annForceOn())return false;var u=_annMustUnsigned();if(!u.length)return false;toast('有 '+u.length+' 則必讀公告未簽收，請先到公告欄按「我已讀」','📢');switchTab('announce');return true;}
@@ -9779,7 +10076,8 @@ function _annCardHTML(a){
   if(a.type==='task'&&a.assignee)meta+='<span>👤 負責：'+esc(a.assignee)+'</span>';
   if(a.unit)meta+='<span onclick="annGoUnit(\''+esc(a.unit)+'\')" style="cursor:pointer;color:#2563EB;text-decoration:underline">🔗 關聯 '+esc(a.unit)+'</span>';
   meta+='<span>發布：'+esc(a.author||'')+' · '+esc(String(a.ts||'').slice(5,16).replace('T',' '))+'</span>';
-  meta+='<span title="已簽收人數">👁 已讀 '+((a.readBy||[]).length)+'/'+LOGIN_ALLOW.length+'</span>';
+  meta+='<span title="點看已讀／未讀名單" onclick="_annReadersToggle(this)" style="cursor:pointer;text-decoration:underline dotted">👁 已讀 '+((a.readBy||[]).length)+'/'+LOGIN_ALLOW.length+'</span>';
+  meta+='<span style="display:none;color:var(--text3)">已讀：'+esc(((a.readBy||[]).slice().join('、'))||'—')+'　｜　未讀：<span style="color:#B91C1C">'+esc(_annUnreadNames(a).join('、')||'—')+'</span></span>';
   var _un=_annUnreadNames(a);if(a.mustRead&&_un.length)meta+='<span style="color:#B91C1C">未簽收：'+esc(_un.join('、'))+'</span>';
   meta+='</div>';
   var acts='<div class="no-print" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">';
@@ -9899,6 +10197,7 @@ function renderPane(id){
   else if(id==='clean')renderCleanTrack();
   else if(id==='uso')renderUso();
   else if(id==='pwo')renderPWO();
+  else if(id==='ustat')renderUStat();
   else if(id==='announce')renderAnnounce();
   else if(id==='units')renderUnits();
   else if(id==='hpend')renderHPend();
@@ -12734,4 +13033,5 @@ function _loginOnAuth(user){
 </script>
 </body>
 </html>
-<!-- v0713-01 app icon -->
+<!-- v0713-02 preview -->
+
