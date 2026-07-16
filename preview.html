@@ -327,7 +327,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 //  FIREBASE CONFIG — 請把下方換成你的 Firebase 專案設定
 // ════════════════════════════════════════════════════════
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, deleteDoc, getDocs, serverTimestamp, Timestamp }
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, writeBatch, doc, setDoc, onSnapshot, getDoc, collection, deleteDoc, getDocs, serverTimestamp, Timestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
@@ -343,7 +343,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 205;  // ← 每次部署新版時遞增（V0716-01 重複作業(dupes)頁字體放大（注意：今天=2026-07-16，前面 V0714-04/05/06 是把舊字頭帶下來的筆誤、已部署故歷史不回改，本版起正名 V0716）：列內容 11px→18px、群組標題 12px→18px、欄位標題 10px→14px，A/B/店標籤・筆數徽章・保留鈕一併放大，grid 欄寬放大避免 18px 擠爆（32/90/55/1fr/100/70/70→40/130/66/1fr/190/90/90）。純該頁版面。V0714-06 廠商下拉統一 A-Z：新增 classic `_vAZ()`（[...S.vendors] localeCompare zh-Hant numeric 排序、只排「下拉顯示」不動 S.vendors 本身順序＝不影響常用廠商排行），把 vOpts/新增缺失/批次改廠商/未清潔警示/篩選(含 datalist)/自動規則 所有廠商 <select> 選項改走 _vAZ()。V0714-05 精簡：①清死碼＝移除舊「分享連結」shareData() 函式＋load() 的 #data= 載入路徑（V0709-03 早已移除按鈕、唯讀分享改用 copyViewLink 通行碼 KIMZOG95）。②移除「🧹清潔追蹤」分頁＝TAB_DEFS 拿掉 clean＋刪掉會把 clean 塞回 tabOrder 的 migrate 行；renderCleanTrack 等函式與 pane-clean 留為無害死碼；清潔資料(cleanPlanDate/cleanSlot)與交屋行事曆的未清潔警示→產生清潔工作→點工派遣待帶入 主線完全不動；使用者現有 tabOrder 的 clean 舊槽會變空位，由使用者用「編輯排序」自行收（AI 不動 tabOrder）。③移除「🏛公設狀態表」分頁＝TAB_DEFS 拿掉 pubarea＋刪 migrate 回填＋預設 tabOrder 種子去掉 pubarea；renderPubArea 與 pane-pubarea 留為死碼；公設「固定清單」publicAreaList 變無介面的孤兒資料（不再可編輯、但不報錯、不被別處用）；公設「缺失」本身在公設分區/總表都在、不受影響；舊 tabOrder 空槽同上由使用者自行收。④showInlineAdd 版面：把「新增並繼續同戶／確認新增並關閉／取消」三顆按鈕從左下獨立一排，移到「預計進場/完成」那排最右邊（margin-left:auto）＝落在缺失內容右下、輸入完就近按、少一排。⑤追蹤總表表頭「↺重新編號」(renumber，會把 2990 筆全部重編 id) 上鎖：onclick 改 `_annAuthAsk('重新編號',renumber)`＝按下先要認證碼(_annAuthCode()＝S.annAuthCode||'MONGA')才執行，避免誤按。⑥移除「📦交屋前缺失彙整」分頁＝TAB_DEFS 拿掉 hpend＋刪 migrate 回填（原 hpend push 後接的 else-if events 改回獨立 if）＋預設 tabOrder 種子去掉 hpend；renderHPend／pane-hpend／_hpendState 留死碼；純檢視、無獨有資料（缺失在總表/廠商/派工單、交屋日在交屋狀態表都在）；舊 tabOrder 空槽由使用者自行收。⑦Excel 匯入廠商空白留空（importExcel `vendor:mapped.vendor||''`，拿掉 S.vendors[0] 預設）。⑧自動填入規則（新分頁「⚙自動規則」）：S.autoRules{enabled,vendorRules:[{kw,vendor}],dueDays,dueSkipSunday,defaultVendor} **走 meta 同步**（migrateState 預設＋applyRemote meta 清單加 autoRules，刻意不走獨立文件＝降低同步層改壞風險；代價＝升級過渡期若有人停舊版存 meta 可能洗掉規則、可重設）。掛新增缺失：廠商預設改空白（showInlineAdd _pendingRow.vendor=''）、issue oninput→_iaAutoVendor 依關鍵字命中第一個填廠商（空白才填、不覆蓋手動）、confirmInlineAdd 三處 push 用 _autoDue(戶) 補預定完成日＝該戶 hu.planDate+dueDays(遇週日順延)、confirm 時 vendor 空白再用 _autoVendor 補。_autoVendor/_autoDue/_iaAutoVendor/renderAutoRules 皆 classic 作用域。V0714-04 🔴止血：舊版整包覆蓋 rows/completed 致「別人剛輸入的整戶缺失永久消失」＝applyRemote 加版本閘門（_meta.writerVer<本機且該列不在 remote.trash/未被退回未完成時）保留本機獨有列＝倖存者，下次存檔洗回雲端＝全員自癒（方向同 V0713-10、補「刪除」這一向）；_fbSave 埋 _lastWrite{ver,by,at}、_fbListen 帶 writerVer 給 applyRemote，埋點兼供 Firestore 事後追誰(哪版)覆蓋。純同步層、不動 UI/資料結構/SAVE_FIELDS。V0714-03 LOGIN_ALLOW 加第10人 jasonchao209@gmail.com（同步：dispatch D0714-01 名單＋Firestore 規則 isEditor，三處一致才有寫入權；check_g95 名單檢查改 10 人）。V0714-02 日報地主總數 _rptOwnerTotal 母集合加入 clientData 的戶（漏掉未排驗收未進交屋管理的地主戶，例 地B6-8→184；加入後=客戶名冊 185）。另本日資料校正：依115.05.05地主分配表把10戶自購→地主、業A5-1→業主（客戶清單，走資料非程式）。V0714-01 驗屋日報「地主戶分算」：總數全部維持原算法（含地主），地主為子集另標、純顯示不動資料層。A＝今日初驗行「（地主 X）」＋累計完成行「（地主 Y）」＋複驗/交屋行「（地主 今日X・累計Y）」＋本週統計各行下「└ 地主戶：預計｜實際｜累計」；B＝下週預計後獨立「🏠 地主戶統計」區塊（總戶＋三階段累計＋本週實際）。判定＝isOwnerUnit(key)（clientData type 地主戶或「地」字頭）。hrptCounts/_rptTodayDetail/_rptPlanRange/_rptDoneRange 加可選 fltr 參數（不影響既有呼叫）＋_rptOwnerTotal()。開關 S.rptFc.hideOwner（走 meta 全員同步），完工推估設定列「顯示地主戶分算」預設勾選、取消勾＝A+B 全隱藏。業主戶不分算（使用者指示）。舊「儲存這份」快照不會自動長出新格式、按「↻重新產生」。V0713-10 🔴修「勾完成的缺失 1-3 分鐘後又復活」＋「公告已讀被洗掉重複要求簽收」同步層四修：①startFirebaseListen 的丟棄閘(_saveTimer||_saving 直接 return)改交給 applyRemote 排隊——增量同步(V0709-10)下被丟棄的更新因 _lastRev 已標記「看過」＝永遠不補讀→該機 rows 停在舊狀態、下次存檔把整包舊 rows 寫回雲端＝缺失復活主因。②排隊機制改「只記變動欄位清單(_pendingKeys 聯集)、真正套用時 window._fbReadFields 重新抓雲端最新」——原本 _pendingRemote 存「排隊當下的快照」會過期，事後 hasDirty=false 走 S=remote 整包蓋回＝復活幫兇；順修多筆排隊互相覆蓋掉更新的舊缺陷；排隊期間有存檔＝過期快照絕不套用。③mergeRows 防復活保險：遠端有、本地沒有的列，若「本地已刪且 dirty(尚未同步)」或「id+issue 已在合併後 completed(＝已完成)」→不加回；no-dirty 分支 S=remote 後也 _purgeDoneFromRows 依 completed 清 rows 殭屍列(雲端被舊版整包寫回時全員自癒)。④公告已讀簽收 readBy 逐則取 本機∪遠端 聯集(_mergeAnnReadBy，雙向)＝簽收只增不減，不再被舊 meta 快照洗掉。純同步層、不動 UI/資料結構；上線前 g95FullBackup＋9 人重整。V0713-09 ①🔴戶況總表改「棟+樓＝一戶」(方案A)：_usUnitList 依 r.unit+r.floor 分組、o.disp=棟-樓、_usUnitSort(棟→樓高低) 套四類分區；約定複驗日改存 S.reCheckUF[disp](原 hu.reCheckDate per棟，改 per棟樓，_usSetRecheck/_usApptEditor/_usApptPanelHTML 皆改；舊 per棟複驗日不遷移、需重設)；初驗日仍取 hu[棟].planDate(各樓共用)。②派工單清單 戶別/樓層/初驗完成(round)/等待天數 四欄標題可點排序 pwoHdrSort/_pwoHdr/_pwoRowDir(再點切升降▲▼)，工項排序下拉保留。V0713-08 ①戶況依戶別戶別膠囊併樓層(A16-1F)去掉獨立小字 ②「最後完成」只在可複驗(remaining===0)戶顯示(避免與未完成衝突) ③廠商派工單清單加「等待天數」欄(初驗完成日→今天未完成幾天，≥14紅≥7琥珀)＋工項排序新增 等待天數多→少/樓層高→低/戶別A→Z(_pwoSort 分支)。V0713-07 ①戶況文字報告「依廠商」改表格(_usVendorReportRows；彈窗 HTML 表格廠商/未完成/已完成/平均/推估/逾期，複製為 TSV 可貼 Excel，去掉每行重複標籤) ②戶況依戶別單元列補「樓層(o.floors=各列 distinct floor)＋最後完成日(o.lastDone=max actualDone)」(初驗日 o.planDate 本就有)。V0713-06 派工單成績單總覽卡片改「點擊全螢幕彈窗展開」(原卡內展開太窄)：`_pwoCoverOpenModal(v)` position:fixed overlay(max-980px)＝大字統計卡+_pwoCoverDetailHTML(算式+未完成缺失清單)+「📷這家圖片」pwoExportOneCover。卡片 onclick 改開 modal、⤢ 提示。V0713-05 戶況總表「📝 文字報告」：`_usTextReport`(跟當前視圖；依戶別＝總覽計數+約定複驗列戶+停滯列戶+可複驗列戶、快好了/進行中只計數；依廠商＝各家成績單一行)＋`_usReportOpen`彈窗textarea＋`_usReportCopy`(navigator.clipboard+_rptCopyFallback)。V0713-04 ①戶況總表「依廠商」加缺失排序下拉 _usDSort/_usDefectSortFn(戶別/樓層/預計進場/逾期/#編號，展開套用) ②派工單成績單總覽卡片可點開 _pwoCoverOpen/_pwoCoverToggle/_pwoCoverDetailHTML(展開顯示全工地&本廠商起算日/效率/推估+該廠商未完成缺失清單，會議用)。V0713-03 戶況總表「依廠商」視圖展開的每筆缺失補顯示「樓層」＋「該戶初驗日期(hu.planDate)」(_usDefectRowHTML showUnit 分支)。V0713-02 八合一：①缺失「代工/幫手」欄(廠商欄維持歸責、排行只認廠商、代工不計統計) ②空白缺失(issue 空)不進統計/排行/計數/匯出(_voidRow，結構操作不受影響) ③戶別下拉可複選(改用 filterMainKeyword 不收合)+特殊項排序(梯廳A>梯廳B>甲>乙>丙>丁 移最下) ④公告「已讀X/Y」可點展開已讀/未讀名單(一般公告也適用) ⑤取消/未到看板依「標記日的週」分組(本週展開其他週收合，截圖/PDF全展開)+原本日期不換行省空白 ⑥戶況總表新分頁 ustat(依戶別/依廠商雙視圖；約定複驗區 hu.reCheckDate 依日期倒數+紅≤3天且未完成>5；四類分區停滯/可複驗/快好了(門檻≤5可調)/進行中收合；只給戶別/廠商名上色；展開內嵌 #ID跳轉+完成勾選+預計進場/完成日即存+未排空紅框；約定複驗日同步交屋行事曆獨立面板不碰 planDate) ⑦廠商派工單每家第一頁「進度成績單」封面(未完成/已完成/進度天數+全工地&本廠商起算日=該廠商各戶最早 hu.planDate+完成效率週日不計+推估完成日週日不計) ⑧CODE_VERSION 190。V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 206;  // ← 每次部署新版時遞增（V0716-02 🔴根治資料層：每筆缺失一份 Firestore 文件＝projects/main/defects/{key}（{d:列物件,st:'o'未完成/'d'已完成,mt,del墓碑,by,ver}）。存檔只寫「有變動的那幾筆」（classic _dfComputeChanges diff）、刪除＝墓碑（垃圾桶 UI 不變）、監聽 onSnapshot(defects) 原生只推變動文件（classic _dfApplyDocs 逐筆合併、本機 dirty 贏）＝沒有人寫得動自己沒碰過的缺失＝整包互蓋物理絕緣、根治掉資料。rows/completed 不再走 _fields 整包文件（_computeDirtyFields 在 _dfReady 時跳過、_fbListen 忽略 legacy rev、applyRemote 開頭 d.rows/completed 換成本機＝舊版整包寫入絕緣）；_fields/rows+completed 凍結當備份。S.rows/S.completed 介面完全不變（每筆多 _k 穩定碼＝文件 key，重新編號不搬文件），渲染/報表/派工單全不動。一次性遷移 _dfMigrate（開機看 _fields/dfMig 標記；key=r+id/c+compId 冪等、兩台同時遷移不重複）；完整還原 g95FullRestore 設 _dfFullReset＝缺席文件補墓碑。開啟 Firestore persistentLocalCache（多分頁）＝重整只重讀變動文件。測試/重置工具 window._dfResetFromLegacy('MONGA')。舊版靠版本閘門自動擋寫。V0716-01 重複作業(dupes)頁字體放大（注意：今天=2026-07-16，前面 V0714-04/05/06 是把舊字頭帶下來的筆誤、已部署故歷史不回改，本版起正名 V0716）：列內容 11px→18px、群組標題 12px→18px、欄位標題 10px→14px，A/B/店標籤・筆數徽章・保留鈕一併放大，grid 欄寬放大避免 18px 擠爆（32/90/55/1fr/100/70/70→40/130/66/1fr/190/90/90）。純該頁版面。V0714-06 廠商下拉統一 A-Z：新增 classic `_vAZ()`（[...S.vendors] localeCompare zh-Hant numeric 排序、只排「下拉顯示」不動 S.vendors 本身順序＝不影響常用廠商排行），把 vOpts/新增缺失/批次改廠商/未清潔警示/篩選(含 datalist)/自動規則 所有廠商 <select> 選項改走 _vAZ()。V0714-05 精簡：①清死碼＝移除舊「分享連結」shareData() 函式＋load() 的 #data= 載入路徑（V0709-03 早已移除按鈕、唯讀分享改用 copyViewLink 通行碼 KIMZOG95）。②移除「🧹清潔追蹤」分頁＝TAB_DEFS 拿掉 clean＋刪掉會把 clean 塞回 tabOrder 的 migrate 行；renderCleanTrack 等函式與 pane-clean 留為無害死碼；清潔資料(cleanPlanDate/cleanSlot)與交屋行事曆的未清潔警示→產生清潔工作→點工派遣待帶入 主線完全不動；使用者現有 tabOrder 的 clean 舊槽會變空位，由使用者用「編輯排序」自行收（AI 不動 tabOrder）。③移除「🏛公設狀態表」分頁＝TAB_DEFS 拿掉 pubarea＋刪 migrate 回填＋預設 tabOrder 種子去掉 pubarea；renderPubArea 與 pane-pubarea 留為死碼；公設「固定清單」publicAreaList 變無介面的孤兒資料（不再可編輯、但不報錯、不被別處用）；公設「缺失」本身在公設分區/總表都在、不受影響；舊 tabOrder 空槽同上由使用者自行收。④showInlineAdd 版面：把「新增並繼續同戶／確認新增並關閉／取消」三顆按鈕從左下獨立一排，移到「預計進場/完成」那排最右邊（margin-left:auto）＝落在缺失內容右下、輸入完就近按、少一排。⑤追蹤總表表頭「↺重新編號」(renumber，會把 2990 筆全部重編 id) 上鎖：onclick 改 `_annAuthAsk('重新編號',renumber)`＝按下先要認證碼(_annAuthCode()＝S.annAuthCode||'MONGA')才執行，避免誤按。⑥移除「📦交屋前缺失彙整」分頁＝TAB_DEFS 拿掉 hpend＋刪 migrate 回填（原 hpend push 後接的 else-if events 改回獨立 if）＋預設 tabOrder 種子去掉 hpend；renderHPend／pane-hpend／_hpendState 留死碼；純檢視、無獨有資料（缺失在總表/廠商/派工單、交屋日在交屋狀態表都在）；舊 tabOrder 空槽由使用者自行收。⑦Excel 匯入廠商空白留空（importExcel `vendor:mapped.vendor||''`，拿掉 S.vendors[0] 預設）。⑧自動填入規則（新分頁「⚙自動規則」）：S.autoRules{enabled,vendorRules:[{kw,vendor}],dueDays,dueSkipSunday,defaultVendor} **走 meta 同步**（migrateState 預設＋applyRemote meta 清單加 autoRules，刻意不走獨立文件＝降低同步層改壞風險；代價＝升級過渡期若有人停舊版存 meta 可能洗掉規則、可重設）。掛新增缺失：廠商預設改空白（showInlineAdd _pendingRow.vendor=''）、issue oninput→_iaAutoVendor 依關鍵字命中第一個填廠商（空白才填、不覆蓋手動）、confirmInlineAdd 三處 push 用 _autoDue(戶) 補預定完成日＝該戶 hu.planDate+dueDays(遇週日順延)、confirm 時 vendor 空白再用 _autoVendor 補。_autoVendor/_autoDue/_iaAutoVendor/renderAutoRules 皆 classic 作用域。V0714-04 🔴止血：舊版整包覆蓋 rows/completed 致「別人剛輸入的整戶缺失永久消失」＝applyRemote 加版本閘門（_meta.writerVer<本機且該列不在 remote.trash/未被退回未完成時）保留本機獨有列＝倖存者，下次存檔洗回雲端＝全員自癒（方向同 V0713-10、補「刪除」這一向）；_fbSave 埋 _lastWrite{ver,by,at}、_fbListen 帶 writerVer 給 applyRemote，埋點兼供 Firestore 事後追誰(哪版)覆蓋。純同步層、不動 UI/資料結構/SAVE_FIELDS。V0714-03 LOGIN_ALLOW 加第10人 jasonchao209@gmail.com（同步：dispatch D0714-01 名單＋Firestore 規則 isEditor，三處一致才有寫入權；check_g95 名單檢查改 10 人）。V0714-02 日報地主總數 _rptOwnerTotal 母集合加入 clientData 的戶（漏掉未排驗收未進交屋管理的地主戶，例 地B6-8→184；加入後=客戶名冊 185）。另本日資料校正：依115.05.05地主分配表把10戶自購→地主、業A5-1→業主（客戶清單，走資料非程式）。V0714-01 驗屋日報「地主戶分算」：總數全部維持原算法（含地主），地主為子集另標、純顯示不動資料層。A＝今日初驗行「（地主 X）」＋累計完成行「（地主 Y）」＋複驗/交屋行「（地主 今日X・累計Y）」＋本週統計各行下「└ 地主戶：預計｜實際｜累計」；B＝下週預計後獨立「🏠 地主戶統計」區塊（總戶＋三階段累計＋本週實際）。判定＝isOwnerUnit(key)（clientData type 地主戶或「地」字頭）。hrptCounts/_rptTodayDetail/_rptPlanRange/_rptDoneRange 加可選 fltr 參數（不影響既有呼叫）＋_rptOwnerTotal()。開關 S.rptFc.hideOwner（走 meta 全員同步），完工推估設定列「顯示地主戶分算」預設勾選、取消勾＝A+B 全隱藏。業主戶不分算（使用者指示）。舊「儲存這份」快照不會自動長出新格式、按「↻重新產生」。V0713-10 🔴修「勾完成的缺失 1-3 分鐘後又復活」＋「公告已讀被洗掉重複要求簽收」同步層四修：①startFirebaseListen 的丟棄閘(_saveTimer||_saving 直接 return)改交給 applyRemote 排隊——增量同步(V0709-10)下被丟棄的更新因 _lastRev 已標記「看過」＝永遠不補讀→該機 rows 停在舊狀態、下次存檔把整包舊 rows 寫回雲端＝缺失復活主因。②排隊機制改「只記變動欄位清單(_pendingKeys 聯集)、真正套用時 window._fbReadFields 重新抓雲端最新」——原本 _pendingRemote 存「排隊當下的快照」會過期，事後 hasDirty=false 走 S=remote 整包蓋回＝復活幫兇；順修多筆排隊互相覆蓋掉更新的舊缺陷；排隊期間有存檔＝過期快照絕不套用。③mergeRows 防復活保險：遠端有、本地沒有的列，若「本地已刪且 dirty(尚未同步)」或「id+issue 已在合併後 completed(＝已完成)」→不加回；no-dirty 分支 S=remote 後也 _purgeDoneFromRows 依 completed 清 rows 殭屍列(雲端被舊版整包寫回時全員自癒)。④公告已讀簽收 readBy 逐則取 本機∪遠端 聯集(_mergeAnnReadBy，雙向)＝簽收只增不減，不再被舊 meta 快照洗掉。純同步層、不動 UI/資料結構；上線前 g95FullBackup＋9 人重整。V0713-09 ①🔴戶況總表改「棟+樓＝一戶」(方案A)：_usUnitList 依 r.unit+r.floor 分組、o.disp=棟-樓、_usUnitSort(棟→樓高低) 套四類分區；約定複驗日改存 S.reCheckUF[disp](原 hu.reCheckDate per棟，改 per棟樓，_usSetRecheck/_usApptEditor/_usApptPanelHTML 皆改；舊 per棟複驗日不遷移、需重設)；初驗日仍取 hu[棟].planDate(各樓共用)。②派工單清單 戶別/樓層/初驗完成(round)/等待天數 四欄標題可點排序 pwoHdrSort/_pwoHdr/_pwoRowDir(再點切升降▲▼)，工項排序下拉保留。V0713-08 ①戶況依戶別戶別膠囊併樓層(A16-1F)去掉獨立小字 ②「最後完成」只在可複驗(remaining===0)戶顯示(避免與未完成衝突) ③廠商派工單清單加「等待天數」欄(初驗完成日→今天未完成幾天，≥14紅≥7琥珀)＋工項排序新增 等待天數多→少/樓層高→低/戶別A→Z(_pwoSort 分支)。V0713-07 ①戶況文字報告「依廠商」改表格(_usVendorReportRows；彈窗 HTML 表格廠商/未完成/已完成/平均/推估/逾期，複製為 TSV 可貼 Excel，去掉每行重複標籤) ②戶況依戶別單元列補「樓層(o.floors=各列 distinct floor)＋最後完成日(o.lastDone=max actualDone)」(初驗日 o.planDate 本就有)。V0713-06 派工單成績單總覽卡片改「點擊全螢幕彈窗展開」(原卡內展開太窄)：`_pwoCoverOpenModal(v)` position:fixed overlay(max-980px)＝大字統計卡+_pwoCoverDetailHTML(算式+未完成缺失清單)+「📷這家圖片」pwoExportOneCover。卡片 onclick 改開 modal、⤢ 提示。V0713-05 戶況總表「📝 文字報告」：`_usTextReport`(跟當前視圖；依戶別＝總覽計數+約定複驗列戶+停滯列戶+可複驗列戶、快好了/進行中只計數；依廠商＝各家成績單一行)＋`_usReportOpen`彈窗textarea＋`_usReportCopy`(navigator.clipboard+_rptCopyFallback)。V0713-04 ①戶況總表「依廠商」加缺失排序下拉 _usDSort/_usDefectSortFn(戶別/樓層/預計進場/逾期/#編號，展開套用) ②派工單成績單總覽卡片可點開 _pwoCoverOpen/_pwoCoverToggle/_pwoCoverDetailHTML(展開顯示全工地&本廠商起算日/效率/推估+該廠商未完成缺失清單，會議用)。V0713-03 戶況總表「依廠商」視圖展開的每筆缺失補顯示「樓層」＋「該戶初驗日期(hu.planDate)」(_usDefectRowHTML showUnit 分支)。V0713-02 八合一：①缺失「代工/幫手」欄(廠商欄維持歸責、排行只認廠商、代工不計統計) ②空白缺失(issue 空)不進統計/排行/計數/匯出(_voidRow，結構操作不受影響) ③戶別下拉可複選(改用 filterMainKeyword 不收合)+特殊項排序(梯廳A>梯廳B>甲>乙>丙>丁 移最下) ④公告「已讀X/Y」可點展開已讀/未讀名單(一般公告也適用) ⑤取消/未到看板依「標記日的週」分組(本週展開其他週收合，截圖/PDF全展開)+原本日期不換行省空白 ⑥戶況總表新分頁 ustat(依戶別/依廠商雙視圖；約定複驗區 hu.reCheckDate 依日期倒數+紅≤3天且未完成>5；四類分區停滯/可複驗/快好了(門檻≤5可調)/進行中收合；只給戶別/廠商名上色；展開內嵌 #ID跳轉+完成勾選+預計進場/完成日即存+未排空紅框；約定複驗日同步交屋行事曆獨立面板不碰 planDate) ⑦廠商派工單每家第一頁「進度成績單」封面(未完成/已完成/進度天數+全工地&本廠商起算日=該廠商各戶最早 hu.planDate+完成效率週日不計+推估完成日週日不計) ⑧CODE_VERSION 190。V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -355,7 +355,13 @@ try {
     isTokenAutoRefreshEnabled: true
   });
 } catch(e){ console.warn('AppCheck init failed', e); }
-const db   = getFirestore(app);
+// V0716-02：開啟 Firestore 本機快取（IndexedDB、多分頁共用）——defects 每筆一文件後，
+// 重整/重開只需向伺服器重讀「有變動」的文件（快取靠 resume token 續傳），初載讀取成本不會爆。
+// 不支援的環境（無痕/舊瀏覽器）自動回退預設（無快取、行為同舊版）。
+let db;
+try {
+  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+} catch(e){ console.warn('[Firestore] 本機快取不可用，改用預設模式', e); db = getFirestore(app); }
 // ── 登入（Auth）：曝露給主程式用；providers 需在 Firebase 後台啟用後才會成功 ──
 const auth = getAuth(app);
 window._auth = auth;
@@ -451,9 +457,20 @@ async function _zDec(b64){
   return new TextDecoder().decode(buf);
 }
 // 從 _fields 子集合讀取完整 state（z=gzip 壓縮／d=舊純JSON 都認）
+// V0716-02：已遷移到 defects（window._dfSkipLegacy）＝逐檔讀、跳過 rows/completed 兩份凍結大文件（省 ~180KB/次頻寬）
 async function _readFieldDocs(){
-  const fieldDocs = await getDocs(fieldsCol);
   const fields = {};
+  if(window._dfSkipLegacy){
+    const keys = SAVE_FIELDS.filter(k=>k!=='rows' && k!=='completed');
+    await Promise.all(keys.map(async k=>{
+      try{
+        const d=await getDoc(doc(fieldsCol,k));
+        if(d.exists()){ const raw=d.data(); const json=(raw&&typeof raw.z==='string')?await _zDec(raw.z):raw.d; if(json!=null) fields[k]=JSON.parse(json); }
+      }catch(e){}
+    }));
+    return _mergeFieldsToState(fields);
+  }
+  const fieldDocs = await getDocs(fieldsCol);
   for(const d of fieldDocs.docs){
     try{
       const raw=d.data();
@@ -542,6 +559,9 @@ window._fbListen = function(onChange){
                     : SAVE_FIELDS.filter(k=>String(rev[k]||'')!==String(_lastRev[k]||''));
         // 相容舊版：舊版 _fbSave 只 bump _ts、不帶 rev；若 _ts 變了卻沒任何 rev 變＝可能舊版寫的，保險整包重讀
         if(!firstLoad && changed.length===0 && String(data._ts||'')!==String(_lastTs||'')){ changed = SAVE_FIELDS.slice(); readAll = true; }
+        // V0716-02：defects 模式下 rows/completed 已改走每筆一文件（defects 集合）；
+        // legacy _fields/rows+completed 的 rev（舊版寫的）一律忽略、不重讀＝舊版整包寫入絕緣。
+        if(window._dfActive) changed = changed.filter(k=>k!=='rows' && k!=='completed');
         _lastRev = rev; _lastTs = data._ts;
         // 初次載入／舊版保險＝讀全部；一般增量＝排除自己剛寫的 echo（rev 對得上 _selfRevMarks 才是自己）
         const toRead = readAll ? changed : changed.filter(k=>String(rev[k]||'')!==String(_selfRevMarks[k]||''));
@@ -578,6 +598,96 @@ window._fbReadFields = async function(keys){
     if(!cur) return await _readFieldDocs();
     return _mergeFieldsToState(Object.assign({}, _splitState(cur), partial));
   }catch(e){ console.error('[Firebase] readFields error', e); return null; }
+};
+
+// ═══ V0716-02 🔴根治：每筆缺失一份文件（projects/main/defects/{key}）═══
+// 文件格式 {d:列物件, st:'o'未完成/'d'已完成, mt:最後修改ms, del:墓碑, by:誰, ver:寫入版本}。
+// 存檔只寫「有變動的那幾筆」＝沒有人寫得動自己沒碰過的缺失＝整包互蓋在物理上不可能。
+const defectsCol = collection(ref, 'defects');
+window._dfActive = false;   // classic _dfBoot 成功後設 true；_fbListen 據此忽略 legacy rows/completed 的 rev
+window._dfSaveDocs = async function(list){
+  for(let i=0;i<list.length;i+=400){
+    const batch = writeBatch(db);
+    list.slice(i,i+400).forEach(it=>{ batch.set(doc(defectsCol, it.k), it.doc); });
+    await batch.commit();
+  }
+  if(list.length) console.log('[defects] 寫入 '+list.length+' 份缺失文件');
+};
+// 遷移標記（1 read；放 _fields/dfMig、不污染 defects 集合）
+window._dfCheckMigrated = async function(){
+  const s = await getDoc(doc(fieldsCol,'dfMig'));
+  return s.exists() ? s.data() : null;
+};
+// 一次性遷移：legacy rows/completed → 每筆一份文件。key 用固定規則（r+id／c+compId）＝冪等，兩台同時遷移也不會重複。
+window._dfMigrate = async function(state){
+  const now = Date.now(); const by = String(window._authEmail||'').replace(/@gmail\.com$/,'');
+  const used = new Set(); const list = [];
+  function add(o, st, pre, idv){
+    let k = pre + String(idv!=null?idv:'x'); let n = 2;
+    while(used.has(k)){ k = pre + String(idv!=null?idv:'x') + 'x' + (n++); }
+    used.add(k);
+    const d = JSON.parse(JSON.stringify(o)); delete d._k;  // 深拷貝＋剝 undefined（Firestore 不收 undefined）
+    list.push({ k:k, doc:{ d:d, st:st, mt:now, del:false, by:by, ver:CODE_VERSION } });
+  }
+  (state.rows||[]).forEach(r=>add(r,'o','r',r.id));
+  (state.completed||[]).forEach(c=>add(c,'d','c',c.compId));
+  await window._dfSaveDocs(list);
+  await setDoc(doc(fieldsCol,'dfMig'), { at:now, by:by, ver:CODE_VERSION, rows:(state.rows||[]).length, completed:(state.completed||[]).length }, { merge:true });
+  console.log('[defects] 一次性遷移完成：未完成 '+(state.rows||[]).length+'＋已完成 '+(state.completed||[]).length+' 筆');
+  return list.length;
+};
+// 監聽整個集合：Firestore 原生只推「有變動的文件」。第一包 resolve（空的本機快取包會跳過、等伺服器包）；之後逐包丟給 onDocs。
+window._dfInit = function(onDocs){
+  return new Promise((resolve)=>{
+    let first = true;
+    onSnapshot(defectsCol, snap=>{
+      try{
+        if(first){
+          if(snap.metadata.fromCache && snap.empty) return;  // 全新裝置的空快取包＝不算數，等伺服器包
+          first = false;
+          resolve({ docs: snap.docs.map(dd=>({ k:dd.id, d:dd.data() })) });
+          return;
+        }
+        const chs = snap.docChanges().map(c=>({ k:c.doc.id, type:c.type, d:(c.type==='removed'?null:c.doc.data()) }));
+        if(chs.length && typeof onDocs==='function') onDocs(chs);
+      }catch(e){ console.error('[defects] listen 處理失敗', e); }
+    }, err=>{ console.error('[defects] listen error', err); if(first){ first=false; resolve(null); } });
+  });
+};
+// 測試/重置工具（console 手動用）：清空 defects 集合＋遷移標記，從 legacy _fields/rows+completed 重新遷移（上 index 前清 preview 測試資料用）
+window._dfResetFromLegacy = async function(pass){
+  if(String(pass||'').toUpperCase()!=='MONGA') return '需要解鎖碼：_dfResetFromLegacy("MONGA")';
+  const all = await getDocs(defectsCol);
+  const ids = all.docs.map(d0=>d0.id);
+  for(let i=0;i<ids.length;i+=400){
+    const batch = writeBatch(db);
+    ids.slice(i,i+400).forEach(id0=>batch.delete(doc(defectsCol,id0)));
+    await batch.commit();
+  }
+  try{ await deleteDoc(doc(fieldsCol,'dfMig')); }catch(e){}
+  window._dfSkipLegacy = false;  // 重遷移要讀 legacy rows/completed 凍結檔
+  const legacy = await window._fbLoad();
+  if(!legacy || !legacy.rows || !legacy.rows.length) return '已清空 '+ids.length+' 份，但讀不到 legacy 資料、未重遷移';
+  const n = await window._dfMigrate(legacy);
+  return '已清空 '+ids.length+' 份並重新遷移 '+n+' 筆（請所有分頁重整）';
+};
+// 割接收尾工具（console 手動用）：比對 legacy rows/completed 與 defects，把「legacy 有、defects 沒有」的列補進 defects。
+// 用途＝割接瞬間停舊版的人最後一筆存檔寫進 legacy、剛好在遷移快照之後＝defects 會漏這幾筆；上線後跑一次撈回。
+// ⚠️ 以 id/compId 比對＝要在「重新編號」之前跑，否則會誤判大量差異。
+window._dfImportLegacyDiff = async function(pass){
+  if(String(pass||'').toUpperCase()!=='MONGA') return '需要解鎖碼：_dfImportLegacyDiff("MONGA")';
+  const prev = window._dfSkipLegacy; window._dfSkipLegacy = false;
+  const legacy = await window._fbLoad(); window._dfSkipLegacy = prev;
+  if(!legacy || !legacy.rows) return '讀不到 legacy 資料';
+  const dsnap = await getDocs(defectsCol);
+  const haveR = new Set(); const haveC = new Set();   // 含墓碑（已刪的不補回）
+  dsnap.docs.forEach(dd=>{ const v=dd.data(); if(!v||!v.d) return; if(v.st==='d') haveC.add(v.d.compId); else haveR.add(v.d.id); });
+  const now = Date.now(); const by = String(window._authEmail||'').replace(/@gmail\.com$/,''); const list = [];
+  (legacy.rows||[]).forEach(r=>{ if(!haveR.has(r.id)) list.push({ k:'r'+r.id+'z'+now.toString(36), doc:{ d:JSON.parse(JSON.stringify(r)), st:'o', mt:now, del:false, by:by, ver:CODE_VERSION } }); });
+  (legacy.completed||[]).forEach(c=>{ if(!haveC.has(c.compId)) list.push({ k:'c'+c.compId+'z'+now.toString(36), doc:{ d:JSON.parse(JSON.stringify(c)), st:'d', mt:now, del:false, by:by, ver:CODE_VERSION } }); });
+  if(!list.length) return '無差異：legacy 與 defects 一致';
+  await window._dfSaveDocs(list);
+  return '已補進 '+list.length+' 筆 legacy 差異（請重整確認畫面）';
 };
 
 window._fbLoad = async function(){
@@ -617,7 +727,17 @@ window.exportHandoverExport = async function(days){
     const fb = await window._fbLoad();
     if(!fb || !fb.handoverUnits) return {error:'no data from _fbLoad'};
     const hu = fb.handoverUnits;
-    const allRows=[...(fb.completed||[]),...(fb.rows||[])];
+    // V0716-02：已遷移到 defects＝缺失改讀 defects 集合（legacy rows/completed 是凍結檔、會過期）
+    let allRows=[...(fb.completed||[]),...(fb.rows||[])];
+    try{
+      const mig=await getDoc(doc(fieldsCol,'dfMig'));
+      if(mig.exists()){
+        const dsnap=await getDocs(defectsCol);
+        const arr=[];
+        dsnap.docs.forEach(dd=>{ const v=dd.data(); if(v && !v.del && v.d) arr.push(v.d); });
+        allRows=arr;
+      }
+    }catch(e){ console.warn('[export] defects 讀取失敗，回退 legacy', e); }
     const defectCache=new Map();
     allRows.forEach(r=>{
       if(!r.unit)return;
@@ -751,6 +871,11 @@ async function initVersionGate(){
               // 只寫「本機真的改過」的欄位（差異儲存），避免舊分頁整包覆蓋別人的設定
               // （曾造成：改版瞬間某個舊分頁把檢視到期日/其他設定蓋回預設值）
               const _dk=(typeof _computeDirtyFields==='function')?_computeDirtyFields():null;
+              // V0716-02：缺失文件也做最終存檔（classic 全域函式在 module 可見；反向才不行）
+              try{
+                const _dfc=(typeof _dfComputeChanges==='function')?_dfComputeChanges():[];
+                if(_dfc&&_dfc.length){ setSyncStatus('saving'); await window._dfSaveDocs(_dfc); if(typeof _dfMap!=='undefined'){_dfc.forEach(c=>{_dfMap[c.k]=c.doc;});} }
+              }catch(e){ console.error('[Version] defects 最終存檔失敗', e); }
               if(!_dk || _dk.size>0){ setSyncStatus('saving'); await window._fbSave(S, _dk); }
               _savedSnapshot=_takeSnapshot();
               console.log('[Version] 自動存檔完成 ✅（僅寫變動欄位）');
@@ -873,7 +998,7 @@ if(window._LOGIN_GATE){
 </div>
 <div id="toast-wrap"></div>
 <div class="shell">
-  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0716-01</span>
+  <div class="page-hdr">🏗 <span id="app-title">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print" onclick="renameApp()" title="改系統名稱">✏️</button> <span>多人協作 · 即時同步</span><span style="font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;margin-left:6px;font-weight:600">V0716-02</span>
     <span id="sync-indicator" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;margin-left:8px;cursor:pointer" onclick="manualSave()" title="點擊立即儲存">⏳ 連線中…</span>
     <span id="user-count" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;display:none" title="目前開啟此系統的使用人數">👤 1 人</span>
     <button class="btn btn-g no-print" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）" style="margin-left:auto;font-size:12px">⬇ 匯出備份</button><button class="btn no-print" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）" style="margin-left:6px;font-size:12px;border-color:#E24B4A;color:#791F1F">⬆ 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" class="btn no-print" onclick="_doLogout()" style="display:none;margin-left:8px;font-size:12px">登出</button>
@@ -1185,6 +1310,144 @@ function logChange(type, detail, extra){
   if(S.changelog.length>500)S.changelog=S.changelog.slice(0,500);
 }
 
+// ═══ V0716-02 🔴根治：defects 每筆一文件（classic 端）═══════════════════
+// _dfMap＝最後已知「雲端」每筆文件狀態（key→{d:列物件,st,mt,del,by,ver}）；S.rows/S.completed 介面不變、由 map 重組。
+// 本機未存檔的變更（S 相對 _dfMap 的差異）＝dirty＝重組時本機贏、存檔時 _dfComputeChanges 只寫那幾筆洗回雲端。
+// 刪除＝墓碑（del:true，文件保留＝永久防復活）；垃圾桶 S.trash 照舊走 _fields/trash（UI 不變）。
+var _dfMap={};
+var _dfReady=false;      // defects 資料層就緒（_dfBoot 成功）；false＝沿用舊 rows/completed 整包制（離線/初始化失敗的退路）
+var _dfPendingChs=[];
+var _dfKeySeq=0;
+function _dfNewKey(){ _dfKeySeq++; return 'k'+Date.now().toString(36)+(_dfKeySeq%1296).toString(36)+Math.random().toString(36).slice(2,8); }
+function _dfEnsureKeys(){
+  // 補穩定碼；順帶防重複（例如某功能用 {...r} 複製列會帶到同一個 _k）＝後到者換新 key、變成新文件
+  var seen={};
+  (S.rows||[]).concat(S.completed||[]).forEach(function(r){
+    if(!r._k || seen[r._k]) r._k=_dfNewKey();
+    seen[r._k]=1;
+  });
+}
+function _dfBody(o){ var d=Object.assign({},o); delete d._k; return d; }
+// S 相對 _dfMap 的變動＝要寫的文件清單：新增/修改/完成/退回＝覆寫；進垃圾桶＝墓碑；不明消失＝不動文件（安全預設，下次合併補回）
+function _dfComputeChanges(){
+  if(!_dfReady) return [];
+  _dfEnsureKeys();
+  var now=Date.now(); var by=String(window._authEmail||'').replace(/@gmail\.com$/,''); var ver=window._CODE_VERSION||0;
+  var out=[]; var seen={};
+  function chk(o, st){
+    var k=o._k; seen[k]=1;
+    var e=_dfMap[k]; var dj=JSON.stringify(_dfBody(o));
+    if(!e || e.del || e.st!==st || JSON.stringify(e.d)!==dj){
+      // JSON round-trip＝深拷貝斷開與 S 的巢狀參照（否則 in-place 改動會連 map 一起變＝diff 永遠相等、漏存）＋剝掉 undefined（Firestore 不收）
+      out.push({k:k, doc:{d:JSON.parse(dj), st:st, mt:now, del:false, by:by, ver:ver}});
+    }
+  }
+  (S.rows||[]).forEach(function(r){ chk(r,'o'); });
+  (S.completed||[]).forEach(function(c){ chk(c,'d'); });
+  var trashK={}; (S.trash||[]).forEach(function(t){ if(t&&t._k) trashK[t._k]=1; });
+  Object.keys(_dfMap).forEach(function(k){
+    var e=_dfMap[k]; if(!e||e.del) return;
+    if(seen[k]) return;
+    if(trashK[k] || window._dfFullReset){
+      out.push({k:k, doc:{d:JSON.parse(JSON.stringify(e.d)), st:e.st, mt:now, del:true, by:by, ver:ver}});
+    }
+  });
+  return out;
+}
+// 本機相對「目前 map」的未存檔變更 key（⚠️ 一定要在 map 套用遠端「之前」算——
+// 若先更新 map 再算，遠端的更新會被誤判成本機修改＝遠端編輯永遠套不進來、還被本機舊值寫回去）
+function _dfLocalDirtyKeys(){
+  var set={};
+  (S.rows||[]).forEach(function(r){
+    if(!r._k) return;  // 沒 _k 的新列在重組時一律保留，不用進 set
+    var e=_dfMap[r._k];
+    if(!e || e.del || e.st!=='o' || JSON.stringify(e.d)!==JSON.stringify(_dfBody(r))) set[r._k]=1;
+  });
+  (S.completed||[]).forEach(function(c){
+    if(!c._k) return;
+    var e=_dfMap[c._k];
+    if(!e || e.del || e.st!=='d' || JSON.stringify(e.d)!==JSON.stringify(_dfBody(c))) set[c._k]=1;
+  });
+  return set;
+}
+// 從 _dfMap 重組 S.rows/S.completed。dirtySet＝套用遠端前算好的本機未存檔 key（本機贏）；
+// 開機請傳 {}＝雲端全贏（頁面剛載入不可能有未存編輯）。沒 _k 的新列一律保留。
+// 本機剛丟垃圾桶（可能未存檔）／刪除 5 秒倒數中＝不加回。
+function _dfRebuildIntoS(dirtySet){
+  if(!dirtySet) dirtySet=_dfLocalDirtyKeys();
+  var keepRows=[]; var keepComp=[];
+  (S.rows||[]).forEach(function(r){ if(!r._k || dirtySet[r._k]) keepRows.push(r); });
+  (S.completed||[]).forEach(function(c){ if(!c._k || dirtySet[c._k]) keepComp.push(c); });
+  var trashK={}; (S.trash||[]).forEach(function(t){ if(t&&t._k) trashK[t._k]=1; });
+  var undoK=(typeof _undoRow!=='undefined'&&_undoRow&&_undoRow._k)?_undoRow._k:null;
+  var rows=[]; var comp=[];
+  var kept={}; keepRows.concat(keepComp).forEach(function(o){ if(o._k)kept[o._k]=1; });
+  Object.keys(_dfMap).forEach(function(k){
+    if(kept[k]) return;                   // 本機 dirty 版本已保留＝map 版本不重複加
+    if(trashK[k]) return;                 // 本機已丟垃圾桶（可能未存檔）＝不加回
+    if(undoK && k===undoK) return;        // 刪除 5 秒倒數中＝不加回（復原時由 _undoRow 塞回）
+    var e=_dfMap[k]; if(!e||e.del||!e.d) return;
+    var o;
+    try{ o=JSON.parse(JSON.stringify(e.d)); }catch(err){ o=Object.assign({},e.d); }  // 深拷貝＝S 與 map 完全斷開參照
+    o._k=k;
+    if(e.st==='d') comp.push(o); else rows.push(o);
+  });
+  keepRows.forEach(function(r){ rows.push(r); });
+  keepComp.forEach(function(c){ comp.push(c); });
+  rows.sort(function(a,b){ return (a.id||0)-(b.id||0); });
+  comp.sort(function(a,b){ return (a.compId||0)-(b.compId||0); });
+  S.rows=rows; S.completed=comp;
+}
+function _dfBusy(){ return !!(_saveTimer||_saving||_renderTimer||_pendingRow||_isFieldEditing()); }
+function _dfOnDocs(chs){
+  if(!chs||!chs.length) return;
+  if(!_dfReady || _dfBusy()){ _dfPendingChs=_dfPendingChs.concat(chs); return; }
+  _dfApplyDocs(chs);
+}
+function _dfFlushPending(){
+  if(!_dfReady || !_dfPendingChs.length) return;
+  if(_dfBusy()) return;
+  var chs=_dfPendingChs; _dfPendingChs=[];
+  _dfApplyDocs(chs);
+}
+function _dfApplyDocs(chs){
+  var dirtySet=_dfLocalDirtyKeys();  // ⚠️ 先算（map 更新前）——遠端更新才不會被誤判成本機修改
+  var changed=false;
+  chs.forEach(function(c){
+    if(c.type==='removed'){ if(_dfMap[c.k]){ delete _dfMap[c.k]; changed=true; } return; }
+    if(!c.d) return;
+    var cur=_dfMap[c.k];
+    if(cur && cur.mt===c.d.mt && cur.st===c.d.st && !!cur.del===!!c.d.del) return;  // 自己的 echo／無變化
+    _dfMap[c.k]=c.d; changed=true;
+  });
+  if(!changed) return;
+  _defectCache=null;
+  _dfRebuildIntoS(dirtySet);
+  try{ localStorage.setItem(SK,JSON.stringify(S)); }catch(e){}
+  console.log('[defects] 套用遠端 '+chs.length+' 份文件變動');
+  throttledRenderAll();
+}
+setInterval(function(){ try{ _dfFlushPending(); }catch(e){} }, 8000);  // 安全網：排隊的文件變動最遲 8 秒補套（閒置且不在編輯時）
+// 開機：確認已遷移（沒有就從 legacy rows/completed 一次性遷移）→ 掛監聽 → 用文件重組 S.rows/S.completed
+async function _dfBoot(st){
+  if(!window._dfInit) return;
+  var mig=await window._dfCheckMigrated();          // 讀不到＝throw → 外層 catch → 本分頁沿用舊制
+  if(!mig){
+    if(window._VIEW_ONLY) throw new Error('尚未遷移且唯讀模式，無法建立缺失文件');
+    await window._dfMigrate(st);
+  }
+  var timeoutP=new Promise(function(res){ setTimeout(function(){ res('__DFTIMEOUT__'); },20000); });
+  var first=await Promise.race([window._dfInit(_dfOnDocs), timeoutP]);
+  if(!first || first==='__DFTIMEOUT__') throw new Error('defects 監聽初始化失敗/逾時');
+  _dfMap={};
+  first.docs.forEach(function(it){ _dfMap[it.k]=it.d; });
+  _dfReady=true; window._dfActive=true;
+  _dfRebuildIntoS({});   // 開機＝雲端全贏（頁面剛載入不可能有未存編輯；localStorage 舊列不可蓋掉雲端新資料）
+  _dfFlushPending();
+  console.log('[defects] 就緒：'+first.docs.length+' 份文件（未完成 '+S.rows.length+'／已完成 '+S.completed.length+'）');
+}
+// ═══ defects 區塊結束 ═══════════════════════════════════════════════════
+
 // V0709-10 修：module 的 const SAVE_FIELDS/_RECEP_SPLIT 是 module scope，classic（_computeDirtyFields／applyRemote）看不到＝會 ReferenceError（V0709-09 起的隱藏 bug：即時同步/存檔壞掉）。classic 端補一份同名清單。
 var _RECEP_SPLIT=['recepOrder','recepMgrOrder','recepMode','recepOff','recepMgrOff'];
 var SAVE_FIELDS=['rows','completed','trash','changelog','uso','events','mgrFixedBusy','mgrSupport','recepOrder','recepMgrOrder','recepMode','recepOff','recepMgrOff','meta'];
@@ -1192,12 +1455,16 @@ var SAVE_FIELDS=['rows','completed','trash','changelog','uso','events','mgrFixed
 function _computeDirtyFields(){
   if(!_savedSnapshot) return new Set(SAVE_FIELDS);
   const dirty = new Set();
-  // rows: 用長度+抽樣快速判斷
-  if(S.rows.length !== _savedSnapshot.rows.length) dirty.add('rows');
-  else if(S.rows.length > 0 && JSON.stringify(S.rows) !== JSON.stringify(_savedSnapshot.rows)) dirty.add('rows');
-  // completed
-  if(S.completed.length !== (_savedSnapshot.completed||[]).length) dirty.add('completed');
-  else if(S.completed.length > 0 && JSON.stringify(S.completed) !== JSON.stringify(_savedSnapshot.completed)) dirty.add('completed');
+  // V0716-02：defects 模式（_dfReady）下 rows/completed 改走每筆一文件（_dfComputeChanges），不再寫 _fields 整包；
+  // 只有 defects 初始化失敗的退路分頁才走舊制。
+  if(!_dfReady){
+    // rows: 用長度+抽樣快速判斷
+    if(S.rows.length !== _savedSnapshot.rows.length) dirty.add('rows');
+    else if(S.rows.length > 0 && JSON.stringify(S.rows) !== JSON.stringify(_savedSnapshot.rows)) dirty.add('rows');
+    // completed
+    if(S.completed.length !== (_savedSnapshot.completed||[]).length) dirty.add('completed');
+    else if(S.completed.length > 0 && JSON.stringify(S.completed) !== JSON.stringify(_savedSnapshot.completed)) dirty.add('completed');
+  }
   // trash（通常很小）
   if(JSON.stringify(S.trash||[]) !== JSON.stringify(_savedSnapshot.trash||[])) dirty.add('trash');
   // changelog
@@ -1235,9 +1502,11 @@ async function _doSave(){
 
   // 計算變動欄位
   const dirtyKeys = _computeDirtyFields();
+  const dfChanges = _dfComputeChanges(); // V0716-02：缺失逐筆 diff（只寫有變動的那幾筆文件）
   const _dmkAtSave = _dirtyMetaKeys(); // V0707-10/11：本次改過的 meta/uso/events 欄位，存完給 15 秒保護窗
-  if(dirtyKeys.size === 0){
+  if(dirtyKeys.size === 0 && dfChanges.length === 0){
     _saving=false; _saveTimer=null;
+    window._dfFullReset=false;
     setSyncStatus('online');
     console.log('[Save] 無變動，跳過儲存');
     return;
@@ -1247,7 +1516,13 @@ async function _doSave(){
   let retries=0, maxRetries=3, delay=1000;
   while(retries<=maxRetries){
     try{
-      await window._fbSave(S, dirtyKeys);
+      // V0716-02：先寫缺失文件（逐筆、批次 400），再寫其他欄位；文件冪等＝重試安全
+      if(dfChanges.length && window._dfSaveDocs){
+        await window._dfSaveDocs(dfChanges);
+        dfChanges.forEach(c=>{ _dfMap[c.k]=c.doc; });
+        window._dfFullReset=false;
+      }
+      if(dirtyKeys.size) await window._fbSave(S, dirtyKeys);
       _savedSnapshot=_takeSnapshot();
       if(_pendingQueued)_pendingStale=true; // V0713-10：排隊中的遠端快照在本次存檔後已過期，套用時必須重抓
       if(_dmkAtSave.size){ if(!window._metaGuard)window._metaGuard={}; const _ge=Date.now()+15000; _dmkAtSave.forEach(k=>{window._metaGuard[k]=_ge;}); } // V0707-10：剛存的 meta/uso/events 欄位保護 15 秒，避免舊快照跳回
@@ -1264,6 +1539,9 @@ async function _doSave(){
       // save 完成，處理排隊中的遠端更新（V0713-10：重抓最新再套，不用過期快照）
       if(_pendingQueued&&!_pendingRow&&!_saveQueued){
         setTimeout(()=>_applyPendingNow(),50);
+      }
+      if(_dfPendingChs.length&&!_pendingRow&&!_saveQueued){
+        setTimeout(()=>_dfFlushPending(),60); // V0716-02：存檔期間排隊的缺失文件變動補套
       }
       return;
     }catch(err){
@@ -1407,6 +1685,9 @@ function applyRemote(d, _meta){
   if(_pendingRow){_queueRemote(d);return;}
   // 若使用者正在輸入欄位，先暫存遠端資料，避免蓋掉未存的編輯（失焦後自動套用）
   if(_isFieldEditing()){_queueRemote(d);return;}
+  // V0716-02：defects 模式下 rows/completed 由 defects 集合供應（_dfApplyDocs），
+  // _fields 舊整包（含舊版/排隊/fallback 路徑帶來的）一律換成本機現值＝舊版整包覆蓋物理絕緣。
+  if(_dfReady && d && typeof d==='object'){ d.rows=S.rows; d.completed=S.completed; }
   _defectCache=null;
   const remote=migrateState(d);
   const _locAnns=S.announcements; // V0713-10：套用前的本機公告（供 readBy 聯集）
@@ -1468,8 +1749,9 @@ function applyRemote(d, _meta){
   throttledRenderAll();
 }
 function applyPendingRemoteIfAny(){
-  if(_pendingQueued&&!_saveTimer&&!_saving&&!_renderTimer&&!_pendingRow){
-    _applyPendingNow(); // V0713-10：重抓最新再套，不用排隊當下的舊快照
+  if(!_saveTimer&&!_saving&&!_renderTimer&&!_pendingRow){
+    if(_pendingQueued)_applyPendingNow(); // V0713-10：重抓最新再套，不用排隊當下的舊快照
+    _dfFlushPending();                    // V0716-02：排隊的缺失文件變動一併補套
   }
 }
 
@@ -1493,6 +1775,8 @@ async function load(){
   // 若 Firebase 已就緒，從雲端載入（V0714-05：移除舊「分享連結」#data 載入死碼，唯讀分享改用 copyViewLink 通行碼）
   if(window._fbLoad){
     setSyncStatus('connecting');
+    // V0716-02：先看 defects 遷移標記——已遷移＝_fbLoad 逐檔讀並跳過 rows/completed 兩份凍結大文件（rows/completed 改由 defects 供應）
+    try{ const _mig=await window._dfCheckMigrated(); window._dfSkipLegacy=!!_mig; }catch(e){ window._dfSkipLegacy=false; }
     // 第一次連線時 Firestore 通道有時尚未就緒，可能長時間 pending；
     // 加上逾時保護，逾時就重試一次，避免畫面卡在「連線中…」
     const withTimeout=(ms)=>new Promise((resolve)=>{
@@ -1506,6 +1790,8 @@ async function load(){
       if(remote==='__TIMEOUT__')remote=await withTimeout(12000);
       if(remote&&remote!=='__TIMEOUT__'&&remote.rows){
         S=migrateState(remote);applyUnitConfig();
+        // V0716-02：rows/completed 改由 defects 集合供應（未遷移＝一次性遷移）；失敗＝本分頁沿用舊制（_dfReady=false）
+        try{ await _dfBoot(S); }catch(e){ console.error('[defects] 初始化失敗，本分頁沿用舊 rows/completed 整包制', e); }
         _savedSnapshot=_takeSnapshot(); // 初始快照
         try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
         setSyncStatus('online');
@@ -1520,6 +1806,8 @@ async function load(){
   // 3. 備援：localStorage
   try{const s=localStorage.getItem(SK);if(s){const d=JSON.parse(s);if(d.rows)S=migrateState(d);}}catch(e){}
   applyUnitConfig();
+  // V0716-02：Firebase 在但 _fbLoad 逾時的情況，仍嘗試接上 defects（失敗＝沿用舊制）
+  if(window._fbReady){ try{ await _dfBoot(S); }catch(e){ console.error('[defects] 初始化失敗（備援路徑）', e); } }
   _savedSnapshot=_takeSnapshot();
   setSyncStatus(window._fbReady?'online':'offline');
   if(window._fbReady)startFirebaseListen();
@@ -4532,6 +4820,7 @@ function g95FullRestore(file){
     if(!confirm('最後確認：真的要用這份備份（'+when+'）覆蓋雲端全部資料嗎？'))return;
     try{
       S=migrateState(st);applyUnitConfig();
+      window._dfFullReset=true; // V0716-02：完整還原＝備份裡沒有的缺失文件也要墓碑（否則舊文件會殘留復活）
       try{logChange('♻️ 還原完整備份','來源備份時間 '+when+'，缺失 '+((S.rows&&S.rows.length)||0)+' 筆');}catch(e){}
       save();renderAll();
       toast('已還原並開始同步到雲端，請通知大家重整一次','♻️');
@@ -13320,5 +13609,4 @@ function _loginOnAuth(user){
 </script>
 </body>
 </html>
-<!-- v0713-01 app icon -->
-<!-- v0716-01 preview 重複作業字體18 -->
+<!-- v0716-02 preview -->
