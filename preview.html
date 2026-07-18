@@ -11069,26 +11069,45 @@ function _homeCell(name,icon,bigHTML,onclick,extra){
   +'<div style="display:flex;align-items:center;gap:7px">'+_homeIco(icon)+'<span style="font-size:15px;font-weight:800;color:#26305A">'+name+'</span></div>'
   +'<div style="margin-top:auto">'+bigHTML+'</div></div>';
 }
+// V0719-01 首頁卡片目錄（可自訂排序，最多 10；順序存 S.layoutCfg.homeCards 走 meta 同步）
+var _HOMECAT={
+ announce:{name:'公告',ic:'ann'}, main:{name:'追蹤總表',ic:'main'}, hcal:{name:'交屋行事曆',ic:'hcal'},
+ pwo:{name:'廠商派工單',ic:'pwo'}, rpt:{name:'驗屋日報',ic:'rpt'}, ustat:{name:'戶況總表',ic:''},
+ inspstat:{name:'驗收統計',ic:''}, defpivot:{name:'驗屋缺失分析',ic:''}, hreport:{name:'交屋進度報告',ic:''},
+ disp:{name:'點工派遣',ic:'disp'}, set:{name:'設定',ic:'set'}, more:{name:'更多',ic:'more'}
+};
+var _HOMEDEF=['announce','main','hcal','pwo','rpt','disp','set','more'];
+function _homeCardOrder(){try{var lc=(S.layoutCfg&&S.layoutCfg.homeCards);if(lc&&lc.length)return lc.filter(function(id){return _HOMECAT[id];}).slice(0,10);}catch(e){}return _HOMEDEF.slice();}
+function _homeIcoFor(id){var c=_HOMECAT[id];if(c&&c.ic&&_HOMEIC[c.ic])return _homeIco(c.ic);try{return _tabIco(id,19)||_homeIco('more');}catch(e){return _homeIco('more');}}
+function _homeGoFor(id){if(id==='disp')return 'g95HomeDispatch()';if(id==='set')return "g95HomeSheet('set')";if(id==='more')return "g95HomeSheet('more')";return "g95HomeGo('"+id+"')";}
+function _homeBig(id,st){
+ if(id==='announce')return st.annUnread?_bigNum(st.annUnread,'#D64545','未讀'):'<div style="font-size:12px;color:#8A8783;font-weight:600;margin-top:4px">無未讀</div>';
+ if(id==='main')return _bigNum(st.overdue,'#D64545','逾期/共'+st.total);
+ if(id==='hcal')return _bigNum(st.today,'#185FA5','戶·今日');
+ if(id==='pwo')return _bigNum(st.pending,'#185FA5','未完成');
+ if(id==='rpt')return '<div style="font-size:19px;font-weight:800;color:#185FA5;margin-top:2px">今日</div>';
+ if(id==='disp')return '<div style="font-size:22px;font-weight:800;color:#5B4FC4">↗</div>';
+ if(id==='set')return '<div style="font-size:12px;color:#5B6B85;font-weight:600">版面·規則·認證碼</div>';
+ if(id==='more')return '<div style="font-size:12px;color:#5B6B85;font-weight:600">報表·戶況·回收</div>';
+ if(id==='ustat')return _bigNum(st.pending,'#185FA5','未完成戶');
+ return '<div style="font-size:12px;color:#5B6B85;font-weight:600;margin-top:4px">點開查看</div>';
+}
 function renderG95Home(){
  var st=_g95HomeStats();
  var sync='';try{var si=document.getElementById('sync-indicator');if(si)sync=si.textContent||'';}catch(e){}
  var uc='';try{var u=document.getElementById('user-count');if(u&&u.style.display!=='none')uc=u.textContent||'';}catch(e){}
  var ver='';try{var vs=document.querySelector('.hdr-seg span');if(vs)ver=vs.textContent||'';}catch(e){}
  var L='1.5px solid rgba(70,102,158,.55)';
- var cells=[
-   _homeCell('公告','ann', st.annUnread?_bigNum(st.annUnread,'#D64545','未讀'):'<div style="font-size:12px;color:#8A8783;font-weight:600;margin-top:4px">無未讀</div>', "g95HomeGo('announce')", 'border-right:'+L+';border-bottom:'+L),
-   _homeCell('追蹤總表','main', _bigNum(st.overdue,'#D64545','逾期/共'+st.total), "g95HomeGo('main')", 'border-bottom:'+L),
-   _homeCell('交屋行事曆','hcal', _bigNum(st.today,'#185FA5','戶·今日'), "g95HomeGo('hcal')", 'border-right:'+L+';border-bottom:'+L),
-   _homeCell('廠商派工單','pwo', _bigNum(st.pending,'#185FA5','未完成'), "g95HomeGo('pwo')", 'border-bottom:'+L),
-   _homeCell('驗屋日報','rpt', '<div style="font-size:19px;font-weight:800;color:#185FA5;margin-top:2px">今日</div>', "g95HomeGo('rpt')", 'border-right:'+L+';border-bottom:'+L),
-   _homeCell('點工派遣','disp', '<div style="font-size:22px;font-weight:800;color:#5B4FC4">↗</div>', "g95HomeDispatch()", 'border-bottom:'+L),
-   _homeCell('設定','set', '<div style="font-size:12px;color:#5B6B85;font-weight:600">版面·規則·認證碼</div>', "g95HomeSheet('set')", 'border-right:'+L),
-   _homeCell('更多','more', '<div style="font-size:12px;color:#5B6B85;font-weight:600">報表·戶況·回收</div>', "g95HomeSheet('more')", '')
- ].join('');
+ var order=_homeCardOrder();var n=order.length;var rows=Math.ceil(n/2);var lastRowStart=(rows-1)*2;
+ var cells=order.map(function(id,i){var c=_HOMECAT[id];if(!c)return '';var ex='';if(i%2===0&&i!==n-1)ex+='border-right:'+L+';';if(i<lastRowStart)ex+='border-bottom:'+L+';';
+   return '<div onclick="'+_homeGoFor(id)+'" style="position:relative;padding:16px 14px;min-height:106px;display:flex;flex-direction:column;cursor:pointer;'+ex+'">'
+    +'<div style="display:flex;align-items:center;gap:7px">'+_homeIcoFor(id)+'<span style="font-size:15px;font-weight:800;color:#26305A">'+esc(c.name)+'</span></div>'
+    +'<div style="margin-top:auto">'+_homeBig(id,st)+'</div></div>';
+ }).join('');
  var html='<div style="position:fixed;inset:0;z-index:8000;background:linear-gradient(165deg,#E8F1FB,#DCE7F4 55%,#E7E1F2);overflow:auto;-webkit-overflow-scrolling:touch">'
   +'<div style="display:flex;align-items:center;gap:10px;background:#5B9BD5;color:#fff;padding:12px 14px;font-size:13px;font-weight:700">'
    +'<span>'+esc(sync||'已同步')+'</span><span style="font-weight:600">'+esc(ver)+'</span>'
-   +'<span style="flex:1"></span>'+(uc?'<span>'+esc(uc)+'</span>':'')+'<span onclick="_doLogout()" style="cursor:pointer;margin-left:10px">登出</span></div>'
+   +'<span style="flex:1"></span>'+(uc?'<span>'+esc(uc)+'</span>':'')+'<span onclick="g95HomeEdit()" style="cursor:pointer;margin-left:10px">編輯</span><span onclick="_doLogout()" style="cursor:pointer;margin-left:12px">登出</span></div>'
   +'<div style="padding:16px 14px 40px">'
    +'<div style="background:rgba(255,255,255,.5);backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 28px -8px rgba(40,60,110,.32);overflow:hidden">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr">'+cells+'</div>'
@@ -11113,6 +11132,29 @@ function g95HomeSheet(kind){
  sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:15px;font-weight:800;margin-bottom:6px">'+(kind==='set'?'設定':'更多')+'</div>'+h;
  document.body.appendChild(bg);document.body.appendChild(sh);
 }
+// V0719-01 首頁卡片自訂排序編輯器（▲▼調序/✕移除/＋加入，最多10；存 S.layoutCfg.homeCards）
+var _homeEditWork=null;
+function g95HomeEdit(){_homeEditWork=_homeCardOrder().slice();_renderHomeEdit();}
+function _renderHomeEdit(){
+ var inUse=_homeEditWork,avail=Object.keys(_HOMECAT).filter(function(id){return inUse.indexOf(id)<0;});
+ var h='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">▲▼ 調順序 · ✕ 移除 · 下方 ＋ 加入（最多 10 個）</div>';
+ h+=inUse.map(function(id,i){return '<div style="display:flex;align-items:center;gap:6px;padding:9px 2px;border-bottom:1px solid var(--border2)"><span style="flex:1;font-size:15px;font-weight:700">'+(i+1)+'. '+esc(_HOMECAT[id].name)+'</span>'
+   +'<button onclick="_homeEditMove('+i+',-1)"'+(i===0?' disabled':'')+' style="font-size:15px;padding:3px 10px">▲</button>'
+   +'<button onclick="_homeEditMove('+i+',1)"'+(i===inUse.length-1?' disabled':'')+' style="font-size:15px;padding:3px 10px">▼</button>'
+   +'<button onclick="_homeEditRemove('+i+')" style="font-size:14px;padding:3px 10px;color:#B3261E">✕</button></div>';}).join('');
+ if(avail.length&&inUse.length<10)h+='<div style="font-size:12px;color:var(--text3);margin:10px 0 4px">可加入：</div>'+avail.map(function(id){return '<button onclick="_homeEditAdd(\''+id+'\')" style="font-size:14px;padding:6px 11px;margin:3px 4px 3px 0">＋ '+esc(_HOMECAT[id].name)+'</button>';}).join('');
+ h+='<div style="display:flex;gap:8px;padding-top:14px;align-items:center"><button onclick="_homeEditReset()" style="font-size:13px">還原預設</button><span style="flex:1"></span><button onclick="_homeSheetClose()" style="font-size:14px">取消</button><button onclick="_homeEditSave()" style="font-size:14px;font-weight:800;color:#fff;background:#5B9BD5;border:none;padding:8px 18px">完成</button></div>';
+ _homeSheetClose();
+ var bg=document.createElement('div');bg.id='homesheet-bg';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:8100';bg.onclick=_homeSheetClose;
+ var sh=document.createElement('div');sh.id='homesheet';sh.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:8200;background:var(--card);border-top:2px solid var(--border);max-height:82vh;overflow:auto;padding:12px 16px calc(16px + env(safe-area-inset-bottom))';
+ sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:15px;font-weight:800;margin-bottom:6px">編輯首頁卡片</div>'+h;
+ document.body.appendChild(bg);document.body.appendChild(sh);
+}
+function _homeEditMove(i,d){var a=_homeEditWork,j=i+d;if(j<0||j>=a.length)return;var t=a[i];a[i]=a[j];a[j]=t;_renderHomeEdit();}
+function _homeEditRemove(i){_homeEditWork.splice(i,1);_renderHomeEdit();}
+function _homeEditAdd(id){if(_homeEditWork.length>=10)return;if(_homeEditWork.indexOf(id)<0)_homeEditWork.push(id);_renderHomeEdit();}
+function _homeEditReset(){_homeEditWork=_HOMEDEF.slice();_renderHomeEdit();}
+function _homeEditSave(){try{if(!S.layoutCfg)S.layoutCfg={};S.layoutCfg.homeCards=_homeEditWork.slice();if(typeof save==='function')save();}catch(e){}_homeSheetClose();renderG95Home();try{toast('首頁卡片已更新','✅');}catch(e){}}
 // ⚙ 版面設定面板（_annAuthAsk 認證後開）：每看板選組別（含釘選）＋手機顯示勾選；存 S.layoutCfg 走 meta 同步
 function layoutCfgMenu(){
   var old=document.getElementById('layout-cfg-ov');if(old)old.remove();
@@ -11263,9 +11305,12 @@ function g95TabMenu(){
  var ov=document.createElement('div');
  ov.id='tab-menu-ov';
  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+ var _isMob=window.innerWidth<=700&&typeof _mnavEnabled==='function'&&_mnavEnabled();  // V0719-01：手機隱藏 6 個不常用分頁（桌機照舊全列）
+ var _MOB_HIDE=['zones','vendor','warn','cal','handover','units'];
  var h='<div class="tmenu"><h3>全部看板（點選跳轉）</h3><div class="tgrid">';
  (S.tabOrder||[]).forEach(function(id){
   if(!id||!TAB_DEFS[id])return;
+  if(_isMob&&_MOB_HIDE.indexOf(id)>=0)return;
   h+='<button class="titem'+(id===activeTab?' on':'')+'" onclick="g95TabGo(\''+id+'\')">'+esc(tabLabel(id))+'</button>';
  });
  h+='</div></div>';
@@ -14366,4 +14411,4 @@ try{
 </body>
 </html>
 
-<!-- v0719-01 preview 手機版大改：新首頁看板中心+各看板底部列+8項調整 -->
+<!-- v0719-01 preview 手機版大改 -->
