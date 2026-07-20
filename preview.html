@@ -1447,12 +1447,15 @@ function _dfComputeChanges(){
   // 🆕V0720-09 翻倍煞車：單次存檔若要新增異常大量「全新文件」（既有 map 沒有的 key、非墓碑），幾乎必為整份重寫翻倍＝中止並警告。
   // 合法的「完整還原備份」(window._dfFullReset) 例外放行；確認確為大量新增可於 console 設 window._dfAllowBulk=true 放行。
   var _newDocs=0; for(var _i=0;_i<out.length;_i++){ if(!out[_i].doc.del && !_dfMap[out[_i].k]) _newDocs++; }
-  var _liveN=0; var _mk=Object.keys(_dfMap); for(var _j=0;_j<_mk.length;_j++){ var _me=_dfMap[_mk[_j]]; if(_me&&!_me.del) _liveN++; }
-  if(_newDocs>200 && _newDocs>0.2*Math.max(1,_liveN) && !window._dfAllowBulk && !window._dfFullReset){
-    console.error('[defects] 翻倍煞車：這次存檔要新增 '+_newDocs+' 份全新文件（既有存活 '+_liveN+'），已中止以防資料翻倍。確認確為大量新增請於 console 設 window._dfAllowBulk=true 後再存。');
-    try{ toast('偵測到異常大量新增('+_newDocs+' 筆)，已暫停存檔以防資料翻倍。若確認要新增請聯絡管理者','⚠️'); }catch(e){}
-    window._dfBulkBlocked=_newDocs;
-    return [];   // 不寫任何文件＝這次存檔作廢（本機 S 仍在，改對了下次會再嘗試）
+  // V0720-12 效能：newDocs 未過門檻(200)＝結構上不可能翻倍，直接放行、跳過昂貴的 liveN 全表計數（原每次存檔都算＝多一趟 O(N)）
+  if(_newDocs>200 && !window._dfAllowBulk && !window._dfFullReset){
+    var _liveN=0; var _mk=Object.keys(_dfMap); for(var _j=0;_j<_mk.length;_j++){ var _me=_dfMap[_mk[_j]]; if(_me&&!_me.del) _liveN++; }
+    if(_newDocs>0.2*Math.max(1,_liveN)){
+      console.error('[defects] 翻倍煞車：這次存檔要新增 '+_newDocs+' 份全新文件（既有存活 '+_liveN+'），已中止以防資料翻倍。確認確為大量新增請於 console 設 window._dfAllowBulk=true 後再存。');
+      try{ toast('偵測到異常大量新增('+_newDocs+' 筆)，已暫停存檔以防資料翻倍。若確認要新增請聯絡管理者','⚠️'); }catch(e){}
+      window._dfBulkBlocked=_newDocs;
+      return [];   // 不寫任何文件＝這次存檔作廢（本機 S 仍在，改對了下次會再嘗試）
+    }
   }
   window._dfBulkBlocked=0;
   return out;
