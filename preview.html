@@ -15,6 +15,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+/* V0720-13：隱藏各頁「完整版⚙」切換鈕（使用者定案不需要）。所有完整版鈕 onclick 皆含 Full=true；只藏入口、不藏「回手機版」(Full=false) 以免萬一停在桌機模式時卡住。要恢復＝於 Console 執行 localStorage.setItem('g95_showfull','1') 後重整。 */
+body.g95-nofull button[onclick*="Full=true"]{display:none!important}
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#DCDAD2;--surface:#EBEBEB;--card:#fff;--border:#D6D6D6;--border2:#E7E7E7;--pborder:#BCBDC9;
@@ -399,7 +401,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 252;  // ← 每次部署新版時遞增（V0720-08 移除交屋狀態表·獨有功能先搬走：使用者定案「交屋狀態表用不到、直接移除」，但先把兩個獨有功能搬走。①「加減驗次輪次」＝客戶清單展開卡片(`buildClientDetailInline`)交屋資訊區加「驗次紀錄」列＝`hu.inspections` 逐輪 date input(`setHuFieldH`)＋刪(`delHuInspCl`)＋「＋加驗次」(`addHuInspCl`)；新增 `addHuInspCl`/`delHuInspCl`＝設 `_clientExpanded=u` 只重繪 renderClients（不像 H2 版動 `_hovExpanded`+reRenderActivePane）。②「批次標記已交屋」＝交屋行事曆批次面板(`_batchSchedPanelHTML`)按鈕列加「批次標記已交屋」→`batchMarkDeliveredByList(ns)`＝貼戶別(`_bslParseTokens`)→查表(`_bslLookup`)→`_bslConfirmBig`＋confirm→`_bslSnapForUndo`(↩還原可用)→逐戶 delivered=true+deliveredDate→save/reRenderActivePane/logChange。移除分頁＝TAB_DEFS.handover 註解掉、default tabOrder 去掉 handover、migrateState 由 push→`filter(id!=='handover')`（既有排序也剔除）、layoutCfg default grpOf 去 handover、`vstatGotoUnit` 由 switchTab('handover')+_hovExpanded 改 switchTab('clients')+`_clientExpanded`。renderHandover 函式與 pane-handover div 保留（setHuField/toggleDeliveredH/toggleDeliveredCl 等仍會呼叫 renderHandover()，pane 在故不會 null crash；只是永不顯示）。側欄/tabbar 各處都 `filter(TAB_DEFS[id])` 故 grpOf 殘留不會復活分頁。批次排程 _bsl 三分頁(hd/hs/hc)本就都在、hc=行事曆保留。純搬移＋移分頁，不改缺失/交屋資料。V0720-07 重複作業「同缺失·不同廠商」防誤刪：根因＝重複分組鍵只用 `戶|||樓|||缺失` 忽略負責廠商，同一缺失若派給 2 家廠商（如 A7·4F·主臥客變給水尚未回灌＝D306泥作×2＋E441油漆×2）會併成「4筆重複」一組，按「合併選取（按組保留最早1筆）」＝只留1筆刪3筆，會把 E441 的活一起刪＝誤刪別家廠商缺失。修法＝新增 `_dupeKeyOf(r)`（預設 `戶|||樓|||缺失|||廠商`，`window._dupeGroupMode==='basic'` 才回舊鍵），renderDupes/mergeDupes/applyDupeKeep/dupeSetKeep/dupeToggleGroup/dupeToggleAll 全改用同一鍵→同缺失不同廠商自動拆成各自一組、合併時各廠商各留最早1筆、結構性不可能跨廠商誤刪。另 renderDupes 建 `vendByBasic`（basic鍵→廠商Set）算跨廠商數：群組表頭加紫徽章「同缺失·跨N廠商」、工具列加「分組依據」切換鈕（含廠商防誤刪＝預設/戶樓缺失舊）＋「只看跨廠商組」篩選 `window._dupeCrossOnly`（空狀態給『顯示全部重複組』鈕）；`_dupeSetGroupMode` 切模式時清空選取/保留。桌機＋手機 `_dupesMobRender` 同步（group 存 `.key/.bk/.vendor`、mob 表頭顯示廠商＋跨N廠商徽章＋切換鈕）。純分組邏輯＋顯示、不改任何缺失資料。V0720-06 效能修正·重複作業選取卡頓：根因＝`dupeToggleRow`/`dupeToggleGroup`/`dupeToggleAll` 勾選一筆就整頁 `renderDupes()`（重算分組＋整頁重塞 DOM，真實資料重複多時每點一下 100~500ms 卡）。修法＝勾選改 `_dupeAfterToggle`→`_dupeSyncUI`＝只就地更新該列 checkbox/背景＋群組表頭勾選＋底部「合併鈕/全選/已選N」，不重繪整頁(桌機 renderDupes row 加 `data-dr`、群組表頭加 `data-dg-ids`、合併鈕 `id=dupe-merge-btn`、已選 `id=dupe-selcount`)；手機(_dupesMobRender 無 data-dr)沿用 renderDupes 保底。合併/套用保留/設保留＝改資料仍走整頁 renderDupes。純效能、外觀行為不變。（診斷：Playwright 實測各分頁渲染＝交屋狀態表 renderHandover ~400-530ms 最重(400+戶格狀圖 DOM 建構·非計算)、追蹤總表89/客戶清單73/驗收統計45、reinsp 19ms 正常；重複作業卡在「選取觸發整頁重繪」。交屋狀態表移除評估：無 switchTab('handover')、handoverUnits 共用不受影響，但獨有 批次排程_bsl/委外代驗勾選/複驗紀錄編輯/標記已交屋＝待使用者確認不需要再移除。）／V0720-05 驗收/修繕進度·通知業務名單＋手機首頁卡：①可複驗/可交屋工具列加「通知業務·名單」鈕→`_riNotifyModal(filter)`＝列該狀態戶別+屋主+電話(clientData.tel)+初驗日+缺失筆數+管理人(缺失列 r.manager)，套現有匯出：「🖼存成圖片(分頁 _riImgPerPage 20/15/10·`_riNotifyPageHTML`)」+「📋複製清單」`_riNotifyCopy`(文字給業務貼LINE)+「含電話」切換(`window._riNotifyTel` 預設顯示)；受目前棟別篩選影響、依初驗日排序；給業務聯繫屋主約複驗/交屋。②手機首頁看板加 `_HOMECAT.reinsp`(可選卡·`_HOMEDEF` 加入·不自動改使用者既有 homeCards)＝`_g95HomeStats` 補 reinspReady(可複驗)/reinspOverdue(逾期未修 via `_riCounts`)、`_homeBig` reinsp 大數字=可複驗(綠)+小紅字逾期未修、點卡 g95HomeGo('reinsp') 進手機版看板。純顯示/唯讀匯出、不寫資料。桌機＋手機。／V0720-04 驗收/修繕進度·廠商彙總改版＋看這家清單匯出：①廠商彙總膠囊→格子(`_riVendorGrid` 桌機5欄/手機2欄·排名1..N·淡黃底#FBEFCB深字·選中琥珀#B45309白字·排序筆數多→少)＋預設前15家＋「展開其餘」(`window._riVendorExpand`)②「看這家清單」`_riVendorModal` 加匯出列：「🖼存成圖片(分頁)」`_riVendorExportImg`＝`_riVendorRows`收逾期戶該廠商未完成缺失→每頁 N 戶(`window._riImgPerPage` 預設20可切15/10)一戶不切→`_riPageHTML`(廠商名+頁碼+戶別+缺失·可切含屋主/初驗日/逾期 `window._riImgExtra`)→`_loadH2C`+`_pwoRenderCanvas`逐頁 toDataURL→`_riShowImages` 預覽層(桌機下載/手機長按存)；「📋複製清單」`_riVendorCopy`＝文字格式A「戶別：缺失、缺失」一行一戶→clipboard 貼 LINE。純顯示/唯讀彙總、不寫資料。桌機＋手機同步。／V0720-03 驗收/修繕進度看板「手機版」：renderReinsp 開頭加 `innerWidth<=700&&_mnavEnabled()&&!_riFull` 分流 `_riMobRender`＝六卡(2排×3)當篩選＋分組/棟別/逾期門檻精簡下拉＋一戶一卡片(平角·戶別★類型屋主/缺失完成·逾期徽章/約複驗·缺失明細)＋逾期視圖廠商彙總膠囊+看這家清單，缺失明細/廠商彈窗沿用桌機同函式；頂列「完整版」鈕(window._riFull→桌機渲染)＋桌機在窄screen顯示「回手機版」鈕。桌機(>700或_riFull)零變動、資料/同步層零變動、純顯示(勾銷案/答應日仍走既有寫入)。第二階段自動排複驗＝案A(寫 S.reCheckUF 約定複驗日+補時段欄位·不碰 planDate)＋規則面板/預覽/復原流程＝已與使用者定案、待做。／V0720-02 驗收/修繕進度看板 v2（承 V0720-01）：①欄位對齊(table-layout:fixed+colgroup 各段同寬)②委外代驗改「戶別後 ★」·缺失欄不寫委外③無缺失保留(供回頭查是否真0缺失)④全修完格式改「M/D 完成（N筆·X工作天）」工作天=排除週日+國定假日(_TW_HOLIDAYS_2026)⑤第6張卡「逾期未修」(pend>0且初驗後≥門檻·紅框·A/B/店細分)＋工具列「逾期門檻▾」(≥7/≥10/≥14·localStorage g95_riOverdue)＝改卡數與清單⑥逾期顯示「初驗後 N 天（含假日 M 天）」日曆天·三級色(7-9琥珀/10-13橘/≥14紅追廠商)⑦逾期視圖上方「廠商彙總·追廠商」面板＝該批逾期戶未完成缺失按廠商筆數多→少膠囊(N筆·M戶)·點選過濾清單+每列 vtag「廠商 N筆」+「看這家清單」彈窗(戶別+缺失·可截圖給廠商)⑧工具列「可複驗/可交屋」快速鈕(=切filter)⑨缺失明細彈窗加「勾完成即銷案(走既有 markDone)＋答應完成日輸入(寫既有 planDone via upd)」＝此二為寫入功能、沿用追蹤總表同路徑。桌機新增功能、手機沿用桌機渲染。／V0720-01 新看板「驗收/修繕進度」第一階段(純顯示·零資料風險)：新分頁 reinsp＝五張底色卡片(已初驗/可複驗/已複驗/可交屋/已交屋，字上數下＋A棟/B棟/店鋪髮絲線兩欄對齊細分·可切精簡)當統計＋篩選；清單依初驗日分段可收合(段首戶數＋整段約複驗)、分組可切 初驗日/棟別/屋主(同屋主聚合)、棟別下拉篩選；每列 約複驗(跳交屋行事曆手動選日·不寫)＋缺失明細(就地彈窗·去追蹤總表看完整)。狀態全衍生自 handoverUnits(inspections/planDate/delivered)＋getDefectRows 完成度(compId)＋clientData 屋主名，不寫任何資料、不動同步/defects。可複驗=已完成初驗＋缺失全修完＋未複驗；可交屋=已複驗＋缺失清零＋未交屋。加分頁四步(TAB_DEFS/pane/tabOrder push/renderPane)＋_TABIC/TAB_BG。⚙自動排規則＋自動排入行事曆＝第二階段(會寫資料)另做。桌機新增、手機沿用桌機渲染(未特化)。／V0719-11 桌機派工單3項：①初驗起始日改「只看未完成項目所在戶別的最早初驗日」(_pwoVendorStats startIso 排除只有已完成的戶別)＝與未完成清單一致(6/22非6/9)、連動 days/rate/推估②派工單工具列整合成一列(清單/成績單切換·篩選▾輪次+驗屋日·搜尋32px+線放大鏡·顯示▾展開/收合/勾選·排序▾廠商+工項去🔧⏳·匯出▾範圍+合併+各家分檔)沿用 _hcddTog③全看板工具列控件 height:32px 齊高(.btn:not(.btn-sm) min-height:32px＋select min-height:32px；td 內小鈕/下拉與 textarea 不受影響)＋派工模式切換鈕去📋📊改線條圖示。桌機版面調整、資料/同步層零變動。／V0719-10 手機實測5項＋補圖示：①交屋行事曆「完整版」鈕收進本週/雙週同列右側·透明底·線條齒輪（另補 main/戶況/派工 完整版⚙→線條齒輪）②截圖修復＝_capEl 指定元素在手機版不存在時退回擷取 pane-目前看板（修使照進度/驗收統計「找不到截圖內容」）③自動填入規則手機卡片＝關鍵字一列＋廠商select右側貼▲▼、移除第三列、左滑刪除(_arSwipeInit觸控)④管理人員展開＝編輯資料移到缺失清單上方⑤全部看板選單＝等高50px·gap0·分割線·文字靠左(.tgrid/.titem)＋客戶清單統計 🏛🏠🏢→線條圖示。只動手機版與少數共用UI、桌機零變動、資料/同步層零變動。／V0719-09 圖示線性化收尾：全檔掃描所有 UI 位置（>元素文字開頭）殘留的彩色 emoji 圖示 247 處一律改線條 SVG（沿用 _icoSVG 同款 .g95ic 風格：印表機/搜尋/時鐘/資料夾/車位/鎖/鑰匙/清潔/離職/支援/目標/建物棟別/檢視眼/置頂針…等，桌機＋手機所有分頁與設定），僅 <option> 內 2 處與純幾何符號(✓✕★➕⬇⬆☐●)、狀態燈、toast 提示圖與 logChange 純文字 emoji 保留。偏好已寫入 CLAUDE.md（線條 SVG、禁 emoji）。資料/同步層零變動。／V0719-08 全站平角化：--r/--rs 半徑變數 2px→0，並掃描全檔 355 處 literal px border-radius 一律改 0（含卡片/按鈕/輸入框/下拉/徽章/膠囊，桌機＋手機皆改），僅保留 20 處 border-radius:50%（計數圓點/頭像/圓形代表字＝真圓非圓角）。使用者強調偏好「平角、不要圓角」已多次，永久寫入 CLAUDE.md 專案規則。資料/同步層零變動。／V0719-07 手機實測修正9項：①使照節點卡上下鈕與內容等高(_usoMobEd align-stretch)②清單分頁器平角方框③客戶清單樓層篩選(單層/複選/區段)④管理人員固定不排時段+休假+支援+離職就地編輯(_mgrMobEditHTML,修desktop editor滲入bug用_mgrMobToggle純state)⑤圖示線性化：公告置頂/已讀/週次+全部看板選單分頁 emoji→線條SVG(桌機同改)⑥篩選下拉平角+▾⑦取消未到記錄取消/未到筆數⑧手機截圖預覽層移除下載鈕(改長按存)⑨html2canvas手機scale:1避免canvas高度上限。只動手機版與少數共用圖示、資料/同步層零變動。／V0719-06 清單頁手機化(批二)最後五頁：重複作業 _dupesMobRender(每組一卡·重複列直式·勾選/★保留/全選/套用保留/合併)／管理人員 _mgrMobRender(人員清單→點展開該人負責缺失卡片·排序列)／進度里程碑 _evMobRender(事件卡片·可編輯內容/單位/區域/管理人/預實日期/刪除/新增)／驗收統計 _vstatMobRender(每日一卡·初複交數字·點展開當日戶別卡片)／交屋進度報告 _hrptMobRender(三環圈直式堆疊+分棟明細·工具列精簡)。各 render 開頭手機分流、寫入走既有函式、桌機零變動。至此批二清單頁全部完成。／V0719-05 清單頁手機化(批二)三頁：更新紀錄 _clogMobRender／垃圾桶 _trashMobRender／已完成 _doneMobRender＝寬表改堆疊卡片(平角天空藍、搜尋、廠商展開明細卡)，各 render 開頭手機分流、寫入走既有 restoreTrashItem/permDeleteTrash/emptyTrash/toggleDoneVendor、桌機零變動。待續：events/inspstat(可編輯/展開，較特別)＋dupes/hreport/mgr(需先出示意圖)。／V0719-04 設定/清單頁手機化(批二)第1頁：客戶清單手機版 renderClients 開頭分流 _clmRender＝棟別×樓層寬格子表→分棟分組清單(A棟/B棟/店鋪)、統計三塊(地主/自購/業主·A/B/店)、搜尋、篩選上下兩排分段(類型一排全部/地主/自購/業主＋棟別一排全棟/A/B/店)、點戶展開就地編輯(客戶名/電話/類型/車位)＝寫入走既有 setCl/clientDelUnit、桌機零變動。其他清單頁(dupes/changelog/trash/done/events/inspstat/hreport/mgr)待後續批出示意圖再做。／V0719-03 手機版整理(批一)修正：①首頁取消上下置中(有標題後改頂端對齊)＋補回漏做的「加入主畫面」引導卡(偵測 standalone/beforeinstallprompt，iOS/Android 步驟 sheet)②行事曆底部列「紀錄」更名「記錄」③行事曆「記錄」改手機專用面板 _cxnMob*(不再開桌機 _cxnBoardOpen 彈窗)④驗屋日報手機版「使照進度」還原成真正的使照文字日報 usoRptCardHTML(原誤用自寫精簡版)⑤「取消／未到 紀錄」更名「取消／未到 記錄」＋改手機版清單。桌機零變動。／V0719-02 手機版整理(批一)：首頁上下置中＋KIMZO標題／首頁編輯卡片改平角／公告去上方新增／行事曆接待排程·紀錄改手機底部面板(含返回鈕)＋頂端完整版⚙／iOS截圖改跳圖片預覽層(長按存)·各看板匯出檢查／篩選面板四欄加▾＋返回鈕＋↑回頂部不擋／各看板底部列一律移除完整版(頂端⚙保留)·總表底部列四格(首頁·篩選·新增·匯出)·移除重複浮動新增·↑移右下／head 加 apple-mobile-web-app／驗屋日報手機版三段可展開／使照手機版平角天空藍檢視下拉。只動手機版與head、桌機零變動、不碰同步/資料層。／V0719-01 手機版大改：新首頁看板中心(玻璃8格大數字外連)＋各看板專屬底部列(⌂首頁錨點/完整版落點/匯出預設圖片)＋分頁地圖(設定/更多分組·使照併驗屋日報·手機隱藏6分頁)＋行事曆筆數%統一/驗次改inspStageBadgeCal/時間分段條/週條戶數＋總表戶別樓層排序/篩選可打字。桌機不動。／V0718-09 手機左右切邊真因＝畫面被誤觸放大(zoom)卡住＝使用者捏縮小即回正；修法＝viewport 加 maximum-scale=1,user-scalable=no＋iOS Safari 專用 gesturestart/gesturechange preventDefault（Safari 會忽略 user-scalable，靠攔截 gesture 才可靠）＝鎖住縮放、不再被放大卡住。桌機不觸發 gesture、零影響。註：V0718-08 的移除 cover＋overflow-x 防線保留（無害）。V0718-08 手機左右切邊修正：V0718-07 加的 viewport-fit=cover 會讓直式手機滿版貼到物理邊緣/圓角＝內容左右被切，移除 cover（回 width=device-width,initial-scale=1）＝iOS 預設把內容留在安全區（頂列仍在瀏海下、不再切邊）；並補防線 @media(max-width:700px){html/body overflow-x:hidden;max-width:100vw}＋body.g95-mnav .shell{max-width:100%;overflow-x:hidden}＝徹底擋掉任何水平溢出把整頁往旁推。純手機、桌機零變動。V0718-07 手機殼頂列精簡＋鎖定：①手機殼(≤700px)頂列桌機件隱藏（系統名/改名筆/多人協作/看板/編輯排序 加 .mob-hdr-hide、CSS body.g95-mnav .page-hdr .mob-hdr-hide{display:none}）＝只留 版本·同步·人數·登出 一條；②viewport 加 viewport-fit=cover＋body.g95-mnav padding-top:env(safe-area-inset-top)＝頂列不被瀏海/動態島壓；③看板/編輯排序移到「更多」sheet（g95TabMenu/toggleTabEditMode、線性 SVG），移除「切回舊版分頁列」＋_mnavEnabled()一律 true＝手機不能切回舊分頁列；④公告欄手機版三顆＋新增收成一顆「＋新增▾」(.hcdd)、📢 emoji 換線性 SVG 喇叭。全部只影響手機殼、桌機零變動。V0718-06 追蹤總表 4 項修正：①頂部工具列（篩選▾/未填廠商/#ID/搜尋/＋新增/匯出▾/匯入 Excel）全部 32px 齊高＋警示鈕改平角；②管理人空徽章 class empty→mgr-none（原撞系統通用 .empty{padding:2rem}＝被撐成 66px 溢出裁成灰弧，這裡修好＝恢復小徽章、資料寫入路徑不動）；③備註欄壓窄（.td-txt max 150→96）＝空間讓給缺失內容（.td-issue min 180→280/max 460→640），備註採 A 式（收成一行 22px、focus 展開 66px、hover title 看全文、placeholder 備註）；④進場/完成日期 input 92→120px＝日期＋星期完整不截斷。V0717-10 版面改版第4步②~⑤＝手機版四頁一次到位（皆 ≤700px＋手機殼開時生效、桌機不動、每頁「完整版⚙」＝原桌機畫面功能一項不減＋回手機版鈕）：①追蹤總表＝搜尋+篩選抽屜（戶別/樓層/廠商/區域/狀態/管理人/輪次/缺日期/無廠商全數）+統計行+一戶一列三行（#/戶別-樓層/廠商色點/輪次/狀態、缺失16px、預計完成/管理/代工/完成快速鈕）+分頁+列點開全欄位編輯面板（upd/markDone/delRow/_editHelper 全走原函式＝驗證/同步照舊）+右下＋新增（跳完整版 inline-add＝自動規則照舊）；②公告欄＝手機工具列收納（次要工具進⋯抽屜：字體/行距/截圖/PDF/全部已讀/強制簽收/認證碼），篩選chips+三顆新增留頂列；③驗屋/使照日報＝手機單欄堆疊、去中線（CSS media）；④派工單＝依廠商收合清單（未完成數多→少、點缺失 pwoGoto 跳總表）；⑤戶況總表簡略版（使用者指定「可看簡略版」）＝每戶未完成筆數多→少+初驗日、點戶跳總表。手機頁面尺寸已確認（viewport meta 本就有、各清單皆流式無橫向溢出）。V0717-09 版面改版第4步①＝交屋行事曆手機版（≤700px＋手機殼開啟時）：本週檢視＝七天週條(點日換天、藍點驗收/青點清潔、今天紫)＋當天清單(依時段分組、A/B/店色塊+戶別17px+★委外+驗次章(nextInspType近似)+未完成筆數紅字+完成%+接待紫字、已取消/未到灰劃線、格頭戶數/清潔數/委外數)；雙週總覽＝壓縮格(驗N/清N、點格跳當天)；點戶別＝底部詳情面板(%/屋主/接待/缺失統計＋四動作：看這戶缺失(annGoUnit)/新增缺失自動帶戶別(showInlineAdd+_pendingRow.unit+refreshUnitSelect+zone對應)/改日期時段(setHuField＝歷史鎖/清潔連動照舊)/標記取消·未到(toggleCancel/toggleNoShow＝原因+歷史照舊))；「完整版⚙」鈕＝切回原桌機畫面（自動排接待/批次排程/警示/紀錄/顯示開關等全部工具一項不減）＋畫面頂端「回手機版」鈕。桌機(>700px)與手機殼關閉時完全走原路徑。V0717-08 實測回饋七合一：①側欄收合鈕改線條 SVG 箭頭+hover（使用者：符號醜不明顯、要CANVA線條風）②背景改天空藍＝--bg #E4E4E4→#CFE3F4、card-main #F0EEF8→#EAF4FC ③驗屋/使照日報兩欄中間加分隔線（右欄 border-left）④頂列合併框 .hdr-seg＝左（版本/已同步/人數）右（匯出/還原/登出/☰看板/取消/編輯排序/深色）各一框、框內直線分割、不再各自成鈕（使用者：不要很多按鈕合併成大框再分割）⑤進追蹤總表 3 秒自動收合側欄、離開自動展開、手動展開本次不再自動收 ⑥字體：預警看板兩表 11→15、派工單清單 12→15、更新紀錄列 11→15/14（使用者：字太小） ⑦（承V0717-07 手機殼要用 preview 網址測）。V0717-07 版面改版第2步＝手機殼：寬≤700px 出現底部五格導覽（公告(未讀章)/總表/行事曆/報告▾/更多▾，線條 SVG 圖示、選中紫+頂線）＝body.g95-mnav 時原藥丸分頁列隱藏、body 加 padding-bottom。報告▾＝報表中心組內 mobShow=1 的看板由下滑出；更多▾＝其餘 mobShow=1 看板＋「☰全部看板(g95TabMenu 舊選單、含手機隱藏的)」＋「↩切回舊版分頁列」。手機顯示清單＝S.layoutCfg.mobShow（⚙版面設定可調、全員同步）；殼開關＝每台 localStorage g95_mnav 預設開（保險絲）。桌機(>700px)完全不受影響；pane 內容未動（手機逐頁優化＝第4步）。V0717-06 缺失表格字體全域放大（使用者：垃圾桶缺失字太小、改15、其他表單一併）：全域 table 11→15、thead th 10→13、td 文字/下拉輸入 11→15、td 日期輸入 10→13、.ae-tbl th 11→13/select 11→14、垃圾桶表 inline 11→15＋刪除日 10→12＋剩N天/完成區標籤 9→11。行事曆格子chips、重複作業頁(已是18)不在此列、維持原樣。V0717-05 編輯排序不再跳回舊版面（使用者實測回報）＝側欄內直接拖：認證後 _sideEdit={order,grpOf,pins} 工作副本、_sideRenderEdit 全組展開＋虛線組名、拖項目＝調順序(順便跟目標同組)、拖到組名＝移入該組尾(含釘選/其他)、✏️改名照舊、「完成排序」寫回 S.tabOrder＋S.layoutCfg 全員同步、取消＝原樣；舊版面(藥丸格)的編輯排序機制原封不動（側欄關閉時照舊）。V0717-04 側欄實測再修：①側欄項目字體 13→16、組標題 11→13（使用者：字太小也不明顯）、側欄 238→264px ②選中項改「平角底色 rgba(91,155,213,.16)＋左紫條 4px＋紫粗體」（使用者：只有一條色線不明顯、要底色）。組內排序＝照舊走「編輯排序」（tabOrder）；釘選要不要留＝使用者可在⚙版面設定把釘選項全改回組別、釘選區自動消失。V0717-03 側欄實測三修：①grid rows auto auto→auto 1fr＝修「側欄比內容高時，公告欄等短內容被推到最下面」（多餘高度原被分給第1列）②收合鈕放大(18px/6px16px)＋側欄全平角、選中改「左紫條＋紫字」不做底色圓角卡片（使用者不喜歡卡片感） ③舊版面分頁列尾端加「🧭 新版側欄」鈕＝從舊版面切回新版的明顯入口（原本只藏在⋯看板面板裡）。V0717-02 電腦版側欄第1步（版面改版五步的第1步）：Notion 風側欄殼＝body.g95-side 時 #mainCard 變 grid、藥丸分頁列隱藏、#side-nav 顯示（釘選＋分組收合＋你的 tabOrder 順序＋公告未讀徽章＋⋯看板顯示設定/⚙版面設定/↩切回舊版面）。新增 S.layoutCfg{grpOrder,grpOf,pins,mobShow}＝分組/釘選/手機顯示設定，走 meta 同步（migrateState 預設種子＝2026-07-17 使用者填表定案＋applyRemote meta 清單加 layoutCfg）；「⚙版面設定」面板認證碼(_annAuthAsk)後使用者可自調全部（mobShow 第2步手機殼才會用到、先存）。每台裝置開關 localStorage g95_side（預設開、⋯看板選單可切「新版側欄」）＋g95_sideMin 收合＋g95_sideGrpClosed 群組收合。編輯排序中/寬<1000px 自動回舊版面（編輯排序機制原封不動）；備份提醒橫幅移出 tabs-wrap（側欄模式也看得到、classic 改顯示在分頁列下方）；tabOrder/空格槽/改名/隱藏/精簡/手機☰看板全部照舊。純 UI 殼、不動同步/資料層/任何 pane 內容。V0717-01（2026-07-17 凌晨）修「登入進來整片空白、點任何看板才恢復」：V0716-05 開機走 defects 快取後 load() 變慢，classic init() 反而晚於「登入後 1.4 秒自動落公告欄」執行；init() 老程式寫死「隱藏 main 以外全部 pane」且不會把 main 重新顯示、也不看 activeTab＝把公告欄藏掉、main 也維持隱藏＝全部 pane 隱藏＝空白（activeTab 仍是 announce 所以分頁標籤亮著）。修法＝init() 兩處寫死 'main' 改「以 activeTab 為準」顯示/隱藏＋renderMain 改 renderPane(activeTab)。純 UI 開機順序、不動同步/資料層。V0716-05 修 preview 實測抓到的「遠端還原傳不回來」：別人從垃圾桶還原缺失（doc del true→false）時，本機垃圾桶殘項會在 _dfRebuildIntoS 被 trashK 排除、且 trash 陣列聯集合併移除不傳播＝該列永遠回不來；修法＝_dfApplyDocs 偵測墓碑復活、順手清本機 S.trash 同 _k 殘項再重組。V0716-04 修 V0716-03 preview 實測抓到的重複文件連鎖：舊資料本有 809 筆重複編號列（rows 12＋completed 797，_findDirtyIds 按 id 去重＝永遠 dirty）→ mergeRows 對重複 id 把同一物件塞兩次（殘影）→ _dfEnsureKeys 誤當「複製列」換新 key＝寫出 809 份重複文件。修法：①applyRemote 在 defects 模式整段跳過 rows/completed 合併管線（mergeRows/_purgeDoneFromRows/_reviveLocalOnly 皆 if(!_dfReady)，rows/completed 完全交給 defects 管線）②_dfEnsureKeys 分流＝同一物件重複出現（殘影）直接陣列去重不換 key、不同物件同 _k（真複製）才換新 key。上線前用 _dfResetFromLegacy 清掉測試期垃圾重遷移。V0716-03 修 V0716-02 preview 實測抓到的三個 bug：①_dfRebuildIntoS 加 pureCloud 模式（開機純雲端）＝修「legacy 列沒 _k 被誤當本機新增→rows/completed 翻倍、再存檔會寫出重複文件」②_dfBoot 加 _dfBootBusy/_dfReady 重入鎖＝修 load 流程重入造成重複遷移+重複掛監聽 ③_dfSaveDocs 批次改並行 Promise.all＝遷移 8800 筆從 1-3 分鐘縮到 ~10 秒。V0716-02 🔴根治資料層：每筆缺失一份 Firestore 文件＝projects/main/defects/{key}（{d:列物件,st:'o'未完成/'d'已完成,mt,del墓碑,by,ver}）。存檔只寫「有變動的那幾筆」（classic _dfComputeChanges diff）、刪除＝墓碑（垃圾桶 UI 不變）、監聽 onSnapshot(defects) 原生只推變動文件（classic _dfApplyDocs 逐筆合併、本機 dirty 贏）＝沒有人寫得動自己沒碰過的缺失＝整包互蓋物理絕緣、根治掉資料。rows/completed 不再走 _fields 整包文件（_computeDirtyFields 在 _dfReady 時跳過、_fbListen 忽略 legacy rev、applyRemote 開頭 d.rows/completed 換成本機＝舊版整包寫入絕緣）；_fields/rows+completed 凍結當備份。S.rows/S.completed 介面完全不變（每筆多 _k 穩定碼＝文件 key，重新編號不搬文件），渲染/報表/派工單全不動。一次性遷移 _dfMigrate（開機看 _fields/dfMig 標記；key=r+id/c+compId 冪等、兩台同時遷移不重複）；完整還原 g95FullRestore 設 _dfFullReset＝缺席文件補墓碑。開啟 Firestore persistentLocalCache（多分頁）＝重整只重讀變動文件。測試/重置工具 window._dfResetFromLegacy('MONGA')。舊版靠版本閘門自動擋寫。V0716-01 重複作業(dupes)頁字體放大（注意：今天=2026-07-16，前面 V0714-04/05/06 是把舊字頭帶下來的筆誤、已部署故歷史不回改，本版起正名 V0716）：列內容 11px→18px、群組標題 12px→18px、欄位標題 10px→14px，A/B/店標籤・筆數徽章・保留鈕一併放大，grid 欄寬放大避免 18px 擠爆（32/90/55/1fr/100/70/70→40/130/66/1fr/190/90/90）。純該頁版面。V0714-06 廠商下拉統一 A-Z：新增 classic `_vAZ()`（[...S.vendors] localeCompare zh-Hant numeric 排序、只排「下拉顯示」不動 S.vendors 本身順序＝不影響常用廠商排行），把 vOpts/新增缺失/批次改廠商/未清潔警示/篩選(含 datalist)/自動規則 所有廠商 <select> 選項改走 _vAZ()。V0714-05 精簡：①清死碼＝移除舊「分享連結」shareData() 函式＋load() 的 #data= 載入路徑（V0709-03 早已移除按鈕、唯讀分享改用 copyViewLink 通行碼 KIMZOG95）。②移除「🧹清潔追蹤」分頁＝TAB_DEFS 拿掉 clean＋刪掉會把 clean 塞回 tabOrder 的 migrate 行；renderCleanTrack 等函式與 pane-clean 留為無害死碼；清潔資料(cleanPlanDate/cleanSlot)與交屋行事曆的未清潔警示→產生清潔工作→點工派遣待帶入 主線完全不動；使用者現有 tabOrder 的 clean 舊槽會變空位，由使用者用「編輯排序」自行收（AI 不動 tabOrder）。③移除「🏛公設狀態表」分頁＝TAB_DEFS 拿掉 pubarea＋刪 migrate 回填＋預設 tabOrder 種子去掉 pubarea；renderPubArea 與 pane-pubarea 留為死碼；公設「固定清單」publicAreaList 變無介面的孤兒資料（不再可編輯、但不報錯、不被別處用）；公設「缺失」本身在公設分區/總表都在、不受影響；舊 tabOrder 空槽同上由使用者自行收。④showInlineAdd 版面：把「新增並繼續同戶／確認新增並關閉／取消」三顆按鈕從左下獨立一排，移到「預計進場/完成」那排最右邊（margin-left:auto）＝落在缺失內容右下、輸入完就近按、少一排。⑤追蹤總表表頭「↺重新編號」(renumber，會把 2990 筆全部重編 id) 上鎖：onclick 改 `_annAuthAsk('重新編號',renumber)`＝按下先要認證碼(_annAuthCode()＝S.annAuthCode||'MONGA')才執行，避免誤按。⑥移除「📦交屋前缺失彙整」分頁＝TAB_DEFS 拿掉 hpend＋刪 migrate 回填（原 hpend push 後接的 else-if events 改回獨立 if）＋預設 tabOrder 種子去掉 hpend；renderHPend／pane-hpend／_hpendState 留死碼；純檢視、無獨有資料（缺失在總表/廠商/派工單、交屋日在交屋狀態表都在）；舊 tabOrder 空槽由使用者自行收。⑦Excel 匯入廠商空白留空（importExcel `vendor:mapped.vendor||''`，拿掉 S.vendors[0] 預設）。⑧自動填入規則（新分頁「⚙自動規則」）：S.autoRules{enabled,vendorRules:[{kw,vendor}],dueDays,dueSkipSunday,defaultVendor} **走 meta 同步**（migrateState 預設＋applyRemote meta 清單加 autoRules，刻意不走獨立文件＝降低同步層改壞風險；代價＝升級過渡期若有人停舊版存 meta 可能洗掉規則、可重設）。掛新增缺失：廠商預設改空白（showInlineAdd _pendingRow.vendor=''）、issue oninput→_iaAutoVendor 依關鍵字命中第一個填廠商（空白才填、不覆蓋手動）、confirmInlineAdd 三處 push 用 _autoDue(戶) 補預定完成日＝該戶 hu.planDate+dueDays(遇週日順延)、confirm 時 vendor 空白再用 _autoVendor 補。_autoVendor/_autoDue/_iaAutoVendor/renderAutoRules 皆 classic 作用域。V0714-04 🔴止血：舊版整包覆蓋 rows/completed 致「別人剛輸入的整戶缺失永久消失」＝applyRemote 加版本閘門（_meta.writerVer<本機且該列不在 remote.trash/未被退回未完成時）保留本機獨有列＝倖存者，下次存檔洗回雲端＝全員自癒（方向同 V0713-10、補「刪除」這一向）；_fbSave 埋 _lastWrite{ver,by,at}、_fbListen 帶 writerVer 給 applyRemote，埋點兼供 Firestore 事後追誰(哪版)覆蓋。純同步層、不動 UI/資料結構/SAVE_FIELDS。V0714-03 LOGIN_ALLOW 加第10人 jasonchao209@gmail.com（同步：dispatch D0714-01 名單＋Firestore 規則 isEditor，三處一致才有寫入權；check_g95 名單檢查改 10 人）。V0714-02 日報地主總數 _rptOwnerTotal 母集合加入 clientData 的戶（漏掉未排驗收未進交屋管理的地主戶，例 地B6-8→184；加入後=客戶名冊 185）。另本日資料校正：依115.05.05地主分配表把10戶自購→地主、業A5-1→業主（客戶清單，走資料非程式）。V0714-01 驗屋日報「地主戶分算」：總數全部維持原算法（含地主），地主為子集另標、純顯示不動資料層。A＝今日初驗行「（地主 X）」＋累計完成行「（地主 Y）」＋複驗/交屋行「（地主 今日X・累計Y）」＋本週統計各行下「└ 地主戶：預計｜實際｜累計」；B＝下週預計後獨立「🏠 地主戶統計」區塊（總戶＋三階段累計＋本週實際）。判定＝isOwnerUnit(key)（clientData type 地主戶或「地」字頭）。hrptCounts/_rptTodayDetail/_rptPlanRange/_rptDoneRange 加可選 fltr 參數（不影響既有呼叫）＋_rptOwnerTotal()。開關 S.rptFc.hideOwner（走 meta 全員同步），完工推估設定列「顯示地主戶分算」預設勾選、取消勾＝A+B 全隱藏。業主戶不分算（使用者指示）。舊「儲存這份」快照不會自動長出新格式、按「↻重新產生」。V0713-10 🔴修「勾完成的缺失 1-3 分鐘後又復活」＋「公告已讀被洗掉重複要求簽收」同步層四修：①startFirebaseListen 的丟棄閘(_saveTimer||_saving 直接 return)改交給 applyRemote 排隊——增量同步(V0709-10)下被丟棄的更新因 _lastRev 已標記「看過」＝永遠不補讀→該機 rows 停在舊狀態、下次存檔把整包舊 rows 寫回雲端＝缺失復活主因。②排隊機制改「只記變動欄位清單(_pendingKeys 聯集)、真正套用時 window._fbReadFields 重新抓雲端最新」——原本 _pendingRemote 存「排隊當下的快照」會過期，事後 hasDirty=false 走 S=remote 整包蓋回＝復活幫兇；順修多筆排隊互相覆蓋掉更新的舊缺陷；排隊期間有存檔＝過期快照絕不套用。③mergeRows 防復活保險：遠端有、本地沒有的列，若「本地已刪且 dirty(尚未同步)」或「id+issue 已在合併後 completed(＝已完成)」→不加回；no-dirty 分支 S=remote 後也 _purgeDoneFromRows 依 completed 清 rows 殭屍列(雲端被舊版整包寫回時全員自癒)。④公告已讀簽收 readBy 逐則取 本機∪遠端 聯集(_mergeAnnReadBy，雙向)＝簽收只增不減，不再被舊 meta 快照洗掉。純同步層、不動 UI/資料結構；上線前 g95FullBackup＋9 人重整。V0713-09 ①🔴戶況總表改「棟+樓＝一戶」(方案A)：_usUnitList 依 r.unit+r.floor 分組、o.disp=棟-樓、_usUnitSort(棟→樓高低) 套四類分區；約定複驗日改存 S.reCheckUF[disp](原 hu.reCheckDate per棟，改 per棟樓，_usSetRecheck/_usApptEditor/_usApptPanelHTML 皆改；舊 per棟複驗日不遷移、需重設)；初驗日仍取 hu[棟].planDate(各樓共用)。②派工單清單 戶別/樓層/初驗完成(round)/等待天數 四欄標題可點排序 pwoHdrSort/_pwoHdr/_pwoRowDir(再點切升降▲▼)，工項排序下拉保留。V0713-08 ①戶況依戶別戶別膠囊併樓層(A16-1F)去掉獨立小字 ②「最後完成」只在可複驗(remaining===0)戶顯示(避免與未完成衝突) ③廠商派工單清單加「等待天數」欄(初驗完成日→今天未完成幾天，≥14紅≥7琥珀)＋工項排序新增 等待天數多→少/樓層高→低/戶別A→Z(_pwoSort 分支)。V0713-07 ①戶況文字報告「依廠商」改表格(_usVendorReportRows；彈窗 HTML 表格廠商/未完成/已完成/平均/推估/逾期，複製為 TSV 可貼 Excel，去掉每行重複標籤) ②戶況依戶別單元列補「樓層(o.floors=各列 distinct floor)＋最後完成日(o.lastDone=max actualDone)」(初驗日 o.planDate 本就有)。V0713-06 派工單成績單總覽卡片改「點擊全螢幕彈窗展開」(原卡內展開太窄)：`_pwoCoverOpenModal(v)` position:fixed overlay(max-980px)＝大字統計卡+_pwoCoverDetailHTML(算式+未完成缺失清單)+「📷這家圖片」pwoExportOneCover。卡片 onclick 改開 modal、⤢ 提示。V0713-05 戶況總表「📝 文字報告」：`_usTextReport`(跟當前視圖；依戶別＝總覽計數+約定複驗列戶+停滯列戶+可複驗列戶、快好了/進行中只計數；依廠商＝各家成績單一行)＋`_usReportOpen`彈窗textarea＋`_usReportCopy`(navigator.clipboard+_rptCopyFallback)。V0713-04 ①戶況總表「依廠商」加缺失排序下拉 _usDSort/_usDefectSortFn(戶別/樓層/預計進場/逾期/#編號，展開套用) ②派工單成績單總覽卡片可點開 _pwoCoverOpen/_pwoCoverToggle/_pwoCoverDetailHTML(展開顯示全工地&本廠商起算日/效率/推估+該廠商未完成缺失清單，會議用)。V0713-03 戶況總表「依廠商」視圖展開的每筆缺失補顯示「樓層」＋「該戶初驗日期(hu.planDate)」(_usDefectRowHTML showUnit 分支)。V0713-02 八合一：①缺失「代工/幫手」欄(廠商欄維持歸責、排行只認廠商、代工不計統計) ②空白缺失(issue 空)不進統計/排行/計數/匯出(_voidRow，結構操作不受影響) ③戶別下拉可複選(改用 filterMainKeyword 不收合)+特殊項排序(梯廳A>梯廳B>甲>乙>丙>丁 移最下) ④公告「已讀X/Y」可點展開已讀/未讀名單(一般公告也適用) ⑤取消/未到看板依「標記日的週」分組(本週展開其他週收合，截圖/PDF全展開)+原本日期不換行省空白 ⑥戶況總表新分頁 ustat(依戶別/依廠商雙視圖；約定複驗區 hu.reCheckDate 依日期倒數+紅≤3天且未完成>5；四類分區停滯/可複驗/快好了(門檻≤5可調)/進行中收合；只給戶別/廠商名上色；展開內嵌 #ID跳轉+完成勾選+預計進場/完成日即存+未排空紅框；約定複驗日同步交屋行事曆獨立面板不碰 planDate) ⑦廠商派工單每家第一頁「進度成績單」封面(未完成/已完成/進度天數+全工地&本廠商起算日=該廠商各戶最早 hu.planDate+完成效率週日不計+推估完成日週日不計) ⑧CODE_VERSION 190。V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
+const CODE_VERSION = 255;  // ← 每次部署新版時遞增（V0720-08 移除交屋狀態表·獨有功能先搬走：使用者定案「交屋狀態表用不到、直接移除」，但先把兩個獨有功能搬走。①「加減驗次輪次」＝客戶清單展開卡片(`buildClientDetailInline`)交屋資訊區加「驗次紀錄」列＝`hu.inspections` 逐輪 date input(`setHuFieldH`)＋刪(`delHuInspCl`)＋「＋加驗次」(`addHuInspCl`)；新增 `addHuInspCl`/`delHuInspCl`＝設 `_clientExpanded=u` 只重繪 renderClients（不像 H2 版動 `_hovExpanded`+reRenderActivePane）。②「批次標記已交屋」＝交屋行事曆批次面板(`_batchSchedPanelHTML`)按鈕列加「批次標記已交屋」→`batchMarkDeliveredByList(ns)`＝貼戶別(`_bslParseTokens`)→查表(`_bslLookup`)→`_bslConfirmBig`＋confirm→`_bslSnapForUndo`(↩還原可用)→逐戶 delivered=true+deliveredDate→save/reRenderActivePane/logChange。移除分頁＝TAB_DEFS.handover 註解掉、default tabOrder 去掉 handover、migrateState 由 push→`filter(id!=='handover')`（既有排序也剔除）、layoutCfg default grpOf 去 handover、`vstatGotoUnit` 由 switchTab('handover')+_hovExpanded 改 switchTab('clients')+`_clientExpanded`。renderHandover 函式與 pane-handover div 保留（setHuField/toggleDeliveredH/toggleDeliveredCl 等仍會呼叫 renderHandover()，pane 在故不會 null crash；只是永不顯示）。側欄/tabbar 各處都 `filter(TAB_DEFS[id])` 故 grpOf 殘留不會復活分頁。批次排程 _bsl 三分頁(hd/hs/hc)本就都在、hc=行事曆保留。純搬移＋移分頁，不改缺失/交屋資料。V0720-07 重複作業「同缺失·不同廠商」防誤刪：根因＝重複分組鍵只用 `戶|||樓|||缺失` 忽略負責廠商，同一缺失若派給 2 家廠商（如 A7·4F·主臥客變給水尚未回灌＝D306泥作×2＋E441油漆×2）會併成「4筆重複」一組，按「合併選取（按組保留最早1筆）」＝只留1筆刪3筆，會把 E441 的活一起刪＝誤刪別家廠商缺失。修法＝新增 `_dupeKeyOf(r)`（預設 `戶|||樓|||缺失|||廠商`，`window._dupeGroupMode==='basic'` 才回舊鍵），renderDupes/mergeDupes/applyDupeKeep/dupeSetKeep/dupeToggleGroup/dupeToggleAll 全改用同一鍵→同缺失不同廠商自動拆成各自一組、合併時各廠商各留最早1筆、結構性不可能跨廠商誤刪。另 renderDupes 建 `vendByBasic`（basic鍵→廠商Set）算跨廠商數：群組表頭加紫徽章「同缺失·跨N廠商」、工具列加「分組依據」切換鈕（含廠商防誤刪＝預設/戶樓缺失舊）＋「只看跨廠商組」篩選 `window._dupeCrossOnly`（空狀態給『顯示全部重複組』鈕）；`_dupeSetGroupMode` 切模式時清空選取/保留。桌機＋手機 `_dupesMobRender` 同步（group 存 `.key/.bk/.vendor`、mob 表頭顯示廠商＋跨N廠商徽章＋切換鈕）。純分組邏輯＋顯示、不改任何缺失資料。V0720-06 效能修正·重複作業選取卡頓：根因＝`dupeToggleRow`/`dupeToggleGroup`/`dupeToggleAll` 勾選一筆就整頁 `renderDupes()`（重算分組＋整頁重塞 DOM，真實資料重複多時每點一下 100~500ms 卡）。修法＝勾選改 `_dupeAfterToggle`→`_dupeSyncUI`＝只就地更新該列 checkbox/背景＋群組表頭勾選＋底部「合併鈕/全選/已選N」，不重繪整頁(桌機 renderDupes row 加 `data-dr`、群組表頭加 `data-dg-ids`、合併鈕 `id=dupe-merge-btn`、已選 `id=dupe-selcount`)；手機(_dupesMobRender 無 data-dr)沿用 renderDupes 保底。合併/套用保留/設保留＝改資料仍走整頁 renderDupes。純效能、外觀行為不變。（診斷：Playwright 實測各分頁渲染＝交屋狀態表 renderHandover ~400-530ms 最重(400+戶格狀圖 DOM 建構·非計算)、追蹤總表89/客戶清單73/驗收統計45、reinsp 19ms 正常；重複作業卡在「選取觸發整頁重繪」。交屋狀態表移除評估：無 switchTab('handover')、handoverUnits 共用不受影響，但獨有 批次排程_bsl/委外代驗勾選/複驗紀錄編輯/標記已交屋＝待使用者確認不需要再移除。）／V0720-05 驗收/修繕進度·通知業務名單＋手機首頁卡：①可複驗/可交屋工具列加「通知業務·名單」鈕→`_riNotifyModal(filter)`＝列該狀態戶別+屋主+電話(clientData.tel)+初驗日+缺失筆數+管理人(缺失列 r.manager)，套現有匯出：「🖼存成圖片(分頁 _riImgPerPage 20/15/10·`_riNotifyPageHTML`)」+「📋複製清單」`_riNotifyCopy`(文字給業務貼LINE)+「含電話」切換(`window._riNotifyTel` 預設顯示)；受目前棟別篩選影響、依初驗日排序；給業務聯繫屋主約複驗/交屋。②手機首頁看板加 `_HOMECAT.reinsp`(可選卡·`_HOMEDEF` 加入·不自動改使用者既有 homeCards)＝`_g95HomeStats` 補 reinspReady(可複驗)/reinspOverdue(逾期未修 via `_riCounts`)、`_homeBig` reinsp 大數字=可複驗(綠)+小紅字逾期未修、點卡 g95HomeGo('reinsp') 進手機版看板。純顯示/唯讀匯出、不寫資料。桌機＋手機。／V0720-04 驗收/修繕進度·廠商彙總改版＋看這家清單匯出：①廠商彙總膠囊→格子(`_riVendorGrid` 桌機5欄/手機2欄·排名1..N·淡黃底#FBEFCB深字·選中琥珀#B45309白字·排序筆數多→少)＋預設前15家＋「展開其餘」(`window._riVendorExpand`)②「看這家清單」`_riVendorModal` 加匯出列：「🖼存成圖片(分頁)」`_riVendorExportImg`＝`_riVendorRows`收逾期戶該廠商未完成缺失→每頁 N 戶(`window._riImgPerPage` 預設20可切15/10)一戶不切→`_riPageHTML`(廠商名+頁碼+戶別+缺失·可切含屋主/初驗日/逾期 `window._riImgExtra`)→`_loadH2C`+`_pwoRenderCanvas`逐頁 toDataURL→`_riShowImages` 預覽層(桌機下載/手機長按存)；「📋複製清單」`_riVendorCopy`＝文字格式A「戶別：缺失、缺失」一行一戶→clipboard 貼 LINE。純顯示/唯讀彙總、不寫資料。桌機＋手機同步。／V0720-03 驗收/修繕進度看板「手機版」：renderReinsp 開頭加 `innerWidth<=700&&_mnavEnabled()&&!_riFull` 分流 `_riMobRender`＝六卡(2排×3)當篩選＋分組/棟別/逾期門檻精簡下拉＋一戶一卡片(平角·戶別★類型屋主/缺失完成·逾期徽章/約複驗·缺失明細)＋逾期視圖廠商彙總膠囊+看這家清單，缺失明細/廠商彈窗沿用桌機同函式；頂列「完整版」鈕(window._riFull→桌機渲染)＋桌機在窄screen顯示「回手機版」鈕。桌機(>700或_riFull)零變動、資料/同步層零變動、純顯示(勾銷案/答應日仍走既有寫入)。第二階段自動排複驗＝案A(寫 S.reCheckUF 約定複驗日+補時段欄位·不碰 planDate)＋規則面板/預覽/復原流程＝已與使用者定案、待做。／V0720-02 驗收/修繕進度看板 v2（承 V0720-01）：①欄位對齊(table-layout:fixed+colgroup 各段同寬)②委外代驗改「戶別後 ★」·缺失欄不寫委外③無缺失保留(供回頭查是否真0缺失)④全修完格式改「M/D 完成（N筆·X工作天）」工作天=排除週日+國定假日(_TW_HOLIDAYS_2026)⑤第6張卡「逾期未修」(pend>0且初驗後≥門檻·紅框·A/B/店細分)＋工具列「逾期門檻▾」(≥7/≥10/≥14·localStorage g95_riOverdue)＝改卡數與清單⑥逾期顯示「初驗後 N 天（含假日 M 天）」日曆天·三級色(7-9琥珀/10-13橘/≥14紅追廠商)⑦逾期視圖上方「廠商彙總·追廠商」面板＝該批逾期戶未完成缺失按廠商筆數多→少膠囊(N筆·M戶)·點選過濾清單+每列 vtag「廠商 N筆」+「看這家清單」彈窗(戶別+缺失·可截圖給廠商)⑧工具列「可複驗/可交屋」快速鈕(=切filter)⑨缺失明細彈窗加「勾完成即銷案(走既有 markDone)＋答應完成日輸入(寫既有 planDone via upd)」＝此二為寫入功能、沿用追蹤總表同路徑。桌機新增功能、手機沿用桌機渲染。／V0720-01 新看板「驗收/修繕進度」第一階段(純顯示·零資料風險)：新分頁 reinsp＝五張底色卡片(已初驗/可複驗/已複驗/可交屋/已交屋，字上數下＋A棟/B棟/店鋪髮絲線兩欄對齊細分·可切精簡)當統計＋篩選；清單依初驗日分段可收合(段首戶數＋整段約複驗)、分組可切 初驗日/棟別/屋主(同屋主聚合)、棟別下拉篩選；每列 約複驗(跳交屋行事曆手動選日·不寫)＋缺失明細(就地彈窗·去追蹤總表看完整)。狀態全衍生自 handoverUnits(inspections/planDate/delivered)＋getDefectRows 完成度(compId)＋clientData 屋主名，不寫任何資料、不動同步/defects。可複驗=已完成初驗＋缺失全修完＋未複驗；可交屋=已複驗＋缺失清零＋未交屋。加分頁四步(TAB_DEFS/pane/tabOrder push/renderPane)＋_TABIC/TAB_BG。⚙自動排規則＋自動排入行事曆＝第二階段(會寫資料)另做。桌機新增、手機沿用桌機渲染(未特化)。／V0719-11 桌機派工單3項：①初驗起始日改「只看未完成項目所在戶別的最早初驗日」(_pwoVendorStats startIso 排除只有已完成的戶別)＝與未完成清單一致(6/22非6/9)、連動 days/rate/推估②派工單工具列整合成一列(清單/成績單切換·篩選▾輪次+驗屋日·搜尋32px+線放大鏡·顯示▾展開/收合/勾選·排序▾廠商+工項去🔧⏳·匯出▾範圍+合併+各家分檔)沿用 _hcddTog③全看板工具列控件 height:32px 齊高(.btn:not(.btn-sm) min-height:32px＋select min-height:32px；td 內小鈕/下拉與 textarea 不受影響)＋派工模式切換鈕去📋📊改線條圖示。桌機版面調整、資料/同步層零變動。／V0719-10 手機實測5項＋補圖示：①交屋行事曆「完整版」鈕收進本週/雙週同列右側·透明底·線條齒輪（另補 main/戶況/派工 完整版⚙→線條齒輪）②截圖修復＝_capEl 指定元素在手機版不存在時退回擷取 pane-目前看板（修使照進度/驗收統計「找不到截圖內容」）③自動填入規則手機卡片＝關鍵字一列＋廠商select右側貼▲▼、移除第三列、左滑刪除(_arSwipeInit觸控)④管理人員展開＝編輯資料移到缺失清單上方⑤全部看板選單＝等高50px·gap0·分割線·文字靠左(.tgrid/.titem)＋客戶清單統計 🏛🏠🏢→線條圖示。只動手機版與少數共用UI、桌機零變動、資料/同步層零變動。／V0719-09 圖示線性化收尾：全檔掃描所有 UI 位置（>元素文字開頭）殘留的彩色 emoji 圖示 247 處一律改線條 SVG（沿用 _icoSVG 同款 .g95ic 風格：印表機/搜尋/時鐘/資料夾/車位/鎖/鑰匙/清潔/離職/支援/目標/建物棟別/檢視眼/置頂針…等，桌機＋手機所有分頁與設定），僅 <option> 內 2 處與純幾何符號(✓✕★➕⬇⬆☐●)、狀態燈、toast 提示圖與 logChange 純文字 emoji 保留。偏好已寫入 CLAUDE.md（線條 SVG、禁 emoji）。資料/同步層零變動。／V0719-08 全站平角化：--r/--rs 半徑變數 2px→0，並掃描全檔 355 處 literal px border-radius 一律改 0（含卡片/按鈕/輸入框/下拉/徽章/膠囊，桌機＋手機皆改），僅保留 20 處 border-radius:50%（計數圓點/頭像/圓形代表字＝真圓非圓角）。使用者強調偏好「平角、不要圓角」已多次，永久寫入 CLAUDE.md 專案規則。資料/同步層零變動。／V0719-07 手機實測修正9項：①使照節點卡上下鈕與內容等高(_usoMobEd align-stretch)②清單分頁器平角方框③客戶清單樓層篩選(單層/複選/區段)④管理人員固定不排時段+休假+支援+離職就地編輯(_mgrMobEditHTML,修desktop editor滲入bug用_mgrMobToggle純state)⑤圖示線性化：公告置頂/已讀/週次+全部看板選單分頁 emoji→線條SVG(桌機同改)⑥篩選下拉平角+▾⑦取消未到記錄取消/未到筆數⑧手機截圖預覽層移除下載鈕(改長按存)⑨html2canvas手機scale:1避免canvas高度上限。只動手機版與少數共用圖示、資料/同步層零變動。／V0719-06 清單頁手機化(批二)最後五頁：重複作業 _dupesMobRender(每組一卡·重複列直式·勾選/★保留/全選/套用保留/合併)／管理人員 _mgrMobRender(人員清單→點展開該人負責缺失卡片·排序列)／進度里程碑 _evMobRender(事件卡片·可編輯內容/單位/區域/管理人/預實日期/刪除/新增)／驗收統計 _vstatMobRender(每日一卡·初複交數字·點展開當日戶別卡片)／交屋進度報告 _hrptMobRender(三環圈直式堆疊+分棟明細·工具列精簡)。各 render 開頭手機分流、寫入走既有函式、桌機零變動。至此批二清單頁全部完成。／V0719-05 清單頁手機化(批二)三頁：更新紀錄 _clogMobRender／垃圾桶 _trashMobRender／已完成 _doneMobRender＝寬表改堆疊卡片(平角天空藍、搜尋、廠商展開明細卡)，各 render 開頭手機分流、寫入走既有 restoreTrashItem/permDeleteTrash/emptyTrash/toggleDoneVendor、桌機零變動。待續：events/inspstat(可編輯/展開，較特別)＋dupes/hreport/mgr(需先出示意圖)。／V0719-04 設定/清單頁手機化(批二)第1頁：客戶清單手機版 renderClients 開頭分流 _clmRender＝棟別×樓層寬格子表→分棟分組清單(A棟/B棟/店鋪)、統計三塊(地主/自購/業主·A/B/店)、搜尋、篩選上下兩排分段(類型一排全部/地主/自購/業主＋棟別一排全棟/A/B/店)、點戶展開就地編輯(客戶名/電話/類型/車位)＝寫入走既有 setCl/clientDelUnit、桌機零變動。其他清單頁(dupes/changelog/trash/done/events/inspstat/hreport/mgr)待後續批出示意圖再做。／V0719-03 手機版整理(批一)修正：①首頁取消上下置中(有標題後改頂端對齊)＋補回漏做的「加入主畫面」引導卡(偵測 standalone/beforeinstallprompt，iOS/Android 步驟 sheet)②行事曆底部列「紀錄」更名「記錄」③行事曆「記錄」改手機專用面板 _cxnMob*(不再開桌機 _cxnBoardOpen 彈窗)④驗屋日報手機版「使照進度」還原成真正的使照文字日報 usoRptCardHTML(原誤用自寫精簡版)⑤「取消／未到 紀錄」更名「取消／未到 記錄」＋改手機版清單。桌機零變動。／V0719-02 手機版整理(批一)：首頁上下置中＋KIMZO標題／首頁編輯卡片改平角／公告去上方新增／行事曆接待排程·紀錄改手機底部面板(含返回鈕)＋頂端完整版⚙／iOS截圖改跳圖片預覽層(長按存)·各看板匯出檢查／篩選面板四欄加▾＋返回鈕＋↑回頂部不擋／各看板底部列一律移除完整版(頂端⚙保留)·總表底部列四格(首頁·篩選·新增·匯出)·移除重複浮動新增·↑移右下／head 加 apple-mobile-web-app／驗屋日報手機版三段可展開／使照手機版平角天空藍檢視下拉。只動手機版與head、桌機零變動、不碰同步/資料層。／V0719-01 手機版大改：新首頁看板中心(玻璃8格大數字外連)＋各看板專屬底部列(⌂首頁錨點/完整版落點/匯出預設圖片)＋分頁地圖(設定/更多分組·使照併驗屋日報·手機隱藏6分頁)＋行事曆筆數%統一/驗次改inspStageBadgeCal/時間分段條/週條戶數＋總表戶別樓層排序/篩選可打字。桌機不動。／V0718-09 手機左右切邊真因＝畫面被誤觸放大(zoom)卡住＝使用者捏縮小即回正；修法＝viewport 加 maximum-scale=1,user-scalable=no＋iOS Safari 專用 gesturestart/gesturechange preventDefault（Safari 會忽略 user-scalable，靠攔截 gesture 才可靠）＝鎖住縮放、不再被放大卡住。桌機不觸發 gesture、零影響。註：V0718-08 的移除 cover＋overflow-x 防線保留（無害）。V0718-08 手機左右切邊修正：V0718-07 加的 viewport-fit=cover 會讓直式手機滿版貼到物理邊緣/圓角＝內容左右被切，移除 cover（回 width=device-width,initial-scale=1）＝iOS 預設把內容留在安全區（頂列仍在瀏海下、不再切邊）；並補防線 @media(max-width:700px){html/body overflow-x:hidden;max-width:100vw}＋body.g95-mnav .shell{max-width:100%;overflow-x:hidden}＝徹底擋掉任何水平溢出把整頁往旁推。純手機、桌機零變動。V0718-07 手機殼頂列精簡＋鎖定：①手機殼(≤700px)頂列桌機件隱藏（系統名/改名筆/多人協作/看板/編輯排序 加 .mob-hdr-hide、CSS body.g95-mnav .page-hdr .mob-hdr-hide{display:none}）＝只留 版本·同步·人數·登出 一條；②viewport 加 viewport-fit=cover＋body.g95-mnav padding-top:env(safe-area-inset-top)＝頂列不被瀏海/動態島壓；③看板/編輯排序移到「更多」sheet（g95TabMenu/toggleTabEditMode、線性 SVG），移除「切回舊版分頁列」＋_mnavEnabled()一律 true＝手機不能切回舊分頁列；④公告欄手機版三顆＋新增收成一顆「＋新增▾」(.hcdd)、📢 emoji 換線性 SVG 喇叭。全部只影響手機殼、桌機零變動。V0718-06 追蹤總表 4 項修正：①頂部工具列（篩選▾/未填廠商/#ID/搜尋/＋新增/匯出▾/匯入 Excel）全部 32px 齊高＋警示鈕改平角；②管理人空徽章 class empty→mgr-none（原撞系統通用 .empty{padding:2rem}＝被撐成 66px 溢出裁成灰弧，這裡修好＝恢復小徽章、資料寫入路徑不動）；③備註欄壓窄（.td-txt max 150→96）＝空間讓給缺失內容（.td-issue min 180→280/max 460→640），備註採 A 式（收成一行 22px、focus 展開 66px、hover title 看全文、placeholder 備註）；④進場/完成日期 input 92→120px＝日期＋星期完整不截斷。V0717-10 版面改版第4步②~⑤＝手機版四頁一次到位（皆 ≤700px＋手機殼開時生效、桌機不動、每頁「完整版⚙」＝原桌機畫面功能一項不減＋回手機版鈕）：①追蹤總表＝搜尋+篩選抽屜（戶別/樓層/廠商/區域/狀態/管理人/輪次/缺日期/無廠商全數）+統計行+一戶一列三行（#/戶別-樓層/廠商色點/輪次/狀態、缺失16px、預計完成/管理/代工/完成快速鈕）+分頁+列點開全欄位編輯面板（upd/markDone/delRow/_editHelper 全走原函式＝驗證/同步照舊）+右下＋新增（跳完整版 inline-add＝自動規則照舊）；②公告欄＝手機工具列收納（次要工具進⋯抽屜：字體/行距/截圖/PDF/全部已讀/強制簽收/認證碼），篩選chips+三顆新增留頂列；③驗屋/使照日報＝手機單欄堆疊、去中線（CSS media）；④派工單＝依廠商收合清單（未完成數多→少、點缺失 pwoGoto 跳總表）；⑤戶況總表簡略版（使用者指定「可看簡略版」）＝每戶未完成筆數多→少+初驗日、點戶跳總表。手機頁面尺寸已確認（viewport meta 本就有、各清單皆流式無橫向溢出）。V0717-09 版面改版第4步①＝交屋行事曆手機版（≤700px＋手機殼開啟時）：本週檢視＝七天週條(點日換天、藍點驗收/青點清潔、今天紫)＋當天清單(依時段分組、A/B/店色塊+戶別17px+★委外+驗次章(nextInspType近似)+未完成筆數紅字+完成%+接待紫字、已取消/未到灰劃線、格頭戶數/清潔數/委外數)；雙週總覽＝壓縮格(驗N/清N、點格跳當天)；點戶別＝底部詳情面板(%/屋主/接待/缺失統計＋四動作：看這戶缺失(annGoUnit)/新增缺失自動帶戶別(showInlineAdd+_pendingRow.unit+refreshUnitSelect+zone對應)/改日期時段(setHuField＝歷史鎖/清潔連動照舊)/標記取消·未到(toggleCancel/toggleNoShow＝原因+歷史照舊))；「完整版⚙」鈕＝切回原桌機畫面（自動排接待/批次排程/警示/紀錄/顯示開關等全部工具一項不減）＋畫面頂端「回手機版」鈕。桌機(>700px)與手機殼關閉時完全走原路徑。V0717-08 實測回饋七合一：①側欄收合鈕改線條 SVG 箭頭+hover（使用者：符號醜不明顯、要CANVA線條風）②背景改天空藍＝--bg #E4E4E4→#CFE3F4、card-main #F0EEF8→#EAF4FC ③驗屋/使照日報兩欄中間加分隔線（右欄 border-left）④頂列合併框 .hdr-seg＝左（版本/已同步/人數）右（匯出/還原/登出/☰看板/取消/編輯排序/深色）各一框、框內直線分割、不再各自成鈕（使用者：不要很多按鈕合併成大框再分割）⑤進追蹤總表 3 秒自動收合側欄、離開自動展開、手動展開本次不再自動收 ⑥字體：預警看板兩表 11→15、派工單清單 12→15、更新紀錄列 11→15/14（使用者：字太小） ⑦（承V0717-07 手機殼要用 preview 網址測）。V0717-07 版面改版第2步＝手機殼：寬≤700px 出現底部五格導覽（公告(未讀章)/總表/行事曆/報告▾/更多▾，線條 SVG 圖示、選中紫+頂線）＝body.g95-mnav 時原藥丸分頁列隱藏、body 加 padding-bottom。報告▾＝報表中心組內 mobShow=1 的看板由下滑出；更多▾＝其餘 mobShow=1 看板＋「☰全部看板(g95TabMenu 舊選單、含手機隱藏的)」＋「↩切回舊版分頁列」。手機顯示清單＝S.layoutCfg.mobShow（⚙版面設定可調、全員同步）；殼開關＝每台 localStorage g95_mnav 預設開（保險絲）。桌機(>700px)完全不受影響；pane 內容未動（手機逐頁優化＝第4步）。V0717-06 缺失表格字體全域放大（使用者：垃圾桶缺失字太小、改15、其他表單一併）：全域 table 11→15、thead th 10→13、td 文字/下拉輸入 11→15、td 日期輸入 10→13、.ae-tbl th 11→13/select 11→14、垃圾桶表 inline 11→15＋刪除日 10→12＋剩N天/完成區標籤 9→11。行事曆格子chips、重複作業頁(已是18)不在此列、維持原樣。V0717-05 編輯排序不再跳回舊版面（使用者實測回報）＝側欄內直接拖：認證後 _sideEdit={order,grpOf,pins} 工作副本、_sideRenderEdit 全組展開＋虛線組名、拖項目＝調順序(順便跟目標同組)、拖到組名＝移入該組尾(含釘選/其他)、✏️改名照舊、「完成排序」寫回 S.tabOrder＋S.layoutCfg 全員同步、取消＝原樣；舊版面(藥丸格)的編輯排序機制原封不動（側欄關閉時照舊）。V0717-04 側欄實測再修：①側欄項目字體 13→16、組標題 11→13（使用者：字太小也不明顯）、側欄 238→264px ②選中項改「平角底色 rgba(91,155,213,.16)＋左紫條 4px＋紫粗體」（使用者：只有一條色線不明顯、要底色）。組內排序＝照舊走「編輯排序」（tabOrder）；釘選要不要留＝使用者可在⚙版面設定把釘選項全改回組別、釘選區自動消失。V0717-03 側欄實測三修：①grid rows auto auto→auto 1fr＝修「側欄比內容高時，公告欄等短內容被推到最下面」（多餘高度原被分給第1列）②收合鈕放大(18px/6px16px)＋側欄全平角、選中改「左紫條＋紫字」不做底色圓角卡片（使用者不喜歡卡片感） ③舊版面分頁列尾端加「🧭 新版側欄」鈕＝從舊版面切回新版的明顯入口（原本只藏在⋯看板面板裡）。V0717-02 電腦版側欄第1步（版面改版五步的第1步）：Notion 風側欄殼＝body.g95-side 時 #mainCard 變 grid、藥丸分頁列隱藏、#side-nav 顯示（釘選＋分組收合＋你的 tabOrder 順序＋公告未讀徽章＋⋯看板顯示設定/⚙版面設定/↩切回舊版面）。新增 S.layoutCfg{grpOrder,grpOf,pins,mobShow}＝分組/釘選/手機顯示設定，走 meta 同步（migrateState 預設種子＝2026-07-17 使用者填表定案＋applyRemote meta 清單加 layoutCfg）；「⚙版面設定」面板認證碼(_annAuthAsk)後使用者可自調全部（mobShow 第2步手機殼才會用到、先存）。每台裝置開關 localStorage g95_side（預設開、⋯看板選單可切「新版側欄」）＋g95_sideMin 收合＋g95_sideGrpClosed 群組收合。編輯排序中/寬<1000px 自動回舊版面（編輯排序機制原封不動）；備份提醒橫幅移出 tabs-wrap（側欄模式也看得到、classic 改顯示在分頁列下方）；tabOrder/空格槽/改名/隱藏/精簡/手機☰看板全部照舊。純 UI 殼、不動同步/資料層/任何 pane 內容。V0717-01（2026-07-17 凌晨）修「登入進來整片空白、點任何看板才恢復」：V0716-05 開機走 defects 快取後 load() 變慢，classic init() 反而晚於「登入後 1.4 秒自動落公告欄」執行；init() 老程式寫死「隱藏 main 以外全部 pane」且不會把 main 重新顯示、也不看 activeTab＝把公告欄藏掉、main 也維持隱藏＝全部 pane 隱藏＝空白（activeTab 仍是 announce 所以分頁標籤亮著）。修法＝init() 兩處寫死 'main' 改「以 activeTab 為準」顯示/隱藏＋renderMain 改 renderPane(activeTab)。純 UI 開機順序、不動同步/資料層。V0716-05 修 preview 實測抓到的「遠端還原傳不回來」：別人從垃圾桶還原缺失（doc del true→false）時，本機垃圾桶殘項會在 _dfRebuildIntoS 被 trashK 排除、且 trash 陣列聯集合併移除不傳播＝該列永遠回不來；修法＝_dfApplyDocs 偵測墓碑復活、順手清本機 S.trash 同 _k 殘項再重組。V0716-04 修 V0716-03 preview 實測抓到的重複文件連鎖：舊資料本有 809 筆重複編號列（rows 12＋completed 797，_findDirtyIds 按 id 去重＝永遠 dirty）→ mergeRows 對重複 id 把同一物件塞兩次（殘影）→ _dfEnsureKeys 誤當「複製列」換新 key＝寫出 809 份重複文件。修法：①applyRemote 在 defects 模式整段跳過 rows/completed 合併管線（mergeRows/_purgeDoneFromRows/_reviveLocalOnly 皆 if(!_dfReady)，rows/completed 完全交給 defects 管線）②_dfEnsureKeys 分流＝同一物件重複出現（殘影）直接陣列去重不換 key、不同物件同 _k（真複製）才換新 key。上線前用 _dfResetFromLegacy 清掉測試期垃圾重遷移。V0716-03 修 V0716-02 preview 實測抓到的三個 bug：①_dfRebuildIntoS 加 pureCloud 模式（開機純雲端）＝修「legacy 列沒 _k 被誤當本機新增→rows/completed 翻倍、再存檔會寫出重複文件」②_dfBoot 加 _dfBootBusy/_dfReady 重入鎖＝修 load 流程重入造成重複遷移+重複掛監聽 ③_dfSaveDocs 批次改並行 Promise.all＝遷移 8800 筆從 1-3 分鐘縮到 ~10 秒。V0716-02 🔴根治資料層：每筆缺失一份 Firestore 文件＝projects/main/defects/{key}（{d:列物件,st:'o'未完成/'d'已完成,mt,del墓碑,by,ver}）。存檔只寫「有變動的那幾筆」（classic _dfComputeChanges diff）、刪除＝墓碑（垃圾桶 UI 不變）、監聽 onSnapshot(defects) 原生只推變動文件（classic _dfApplyDocs 逐筆合併、本機 dirty 贏）＝沒有人寫得動自己沒碰過的缺失＝整包互蓋物理絕緣、根治掉資料。rows/completed 不再走 _fields 整包文件（_computeDirtyFields 在 _dfReady 時跳過、_fbListen 忽略 legacy rev、applyRemote 開頭 d.rows/completed 換成本機＝舊版整包寫入絕緣）；_fields/rows+completed 凍結當備份。S.rows/S.completed 介面完全不變（每筆多 _k 穩定碼＝文件 key，重新編號不搬文件），渲染/報表/派工單全不動。一次性遷移 _dfMigrate（開機看 _fields/dfMig 標記；key=r+id/c+compId 冪等、兩台同時遷移不重複）；完整還原 g95FullRestore 設 _dfFullReset＝缺席文件補墓碑。開啟 Firestore persistentLocalCache（多分頁）＝重整只重讀變動文件。測試/重置工具 window._dfResetFromLegacy('MONGA')。舊版靠版本閘門自動擋寫。V0716-01 重複作業(dupes)頁字體放大（注意：今天=2026-07-16，前面 V0714-04/05/06 是把舊字頭帶下來的筆誤、已部署故歷史不回改，本版起正名 V0716）：列內容 11px→18px、群組標題 12px→18px、欄位標題 10px→14px，A/B/店標籤・筆數徽章・保留鈕一併放大，grid 欄寬放大避免 18px 擠爆（32/90/55/1fr/100/70/70→40/130/66/1fr/190/90/90）。純該頁版面。V0714-06 廠商下拉統一 A-Z：新增 classic `_vAZ()`（[...S.vendors] localeCompare zh-Hant numeric 排序、只排「下拉顯示」不動 S.vendors 本身順序＝不影響常用廠商排行），把 vOpts/新增缺失/批次改廠商/未清潔警示/篩選(含 datalist)/自動規則 所有廠商 <select> 選項改走 _vAZ()。V0714-05 精簡：①清死碼＝移除舊「分享連結」shareData() 函式＋load() 的 #data= 載入路徑（V0709-03 早已移除按鈕、唯讀分享改用 copyViewLink 通行碼 KIMZOG95）。②移除「🧹清潔追蹤」分頁＝TAB_DEFS 拿掉 clean＋刪掉會把 clean 塞回 tabOrder 的 migrate 行；renderCleanTrack 等函式與 pane-clean 留為無害死碼；清潔資料(cleanPlanDate/cleanSlot)與交屋行事曆的未清潔警示→產生清潔工作→點工派遣待帶入 主線完全不動；使用者現有 tabOrder 的 clean 舊槽會變空位，由使用者用「編輯排序」自行收（AI 不動 tabOrder）。③移除「🏛公設狀態表」分頁＝TAB_DEFS 拿掉 pubarea＋刪 migrate 回填＋預設 tabOrder 種子去掉 pubarea；renderPubArea 與 pane-pubarea 留為死碼；公設「固定清單」publicAreaList 變無介面的孤兒資料（不再可編輯、但不報錯、不被別處用）；公設「缺失」本身在公設分區/總表都在、不受影響；舊 tabOrder 空槽同上由使用者自行收。④showInlineAdd 版面：把「新增並繼續同戶／確認新增並關閉／取消」三顆按鈕從左下獨立一排，移到「預計進場/完成」那排最右邊（margin-left:auto）＝落在缺失內容右下、輸入完就近按、少一排。⑤追蹤總表表頭「↺重新編號」(renumber，會把 2990 筆全部重編 id) 上鎖：onclick 改 `_annAuthAsk('重新編號',renumber)`＝按下先要認證碼(_annAuthCode()＝S.annAuthCode||'MONGA')才執行，避免誤按。⑥移除「📦交屋前缺失彙整」分頁＝TAB_DEFS 拿掉 hpend＋刪 migrate 回填（原 hpend push 後接的 else-if events 改回獨立 if）＋預設 tabOrder 種子去掉 hpend；renderHPend／pane-hpend／_hpendState 留死碼；純檢視、無獨有資料（缺失在總表/廠商/派工單、交屋日在交屋狀態表都在）；舊 tabOrder 空槽由使用者自行收。⑦Excel 匯入廠商空白留空（importExcel `vendor:mapped.vendor||''`，拿掉 S.vendors[0] 預設）。⑧自動填入規則（新分頁「⚙自動規則」）：S.autoRules{enabled,vendorRules:[{kw,vendor}],dueDays,dueSkipSunday,defaultVendor} **走 meta 同步**（migrateState 預設＋applyRemote meta 清單加 autoRules，刻意不走獨立文件＝降低同步層改壞風險；代價＝升級過渡期若有人停舊版存 meta 可能洗掉規則、可重設）。掛新增缺失：廠商預設改空白（showInlineAdd _pendingRow.vendor=''）、issue oninput→_iaAutoVendor 依關鍵字命中第一個填廠商（空白才填、不覆蓋手動）、confirmInlineAdd 三處 push 用 _autoDue(戶) 補預定完成日＝該戶 hu.planDate+dueDays(遇週日順延)、confirm 時 vendor 空白再用 _autoVendor 補。_autoVendor/_autoDue/_iaAutoVendor/renderAutoRules 皆 classic 作用域。V0714-04 🔴止血：舊版整包覆蓋 rows/completed 致「別人剛輸入的整戶缺失永久消失」＝applyRemote 加版本閘門（_meta.writerVer<本機且該列不在 remote.trash/未被退回未完成時）保留本機獨有列＝倖存者，下次存檔洗回雲端＝全員自癒（方向同 V0713-10、補「刪除」這一向）；_fbSave 埋 _lastWrite{ver,by,at}、_fbListen 帶 writerVer 給 applyRemote，埋點兼供 Firestore 事後追誰(哪版)覆蓋。純同步層、不動 UI/資料結構/SAVE_FIELDS。V0714-03 LOGIN_ALLOW 加第10人 jasonchao209@gmail.com（同步：dispatch D0714-01 名單＋Firestore 規則 isEditor，三處一致才有寫入權；check_g95 名單檢查改 10 人）。V0714-02 日報地主總數 _rptOwnerTotal 母集合加入 clientData 的戶（漏掉未排驗收未進交屋管理的地主戶，例 地B6-8→184；加入後=客戶名冊 185）。另本日資料校正：依115.05.05地主分配表把10戶自購→地主、業A5-1→業主（客戶清單，走資料非程式）。V0714-01 驗屋日報「地主戶分算」：總數全部維持原算法（含地主），地主為子集另標、純顯示不動資料層。A＝今日初驗行「（地主 X）」＋累計完成行「（地主 Y）」＋複驗/交屋行「（地主 今日X・累計Y）」＋本週統計各行下「└ 地主戶：預計｜實際｜累計」；B＝下週預計後獨立「🏠 地主戶統計」區塊（總戶＋三階段累計＋本週實際）。判定＝isOwnerUnit(key)（clientData type 地主戶或「地」字頭）。hrptCounts/_rptTodayDetail/_rptPlanRange/_rptDoneRange 加可選 fltr 參數（不影響既有呼叫）＋_rptOwnerTotal()。開關 S.rptFc.hideOwner（走 meta 全員同步），完工推估設定列「顯示地主戶分算」預設勾選、取消勾＝A+B 全隱藏。業主戶不分算（使用者指示）。舊「儲存這份」快照不會自動長出新格式、按「↻重新產生」。V0713-10 🔴修「勾完成的缺失 1-3 分鐘後又復活」＋「公告已讀被洗掉重複要求簽收」同步層四修：①startFirebaseListen 的丟棄閘(_saveTimer||_saving 直接 return)改交給 applyRemote 排隊——增量同步(V0709-10)下被丟棄的更新因 _lastRev 已標記「看過」＝永遠不補讀→該機 rows 停在舊狀態、下次存檔把整包舊 rows 寫回雲端＝缺失復活主因。②排隊機制改「只記變動欄位清單(_pendingKeys 聯集)、真正套用時 window._fbReadFields 重新抓雲端最新」——原本 _pendingRemote 存「排隊當下的快照」會過期，事後 hasDirty=false 走 S=remote 整包蓋回＝復活幫兇；順修多筆排隊互相覆蓋掉更新的舊缺陷；排隊期間有存檔＝過期快照絕不套用。③mergeRows 防復活保險：遠端有、本地沒有的列，若「本地已刪且 dirty(尚未同步)」或「id+issue 已在合併後 completed(＝已完成)」→不加回；no-dirty 分支 S=remote 後也 _purgeDoneFromRows 依 completed 清 rows 殭屍列(雲端被舊版整包寫回時全員自癒)。④公告已讀簽收 readBy 逐則取 本機∪遠端 聯集(_mergeAnnReadBy，雙向)＝簽收只增不減，不再被舊 meta 快照洗掉。純同步層、不動 UI/資料結構；上線前 g95FullBackup＋9 人重整。V0713-09 ①🔴戶況總表改「棟+樓＝一戶」(方案A)：_usUnitList 依 r.unit+r.floor 分組、o.disp=棟-樓、_usUnitSort(棟→樓高低) 套四類分區；約定複驗日改存 S.reCheckUF[disp](原 hu.reCheckDate per棟，改 per棟樓，_usSetRecheck/_usApptEditor/_usApptPanelHTML 皆改；舊 per棟複驗日不遷移、需重設)；初驗日仍取 hu[棟].planDate(各樓共用)。②派工單清單 戶別/樓層/初驗完成(round)/等待天數 四欄標題可點排序 pwoHdrSort/_pwoHdr/_pwoRowDir(再點切升降▲▼)，工項排序下拉保留。V0713-08 ①戶況依戶別戶別膠囊併樓層(A16-1F)去掉獨立小字 ②「最後完成」只在可複驗(remaining===0)戶顯示(避免與未完成衝突) ③廠商派工單清單加「等待天數」欄(初驗完成日→今天未完成幾天，≥14紅≥7琥珀)＋工項排序新增 等待天數多→少/樓層高→低/戶別A→Z(_pwoSort 分支)。V0713-07 ①戶況文字報告「依廠商」改表格(_usVendorReportRows；彈窗 HTML 表格廠商/未完成/已完成/平均/推估/逾期，複製為 TSV 可貼 Excel，去掉每行重複標籤) ②戶況依戶別單元列補「樓層(o.floors=各列 distinct floor)＋最後完成日(o.lastDone=max actualDone)」(初驗日 o.planDate 本就有)。V0713-06 派工單成績單總覽卡片改「點擊全螢幕彈窗展開」(原卡內展開太窄)：`_pwoCoverOpenModal(v)` position:fixed overlay(max-980px)＝大字統計卡+_pwoCoverDetailHTML(算式+未完成缺失清單)+「📷這家圖片」pwoExportOneCover。卡片 onclick 改開 modal、⤢ 提示。V0713-05 戶況總表「📝 文字報告」：`_usTextReport`(跟當前視圖；依戶別＝總覽計數+約定複驗列戶+停滯列戶+可複驗列戶、快好了/進行中只計數；依廠商＝各家成績單一行)＋`_usReportOpen`彈窗textarea＋`_usReportCopy`(navigator.clipboard+_rptCopyFallback)。V0713-04 ①戶況總表「依廠商」加缺失排序下拉 _usDSort/_usDefectSortFn(戶別/樓層/預計進場/逾期/#編號，展開套用) ②派工單成績單總覽卡片可點開 _pwoCoverOpen/_pwoCoverToggle/_pwoCoverDetailHTML(展開顯示全工地&本廠商起算日/效率/推估+該廠商未完成缺失清單，會議用)。V0713-03 戶況總表「依廠商」視圖展開的每筆缺失補顯示「樓層」＋「該戶初驗日期(hu.planDate)」(_usDefectRowHTML showUnit 分支)。V0713-02 八合一：①缺失「代工/幫手」欄(廠商欄維持歸責、排行只認廠商、代工不計統計) ②空白缺失(issue 空)不進統計/排行/計數/匯出(_voidRow，結構操作不受影響) ③戶別下拉可複選(改用 filterMainKeyword 不收合)+特殊項排序(梯廳A>梯廳B>甲>乙>丙>丁 移最下) ④公告「已讀X/Y」可點展開已讀/未讀名單(一般公告也適用) ⑤取消/未到看板依「標記日的週」分組(本週展開其他週收合，截圖/PDF全展開)+原本日期不換行省空白 ⑥戶況總表新分頁 ustat(依戶別/依廠商雙視圖；約定複驗區 hu.reCheckDate 依日期倒數+紅≤3天且未完成>5；四類分區停滯/可複驗/快好了(門檻≤5可調)/進行中收合；只給戶別/廠商名上色；展開內嵌 #ID跳轉+完成勾選+預計進場/完成日即存+未排空紅框；約定複驗日同步交屋行事曆獨立面板不碰 planDate) ⑦廠商派工單每家第一頁「進度成績單」封面(未完成/已完成/進度天數+全工地&本廠商起算日=該廠商各戶最早 hu.planDate+完成效率週日不計+推估完成日週日不計) ⑧CODE_VERSION 190。V0713-01 新增 App 圖示（manifest+icon-192/512+apple-touch-icon，head 加 link），可加到主畫面顯示放大鏡打勾圖示；未加 service worker（G95 之前刻意移除，避免版本快取問題）｜V0709-10 成本優化：增量同步。_fbSave 主文件多寫「每欄版本戳 rev={欄:ts}」(merge 深合併)＋module 記 _selfRevMarks；_fbListen 改成比對 rev 只重讀「有變動」的欄位文件(不再每次寫入都 getDocs 整包重讀所有欄位)，用 window._getState() 取目前 state 當底、只疊變動欄位組出完整 remote。排除自己 echo(rev 對得上 _selfRevMarks)、相容舊版(舊版只 bump _ts 無 rev→整包重讀)。classic 加 window._getState 橋接(S 是 let、module 讀不到)。大砍 Firestore 讀取/頻寬(原本一人存檔全員重抓 rows~90KB+completed~90KB+…)。｜V0709-09：接待派任順序那組 recepOrder/recepMgrOrder/recepMode/recepOff/recepMgrOff 也拆成獨立欄位文件（_RECEP_SPLIT，加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields/_fbMigrateSplit/applyRemote），比照 V0709-08 防舊版存 meta 整包蓋掉，多一層保險。無 UI/行為改變。｜V0709-08 二合一：①自動排接待「平均分攤」改成每天上午/下午各自獨立計數＝load 依 日期+時段段(am/pm,_recepPeriod)分桶、下午不受上午分攤影響。②🔴資料層根治：固定不排時段(mgrFixedBusy)＋支援人力改存獨立欄位文件 _fields/mgrFixedBusy、_fields/mgrSupport（加入 SAVE_FIELDS/_SPLIT_CORE/_splitState/_mergeFieldsToState/_computeDirtyFields(_SPLIT2)/_fbMigrateSplit/applyRemote 清單），根治「別人用舊版存 meta 整包把新欄位蓋掉」（症狀：休假還在、固定不排/支援不見）。支援從 managerDetails.support 移到 S.mgrSupport={名:{from,to}}，migrateState 一次性遷移。⚠️改資料層＝上線前 g95FullBackup＋全員重整一次。｜V0709-07 三合一：①接待工具列加「🧹清空接待(全部)」「🧹清空(自動排)」＝依範圍(_recepRangeBounds)清 hosts、確認、存 window._recepUndo/_recepUndoKind 供「↩復原」共用；自動排標 hostAuto=true、手動 toggleHost 標 false，只清自動排靠此旗標。②支援人力＝managerDetails[名].support/supportFrom/supportTo，統一藍色系(mgrColor 支援回 MGR_SUPPORT_COLOR)；_mgrSupportBlocked(名,日)＝支援期間外；autoAssignHosts avail 加期間外跳過；_hostStatus 統一(休/會/非支援期紅字)套 hostCellAligned/hostBadgesHtml/hostPickerHtml，手動只提醒不擋；管理人員頁(卡片renderMgr＋側欄mgrEditorHTML)支援者另分「🤝支援人力」組＋徽章＋期間；詳情面板 _mgrSupportEditorHTML 設為支援＋期間。③資料清理：A1-13/A6-27 殘留未到旗標請使用者手動清。｜V0709-06 新功能：自動排接待「↩ 復原自動排接待」鈕＝autoAssignHosts 排到的戶原本 hosts 存本機快照 window._recepUndo（只記本次動到的戶），工具列「⚙順序」旁出現「↩ 復原自動排接待（N戶）」按下＝那 N 戶 hosts 還原成排之前(本來空就變回空)＋save＋renderHCal；只還原本次自動排到的、手動指派不碰；快照本機、重整失效。｜V0709-05 新功能：接待「固定不排時段」＝管理人員詳情面板新增每週固定的星期×時段封鎖(如例行會議)，資料存 S.mgrFixedBusy={名:{d:{dow:[時段idx]},from,to}}、可選填起訖期限、預設永久；自動排接待 autoAssignHosts 的 avail 過濾器在跳休假旁加 _isMgrBusy(名,驗收日,時段) 一併跳過；行事曆接待徽章 hostCellAligned/hostBadgesHtml 命中固定會議標紅「(會)」(同休假紅底)；手動 hostPicker 標「📅會」提醒但不擋(仍可手動指派)。編輯區塊放在「特定日休假」上方。｜V0709-04 修 bug：批次排程 _bslApplyOne 交屋分支改新驗收日時漏清 cancelled/noShow＝未來戶被帶到新日期仍顯示「已取消」；補 if(date&&date!==hu.planDate)清旗標，與單筆 setHuField 一致，歷史保留在 cancelHistory/noShowHistory。｜V0709-03 版面：頂列移除「🔗產生分享連結」按鈕（shareData 函式與舊分享載入保留不動）；把「完整備份 ⬇匯出／⬆還原」兩顆＋隱藏 input 移到頂列（原分享連結位置，任何分頁可一鍵備份），管理人員頁的完整備份長條移除；追蹤總表的分享提示 share-bar 一併移除。｜V0709-02 細修：①離職卡改收合覆蓋卡(灰、只徽章＋離職日、點擊展開 toggleMgrCardExpand)＋離職者排最下＋「離職」分隔列(卡片區與右側清單同步)；彭世鈺等「職稱欄打離職」的舊做法開機一次性轉正式離職旗標並清職稱(_mgrResignMigrate)、_mgrResigned 相容 title 含「離職」。②自動排接待加日期範圍(連動行事曆/本週/自訂起訖/全部未來 _recepRangeBounds)。③派任順序面板加「人員層級」：職稱可展開(▶)逐人 ▲▼ 排序(S.recepMgrOrder)＋個別派/不選(S.recepMgrOff)，並加「平均分攤／照我排順序」切換(S.recepMode)；autoAssignHosts 依 rank(職位→人員順序)＋mode 派工。｜V0709-01 三合一：①自動清潔缺失戶別去樓層(A1-10→A1、樓層另存)＋一次性清理舊資料鈕(_cwFixLegacyUnits)；②自動排接待人力 autoAssignHosts：只補未來空缺、依職位派任順序(可自調 S.recepOrder/recepOff、工讀生預設不派)分攤、每人每時段上限1戶(同屋主除外)、避開休假/離職、排不完提示人力不足，工具列「🧑‍💼自動排接待」＋「⚙順序」設定面板；③離職員工機制 managerDetails[名].resigned＝留存不刪但排除於管理人/接待選單(activeMgrs/mgrSelectList/hostPicker)、管理人卡片灰底＋已離職徽章＋詳情面板標記離職/恢復任職鈕）｜V0707-12 完整備份區塊新增「⬆ 還原完整備份」＝選備份 JSON→驗證是否有效(_type=g95-full-backup 或含 rows)→顯示備份時間/筆數摘要→強確認→輸入 MONGA→最後確認→S=migrateState(備份)、save() 覆蓋雲端全部資料並同步全員(含 uso/events 獨立文件重寫)、logChange 記錄。重大操作、無法復原）｜V0707-11 另含驗屋日報二調：本週統計結束日改「報告當天」(非週日，預計/實際/差異/取消皆算到當天)＋「🚫取消/未到統計」整塊改可勾選(rptFc.showCxn)預設關、累計選項附屬其下。🔴改儲存結構：使照(uso)/里程碑事件(events) 從 meta 整包拆成獨立欄位文件 _fields/uso、_fields/events＝根治「別人改別的 meta 也會蓋掉你使照/事件」；_splitState/_mergeFieldsToState 相容回退(讀不到獨立文件就用舊 meta)＋開機一次性遷移 _fbMigrateSplit；_computeDirtyFields 各自判定不併 meta；SAVE_FIELDS 加 uso/events；保留 V0707-10 的 15 秒 meta 保護當第二道防線。⚠️改資料層＝上線前先 g95FullBackup、index+preview 一起上、9 人各自重整一次、無法乾淨回退）｜V0707-10 ①修同步：使照節點/里程碑事件/預警等 meta 欄位改過後不再被遠端整包覆蓋(存了5-15秒又跳回)＝applyRemote 新增 _protectedMetaKeys(本機未同步的 meta 欄位＋剛存檔 15 秒 _metaGuard)納入 hasDirty、逐項合併時保留本機、不採用遠端；rows/completed/handoverUnits 合併不變。②使照三欄看板(已完成/進行中/未開始)也依工具列「近→遠/遠→近」排序(已完成用實際日、進行中/未開始用預定日、無日期排最後)。殘留：跨人同時改 meta 的整包 LWW 覆蓋要拆獨立同步文件才根治）｜V0707-09 ①取消／未到紀錄看板：noShowHistory 補上未到歷史(比照 cancelHistory，改期永久保留)、標記時可留空原因、cancelHistory 也補 by/reason；彙整看板可搜尋(戶別/日期/原因)+類型篩選+標記日新舊排序+字體+截圖+PDF+點戶別跳行事曆+原因補改/刪除；入口=交屋行事曆工具列🚫鈕開彈窗＋驗屋日報頁嵌入。②使照日期排序切換 近→遠/遠→近(_usoRptDir 本機記憶)：文字日報三組(已完成用實際日、進行中/後續用預計日)＋里程碑總表，串珠/月列時間軸不受影響）｜V0707-08 新增缺失廠商欄改版：常用廠商快速鈕(依總表使用次數排序、預設1家、－/＋可調上限10、本機記憶g95_vendorQuickN)＋自訂搜尋下拉(代號與工種名皆中段比對、命中反白、色點同總表、常用標N筆、上下鍵+Enter選+Esc收、＋新增廠商)，取代原生datalist；只用在showInlineAdd新增缺失，不動總表/其他頁）｜V0707-07 ③廠商派工單新增「工項排序：🔧複驗優先(綜合)」＝交屋驗收日近→同戶未完成缺失多→初驗完成早→預計完成早/逾期，排前面＝優先修推複驗；PDF/合併一份照此輸出給廠商）｜V0707-06 ①分頁隱藏改固定位置留空不補位；④強制簽收預設開＋切換需認證碼；⑤公告發布3分鐘後上鎖(非本人或逾時)編輯/刪除需認證碼、滿一週(除置頂)自動收折成民國週群組(例115/07/06-07/12)、可另設公告專用認證碼；認證碼預設沿用MONGA）｜V0707-05 廠商分類頁「📋 待複驗優先清單」：點選一家廠商→列出該廠商初驗未完成缺失的戶，依驗收日近＋缺失多排序、高/中/低優先，字體A-/A+＋截圖＋PDF 給廠商推動複驗）｜V0707-04 分頁隱藏/精簡：「⋯ 看板」鈕開「🗂 看板顯示設定」面板，每個分頁👁顯示/🚫隱藏＋精簡模式，只存本機 localStorage(g95_tabHidden/g95_tabCompact)、不動 S.tabOrder 排序）｜V0707-03 公告欄①：登入後一律先落公告欄；取消自動已讀改每則按「✅我已讀」主動簽收；公告可設⭐必讀＋顯示未簽收名單；「🔒強制簽收」開關(S.annForce)開啟時必讀未簽收前擋其他分頁）｜V0707-02 新分頁「📢 公告欄」：⏰交辦(負責人/期限/狀態)＋❓疑問Q&A(問答分開/已解答)＋📌公告；篩選/置頂/已讀人數/連戶別跳追蹤總表；字體行距/截圖/PDF；未讀分頁徽章。資料 S.announcements 走 meta）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -560,6 +562,14 @@ window._fbSave = async function(data, dirtyKeys){
 
   const totalKB = keysToWrite.reduce((sum,k)=>sum+JSON.stringify(fields[k]).length, 0)/1024;
   console.log('[Firebase] 差異儲存: ['+keysToWrite.join(', ')+'] ('+totalKB.toFixed(0)+'KB / 全量'+(JSON.stringify(data).length/1024).toFixed(0)+'KB)');
+};
+
+// V0721-01（D0721-02 連動）：派工候選側寫——把「點工類·未完成·有預計完成日」的精簡候選獨立寫入
+// _fields/dispatch_cands（{z:gzip}，dispatch 端 _g95Dec 相容），讓 dispatch 讀 1 份取代整包 defects(~8000)。
+// 刻意不進 SAVE_FIELDS / rev / meta＝G95 自身 client 不讀此文件、不影響核心存檔與多人同步。傳入 json=候選陣列字串。
+window._fbWriteDispatchCands = async function(json){
+  const z = await _zEnc(json);
+  await setDoc(doc(fieldsCol, 'dispatch_cands'), { z, _mt: Date.now(), ver:(window._CODE_VERSION||0) });
 };
 
 // V0707-11：開機一次性遷移——若 uso/events 尚未有獨立文件（舊資料仍在 meta），就從目前 state 建立獨立文件。
@@ -813,7 +823,7 @@ window.exportHandoverExport = async function(days){
       const addRows=rows=>{if(!rows)return;rows.forEach(r=>{if(!seen.has(r.id)){seen.add(r.id);result.push(r);}});};
       addRows(defectCache.get(unitKey));addRows(defectCache.get(displayName));
       addRows(defectCache.get(String(unitKey).toUpperCase()));addRows(defectCache.get(displayName.toUpperCase()));
-      if(col&&flr&&result.length===0){
+      if(col&&flr){  /* V0720-14：改「聯集」不再先命中就停＝同戶缺失若混用「B2-27合併」與「B2＋27F分開」兩種寫法也全撈齊、用id去重（修行事曆筆數對不上／少算） */
         defectCache.forEach((rows,ru)=>{
           if(!rows.length)return;
           const clean=ru.replace(/^(地|業)/,'').trim();
@@ -1043,7 +1053,7 @@ if(window._LOGIN_GATE){
 </script>
 
 </head>
-<body>
+<body class="g95-nofull">
 <!-- Modal -->
 <div class="modal-bg" id="modalBg">
   <div class="modal">
@@ -1060,7 +1070,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600">V0720-12</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600">V0721-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -1101,6 +1111,7 @@ if(window._LOGIN_GATE){
     <div id="pane-clean"     style="display:none"></div>
     <div id="pane-uso"       style="display:none"></div>
     <div id="pane-autorule"  style="display:none"></div>
+    <div id="pane-ulookup"   style="display:none"></div>
     </div>
   </div>
 </div>
@@ -1108,7 +1119,7 @@ if(window._LOGIN_GATE){
 const SK='tracker_v5';
 const DOW=['日','一','二','三','四','五','六'];
 const V_COLORS=['#534AB7','#0F6E56','#993C1D','#185FA5','#3B6D11','#854F0B','#7A0055','#5F5E5A','#9C6B00','#1A6B6B'];
-const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',reinsp:'card-cal',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones',hpend:'card-warn',trash:'card-warn'};
+const TAB_BG={main:'card-main',vendor:'card-vendor',warn:'card-warn',cal:'card-cal',zones:'card-zones',mgr:'card-mgr',events:'card-event',done:'card-done',changelog:'card-main',handover:'card-vendor',reinsp:'card-cal',hstats:'card-zones',clients:'card-mgr',hcal:'card-cal',pubarea:'card-zones',hpend:'card-warn',ulookup:'card-zones',trash:'card-warn'};
 
 let S={
   rows:[
@@ -1748,6 +1759,40 @@ function _stampMetaTouch(){
     Object.keys(prev).forEach(k=>{if(!(k in cur))window._metaTouch[kind+':'+k]=now;});
   });
 }
+// ── V0721-01（D0721-02 連動）：派工候選側寫 ──
+// 算「點工類·未完成·有預計完成日」精簡候選 → 獨立寫 _fields/dispatch_cands（module window._fbWriteDispatchCands）。
+// 欄位與 dispatch 舊 _g95Cands 逐欄一致（refId/round/unit/content/note/vendor/mgr/due），故 dispatch 兩模式行為相同。
+var _dcLast=null,_dcTimer=null;
+function _dispatchCandsBuild(){
+  var out=[],rows=(typeof S!=='undefined'&&S.rows)||[];
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]; if(!r) continue;
+    if(r.actualDone) continue;                 // 已完成→不進候選
+    if(!r.planDone) continue;                  // 無預計完成日→不進候選
+    var v=String(r.vendor||'');
+    var isPW=!!(S.vendorFlags&&S.vendorFlags[v]);
+    if(!isPW && v.indexOf('點工')<0) continue; // 非點工廠商→跳過（旗標優先、名字含「點工」為 fallback）
+    out.push({refId:String(r.id),round:(r.round==='複驗'?'複驗':'初驗'),unit:String(r.unit||'')+(r.floor?' · '+r.floor:''),content:r.issue||'',note:r.note||'',vendor:v,mgr:r.manager||'',due:r.planDone});
+  }
+  return out;
+}
+function _dispatchCandsSync(){
+  try{
+    if(window._VIEW_ONLY) return;
+    if(!window._fbWriteDispatchCands) return;
+    clearTimeout(_dcTimer);
+    _dcTimer=setTimeout(function(){
+      try{
+        var json=JSON.stringify(_dispatchCandsBuild());
+        if(json===_dcLast) return;             // 內容沒變→不寫（省 Firestore 寫入）
+        _dcLast=json;
+        window._fbWriteDispatchCands(json).then(function(){
+          console.log('[派工候選] 已更新 '+json.length+'B');
+        }).catch(function(e){ console.warn('[派工候選] 寫入失敗', e); });
+      }catch(e){ console.warn('[派工候選] build', e); }
+    }, 2500);
+  }catch(e){ console.warn('_dispatchCandsSync', e); }
+}
 function save(){
   if(window._VIEW_ONLY)return;
   try{if(S.trash&&S.trash.length>300)S.trash.length=300;}catch(e){} // V0705-02：垃圾桶上限 300（新的在前，砍最舊）
@@ -1759,6 +1804,7 @@ function save(){
   try{_stampMetaTouch();}catch(e){}
   if(S.trash&&S.trash.length>300)S.trash=S.trash.slice(0,300);  // 垃圾桶上限300筆（新的在前），避免meta無限膨脹
   try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}
+  try{_dispatchCandsSync();}catch(e){} // D0721-02：派工候選側寫（獨立、有 2.5s 防抖＋無變動不寫）
   if(window._fbSave){
     // 若正在寫入中，標記需要再存一次（不設新 timer）
     if(_saving){ _saveQueued=true; setSyncStatus('pending'); return; }
@@ -1992,6 +2038,7 @@ async function load(){
   _savedSnapshot=_takeSnapshot();
   setSyncStatus(window._fbReady?'online':'offline');
   if(window._fbReady)startFirebaseListen();
+  if(window._fbReady){ try{ setTimeout(function(){ try{ _dispatchCandsSync(); }catch(e){} }, 9000); }catch(e){} } // D0721-02：開機後種一次派工候選（不必等使用者編輯，dispatch 即有 1 份可讀）
 }
 function migrateState(d){
   if(!d.zones)d.zones=[{id:'indoor',label:'室內缺失',color:'#534AB7'},{id:'pub_ab',label:'公設 梯廳/樓梯間',color:'#0F6E56'},{id:'pub_cd',label:'公設 RF/2F/1F/店鋪',color:'#993C1D'},{id:'basement',label:'地下室',color:'#185FA5'}];
@@ -2013,6 +2060,7 @@ function migrateState(d){
   if(!d.tabOrder.includes('autorule'))d.tabOrder.push('autorule');
   d.tabOrder=d.tabOrder.filter(function(id){return id!=='handover';});  // V0720-08：交屋狀態表已移除，從既有排序剔除（功能已搬客戶清單/行事曆）
   if(!d.tabOrder.includes('reinsp'))d.tabOrder.push('reinsp');   // V0720-01 驗收/修繕進度：新分頁補在最後，位置由使用者用「編輯排序」自行擺（AI 不重排 tabOrder）
+  if(!d.tabOrder.includes('ulookup'))d.tabOrder.push('ulookup'); // V0720-13 戶別查詢：新分頁補在最後，位置由使用者自行擺
   if(!d.tabOrder.includes('hstats'))d.tabOrder.push('hstats');
   if(!d.tabOrder.includes('clients'))d.tabOrder.push('clients');
   if(!d.tabOrder.includes('hcal'))d.tabOrder.push('hcal');
@@ -2374,6 +2422,7 @@ function upd(id,f,v,skipCheck){
   const old=r[f];r[f]=v;
   if(f==='planIn'&&v&&!r.planDone){r.planDone=v;}
   if(f==='actualDone'&&v&&!r.actualIn)r.actualIn=v;
+  if(f==='actualDone'&&v){try{var _i1=(typeof _riInsp1ForUnitFloor==='function')?_riInsp1ForUnitFloor(r.unit,r.floor):'';if(_i1&&v<_i1)toast('提醒：完成日 '+v.slice(5)+' 早於初驗日 '+_i1.slice(5)+'，請確認','⚠️');}catch(e){}}  // V0720-14 ③軟提醒（不強制擋）
   if(String(old)!==String(r[f])){
     const L={manager:'管理人',unit:'戶別',floor:'樓層',vendor:'廠商',issue:'缺失內容',note:'備註',planIn:'預計進場',planDone:'預計完成',actualIn:'實際進場',actualDone:'實際完成',zone:'區域',round:'輪次'};
     const isLayout=['vendor','zone','manager'].includes(f);
@@ -2952,6 +3001,23 @@ function _arSwipeInit(){
   document.addEventListener('touchmove',function(e){if(!cur)return;var mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;if(!horiz&&Math.abs(mx)>Math.abs(my)&&Math.abs(mx)>6)horiz=true;if(horiz){dx=Math.max(-72,Math.min(0,(cur._base||0)+mx));cur.style.transform='translateX('+dx+'px)';}},{passive:true});
   document.addEventListener('touchend',function(){if(!cur)return;cur.style.transition='transform .18s';var open=dx<-36;cur._base=open?-72:0;cur.style.transform='translateX('+cur._base+'px)';cur=null;},{passive:true});
 }
+// V0720-14 桌機自動規則：⋮⋮ 拖曳排序＋左拉刪除（不用按鈕）；手機版沿用 _arSwipeInit＋▲▼，不動
+function _arSwipeInitD(){
+  if(window._arSwipeDOn)return;window._arSwipeDOn=1;
+  var cur=null,sx=0,sy=0,dx=0,horiz=false,idx=-1;
+  document.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='touch')return; // 觸控走手機版邏輯
+    var f=e.target.closest&&e.target.closest('.ar-front-d');if(!f)return;
+    if(e.target.closest&&e.target.closest('input,select,button,textarea,option,.ar-grip'))return; // 不干擾輸入與拖曳把手
+    cur=f;sx=e.clientX;sy=e.clientY;dx=0;horiz=false;cur.style.transition='none';
+    var w=cur.closest('.ar-wrap');idx=w?parseInt(w.getAttribute('data-i'),10):-1;
+  });
+  document.addEventListener('pointermove',function(e){if(!cur)return;var mx=e.clientX-sx,my=e.clientY-sy;if(!horiz&&Math.abs(mx)>Math.abs(my)&&Math.abs(mx)>6)horiz=true;if(horiz){e.preventDefault();dx=Math.max(-96,Math.min(0,mx));cur.style.transform='translateX('+dx+'px)';}});
+  document.addEventListener('pointerup',function(){if(!cur)return;var c=cur,i=idx;cur=null;c.style.transition='transform .18s';if(dx<-60){c.style.transform='translateX(-110%)';setTimeout(function(){try{_arDel(i);}catch(e){}},150);}else{c.style.transform='translateX(0)';}});
+}
+function _arDragStart(e,i){window._arDragI=i;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(i));}catch(_){}}
+function _arDragOver(e){e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch(_){}}
+function _arDrop(e,i){e.preventDefault();var from=window._arDragI;window._arDragI=null;if(from==null||from===i)return;var arr=_arRules().vendorRules;if(from<0||from>=arr.length)return;var it=arr.splice(from,1)[0];arr.splice(i,0,it);_arSaveRender();}
 function _arKw(i,v){_arRules().vendorRules[i].kw=v;save();}
 function _arVendor(i,v){_arRules().vendorRules[i].vendor=v;save();}
 function _arMove(i,d){var r=_arRules().vendorRules;var j=i+d;if(j<0||j>=r.length)return;var t=r[i];r[i]=r[j];r[j]=t;_arSaveRender();}
@@ -2975,21 +3041,25 @@ function renderAutoRules(){
         +'</div>'
       +'</div>';
     }
-    return '<div class="ar-row" style="display:grid;grid-template-columns:1fr 20px 1fr auto;gap:8px;align-items:center;margin-bottom:6px">'
-      +'<input value="'+esc(r.kw||'')+'" placeholder="關鍵字（多個用／分隔）" oninput="_arKw('+i+',this.value)" style="font-size:12px;padding:6px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
-      +'<span style="text-align:center;color:var(--text3)">→</span>'
-      +'<select onchange="_arVendor('+i+',this.value)" style="font-size:12px;padding:6px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+vopts(r.vendor||'')+'</select>'
-      +'<span style="display:flex;gap:3px"><button class="btn btn-sm" onclick="_arMove('+i+',-1)" title="上移" style="padding:2px 6px">▲</button><button class="btn btn-sm" onclick="_arMove('+i+',1)" title="下移" style="padding:2px 6px">▼</button><button class="btn btn-sm btn-d" onclick="_arDel('+i+')" style="padding:2px 6px">✕</button></span>'
-      +'</div>';
+    return '<div class="ar-wrap" data-i="'+i+'" ondragover="_arDragOver(event)" ondrop="_arDrop(event,'+i+')" style="position:relative;overflow:hidden;margin-bottom:6px;background:#E8322B">'
+      +'<div style="position:absolute;right:0;top:0;bottom:0;width:88px;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px"><svg class="g95ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>刪除</div>'
+      +'<div class="ar-front-d" style="position:relative;background:var(--card);display:grid;grid-template-columns:24px 1fr 20px 1fr;gap:8px;align-items:center;padding:6px 8px;transition:transform .18s">'
+        +'<span class="ar-grip" draggable="true" ondragstart="_arDragStart(event,'+i+')" title="按住拖曳排序" style="cursor:grab;color:var(--text3);font-size:16px;letter-spacing:-4px;text-align:center;user-select:none;padding-left:3px">⋮⋮</span>'
+        +'<input value="'+esc(r.kw||'')+'" placeholder="關鍵字（多個用／分隔）" oninput="_arKw('+i+',this.value)" style="font-size:12px;padding:6px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'
+        +'<span style="text-align:center;color:var(--text3)">→</span>'
+        +'<select onchange="_arVendor('+i+',this.value)" style="font-size:12px;padding:6px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+vopts(r.vendor||'')+'</select>'
+      +'</div>'
+    +'</div>';
   }).join('');
   if(_arMob&&typeof _arSwipeInit==='function')_arSwipeInit();
+  else if(!_arMob&&typeof _arSwipeInitD==='function')_arSwipeInitD();
   var el=document.getElementById('pane-autorule');if(!el)return;
   el.innerHTML='<div style="max-width:760px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:15px;font-weight:700"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>自動填入規則</span>'
       +'<label style="margin-left:auto;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" '+(a.enabled?'checked':'')+' onchange="_arToggle(this.checked)">啟用自動填入</label></div>'
     +'<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">'
       +'<div style="font-size:13px;font-weight:600;margin-bottom:2px">關鍵字 → 廠商</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-bottom:10px">輸入缺失內容時由上而下比對，命中第一個關鍵字就填該廠商（▲▼ 調順序'+(_arMob?'、左滑刪除':'')+'）</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-bottom:10px">輸入缺失內容時由上而下比對，命中第一個關鍵字就填該廠商（'+(_arMob?'▲▼ 調順序、左滑刪除':'⋮⋮ 拖曳排序、左拉刪除')+'）</div>'
       +(rules||'<div style="font-size:12px;color:var(--text3);padding:6px">尚無規則，按下方新增</div>')
       +'<button class="btn btn-sm btn-p" onclick="_arAdd()" style="margin-top:8px;font-size:12px">＋ 新增規則</button>'
       +'<div style="margin-top:12px;font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">找不到關鍵字時的預設廠商：<select onchange="_arDefVendor(this.value)" style="font-size:12px;padding:5px 8px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">'+vopts(a.defaultVendor||'')+'</select><span style="color:var(--text3)">（留空＝不填、留待你指定）</span></div>'
@@ -3143,6 +3213,11 @@ function applyMissingVendorFilter(){
   mainPage=0;
   renderMain();
   toast(`已篩出 ${missIds.length} 筆廠商未填的記錄`,'⚠️');
+}
+// V0720-13：未填廠商改切換鈕＝再按一次即關閉（原本沒有關閉入口、又會和其他篩選互卡，需刷新才解除）
+function toggleMissingVendorFilter(){
+  if(window._fMissingVendor){window._fMissingVendor=false;selectedIds=new Set();mainPage=0;renderMain();toast('已關閉「未填廠商」篩選');}
+  else{applyMissingVendorFilter();}
 }
 function wireBulk(){
   const sel=document.getElementById('bField');if(!sel)return;
@@ -3601,7 +3676,7 @@ function rowHTML(r,showZone,visIds){
     ${showZone?`<td style="width:96px"><select onchange="upd(${r.id},'zone',this.value)" onclick="event.stopPropagation()">${zOpts(r.zone)}</select></td>`:''}
     <td style="width:72px"><div style="display:flex;align-items:center;gap:1px"><input type="text" value="${esc(r.unit)}" onblur="upd(${r.id},'unit',this.value)" onclick="event.stopPropagation()" style="width:100%;min-width:0"><span title="${r.isOwner?'地主戶（點擊取消）':'設為地主戶'}" onclick="event.stopPropagation();upd(${r.id},'isOwner',!r.isOwner)" style="cursor:pointer;font-size:10px;flex-shrink:0;opacity:${r.isOwner?'1':'.18'}"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg></span></div></td>
     <td style="width:44px"><input type="text" value="${esc(r.floor)}" onblur="upd(${r.id},'floor',this.value)" onclick="event.stopPropagation()"></td>
-    <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()">${vOpts(r.vendor)}</select>${helperTag(r)}</td>
+    <td style="width:86px"><select onchange="upd(${r.id},'vendor',this.value)" onclick="event.stopPropagation()"><option value=""${r.vendor?'':' selected'}>（未填）</option>${vOpts(r.vendor)}</select>${helperTag(r)}</td>
     <td style="width:40px;text-align:center;vertical-align:top;padding-top:5px" onclick="event.stopPropagation()">${roundBadgeClick(r)}</td>
     <td class="td-issue" style="vertical-align:top"><textarea rows="1" onblur="upd(${r.id},'issue',this.value)" onclick="event.stopPropagation()" placeholder="缺失內容" style="height:36px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical">${esc((r.issue||'').replace(/^\s+/,''))}</textarea></td>
     <td class="td-txt" style="vertical-align:top"><textarea rows="1" title="${esc((r.note||'').replace(/^\s+/,''))}" onfocus="this.style.height='66px'" onblur="upd(${r.id},'note',this.value);this.style.height='22px'" onclick="event.stopPropagation()" placeholder="備註" style="height:22px!important;min-height:0!important;box-sizing:border-box;width:100%;resize:vertical;overflow:hidden">${esc((r.note||'').replace(/^\s+/,''))}</textarea></td>
@@ -4103,7 +4178,7 @@ function filterMainKeyword(){
   const fRound=(document.getElementById('fRound')||{}).value||'';
   let data=[...S.rows];
   if(fUnitSet.size>0)data=data.filter(r=>fUnitSet.has(r.unit));
-  if(fFloor)data=data.filter(r=>r.floor===fFloor);
+  if(fFloor){const _dfc=_floorCanon(fFloor);data=data.filter(r=>_floorCanon(r.floor)===_dfc);}
   if(fVendor)data=data.filter(r=>(r.vendor||'').includes(fVendor));
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
@@ -4136,12 +4211,14 @@ function filterMainKeyword(){
   wireBulk();
 }
 // ══ V0717-10 追蹤總表手機版（≤700px＋手機殼開）：一戶一列三行＋篩選抽屜＋列點開編輯面板；批次/匯入/匯出/重點提示/重新編號＝「完整版⚙」 ══
+// V0720-13 樓層正規化：手機篩選打「27」要對到資料的「27F」。統一去空白、轉大寫、去掉結尾的 F（樓層一律 RnF/nF/BnF，去尾 F 後即可等值比對；27→27、27F→27、B1F→B1、R3F→R3）
+function _floorCanon(f){return String(f==null?'':f).toUpperCase().replace(/\s+/g,'').replace(/F$/,'');}
 var _mm={q:'',unit:'',floor:'',vendor:'',zone:'',status:'',mgr:'',round:'',missDate:false,missVendor:false,page:0};
 function _mmSet(f,v){_mm[f]=v;_mm.page=0;renderMain();}
 function _mmData(){
  var data=(S.rows||[]).slice();
  if(_mm.unit)data=data.filter(function(r){return r.unit===_mm.unit;});
- if(_mm.floor)data=data.filter(function(r){return (r.floor||'')===_mm.floor;});
+ if(_mm.floor){var _mfc=_floorCanon(_mm.floor);data=data.filter(function(r){return _floorCanon(r.floor)===_mfc;});}
  if(_mm.vendor)data=data.filter(function(r){return (r.vendor||'').indexOf(_mm.vendor)>=0;});
  if(_mm.zone)data=data.filter(function(r){return r.zone===_mm.zone;});
  if(_mm.status)data=data.filter(function(r){return getStatus(r)===_mm.status;});
@@ -4194,7 +4271,7 @@ function _mmFilterSheet(){
  var floors=[];(S.rows||[]).forEach(function(r){if(r.floor&&floors.indexOf(r.floor)<0)floors.push(r.floor);});floors=_mmSortFloors(floors);
  var h='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="display:flex;align-items:center;margin-bottom:4px"><span style="font-size:15px;font-weight:700;flex:1">篩選</span><button onclick="_mmFilterSheet()" style="font-size:14px;font-weight:700;border:1px solid var(--pborder);border-radius:0;background:#fff;color:#26305A;padding:5px 12px;font-family:var(--font)">✕ 返回</button></div>'
   +typeOpt(_mm.unit,units.map(function(u){return [u,u];}),'unit','戶別')
-  +typeOpt(_mm.floor,floors.map(function(f){return [f,f];}),'floor','樓層')
+  +opt(_mm.floor,floors.map(function(f){return [f,f];}),'floor','樓層')/* V0720-13：樓層改下拉選單（原可打字易漏「F」造成 0 筆） */
   +typeOpt(_mm.vendor,_vAZ().map(function(v){return [v,v];}),'vendor','廠商')
   +opt(_mm.zone,(S.zones||[]).map(function(z){return [z.id,z.label];}),'zone','區域')
   +opt(_mm.status,[['overdue','逾期'],['pending','未開始'],['ongoing','進行中'],['done','已完成']],'status','狀態')
@@ -4268,7 +4345,7 @@ function renderMain(){
   const fRound=(document.getElementById('fRound')||{}).value||'';
   let data=[...S.rows];
   if(fUnitSet.size>0)data=data.filter(r=>fUnitSet.has(r.unit));
-  if(fFloor)data=data.filter(r=>r.floor===fFloor);
+  if(fFloor){const _dfc=_floorCanon(fFloor);data=data.filter(r=>_floorCanon(r.floor)===_dfc);}
   if(fVendor)data=data.filter(r=>(r.vendor||'').includes(fVendor));
   if(fZone)data=data.filter(r=>r.zone===fZone);
   if(fStatus)data=data.filter(r=>getStatus(r)===fStatus);
@@ -4354,7 +4431,7 @@ function renderMain(){
       <button class="hcdd-t mfbtn${_mfN?" mfopen":""}" onclick="var m=document.getElementById('mainFilt');m.classList.toggle('show');this.classList.toggle('mfopen')"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>篩選${_mfN?" ("+_mfN+")":""} <span class="hcdd-cv">▾</span></button>
       <div class="mainfilt${_mfN?" show":""}" id="mainFilt">${uDropdown}
       <select id="fFloor" onchange="mainPage=0;renderMain()"><option value="">全部樓層</option>${flOp}</select>
-      <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
+      <input id="fVendor" type="text" list="fVendor-list" placeholder="全部廠商" value="${esc(fVendor)}" style="font-size:12px;padding:5px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:110px" onchange="mainPage=0;window._fMissingVendor=false;renderMain()" onkeydown="if(event.key==='Enter')this.blur()">
       <datalist id="fVendor-list">${vOpDl}</datalist>
       <select id="fZone" onchange="mainPage=0;renderMain()"><option value="">全部區域</option>${zOp}</select>
       <select id="fRound" onchange="mainPage=0;renderMain()" title="只看某輪次"><option value="">全部輪次</option>${(()=>{const rs=[...new Set(['初驗','複驗1','複驗2','複驗3',...S.rows.map(r=>r.round).filter(Boolean)])].sort((a,b)=>inspOrderVal(a)-inspOrderVal(b));return rs.map(x=>'<option value="'+esc(x)+'" '+(x===fRound?'selected':'')+'>'+esc(x)+'</option>').join('')+'<option value="自檢" '+(fRound==='自檢'?'selected':'')+'>自檢</option>';})()}</select>
@@ -4367,9 +4444,9 @@ function renderMain(){
         <option value="overdue"${fStatus==='overdue'?' selected':''}>逾期</option>
       </select></div>
       ${(()=>{const missCnt=S.rows.filter(r=>{const isDone=(S.completed instanceof Set)?S.completed.has(r.id):Array.isArray(S.completed)&&S.completed.includes(r.id);const hasDoneStatus=getStatus(r)==='done';return(isDone||hasDoneStatus)&&(!r.actualIn||!r.actualDone);}).length;return missCnt?`<button class="btn no-print" onclick="applyMissingDateFilter()" style="background:#FFF8E6;color:#6B4D00;border-color:#D4A900;border-radius:0;font-size:12px;padding:0 10px;height:32px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px">⚠️ 已完成未填日期 <span style="font-size:10px;padding:1px 5px;border-radius:0;background:#F5C842;color:#5A3E00;font-weight:600">${missCnt}</span></button>`:'';})()}
-      ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;return missVendorCnt?`<button class="btn no-print" onclick="applyMissingVendorFilter()" style="background:#FCEBEB;color:#791F1F;border-color:#E24B4A;border-radius:0;font-size:12px;padding:0 10px;height:32px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px">⚠️ 未填廠商 <span style="font-size:10px;padding:1px 5px;border-radius:0;background:#E24B4A;color:#fff;font-weight:600">${missVendorCnt}</span></button>`:'';})()}
+      ${(()=>{const missVendorCnt=S.rows.filter(r=>!r.vendor).length;if(!missVendorCnt)return '';const on=!!window._fMissingVendor;return `<button class="btn no-print" onclick="toggleMissingVendorFilter()" title="${on?'篩選中，點此關閉':'只看未填廠商的缺失'}" style="background:${on?'#E24B4A':'#FCEBEB'};color:${on?'#fff':'#791F1F'};border-color:#E24B4A;border-radius:0;font-size:12px;padding:0 10px;height:32px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px"><svg class="g95ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg> 未填廠商${on?'（篩選中·點此關閉）':''} <span style="font-size:10px;padding:1px 5px;border-radius:0;background:${on?'#fff':'#E24B4A'};color:${on?'#E24B4A':'#fff'};font-weight:600">${missVendorCnt}</span></button>`;})()}
       <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:0 6px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
-      <input id="fKeyword" type="text" placeholder="🔍 搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:0 7px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);width:150px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()">
+      <span style="position:relative;display:inline-flex;align-items:center"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa2bd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="fKeyword" type="text" placeholder="搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:0 7px 0 28px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);width:150px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()"></span>
       <button class="btn btn-p no-print" onclick="showInlineAdd()" style="height:32px;box-sizing:border-box;padding:0 12px;white-space:nowrap">＋ 新增</button>
       <span class="hcdd"><button class="hcdd-t" onclick="_hcddTog(this)"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5 5-5M21 21H3"/></svg>匯出 <span class="hcdd-cv">▾</span></button><div class="hcdd-m hcdd-r"><button class="btn no-print" onclick="exportCSV()">↓ CSV</button><button class="btn btn-pdf no-print" id="mainPdf"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="15" width="10" height="6"/></svg>PDF</button></div></span><div class="import-drop no-print" id="iDrop" title="支援欄位：管理人 區域 戶別 樓層 廠商 缺失內容 備註 預計進場 預計完成 實際進場 實際完成（廠商/管理人若不存在將自動新增）"><svg class="g95ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>匯入 Excel（可拖曳／點選）</div>
     </div>
@@ -6244,6 +6321,33 @@ function _riInsp1Date(hu){
   for(var i=0;i<insps.length;i++){ var x=insps[i]; if(x&&x.date&&inspTypeOf(x)==='初驗'&&x.date<=t&&(!out||x.date<out)) out=x.date; }
   return out;
 }
+// V0720-14 ③：依缺失列的戶別＋樓層反查該戶初驗日（供輸入完成日時軟提醒）
+function _riInsp1ForUnitFloor(unit,floor){
+  var col=String(unit||'').replace(/^(地|業)/,'').replace(/[（(][^）)]*[）)]/g,'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  var fl=String(floor||'').replace(/\D/g,'');
+  var target=col+(fl?('-'+fl):'');var HU=S.handoverUnits||{};
+  for(var k in HU){var dn=unitDisplayName(k).toUpperCase();if(dn===target||dn===String(unit||'').replace(/^(地|業)/,'').toUpperCase()){var i=_riInsp1Date(HU[k]);if(i)return i;}}
+  return '';
+}
+// V0720-14 ②：完成早於初驗 稽核清單
+function _riDateAudit(){
+  var old=document.getElementById('ri-anom-ov');if(old){old.remove();return;}
+  var list=(window._riAnom||[]).slice().sort(function(a,b){return (a.insp1||'').localeCompare(b.insp1||'');});
+  var td='padding:6px 9px;border-top:1px solid var(--border2);font-size:13px';
+  var body=list.map(function(s){
+    var gap=(s.insp1&&s.lastDone)?_riSpan(s.lastDone,s.insp1).cal:0;
+    return '<tr><td style="'+td+'">'+esc(s.disp)+'</td><td style="'+td+'">'+(s.insp1?s.insp1.slice(5).replace('-','/'):'—')+'</td><td style="'+td+';color:#B3261E;font-weight:700">'+(s.lastDone?s.lastDone.slice(5).replace('-','/'):'—')+'</td><td style="'+td+';color:#B3261E;font-weight:700;text-align:center">早 '+gap+' 天</td><td style="'+td+'">'+esc(s.owner||'')+'</td><td style="'+td+';white-space:nowrap"><button class="btn btn-sm" onclick="_riDateAudit();switchTab(\'hcal\')" title="到交屋行事曆改初驗日">改初驗</button> <button class="btn btn-sm" onclick="_riDateAudit();annGoUnit(\''+_riEscJs(s.disp)+'\')" title="到追蹤總表改完成日">改完成</button></td></tr>';
+  }).join('');
+  var ov=document.createElement('div');ov.id='ri-anom-ov';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;display:flex;align-items:center;justify-content:center';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML='<div style="background:var(--card);max-width:640px;width:94%;max-height:84vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--font)">'
+    +'<div style="padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><svg class="g95ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20Z"/><path d="M12 9v5M12 17h.01"/></svg><b style="font-size:15px">日期異常稽核 · 完成早於初驗（'+list.length+' 戶）</b><span style="flex:1"></span><button class="btn btn-sm" onclick="_riDateAudit()">關閉</button></div>'
+    +(list.length?('<table style="width:100%;border-collapse:collapse"><thead><tr><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px">戶別</th><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px">初驗日</th><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px">最晚完成日</th><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px;text-align:center">早幾天</th><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px">屋主</th><th style="'+td+';border-top:none;background:#F5F8FC;color:var(--text2);font-size:12px">修正</th></tr></thead><tbody>'+body+'</tbody></table>')
+      :'<div style="padding:24px;text-align:center;color:var(--text3)">目前沒有「完成早於初驗」的戶</div>')
+    +'<div style="padding:10px 16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border2)">修正方向：初驗日填晚了→改交屋行事曆的初驗紀錄日；完成日填早了→改追蹤總表的實際完成日。初驗前自檢就修掉的缺失＝把該筆輪次改「自檢」。</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
 function _riStat(key){
   var hu=(S.handoverUnits&&S.handoverUnits[key])||{};
   var insps=hu.inspections||[];
@@ -6265,7 +6369,7 @@ function _riStat(key){
   if(tot>0&&pend===0){dr.forEach(function(r){var d=r.actualDone||'';if(d&&d>lastDone)lastDone=d;});}
   var workComplete=(insp1&&lastDone)?_riSpan(insp1,lastDone).work:0;
   var sp=(insp1&&pend>0)?_riSpan(insp1,todayISO()):{cal:0,rest:0,work:0};
-  return {hu:hu,inspected:inspected,hasReDone:hasReDone,delivered:delivered,outsource:outsource,tot:tot,pend:pend,pendRows:pendRows,insp1:insp1,stage:stage,dr:dr,lastDone:lastDone,workComplete:workComplete,calDays:sp.cal,restDays:sp.rest};
+  return {hu:hu,inspected:inspected,hasReDone:hasReDone,delivered:delivered,outsource:outsource,tot:tot,pend:pend,pendRows:pendRows,insp1:insp1,stage:stage,dr:dr,lastDone:lastDone,workComplete:workComplete,calDays:sp.cal,restDays:sp.rest,dateAnomaly:!!(insp1&&lastDone&&lastDone<insp1)};  // V0720-14：完成日早於初驗日＝資料異常
 }
 function _riCardBrk(c){
   if(_riBrk==='B'){
@@ -6294,7 +6398,8 @@ function _riCompCell(s){
   if(s.tot===0)return '<span style="color:#8A8783;font-weight:600">無缺失</span>';
   if(s.pend===0){
     var d=s.lastDone?s.lastDone.slice(5).replace('-','/'):'';
-    return '<span style="color:#3B6D11;font-weight:700">'+(d?d+' 完成':'全修完')+'</span><span style="display:block;font-size:11px;color:#8A8783;font-weight:600;margin-top:2px">（'+s.tot+' 筆 · '+s.workComplete+' 工作天）</span>';
+    var anom=s.dateAnomaly?'<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#B3261E;font-weight:800;margin-top:2px"><svg class="g95ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20Z"/><path d="M12 9v5M12 17h.01"/></svg>完成早於初驗</span>':'';
+    return '<span style="color:'+(s.dateAnomaly?'#B3261E':'#3B6D11')+';font-weight:700">'+(d?d+' 完成':'全修完')+'</span><span style="display:block;font-size:11px;color:#8A8783;font-weight:600;margin-top:2px">（'+s.tot+' 筆 · '+s.workComplete+' 工作天）</span>'+anom;
   }
   var pct=Math.round((s.tot-s.pend)/s.tot*100);
   return '<span style="color:#B45309;font-weight:700">'+s.pend+' 筆待修 · '+pct+'%</span><br>'+_riAgeBadge(s);
@@ -6542,6 +6647,7 @@ function renderReinsp(){
     s.overdue=s.pending&&!!s.insp1&&s.calDays>=_riOverdueDays;
     stats.push(s);
   });
+  window._riAnom=stats.filter(function(s){return s.dateAnomaly;});  // V0720-14 ①②：完成早於初驗清單（供頂部提示鈕＋稽核清單）
   function cnt(pred){var o={t:0,A:0,B:0,S:0};stats.forEach(function(s){if(pred(s)){o.t++;var bk=s.block==='B'?'B':s.block==='店'?'S':'A';o[bk]++;}});return o;}
   var cInsp1=cnt(function(s){return s.inspected;});
   var cOver=cnt(function(s){return s.overdue;});
@@ -6578,6 +6684,7 @@ function renderReinsp(){
     +'<button class="btn btn-sm" onclick="_riCollapseAll(true)" style="height:32px">全部收合</button>'
     +'<button class="btn btn-sm" onclick="_riCollapseAll(false)" style="height:32px">全部展開</button>'
     +'<button class="btn btn-sm" onclick="_riToggleBrk()" style="height:32px" title="卡片棟別細分顯示方式">細分：'+(_riBrk==='A'?'對齊':'精簡')+'</button>'
+    +((window._riAnom&&window._riAnom.length)?'<button class="btn btn-sm" onclick="_riDateAudit()" style="height:32px;background:#FBEFCB;border-color:#B45309;color:#B45309;font-weight:800" title="完成日早於初驗日的戶，點開稽核清單"><svg class="g95ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M12 3 2 20h20Z"/><path d="M12 9v5M12 17h.01"/></svg>日期異常 '+window._riAnom.length+' 戶</button>':'')
     +'</div>';
   var COLG='<colgroup><col style="width:120px"><col style="width:74px"><col style="width:80px"><col><col style="width:116px"><col style="width:150px"></colgroup>';
   var thS='background:#F1F5FA;color:#556;font-size:11.5px;font-weight:700;text-align:left;padding:7px 9px;border-bottom:1px solid rgba(0,0,0,.1)';
@@ -6642,21 +6749,25 @@ function _riMobRender(pane){
   try{if(typeof _buildDefectCache==='function')_buildDefectCache();}catch(e){}
   var stats=[];
   _riAllKeys().forEach(function(key){var s=_riStat(key);if(!s.inspected)return;s.key=key;s.block=_riBlockOf(key);s.disp=unitDisplayName(key);s.owner=_riOwnerName(key);s.type=_riTypeLabel(key);s.pending=(s.pend>0&&!s.delivered);s.overdue=s.pending&&!!s.insp1&&s.calDays>=_riOverdueDays;stats.push(s);});
-  function c(pred){var n=0;stats.forEach(function(s){if(pred(s))n++;});return n;}
-  function mcard(f,lbl,num,bg,fg){var on=_riFilter===f;return '<div onclick="_riSetFilter(\''+f+'\')" style="flex:1;min-width:0;padding:9px 4px;text-align:center;background:'+bg+';color:'+fg+';cursor:pointer;'+(on?'outline:3px solid '+fg+';outline-offset:-3px;':'')+'"><div style="font-size:12px;font-weight:800">'+lbl+'</div><div style="font-size:22px;font-weight:800;line-height:1.1">'+num+'</div></div>';}
+  // V0720-14：手機卡片補回 A/B/店 細分數量（比照桌機）
+  function c3(pred){var o={t:0,A:0,B:0,S:0};stats.forEach(function(s){if(pred(s)){o.t++;var bk=s.block==='B'?'B':s.block==='店'?'S':'A';o[bk]++;}});return o;}
+  function mcard(f,lbl,o,bg,fg){var on=_riFilter===f;return '<div onclick="_riSetFilter(\''+f+'\')" style="flex:1;min-width:0;padding:8px 3px 7px;text-align:center;background:'+bg+';color:'+fg+';cursor:pointer;'+(on?'outline:3px solid '+fg+';outline-offset:-3px;':'')+'"><div style="font-size:12px;font-weight:800">'+lbl+'</div><div style="font-size:22px;font-weight:800;line-height:1.05">'+o.t+'</div><div style="font-size:9.5px;font-weight:700;margin-top:2px;line-height:1.2;opacity:.9">A '+o.A+'·B '+o.B+'·店 '+o.S+'</div></div>';}
   var cardsHTML='<div style="display:flex;gap:5px;margin-bottom:5px">'
-    +mcard('insp1','已初驗',c(function(s){return s.inspected;}),'#E6F1FB','#185FA5')
-    +mcard('overdue','逾期未修',c(function(s){return s.overdue;}),'#FBE0E0','#B3261E')
-    +mcard('reinsp','可複驗',c(function(s){return s.stage==='reinsp';}),'#EAF3DE','#3B6D11')+'</div>'
+    +mcard('insp1','已初驗',c3(function(s){return s.inspected;}),'#E6F1FB','#185FA5')
+    +mcard('overdue','逾期未修',c3(function(s){return s.overdue;}),'#FBE0E0','#B3261E')
+    +mcard('reinsp','可複驗',c3(function(s){return s.stage==='reinsp';}),'#EAF3DE','#3B6D11')+'</div>'
     +'<div style="display:flex;gap:5px;margin-bottom:10px">'
-    +mcard('re','已複驗',c(function(s){return s.hasReDone;}),'#E1F5EE','#0A6640')
-    +mcard('deliverable','可交屋',c(function(s){return s.stage==='deliverable';}),'#FDF0DC','#B45309')
-    +mcard('delivered','已交屋',c(function(s){return s.delivered;}),'#EEEDFE','#5B4F9E')+'</div>';
+    +mcard('re','已複驗',c3(function(s){return s.hasReDone;}),'#E1F5EE','#0A6640')
+    +mcard('deliverable','可交屋',c3(function(s){return s.stage==='deliverable';}),'#FDF0DC','#B45309')
+    +mcard('delivered','已交屋',c3(function(s){return s.delivered;}),'#EEEDFE','#5B4F9E')+'</div>';
   function opt(v,cur,t){return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+t+'</option>';}
-  var ctrl='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'
-    +'<select onchange="_riSetGroup(this.value)" style="flex:1;height:34px;border:1px solid #5B9BD5;color:#185FA5;font-weight:700;font-size:13px;background:#fff">'+opt('date',_riGroup,'依初驗日')+opt('block',_riGroup,'依棟別')+opt('owner',_riGroup,'依屋主')+'</select>'
-    +'<select onchange="_riSetBlock(this.value)" style="flex:1;height:34px;border:1px solid #5B9BD5;color:#185FA5;font-weight:700;font-size:13px;background:#fff">'+opt('all',_riBlock,'全棟')+opt('A',_riBlock,'A棟')+opt('B',_riBlock,'B棟')+opt('S',_riBlock,'店鋪')+'</select>'
-    +'<select onchange="_riSetOverdue(this.value)" style="flex:1;height:34px;border:1px solid #B3261E;color:#B3261E;font-weight:700;font-size:13px;background:#fff">'+opt('7',String(_riOverdueDays),'逾期≥7天')+opt('10',String(_riOverdueDays),'逾期≥10天')+opt('14',String(_riOverdueDays),'逾期≥14天')+'</select>'
+  // V0720-14：手機篩選下拉格式修正＝平角、去 iOS 原生圓角/箭頭、文字不溢出＋自訂 ▾
+  var _selBase='height:34px;width:100%;-webkit-appearance:none;appearance:none;border-radius:0;font-weight:700;font-size:13px;background:#fff;font-family:var(--font);padding:0 22px 0 8px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden';
+  function _selW(onch,opts,color){return '<span style="position:relative;flex:1;min-width:0;display:flex"><select onchange="'+onch+'" style="'+_selBase+';border:1px solid '+color+';color:'+color+'">'+opts+'</select><span style="position:absolute;right:7px;top:50%;transform:translateY(-50%);pointer-events:none;color:'+color+';font-size:10px">▾</span></span>';}
+  var ctrl='<div style="display:flex;gap:6px;margin-bottom:10px">'
+    +_selW('_riSetGroup(this.value)',opt('date',_riGroup,'依初驗日')+opt('block',_riGroup,'依棟別')+opt('owner',_riGroup,'依屋主'),'#5B9BD5')
+    +_selW('_riSetBlock(this.value)',opt('all',_riBlock,'全棟')+opt('A',_riBlock,'A棟')+opt('B',_riBlock,'B棟')+opt('S',_riBlock,'店鋪'),'#5B9BD5')
+    +_selW('_riSetOverdue(this.value)',opt('7',String(_riOverdueDays),'逾期≥7天')+opt('10',String(_riOverdueDays),'逾期≥10天')+opt('14',String(_riOverdueDays),'逾期≥14天'),'#B3261E')
     +'</div>';
   var rows=stats.filter(function(s){if(_riFilter==='insp1')return s.inspected;if(_riFilter==='overdue')return s.overdue;if(_riFilter==='reinsp')return s.stage==='reinsp';if(_riFilter==='re')return s.hasReDone;if(_riFilter==='deliverable')return s.stage==='deliverable';if(_riFilter==='delivered')return s.delivered;return false;});
   if(_riBlock!=='all')rows=rows.filter(function(s){return _riBlock==='S'?s.block==='店':s.block===_riBlock;});
@@ -8764,7 +8875,7 @@ function getDefectRows(unitKey){
   addRows(db.get(unitKey));addRows(db.get(displayName));
   addRows(db.get(unitKey.toUpperCase()));addRows(db.get(displayName.toUpperCase()));
   // fuzzy 比對（unit 欄位格式如 A1(地) + floor=28F）
-  if(col&&flr&&result.length===0){
+  if(col&&flr){  /* V0720-14：改「聯集」不再先命中就停＝同戶缺失若混用「B2-27合併」與「B2＋27F分開」兩種寫法也全撈齊、用id去重（修行事曆筆數對不上／少算） */
     db.forEach((rows,ru)=>{
       if(!rows.length)return;
       const clean=ru.replace(/^(地|業)/,'').trim();
@@ -11717,6 +11828,7 @@ const TAB_DEFS={
   done:      {label:'✅ 已完成工作',       row:2},
   // handover:  {label:'🏠 交屋狀態表',      row:3},  // V0720-08：已移除分頁。獨有功能已搬走＝「加減驗次輪次」→客戶清單展開卡、「批次標記已交屋」→交屋行事曆批次面板；per-unit 編輯客戶清單本就有、批次排程行事曆本就有。還原＝取消本行註解＋migrateState 改回 push handover。
   reinsp:    {label:'🏁 驗收/修繕進度',    row:3},
+  ulookup:   {label:'🔍 戶別查詢',        row:3},
   // hstats:    {label:'📊 客戶交屋狀態表',  row:3},  // V0701-29：統計表＋批次排程已併入「交屋狀態表」，隱藏此分頁。還原＝取消本行註解
   hcal:      {label:'📆 交屋行事曆',      row:3},
   uso:       {label:'📄 使照進度',        row:3},
@@ -11734,10 +11846,11 @@ const TAB_DEFS={
   trash:     {label:'🗑 垃圾桶',            row:3},
 };
 // ── V0718-01 版面線性圖示系統（TAB icon）──
-var _TABIC={events:'flag',main:'list',ustat:'grid',zones:'truck',vendor:'tag',warn:'warn',cal:'cal',mgr:'users',done:'check',handover:'home',reinsp:'clipck',hcal:'cal',uso:'file',autorule:'gear',clients:'users',changelog:'edit',units:'home',dupes:'copy',inspstat:'chart',defpivot:'grid',hreport:'trend',rpt:'clipck',pwo:'clip',announce:'mega',trash:'trash'};
+var _TABIC={events:'flag',main:'list',ustat:'grid',zones:'truck',vendor:'tag',warn:'warn',cal:'cal',mgr:'users',done:'check',handover:'home',reinsp:'clipck',ulookup:'search',hcal:'cal',uso:'file',autorule:'gear',clients:'users',changelog:'edit',units:'home',dupes:'copy',inspstat:'chart',defpivot:'grid',hreport:'trend',rpt:'clipck',pwo:'clip',announce:'mega',trash:'trash'};
 var _ICOP={
  flag:'<path d="M4 21V4M4 4h13l-2 4 2 4H4"/>',
  list:'<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
  grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
  truck:'<path d="M2 5h11v11H2Z"/><path d="M13 8h4l3 3v5h-7Z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
  tag:'<path d="M3 8l5-5h6l7 7-8 8-7-7Z"/><circle cx="8.5" cy="8.5" r="1.3"/>',
@@ -11837,7 +11950,7 @@ function _sideRender(){
   var el=document.getElementById('side-nav');if(!el)return;
   if(_tabEditMode&&_sideEdit){_sideRenderEdit(el);return;}  // V0717-05：排序模式直接在側欄拖
   var cfg=_lcfg();
-  var order=(S.tabOrder||[]).filter(function(x){return x&&TAB_DEFS[x]&&!_isTabHidden(x);});
+  var order=(S.tabOrder||[]).filter(function(x){return x&&TAB_DEFS[x]&&!_isTabHidden(x)&&x!=='units';});  // V0720-14：戶別管理移出側欄，只從「⚙ 版面設定」進入（主檔·很少用）
   var used={};
   var pins=order.filter(function(id){return cfg.pins.indexOf(id)>=0;});
   pins.forEach(function(id){used[id]=1;});
@@ -11980,9 +12093,14 @@ function mnavSheet(kind){
  sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:13px;color:var(--text3);font-weight:700;margin-bottom:4px">'+(kind==='rpt'?'報告':'更多')+'</div>'+h;
  document.body.appendChild(bg);document.body.appendChild(sh);
 }
+// V0720-13：「電腦版（另開分頁）」＝在手機另開一個強制桌機版面的分頁（?pc=1），原手機分頁不受影響
+function _pcForced(){try{return /[?&]pc=1(&|$)/.test(location.search);}catch(e){return false;}}
+function _openPCView(){try{var u=location.origin+location.pathname+(location.search?location.search+'&pc=1':'?pc=1');window.open(u,'_blank');}catch(e){try{window.open(location.href,'_blank');}catch(e2){}}}
 function _mnavSync(){
- var on=_mnavEnabled()&&window.innerWidth<=700;
+ if(_pcForced()){try{var _mv=document.querySelector('meta[name=viewport]');if(_mv&&!window._pcVpSet){_mv.setAttribute('content','width=1180');window._pcVpSet=1;}}catch(e){}}
+ var on=_mnavEnabled()&&window.innerWidth<=700&&!_pcForced();
  document.body.classList.toggle('g95-mnav',on);
+ try{document.body.classList.toggle('g95-nofull',localStorage.getItem('g95_showfull')!=='1');}catch(e){} // V0720-13：預設隱藏完整版鈕；localStorage g95_showfull=1 可恢復
  if(on)_mnavRender();else _mnavCloseSheet();
  if(!on){try{g95HomeClose();}catch(e){}}
 }
@@ -12089,6 +12207,7 @@ function g95HomeSheet(kind){
    ? [['',[['clients','客戶清單'],['mgr','管理人員'],['autorule','自動規則'],['dupes','重複作業'],['changelog','更新紀錄']]]]
    : [['報表中心',[['inspstat','驗收統計'],['defpivot','驗屋缺失分析'],['hreport','交屋進度報告'],['events','進度里程碑']]],['交屋',[['ustat','戶況總表']]],['回收',[['done','已完成工作'],['trash','垃圾桶']]]];
  var h='';groups.forEach(function(g){ if(g[0])h+='<div style="font-size:12px;font-weight:800;color:#93A0B5;padding:10px 4px 4px;letter-spacing:1px">'+g[0]+'</div>'; g[1].forEach(function(it){ h+='<div onclick="g95HomeSheetGo(\''+it[0]+'\')" style="display:flex;align-items:center;gap:10px;padding:13px 6px;border-bottom:1px solid var(--border2);font-size:16px;font-weight:700;cursor:pointer">'+_tabIco(it[0],18)+'<span style="flex:1">'+esc(it[1])+'</span><span style="color:var(--text3)">›</span></div>'; }); });
+ if(kind!=='set'){h+='<div onclick="_homeSheetClose();_openPCView()" style="display:flex;align-items:center;gap:10px;padding:13px 6px;border-top:2px solid var(--border2);margin-top:6px;font-size:16px;font-weight:700;cursor:pointer;color:#185FA5"><svg class="g95ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13"/><path d="M8 21h8M12 17v4"/></svg><span style="flex:1">電腦版（另開分頁）</span><span style="color:var(--text3)">↗</span></div>';}
  _homeSheetClose();
  var bg=document.createElement('div');bg.id='homesheet-bg';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:8100';bg.onclick=_homeSheetClose;
  var sh=document.createElement('div');sh.id='homesheet';sh.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:8200;background:var(--card);border-top:2px solid var(--border);max-height:80vh;overflow:auto;padding:12px 16px calc(16px + env(safe-area-inset-bottom))';
@@ -12139,7 +12258,7 @@ function layoutCfgMenu(){
   ov.innerHTML='<div style="background:var(--card);border-radius:0;max-width:470px;width:94%;max-height:84vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--font)">'
     +'<div style="padding:14px 16px;border-bottom:1px solid var(--border)"><span style="font-size:15px;font-weight:700"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>版面設定</span><div style="font-size:11px;color:var(--text3);margin-top:4px">每個看板：選側欄組別（「釘選」＝常駐最上）＋勾「手機顯示」（不勾＝手機版面不出現、電腦照常）。存檔後全員同步；組內順序照「編輯排序」。</div></div>'
     +'<div style="padding:6px 10px">'+rows+'</div>'
-    +'<div style="padding:10px 16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-sm" onclick="document.getElementById(\'layout-cfg-ov\').remove()">取消</button><button class="btn btn-sm btn-p" onclick="layoutCfgSave()">儲存</button></div></div>';
+    +'<div style="padding:10px 16px;display:flex;gap:8px;align-items:center"><button class="btn btn-sm" onclick="document.getElementById(\'layout-cfg-ov\').remove();switchTab(\'units\')" title="棟/樓/戶別主檔（很少用，收在這裡）"><svg class="g95ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>戶別管理</button><span style="flex:1"></span><button class="btn btn-sm" onclick="document.getElementById(\'layout-cfg-ov\').remove()">取消</button><button class="btn btn-sm btn-p" onclick="layoutCfgSave()">儲存</button></div></div>';
   document.body.appendChild(ov);
 }
 function layoutCfgSave(){
@@ -12198,7 +12317,7 @@ function renderTabBar(){
   if(wrap)wrap.classList.toggle('edit-mode',_tabEditMode);
   if(btn){
     btn.classList.toggle('active',_tabEditMode);
-    btn.innerHTML=_tabEditMode?'🔒 完成排序':'🔓 編輯排序';
+    btn.innerHTML=_tabEditMode?'<svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg> 完成排序':'<svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序';
   }
   if(cancelBtn)cancelBtn.style.display=_tabEditMode?'':'none';
   try{var _at=document.getElementById('app-title');if(_at&&S.appTitle)_at.textContent=S.appTitle;}catch(e){}
@@ -12273,6 +12392,7 @@ function g95TabMenu(){
  var h='<div class="tmenu"><h3>全部看板（點選跳轉）</h3><div class="tgrid">';
  (S.tabOrder||[]).forEach(function(id){
   if(!id||!TAB_DEFS[id])return;
+  if(id==='units')return;  // V0720-14：戶別管理只從「⚙ 版面設定」進入
   if(_isMob&&_MOB_HIDE.indexOf(id)>=0)return;
   h+='<button class="titem'+(id===activeTab?' on':'')+'" onclick="g95TabGo(\''+id+'\')" style="display:flex;align-items:center;gap:7px;justify-content:flex-start">'+_tabIco(id,16)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">'+esc(_tabTxt(tabLabel(id)))+'</span></button>';  // V0719-07 emoji→線性圖示；V0719-10 等高無空隙分割線靠左
  });
@@ -12478,6 +12598,224 @@ function switchTab(id){
   }
   setTimeout(()=>renderPane(id),0);
 }
+// ══════════════════════════════════════════════════════════════════════════
+//  V0720-13 戶別查詢（唯讀）：輸入戶別 → ①驗收履歷(哪天·幾次) ②全部缺失(含已完成) ③漏登提示
+//  同屋主可帶出名下其他戶別。純查詢、不改缺失內容（要改點 #ID 跳追蹤總表）。
+// ══════════════════════════════════════════════════════════════════════════
+var _ulq={units:[],skipOwner:{}};
+function _ulqAllOptions(){
+  var out=[],seen={};
+  try{_allUnitKeys().forEach(function(k){var d=unitDisplayName(k);if(d&&!seen[d]){seen[d]=1;out.push(d);}});}catch(e){}
+  out.sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});});
+  return out;
+}
+function _ulqResolve(text){
+  var t=String(text||'').trim();if(!t)return '';
+  var map=_bslLookup();var hit=map.get(t.toUpperCase());
+  return hit||t;
+}
+function _ulqAddInput(v){
+  String(v||'').split(/[,，、\s]+/).filter(Boolean).forEach(function(x){var k=_ulqResolve(x);if(k&&_ulq.units.indexOf(k)<0)_ulq.units.push(k);});
+  renderUnitLookup();
+}
+function _ulqRemove(k){var i=_ulq.units.indexOf(k);if(i>=0)_ulq.units.splice(i,1);renderUnitLookup();}
+function _ulqClear(){_ulq.units=[];_ulq.skipOwner={};renderUnitLookup();}
+function _ulqOwnerExtras(){
+  var have={};_ulq.units.forEach(function(k){have[k]=1;});
+  var owners={};_ulq.units.forEach(function(k){var o=_ownerOf(k);if(o)owners[o]=1;});
+  var res={},pool={};
+  try{_allUnitKeys().forEach(function(k){pool[k]=1;});}catch(e){}
+  try{Object.keys(S.clientData||{}).forEach(function(k){pool[k]=1;});}catch(e){} // 屋主定義在 clientData，一併掃才不漏
+  Object.keys(pool).forEach(function(k){var o=_ownerOf(k);if(o&&owners[o]&&!have[k]){(res[o]=res[o]||[]).push(k);}});
+  Object.keys(res).forEach(function(o){if(_ulq.skipOwner[o])delete res[o];});
+  return res;
+}
+function _ulqAddOwner(o){(_ulqOwnerExtras()[o]||[]).forEach(function(k){if(_ulq.units.indexOf(k)<0)_ulq.units.push(k);});renderUnitLookup();}
+function _ulqSkip(o){_ulq.skipOwner[o]=1;renderUnitLookup();}
+function _ulqDone(r){return (r&&r.compId!=null)||!!(r&&r.actualDone);}
+function _ulqMiss(r){return _ulqDone(r)&&(!r.actualIn||!r.actualDone);}
+function _ulqDefRows(key){
+  var rows=[];try{rows=getDefectRows(key).filter(function(r){return !_voidRow(r);});}catch(e){rows=[];}
+  rows.sort(function(a,b){var da=_ulqDone(a)?1:0,db=_ulqDone(b)?1:0;if(da!==db)return da-db;return String(a.vendor||'').localeCompare(String(b.vendor||''));});
+  return rows;
+}
+function _ulqRounds(key){
+  var hu=(S.handoverUnits&&S.handoverUnits[key])||{};var insps=(hu.inspections||[]);var map={},maxRe=0;
+  insps.forEach(function(x){if(!x||!x.date)return;var t=inspTypeOf(x);if(!map[t]||x.date<map[t])map[t]=x.date;var m=String(t).match(/^複驗(\d+)/);if(m)maxRe=Math.max(maxRe,+m[1]);});
+  return {map:map,maxRe:maxRe,count:Object.keys(map).length,planDate:hu.planDate||''};
+}
+function _ulqPill(r){
+  if(_ulqMiss(r))return '<span style="background:#FBEFCB;color:#B45309;font-size:11px;font-weight:700;padding:1px 8px">已完成·缺日期</span>';
+  if(_ulqDone(r))return '<span style="background:#E7F4EC;color:#0A6640;font-size:11px;font-weight:700;padding:1px 8px">已完成</span>';
+  var st=getStatus(r);var lb=st==='overdue'?'逾期':st==='ongoing'?'進行中':'未開始';
+  return '<span style="background:#FBE9E7;color:#B3261E;font-size:11px;font-weight:700;padding:1px 8px">'+lb+'</span>';
+}
+function _ulqUnitBlock(key,idx){
+  var disp=unitDisplayName(key);var owner=_ownerOf(key);var typeL=(typeof _riTypeLabel==='function')?_riTypeLabel(key):'';
+  var cl=(S.clientData&&S.clientData[key])||{};var rounds=_ulqRounds(key);var rows=_ulqDefRows(key);
+  var tot=rows.length,done=0,miss=0;rows.forEach(function(r){if(_ulqDone(r))done++;if(_ulqMiss(r))miss++;});
+  var notDone=tot-done;var st=(typeof _riStat==='function')?_riStat(key):{inspected:false};
+  var h='<div id="ulq-u-'+idx+'" style="border:1px solid var(--pborder);margin-top:14px">';
+  h+='<div style="background:#F5F8FC;border-bottom:1px solid var(--pborder);padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+    +'<span style="font-size:16px;font-weight:800">'+esc(disp)+'</span>'
+    +(owner?'<span style="font-size:12px;color:var(--text2)">屋主：'+esc(owner)+(typeL?'（'+typeL+'）':'')+'</span>':'<span style="font-size:12px;color:#B3261E">未登屋主</span>')
+    +(cl.tel?'<span style="font-size:12px;color:var(--text2)">'+esc(cl.tel)+'</span>':'')
+    +'<span style="flex:1"></span>'
+    +'<button class="btn btn-sm" onclick="_ulqXlsx('+idx+')" style="font-size:12px">匯出 Excel</button>'
+    +'<button class="btn btn-sm" onclick="_ulqShot('+idx+')" style="font-size:12px">存成圖片</button>'
+    +'</div><div style="padding:12px">';
+  if(st.inspected&&tot===0){h+='<div style="border:1px solid #B45309;background:#FBEFCB;padding:8px 11px;font-size:12px;color:#7a4a08;font-weight:700;margin-bottom:12px">⚠ 已初驗、但目前 0 筆缺失——請確認是否漏登（對驗屋當天紀錄）</div>';}
+  h+='<div style="font-size:13px;font-weight:800;margin:2px 0 7px">驗收履歷（哪天·幾次）</div>';
+  if(rounds.count===0){
+    h+='<div style="font-size:12px;color:var(--text2);padding:2px 0 4px">'+(rounds.planDate?('已排定初驗 '+fmtMD(rounds.planDate)+'（尚無完成紀錄）'):'尚未排初驗')+'</div>';
+  }else{
+    var cols=['初驗'];for(var i=1;i<=rounds.maxRe;i++)cols.push('複驗'+i);
+    var rh='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr>';
+    cols.forEach(function(c){rh+='<th style="border:1px solid var(--pborder);background:#F5F8FC;padding:6px 9px;font-size:12px;color:var(--text2)">'+c+'</th>';});
+    rh+='<th style="border:1px solid var(--pborder);background:#F5F8FC;padding:6px 9px;font-size:12px;color:var(--text2);text-align:center">總驗次</th></tr><tr>';
+    cols.forEach(function(c){var d=rounds.map[c];rh+='<td style="border:1px solid var(--pborder);padding:6px 9px">'+(d?fmtMD(d):'—')+'</td>';});
+    rh+='<td style="border:1px solid var(--pborder);padding:6px 9px;text-align:center;font-weight:800">'+rounds.count+'</td></tr></table></div>';
+    h+=rh;
+  }
+  h+='<div style="font-size:13px;font-weight:800;margin:14px 0 7px">全部缺失（含已完成）</div>';
+  if(tot===0){
+    h+='<div style="font-size:12px;color:var(--text2)">此戶目前無缺失紀錄</div>';
+  }else{
+    var thb='border:1px solid var(--pborder);background:#F5F8FC;padding:6px 9px;font-size:12px;color:var(--text2)';
+    var tb='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr>'
+      +'<th style="'+thb+';text-align:center">#</th>'
+      +'<th style="'+thb+'">缺失內容</th>'
+      +'<th style="'+thb+'">廠商</th>'
+      +'<th style="'+thb+'">輪次</th>'
+      +'<th style="'+thb+'">狀態</th>'
+      +'<th style="'+thb+'">實際完成</th></tr>';
+    rows.forEach(function(r){
+      var idCell=_ulqDone(r)?('<span style="color:var(--text3)">'+r.id+'</span>'):('<a onclick="pwoGoto('+r.id+')" style="color:#185FA5;cursor:pointer;text-decoration:underline">'+r.id+'</a>');
+      var vc=vColor(r.vendor);
+      tb+='<tr'+(_ulqDone(r)?' style="background:#FAFDFB"':'')+'>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px;text-align:center">'+idCell+'</td>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px">'+esc(r.issue)+'</td>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px">'+(r.vendor?'<span style="display:inline-block;width:8px;height:8px;background:'+vc+';margin-right:5px;vertical-align:1px"></span>'+esc(r.vendor):'<span style="color:#B3261E">無廠商</span>')+(r.helper?' <span style="color:var(--text3);font-size:11px">代工'+esc(r.helper)+'</span>':'')+'</td>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px">'+esc(r.round||'自檢')+'</td>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px">'+_ulqPill(r)+'</td>'
+        +'<td style="border:1px solid var(--pborder);padding:6px 9px">'+(r.actualDone?fmtMD(r.actualDone):'—')+'</td></tr>';
+    });
+    tb+='</table></div>';
+    h+=tb;
+    h+='<div style="font-size:12px;color:var(--text2);margin-top:7px">小計：共 <b style="color:#26305A">'+tot+'</b> 筆 ｜ <span style="color:#0A6640">已完成 '+done+'</span> ｜ <span style="color:#B3261E">未完成 '+notDone+'</span>'+(miss?' ｜ <span style="color:#B45309">已完成缺日期 '+miss+'</span>':'')+'</div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+function _ulqXlsx(idx){
+  try{
+    var key=_ulq.units[idx];if(!key)return;var disp=unitDisplayName(key);var rows=_ulqDefRows(key);
+    var aoa=[['戶別',disp],['屋主',_ownerOf(key)]];
+    var rd=_ulqRounds(key);var rline=['驗次'];var cols=['初驗'];for(var i=1;i<=rd.maxRe;i++)cols.push('複驗'+i);
+    cols.forEach(function(c){rline.push(c+'：'+(rd.map[c]||'—'));});aoa.push(rline);aoa.push([]);
+    aoa.push(['#','缺失內容','廠商','輪次','狀態','實際完成日']);
+    rows.forEach(function(r){var stt=_ulqMiss(r)?'已完成·缺日期':_ulqDone(r)?'已完成':(getStatus(r)==='overdue'?'逾期':getStatus(r)==='ongoing'?'進行中':'未開始');aoa.push([r.id,r.issue||'',r.vendor||'',r.round||'自檢',stt,r.actualDone||'']);});
+    var ws=XLSX.utils.aoa_to_sheet(aoa);var wb={SheetNames:['戶別查詢'],Sheets:{'戶別查詢':ws}};
+    var out=XLSX.write(wb,{bookType:'xlsx',type:'array'});var blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='戶別查詢_'+disp+'.xlsx';document.body.appendChild(a);a.click();a.remove();
+  }catch(e){alert('匯出失敗：'+e.message);}
+}
+function _ulqShot(idx){var el=document.getElementById('ulq-u-'+idx);if(el&&typeof _capEl==='function')_capEl(el,'戶別查詢_'+unitDisplayName(_ulq.units[idx]||'')+'.png');}
+// ── V0720-13 戶別查詢·手機版（≤700px＋手機殼開）：一戶一卡、驗次 chips、缺失堆疊卡；「完整版⚙」回桌機表格 ──
+function _ulqMobUnit(key,idx){
+  var disp=unitDisplayName(key);var owner=_ownerOf(key);var typeL=(typeof _riTypeLabel==='function')?_riTypeLabel(key):'';
+  var rounds=_ulqRounds(key);var rows=_ulqDefRows(key);
+  var tot=rows.length,done=0,miss=0;rows.forEach(function(r){if(_ulqDone(r))done++;if(_ulqMiss(r))miss++;});
+  var notDone=tot-done;var st=(typeof _riStat==='function')?_riStat(key):{inspected:false};
+  var h='<div id="ulq-u-'+idx+'" style="border:1px solid var(--pborder);margin-top:12px">';
+  h+='<div style="background:#EAF4FC;border-bottom:1px solid var(--pborder);padding:9px 11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    +'<span style="font-size:17px;font-weight:800">'+esc(disp)+'</span>'
+    +(owner?'<span style="font-size:12px;color:var(--text2)">屋主 '+esc(owner)+(typeL?'·'+typeL:'')+'</span>':'<span style="font-size:12px;color:#B3261E">未登屋主</span>')
+    +'<span style="flex:1"></span>'
+    +'<button class="btn btn-sm" onclick="_ulqXlsx('+idx+')" style="font-size:12px">Excel</button>'
+    +'<button class="btn btn-sm" onclick="_ulqShot('+idx+')" style="font-size:12px">存圖</button></div>';
+  h+='<div style="padding:10px 11px">';
+  if(st.inspected&&tot===0){h+='<div style="border:1px solid #B45309;background:#FBEFCB;padding:8px 11px;font-size:12px;color:#7a4a08;font-weight:700;margin-bottom:10px">⚠ 已初驗、但目前 0 筆缺失——請確認是否漏登</div>';}
+  h+='<div style="font-size:13px;font-weight:800;margin:0 0 5px">驗收履歷</div>';
+  if(rounds.count===0){
+    h+='<div style="font-size:12px;color:var(--text2)">'+(rounds.planDate?('已排定初驗 '+fmtMD(rounds.planDate)+'（尚無完成紀錄）'):'尚未排初驗')+'</div>';
+  }else{
+    var cols=['初驗'];for(var i=1;i<=rounds.maxRe;i++)cols.push('複驗'+i);
+    h+='<div>'+cols.map(function(c){var d=rounds.map[c];return '<span style="display:inline-block;border:1px solid var(--border2);padding:2px 8px;font-size:12px;margin:2px 5px 2px 0">'+c+' '+(d?fmtMD(d):'—')+'</span>';}).join('')+'<span style="font-size:12px;color:var(--text2)">共 '+rounds.count+' 次</span></div>';
+  }
+  h+='<div style="font-size:13px;font-weight:800;margin:12px 0 4px">全部缺失（含已完成） <span style="font-size:11px;color:var(--text2);font-weight:400">共 '+tot+'</span></div>';
+  if(tot===0){
+    h+='<div style="font-size:12px;color:var(--text2)">此戶目前無缺失紀錄</div>';
+  }else{
+    rows.forEach(function(r){
+      var idPart=_ulqDone(r)?('#'+r.id):('<a onclick="pwoGoto('+r.id+')" style="color:#185FA5;text-decoration:underline;cursor:pointer">#'+r.id+'</a>');
+      h+='<div style="border-bottom:1px solid var(--border2);padding:7px 0">'
+        +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+          +'<span style="font-size:12px;color:var(--text3)">'+idPart+'</span>'
+          +(r.vendor?'<span style="font-size:12px;color:var(--text2)"><span style="display:inline-block;width:8px;height:8px;background:'+vColor(r.vendor)+';margin-right:4px;vertical-align:1px"></span>'+esc(r.vendor)+'</span>':'<span style="font-size:12px;color:#B3261E">無廠商</span>')
+          +'<span style="flex:1"></span>'+_ulqPill(r)+'</div>'
+        +'<div style="font-size:15px;margin:3px 0 1px">'+esc(r.issue||'（未填內容）')+'</div>'
+        +'<div style="font-size:12px;color:var(--text3)">'+esc(r.round||'自檢')+(r.actualDone?' · 完成 '+fmtMD(r.actualDone):'')+'</div></div>';
+    });
+    h+='<div style="font-size:12px;color:var(--text2);margin-top:7px"><span style="color:#0A6640">已完成 '+done+'</span> · <span style="color:#B3261E">未完成 '+notDone+'</span>'+(miss?' · <span style="color:#B45309">缺日期 '+miss+'</span>':'')+'</div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+function _ulqMobRender(){
+  var mc=document.getElementById('pane-ulookup');if(!mc)return;
+  try{_buildDefectCache();}catch(e){}
+  var opts=_ulqAllOptions();
+  var dl='<datalist id="ulq-dl">'+opts.map(function(o){return '<option value="'+esc(o)+'">';}).join('')+'</datalist>';
+  var chips=_ulq.units.map(function(k){return '<span style="background:#EAF4FC;border:1px solid #5B9BD5;color:#185FA5;font-size:13px;font-weight:800;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;margin:2px">'+esc(unitDisplayName(k))+' <span onclick="_ulqRemove(\''+String(k).replace(/'/g,"\\'")+'\')" style="cursor:pointer;font-weight:900">✕</span></span>';}).join('');
+  var bar='<div style="display:flex;gap:6px;align-items:center;padding:2px 0 6px">'
+    +'<input id="ulq-in" list="ulq-dl" placeholder="輸入戶別加入…" onchange="_ulqAddInput(this.value);this.value=\'\'" style="flex:1;font-size:16px;padding:8px;border:1px solid var(--pborder)">'
+    +(_ulq.units.length?'<button class="btn btn-sm" onclick="_ulqClear()" style="font-size:14px">清除</button>':'')
+    +'<button class="btn btn-sm" onclick="window._ulqFull=true;renderUnitLookup()" title="桌機表格版" style="font-size:14px">完整版⚙</button></div>'
+    +(chips?('<div style="padding:0 0 6px">'+chips+'</div>'):'')+dl;
+  var body='';
+  var extras=_ulqOwnerExtras();
+  Object.keys(extras).forEach(function(o){var ex=extras[o];if(!ex.length)return;
+    body+='<div style="border:1px solid #5B9BD5;background:#EAF4FC;padding:9px 11px;margin-top:8px;font-size:13px;color:#185FA5">'
+      +'<div>屋主「'+esc(o)+'」名下另有 <b>'+ex.length+'</b> 戶未列入：'+ex.map(function(k){return esc(unitDisplayName(k));}).join('、')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:7px"><button class="btn btn-sm btn-p" onclick="_ulqAddOwner(\''+String(o).replace(/'/g,"\\'")+'\')" style="font-size:12px">帶出</button>'
+      +'<button class="btn btn-sm" onclick="_ulqSkip(\''+String(o).replace(/'/g,"\\'")+'\')" style="font-size:12px">略過</button></div></div>';
+  });
+  if(!_ulq.units.length){
+    body+='<div style="text-align:center;color:var(--text3);padding:40px 10px;font-size:15px">輸入戶別開始查詢<br><span style="font-size:12px">可一次查多戶；可匯出 Excel／存成圖片</span></div>';
+  }else{
+    _ulq.units.forEach(function(k,idx){body+=_ulqMobUnit(k,idx);});
+  }
+  mc.innerHTML='<div style="padding:2px">'+bar+body+'</div>';
+}
+function renderUnitLookup(){
+  var mc=document.getElementById('pane-ulookup');if(!mc)return;
+  if(window.innerWidth<=700&&typeof _mnavEnabled==='function'&&_mnavEnabled()&&!window._ulqFull){_ulqMobRender();return;}
+  try{_buildDefectCache();}catch(e){}
+  var opts=_ulqAllOptions();
+  var dl='<datalist id="ulq-dl">'+opts.map(function(o){return '<option value="'+esc(o)+'">';}).join('')+'</datalist>';
+  var chips=_ulq.units.map(function(k){return '<span style="background:#EAF4FC;border:1px solid #5B9BD5;color:#185FA5;font-size:13px;font-weight:800;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;margin:2px">'+esc(unitDisplayName(k))+' <span onclick="_ulqRemove(\''+String(k).replace(/'/g,"\\'")+'\')" style="cursor:pointer;font-weight:900">✕</span></span>';}).join('');
+  var bar='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 0 10px">'
+    +'<span style="font-size:13px;color:var(--text2)">查詢戶別（可多戶／可貼一串）：</span>'+chips
+    +'<input id="ulq-in" list="ulq-dl" placeholder="輸入戶別加入…" onchange="_ulqAddInput(this.value);this.value=\'\'" style="font-size:13px;padding:6px 10px;border:1px solid var(--pborder);min-width:150px;font-family:var(--font)">'
+    +(_ulq.units.length?'<button class="btn btn-sm" onclick="_ulqClear()" style="font-size:12px">清除</button>':'')
+    +((window.innerWidth<=700&&window._ulqFull)?'<button class="btn btn-sm btn-p" onclick="window._ulqFull=false;renderUnitLookup()" style="font-size:12px">↩ 回手機版</button>':'')
+    +'</div>'+dl;
+  var body='';
+  var extras=_ulqOwnerExtras();
+  Object.keys(extras).forEach(function(o){var ex=extras[o];if(!ex.length)return;
+    body+='<div style="border:1px solid #5B9BD5;background:#EAF4FC;padding:9px 12px;margin-top:10px;font-size:13px;color:#185FA5;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +'<span>屋主「'+esc(o)+'」名下另有 <b>'+ex.length+'</b> 戶未列入：'+ex.map(function(k){return esc(unitDisplayName(k));}).join('、')+'</span><span style="flex:1"></span>'
+      +'<button class="btn btn-sm btn-p" onclick="_ulqAddOwner(\''+String(o).replace(/'/g,"\\'")+'\')" style="font-size:12px">帶出</button>'
+      +'<button class="btn btn-sm" onclick="_ulqSkip(\''+String(o).replace(/'/g,"\\'")+'\')" style="font-size:12px">略過</button></div>';
+  });
+  if(!_ulq.units.length){
+    body+='<div style="text-align:center;color:var(--text3);padding:40px 10px;font-size:14px">輸入戶別開始查詢<br><span style="font-size:12px">可一次查多戶；查詢後可匯出 Excel／存成圖片</span></div>';
+  }else{
+    _ulq.units.forEach(function(k,idx){body+=_ulqUnitBlock(k,idx);});
+  }
+  mc.innerHTML='<div style="padding:6px 2px">'+bar+body+'</div>';
+}
 function renderPane(id){
   if(id==='main')renderMain();
   else if(id==='vendor')renderVendor();
@@ -12491,6 +12829,7 @@ function renderPane(id){
   else if(id==='dupes')renderDupes();
   else if(id==='handover')renderHandover();
   else if(id==='reinsp')renderReinsp();
+  else if(id==='ulookup')renderUnitLookup();
   else if(id==='hstats')renderHStats();
   else if(id==='clients')renderClients();
   else if(id==='hcal')renderHCal();
@@ -13314,6 +13653,7 @@ function defectDateOf(r){
 function _defRankHtml(){
   if(!window._dpRound)window._dpRound='初驗';
   if(!window._dpSort)window._dpSort='count';
+  if(!window._dpView)window._dpView='cards';  // V0720-14 驗屋缺失分析顯示方式：cards重點卡(預設)/pivot樞紐表/bars長條
   const rows=S.rows.slice();
   const huByDisp={};Object.keys(S.handoverUnits||{}).forEach(k=>{huByDisp[unitDisplayName(k)]=k;huByDisp[k]=k;});
   const lastDate=u=>{const k=huByDisp[u];const insps=(k&&(S.handoverUnits[k]||{}).inspections)||[];let mx='';insps.forEach(i=>{if(i.date&&i.date>mx)mx=i.date;});return mx;};
@@ -13332,24 +13672,37 @@ function _defRankHtml(){
   const rbtn=roundsArr.map(function(rd){return '<span onclick="dpSetRound(\''+esc(rd)+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:0;'+(sel===rd?'background:#EAF1FB;color:#185FA5;border:1px solid #9DC2EC;':'border:0.5px solid var(--border);color:var(--text2);')+'">'+esc(rd)+'</span>';}).join('');
   const sopt=[['count','缺失數 多→少'],['date','最近日期 新→舊']];
   const sbtn=sopt.map(function(p){return '<span onclick="dpSetSort(\''+p[0]+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:0;'+(window._dpSort===p[0]?'background:#EAF1FB;color:#185FA5;border:1px solid #9DC2EC;':'border:0.5px solid var(--border);color:var(--text2);')+'">'+p[1]+'</span>';}).join('');
-  const body=arr.map(function(x,i){
+  const totalC=arr.reduce((s,x)=>s+x.count,0)||1;
+  function mkDetail(x){
+    const items=x.items.slice().sort((a,b)=>(lastDate(b.unit)||'').localeCompare(lastDate(a.unit)||''));
+    return '<div style="padding:2px 12px 10px 24px;background:#F7F5FF;border-bottom:0.5px solid var(--border2)"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text3);font-size:11px"><td style="padding:2px 6px">戶別</td><td style="padding:2px 6px">缺失內容</td><td style="padding:2px 6px;text-align:right">最近驗收日</td></tr>'+items.slice(0,60).map(function(r){return '<tr style="border-top:0.5px solid var(--border2)"><td style="padding:3px 6px;white-space:nowrap">'+esc(unitDisplayName(r.unit||''))+'</td><td style="padding:3px 6px">'+esc(r.issue||'')+'</td><td style="padding:3px 6px;text-align:right;color:var(--text2)">'+md(lastDate(r.unit))+'</td></tr>';}).join('')+(items.length>60?'<tr><td colspan="3" style="padding:3px 6px;color:var(--text3);font-size:11px">…等 '+items.length+' 筆</td></tr>':'')+'</table></div>';
+  }
+  // A 長條
+  const barsBody=arr.map(function(x,i){
     const open=window._dpRankExpand===x.v;
     const w=Math.round(x.count/maxC*100);
-    let detail='';
-    if(open){
-      const items=x.items.slice().sort((a,b)=>(lastDate(b.unit)||'').localeCompare(lastDate(a.unit)||''));
-      detail='<div style="padding:2px 12px 10px 48px;background:#F7F5FF;border-bottom:0.5px solid var(--border2)"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text3);font-size:11px"><td style="padding:2px 6px">戶別</td><td style="padding:2px 6px">缺失內容</td><td style="padding:2px 6px;text-align:right">最近驗收日</td></tr>'+items.slice(0,60).map(function(r){return '<tr style="border-top:0.5px solid var(--border2)"><td style="padding:3px 6px;white-space:nowrap">'+esc(unitDisplayName(r.unit||''))+'</td><td style="padding:3px 6px">'+esc(r.issue||'')+'</td><td style="padding:3px 6px;text-align:right;color:var(--text2)">'+md(lastDate(r.unit))+'</td></tr>';}).join('')+(items.length>60?'<tr><td colspan="3" style="padding:3px 6px;color:var(--text3);font-size:11px">…等 '+items.length+' 筆</td></tr>':'')+'</table></div>';
-    }
-    return '<div onclick="dpRankToggle(\''+esc(x.v)+'\')" style="display:grid;grid-template-columns:24px minmax(80px,150px) 1fr 30px 44px 16px;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;'+(i>0?'border-top:0.5px solid var(--border2);':'')+(open?'background:#F7F5FF;':'')+'"><span style="font-size:12px;color:var(--text3)">'+(i+1)+'</span><span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(x.v)+'</span><span style="height:13px;background:var(--surface);border-radius:0;position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:'+w+'%;background:#378ADD;border-radius:0"></span></span><span style="font-size:13px;font-weight:600;text-align:right">'+x.count+'</span><span style="font-size:11px;color:var(--text2);text-align:right">'+md(x.date)+'</span><span style="text-align:center;color:var(--text3);font-size:11px">'+(open?'▲':'▼')+'</span></div>'+detail;
+    return '<div onclick="dpRankToggle(\''+esc(x.v)+'\')" style="display:grid;grid-template-columns:24px minmax(80px,150px) 1fr 30px 44px 16px;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;'+(i>0?'border-top:0.5px solid var(--border2);':'')+(open?'background:#F7F5FF;':'')+'"><span style="font-size:12px;color:var(--text3)">'+(i+1)+'</span><span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(x.v)+'</span><span style="height:13px;background:var(--surface);border-radius:0;position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:'+w+'%;background:#378ADD;border-radius:0"></span></span><span style="font-size:13px;font-weight:600;text-align:right">'+x.count+'</span><span style="font-size:11px;color:var(--text2);text-align:right">'+md(x.date)+'</span><span style="text-align:center;color:var(--text3);font-size:11px">'+(open?'▲':'▼')+'</span></div>'+(open?mkDetail(x):'');
   }).join('');
+  // C 重點卡（預設）
+  const cardsGrid='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;padding:10px">'+arr.map(function(x,i){const on=window._dpRankExpand===x.v;return '<div onclick="dpRankToggle(\''+esc(x.v)+'\')" style="border:1px solid '+(on?'#9DC2EC':'var(--border2)')+';background:'+(on?'#F2F8FD':'var(--card)')+';padding:9px 10px;cursor:pointer"><div style="font-size:11px;color:var(--text3)">第 '+(i+1)+' 名</div><div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(x.v)+'">'+esc(x.v)+'</div><div style="font-size:22px;font-weight:800;color:#185FA5;line-height:1.25">'+x.count+'</div><div style="font-size:11px;color:var(--text3)">最近 '+md(x.date)+'</div></div>';}).join('')+'</div>';
+  const expX=(window._dpRankExpand!=null)?arr.find(function(a){return a.v===window._dpRankExpand;}):null;
+  const cardsBody=cardsGrid+(expX?mkDetail(expX):'');
+  // B 樞紐表
+  const tableBody='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#F5F8FC;color:var(--text2);font-size:11px"><td style="padding:6px 8px;text-align:center">排名</td><td style="padding:6px 8px">廠商</td><td style="padding:6px 8px;text-align:right">缺失數</td><td style="padding:6px 8px;text-align:right">佔比</td><td style="padding:6px 8px;text-align:right">最近驗收日</td></tr>'+arr.map(function(x,i){const on=window._dpRankExpand===x.v;const pct=Math.round(x.count/totalC*100);return '<tr onclick="dpRankToggle(\''+esc(x.v)+'\')" style="cursor:pointer;border-top:0.5px solid var(--border2);'+(on?'background:#F2F8FD;':'')+'"><td style="padding:5px 8px;text-align:center;color:var(--text3)">'+(i+1)+'</td><td style="padding:5px 8px">'+esc(x.v)+'</td><td style="padding:5px 8px;text-align:right;font-weight:600">'+x.count+'</td><td style="padding:5px 8px;text-align:right;color:var(--text2)">'+pct+'%</td><td style="padding:5px 8px;text-align:right;color:var(--text2)">'+md(x.date)+'</td></tr>'+(on?'<tr><td colspan="5" style="padding:0">'+mkDetail(x)+'</td></tr>':'');}).join('')+'</table>';
+  const _v=window._dpView;
+  const body=_v==='bars'?barsBody:(_v==='pivot'?tableBody:cardsBody);
+  const vopt=[['cards','重點卡'],['pivot','樞紐表'],['bars','長條']];
+  const vbtn=vopt.map(function(p){return '<span onclick="dpSetView(\''+p[0]+'\')" style="cursor:pointer;font-size:12px;padding:3px 10px;border-radius:0;'+(_v===p[0]?'background:#EAF1FB;color:#185FA5;border:1px solid #9DC2EC;':'border:0.5px solid var(--border);color:var(--text2);')+'">'+p[1]+'</span>';}).join('');
+  const _vnote=_v==='bars'?'長條＝缺失數 · 點列展開該廠商缺失清單':(_v==='pivot'?'表格＝排名／缺失數／佔比／最近驗收日 · 點列展開':'重點卡＝各廠商缺失數排名 · 點卡展開該廠商缺失清單');
   return '<div style="margin-top:24px"><div style="font-size:14px;font-weight:700;margin-bottom:6px"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V9M17 16v-6"/></svg>驗屋缺失排行（依輪次）</div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">輪次</span>'+rbtn+'</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">排序</span>'+sbtn+'</div></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">顯示</span>'+vbtn+'</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">輪次</span>'+rbtn+'</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">排序</span>'+sbtn+'</div></div>'
     +'<div style="background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden">'+(body||'<div style="padding:14px;text-align:center;color:var(--text3)">此輪次目前沒有缺失</div>')+'</div>'
-    +'<div style="font-size:11px;color:var(--text3);margin-top:8px">長條＝缺失數 · 日期＝該戶最近驗收日 · 點任一列展開該廠商缺失清單</div></div>';
+    +'<div style="font-size:11px;color:var(--text3);margin-top:8px">'+_vnote+'</div></div>';
 }
 function dpTogglePivot(){window._dpPivotOpen=!window._dpPivotOpen;renderDefPivot();}
 function dpSetRound(r){window._dpRound=r;window._dpRankExpand=null;renderDefPivot();}
 function dpSetSort(s){window._dpSort=s;renderDefPivot();}
+function dpSetView(v){window._dpView=v;renderDefPivot();}
 function dpRankToggle(v){window._dpRankExpand=(window._dpRankExpand===v)?null:v;renderDefPivot();}
 function renderDefPivot(){
   const el=document.getElementById('pane-defpivot'); if(!el)return;
@@ -13744,7 +14097,7 @@ function buildDailyReportText(){
   const owkDone=oTot?_rptDoneRange(wk.mon,wkEnd,isOwnerUnit):null;
   const BAR='━'.repeat((S.rptBarLen&&Number(S.rptBarLen)>0)?Number(S.rptBarLen):8);
   const L=[];
-  L.push('📋 G95 驗屋日報｜'+_rptMMDD(date)+'（'+_rptDOW(date)+'）');
+  L.push('G95 驗屋日報｜'+_rptMMDD(date)+'（'+_rptDOW(date)+'）');
   L.push('');
   L.push('總戶數 '+total+' 戶（A棟'+bt.A+'+B棟'+bt.B+'+店鋪'+bt.shop+'）');
   var _isISO=_rptInitStartISO();
@@ -13799,7 +14152,7 @@ function buildDailyReportText(){
   // V0714-01：🏠 地主戶統計 獨立區塊（預設顯示；「顯示地主戶分算」取消勾選＝連同上面（地主）標註一起隱藏）
   if(oc){
     L.push('');L.push(BAR);L.push('');
-    L.push('🏠 地主戶統計（總 '+oTot+' 戶）');
+    L.push('地主戶統計（總 '+oTot+' 戶）');
     L.push('初驗 累計 '+oc.init+'｜複驗 累計 '+oc.re+'｜交屋 累計 '+oc.deliv);
     L.push('本週：初驗 '+owkDone.init+'｜複驗 '+owkDone.re+'｜交屋 '+owkDone.deliv);
   }
@@ -13811,7 +14164,7 @@ function buildDailyReportText(){
     var allShow=(S.rptFc&&S.rptFc.showCxnAll)&&(cxAll['初'].length||cxAll['複'].length);
     if(!wkAny&&!allShow)return;
     L.push('');L.push(BAR);L.push('');
-    L.push('🚫 取消／未到統計');
+    L.push('取消／未到統計');
     if(wkAny){
       L.push('本週（'+_rptMMDD(wk.mon)+'～'+_rptMMDD(wkEnd)+'）');
       ['初','複'].forEach(function(st){if(cxWk[st].length)_rptCxnStageLines(st==='初'?'初驗':'複驗',cxWk[st]).forEach(function(ln){L.push(ln);});});
@@ -15071,9 +15424,9 @@ function usoTxt(){
  }
  var grp={done:[],doing:[],todo:[],wait:[]};
  U.nodes.forEach(function(n){grp[usoStatus(n)].push(n);});
- L.push('✅ 已完成('+grp.done.length+')：'+grp.done.map(function(n){return n.name+' '+n.actual;}).join('；'));
- L.push('🔵 進行中('+grp.doing.length+')：'+grp.doing.map(function(n){var p=usoPlanOf(n);return n.name+(p?(' 預計'+usoMD(p)):'');}).join('；'));
- L.push('⚪ 未開始('+(grp.todo.length+grp.wait.length)+')：'+grp.wait.concat(grp.todo).map(function(n){var p=usoPlanOf(n);var w='';if(usoStatus(n)==='wait'){var gi=usoGate(n);w='(等前置'+gi.k+'/'+gi.m+')';}return n.name+w+(p?(' '+usoMD(p)):'');}).join('；'));
+ L.push('已完成('+grp.done.length+')：'+grp.done.map(function(n){return n.name+' '+n.actual;}).join('；'));
+ L.push('進行中('+grp.doing.length+')：'+grp.doing.map(function(n){var p=usoPlanOf(n);return n.name+(p?(' 預計'+usoMD(p)):'');}).join('；'));
+ L.push('未開始('+(grp.todo.length+grp.wait.length)+')：'+grp.wait.concat(grp.todo).map(function(n){var p=usoPlanOf(n);var w='';if(usoStatus(n)==='wait'){var gi=usoGate(n);w='(等前置'+gi.k+'/'+gi.m+')';}return n.name+w+(p?(' '+usoMD(p)):'');}).join('；'));
  var arr=usoSorted(),st=U.start||(arr.length?usoDateOf(arr[0]):''),tg=g?usoDateOf(g):'';
  if(st&&tg&&tg>=st)L.push('起算 '+st+' → 總天數 '+usoDaysN(st,tg)+' 天（工作天 '+usoWDN(st,tg)+' 天）');
  return L.join('\n');
@@ -15101,7 +15454,7 @@ function usoMDWp(iso){return iso?(usoMD2(iso)+'('+usoDOWs(iso)+')'):'';}
 function buildUsoReportText(){
  var U=_USO(),g=usoGoalNode(),t=todayISO(),L=[];
  var BAR='━'.repeat(9);
- L.push('📋 G95 使照進度｜'+_rptMMDD(t)+'（'+_rptDOW(t)+'）');
+ L.push('G95 使照進度｜'+_rptMMDD(t)+'（'+_rptDOW(t)+'）');
  L.push('');
  // 起算節點 → 目標
  var sn=(U.startNode?usoById(U.startNode):null);var snd=sn?usoDateOf(sn):'';
@@ -15126,13 +15479,13 @@ function buildUsoReportText(){
  if(!_usoRptAll&&doneArr.length>_usoRptRecent){shown=doneArr.slice(doneArr.length-_usoRptRecent);trunc=true;}
  if(_usoRptDirV()==='desc')shown=shown.slice().reverse();
  L.push('');L.push(BAR);L.push('');
- L.push('✅ 已完成（共 '+doneArr.length+' 項'+(trunc?('，顯示最近 '+shown.length+' 筆'):'')+'）');
+ L.push('已完成（共 '+doneArr.length+' 項'+(trunc?('，顯示最近 '+shown.length+' 筆'):'')+'）');
  var lastM='';
  shown.forEach(function(n){var mm=n.actual.slice(0,7);if(lastM&&mm!==lastM)L.push('');lastM=mm;L.push(usoMDW(n.actual)+' '+n.name);});
  if(!shown.length)L.push('（尚無）');
  // ▶ 進行中
  L.push('');L.push(BAR);L.push('');
- L.push('▶ 進行中（'+grp.doing.length+' 項）');
+ L.push('進行中（'+grp.doing.length+' 項）');
  if(!grp.doing.length)L.push('（無）');
  grp.doing.sort(function(a,b){var pa=usoPlanOf(a)||'zzzz',pb=usoPlanOf(b)||'zzzz';var r=pa<pb?-1:(pa>pb?1:0);return _usoRptDirV()==='desc'?-r:r;});
  grp.doing.forEach(function(n){var p=usoPlanOf(n);L.push(n.name+(p?('（預計完成 '+usoMDW(p)+'）'):''));});
@@ -15147,8 +15500,8 @@ function buildUsoReportText(){
  // 🎯 目標收尾
  L.push('');L.push(BAR);L.push('');
  if(g){
-  if(g.actual)L.push('🎯 '+g.name+'：已取得 '+usoMDW(g.actual)+' ✅');
-  else L.push('🎯 '+g.name+'預計：'+usoMDW(gd)+gstar+'（剩 '+up.length+' 個節點）');
+  if(g.actual)L.push(g.name+'：已取得 '+usoMDW(g.actual));
+  else L.push(g.name+'預計：'+usoMDW(gd)+gstar+'（剩 '+up.length+' 個節點）');
  }
  return L.join('\n');
 }
@@ -15638,4 +15991,4 @@ try{
 </script>
 </body>
 </html>
-<!-- v0720-12 preview -->
+<!-- v0721-02 index -->
