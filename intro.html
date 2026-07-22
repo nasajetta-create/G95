@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G95 工程管理系統 — 介紹說明</title>
+<style>
+  :root{
+    --sky:#5B9BD5; --sky-d:#3E7CB1; --ink:#26215C; --text:#2b2b2b; --text2:#5b6b85;
+    --line:#334756; --bg:#eef4fb; --card:#ffffff; --card2:#EAF4FC; --border:#d5e2f0;
+    --gray:#DCDAD2; --warn:#C0392B; --ok:#2E6B26; --gold:#B8860B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Noto Sans TC",-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+       color:var(--text);background:var(--bg);line-height:1.75;font-size:15px}
+  a{color:var(--sky-d)}
+  .ic{width:1em;height:1em;vertical-align:-.14em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:inline-block}
+  header{background:linear-gradient(120deg,var(--sky),var(--sky-d));color:#fff;padding:26px 20px 20px}
+  header .wrap{max-width:980px;margin:0 auto}
+  header h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:12px}
+  header p{margin:8px 0 0;opacity:.95;font-size:15px}
+  header .meta{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  header .chip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);padding:3px 11px;font-size:12.5px;font-weight:600}
+  .tabs{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(40,60,110,.06)}
+  .tabs .wrap{max-width:980px;margin:0 auto;display:flex;overflow-x:auto}
+  .tab{flex:0 0 auto;padding:14px 20px;font-size:15px;font-weight:700;color:var(--text2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:7px}
+  .tab:hover{color:var(--sky-d)}
+  .tab.on{color:var(--ink);border-bottom-color:var(--sky)}
+  main{max-width:980px;margin:0 auto;padding:26px 20px 60px}
+  .pane{display:none;animation:fade .25s ease}
+  .pane.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h2.sec{font-size:20px;color:var(--ink);font-weight:800;margin:8px 0 6px;display:flex;align-items:center;gap:9px;border-left:5px solid var(--sky);padding-left:11px}
+  p.lead{color:var(--text2);margin:0 0 20px;font-size:15.5px}
+  .card{background:var(--card);border:1px solid var(--border);padding:18px 20px;margin:14px 0}
+  .card h3{margin:0 0 8px;font-size:16.5px;color:var(--ink);font-weight:800;display:flex;align-items:center;gap:9px}
+  .card p{margin:6px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:14px 0}
+  .fcard{background:var(--card);border:1px solid var(--border);padding:15px 16px}
+  .fcard .t{font-weight:800;color:var(--ink);font-size:15.5px;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .fcard .d{color:var(--text2);font-size:13.5px;line-height:1.65}
+  .fcard .tag{display:inline-block;font-size:11px;color:var(--sky-d);border:1px solid var(--sky);padding:1px 7px;margin-top:8px}
+  ul.clean{margin:8px 0;padding-left:22px}
+  ul.clean li{margin:5px 0}
+  .step{display:flex;gap:14px;margin:10px 0;align-items:flex-start}
+  .step .n{flex:0 0 30px;height:30px;background:var(--sky);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .step .b{flex:1}.step .b b{color:var(--ink)}
+  details{background:var(--card);border:1px solid var(--border);margin:10px 0}
+  details>summary{cursor:pointer;padding:13px 16px;font-weight:700;color:var(--ink);list-style:none;display:flex;align-items:center;gap:9px}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary .arw{margin-left:auto;transition:transform .2s}
+  details[open]>summary .arw{transform:rotate(90deg)}
+  details .body{padding:2px 16px 15px;color:var(--text2);font-size:14px}
+  .arch{background:var(--card);border:1px solid var(--border);padding:18px;margin:14px 0;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{border:1px solid var(--border);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--card2);color:var(--ink);font-weight:700}
+  .prob{background:#fdf2f0;border-left:4px solid var(--warn)}
+  .sol{background:#eef7ec;border-left:4px solid var(--ok)}
+  .note{background:#fffdf3;border:1px solid #ecdfa8;border-left:4px solid var(--gold);padding:12px 15px;margin:14px 0;font-size:14px;color:#6b5a1e}
+  footer{max-width:980px;margin:0 auto;padding:20px;color:var(--text2);font-size:12.5px;border-top:1px solid var(--border);text-align:center}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+  .kpi .k{flex:1 1 130px;background:var(--card);border:1px solid var(--border);padding:14px;text-align:center}
+  .kpi .k b{display:block;font-size:24px;color:var(--sky-d);font-weight:800}
+  .kpi .k span{font-size:12.5px;color:var(--text2)}
+  @media(max-width:600px){header h1{font-size:21px}.tab{padding:12px 14px;font-size:14px}main{padding:18px 14px 50px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1><svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 11h.01M15 11h.01"/></svg>G95 工程管理系統</h1>
+  <p>建案交屋前的「工程缺失追蹤 × 驗收修繕 × 廠商派工」即時協作平台</p>
+  <div class="meta">
+    <span class="chip">單一網頁・免安裝</span>
+    <span class="chip">Firebase 即時多人同步</span>
+    <span class="chip">電腦＋手機</span>
+    <span class="chip">10 人協作</span>
+    <span class="chip">現行 V0721-10</span>
+  </div>
+</div></header>
+
+<nav class="tabs"><div class="wrap">
+  <div class="tab on" data-t="preface"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4zM20 4h-4a2 2 0 0 0-2 2v11.5a2.5 2.5 0 0 1 2.5-2.5H20z"/></svg>前言</div>
+  <div class="tab" data-t="intro"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>系統簡介</div>
+  <div class="tab" data-t="feat"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>功能總覽</div>
+  <div class="tab" data-t="use"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>使用說明</div>
+  <div class="tab" data-t="tech"><svg class="ic" viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg>技術架構</div>
+</div></nav>
+
+<main>
+
+<!-- ═══ 前言 ═══ -->
+<section class="pane on" id="preface">
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4zM20 4h-4a2 2 0 0 0-2 2v11.5a2.5 2.5 0 0 1 2.5-2.5H20z"/></svg>前言</h2>
+  <p class="lead">這一頁記錄 G95 的由來、規模，以及它「到底是什麼」——寫給第一次認識這套系統的人。</p>
+
+  <div class="card">
+    <h3><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>它的由來</h3>
+    <p>G95 不是一次做完的工具，而是從工地現場的實際需要長出來、再被一輪一輪磨出來的系統。</p>
+    <div class="kpi">
+      <div class="k"><b>2026.06.01</b><span>系統建立</span></div>
+      <div class="k"><b>6/27</b><span>第一個正式版（含登入/權限）</span></div>
+      <div class="k"><b>260+</b><span>累計改動次數</span></div>
+      <div class="k"><b>263</b><span>CODE_VERSION（每上線遞增）</span></div>
+    </div>
+    <p style="color:var(--text2);font-size:13.5px">系統建立於 <b>2026 年 6 月 1 日</b>；第一個有登入與權限鎖的正式版在 6/27（V0624 系列）。到現在約 <b>7～8 週</b>，光「正式部署」就到 CODE_VERSION 263，加上早期開發存檔——整套系統前前後後<b>改了 250～300 次以上</b>。它不是小工具，是被磨了幾百輪的東西。</p>
+  </div>
+
+  <div class="card">
+    <h3><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>系統的核心</h3>
+    <p style="font-size:16px"><b>核心是一份「唯一、即時、永遠正確」的缺失真相。</b></p>
+    <p>一筆缺失從驗出、派工、修繕、複驗、到交屋，整條流程只存在一個地方；10 個人同時看、同時改，畫面永遠一致，不會互相蓋掉、不會掉。撐起這件事的，是底層那套「<b>每筆缺失一份文件的即時同步資料層</b>」——它是<b>根</b>；畫面上的數字、看板、報表，都只是從它長出來的<b>枝葉</b>。</p>
+  </div>
+
+  <div class="card">
+    <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12v9M12 12L4 7.5M12 12l8-4.5"/></svg>為什麼做得這麼「簡單」</h3>
+    <p>G95 刻意做成<b>一個網頁、免安裝、不用自己架一台主機</b>——所以隨開隨用、好維護、不必養一組 IT 團隊。</p>
+    <p>「簡單」也是有代價的：<b>資料安全、不掉資料、大家版本要更新一致</b>這些事，得靠系統本身設計得夠嚴謹（雲端服務也有使用成本、要留意用量）——這些我們都在背後處理掉了。<b>簡單好用是你看到的表面，背後為了「簡單卻不會出事」其實做了很多工。</b></p>
+  </div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M8 3v18M3 8h5M16 3v18M16 8h5M8 12h8"/></svg>只是「統計學」？</h2>
+  <p class="lead">很多人看畫面上滿滿的數字，第一反應是「這不就是統計嗎？」畫面上的彙總（總項目／逾期／已初驗／累計完成）確實是統計——但這最簡單的 <b>5%</b>，是靠背後另外 <b>95% 的工程</b>才產得出來的。真正難、真正值錢的，都在看不到的地方：</p>
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>即時協作系統工程</div><div class="d">讓多人在不同的電腦上、不穩的手機網路上同時編輯，資料還要能即時同步、不互相覆蓋、不掉——這才是背後真正的分散式系統工程。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-4 3 2 5-7"/></svg>領域建模</div><div class="d">把管理者的想法與技能，具現化成大家能共享同一套規則的軟體——也就是把真實工地流程與業務規則（什麼叫「可複驗」、「已初驗」怎麼定義、驗收日怎麼排）編碼進系統。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>產品／UX</div><div class="d">系統真正落地的關鍵——手機化、示意圖驅動設計、視覺一致，讓 10 個非技術的人每天都願意用。</div></div>
+  </div>
+  <div class="note" style="background:#eef4fb;border-color:var(--border);border-left-color:var(--sky);color:var(--ink);font-size:14.5px;line-height:2">
+    <b style="font-size:17px">它不是統計學，是一套即時協作的系統。</b><br>
+    統計是「看得到的表面」，工程是「看不到的地基」。<br>
+    <b>在錯的、舊的、掉了的資料上算統計，數字再漂亮都是假的。</b><br>
+    這個技術的價值，是先把資料弄成「即時、正確、大家共用」——統計只是最後的輸出。
+  </div>
+</section>
+
+<!-- ═══ 系統簡介 ═══ -->
+<section class="pane" id="intro">
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>這是什麼系統？</h2>
+  <p class="lead">G95 是一套為<b>建案交屋前階段</b>打造的工程管理系統。從驗屋驗出缺失、派給廠商修繕、複驗、到最後交屋，整條流程的每一筆缺失、每一戶進度、每個廠商的工作，都在同一個網頁上即時追蹤——多人一起用、電腦手機都行、資料雲端同步。</p>
+
+  <div class="card prob">
+    <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>它解決的痛點</h3>
+    <ul class="clean">
+      <li>交屋前缺失動輒<b>上千筆</b>，用 Excel／紙本追蹤，多人一改就亂、對不齊、還會掉資料。</li>
+      <li>同一戶要跨<b>多家廠商</b>派工，誰負責哪筆、修完沒、能不能複驗，很難一眼看清。</li>
+      <li>驗收、複驗、交屋要<b>排程與接待人力</b>，行事曆和缺失進度各記各的、兜不起來。</li>
+      <li>老闆/業務想知道「今天驗幾戶、累計進度、哪些逾期沒修」，得手動彙整。</li>
+    </ul>
+  </div>
+
+  <div class="card sol">
+    <h3><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>G95 怎麼解</h3>
+    <ul class="clean">
+      <li><b>單一真相來源</b>：所有缺失、進度、派工都在一個系統，<b>即時多人同步</b>，改了大家馬上看到。</li>
+      <li><b>缺失全生命週期</b>：新增缺失 → 派廠商 → 修繕 → 勾完成 → 複驗 → 交屋，狀態一路追。</li>
+      <li><b>驗收/修繕進度看板</b>：一眼看哪些戶已初驗、缺失修完可複驗、逾期未修、可交屋。</li>
+      <li><b>行事曆＋接待排班整合</b>：驗收日、複驗、交屋排程與接待人力一起管。</li>
+      <li><b>自動日報與報表</b>：驗屋日報、交屋進度、廠商成績單自動產生。</li>
+      <li><b>免安裝</b>：開網址就能用，電腦看大表、手機看看板，資料存雲端不怕掉。</li>
+    </ul>
+  </div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M9 21V9"/></svg>兩個搭配系統</h2>
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>G95 缺失追蹤</div><div class="d">主系統。缺失追蹤、驗收修繕進度、交屋行事曆、報表——本說明主要介紹它。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M16 3h5v5M21 3l-9 9M8 3H3v18h18v-5"/></svg>點工派遣看板</div><div class="d">獨立的點工/機具派遣系統，跨工地共用，與 G95 缺失資料<b>連動</b>（派工單直接看到各戶缺失）。</div></div>
+  </div>
+
+  <div class="kpi">
+    <div class="k"><b>1</b><span>單一網頁・免安裝</span></div>
+    <div class="k"><b>10</b><span>人即時協作</span></div>
+    <div class="k"><b>2</b><span>裝置（電腦＋手機）</span></div>
+    <div class="k"><b>24</b><span>功能分頁</span></div>
+  </div>
+</section>
+
+<!-- ═══ 功能總覽 ═══ -->
+<section class="pane" id="feat">
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>核心作業</h2>
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h18v14H8l-5 4V3z"/></svg>公告欄</div><div class="d">交辦、疑問、公告三類；未讀提醒、可要求簽收。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M3 9h18M9 4v16"/></svg>追蹤總表</div><div class="d">所有缺失的主表：戶別／樓層／廠商／缺失內容／進場・完成日／狀態。可篩選、搜尋、Excel 匯入。<span class="tag">核心</span></div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>驗收/修繕進度</div><div class="d">六態卡片：已初驗／可複驗／已複驗／可交屋／已交屋／逾期未修，一眼掌握每戶修繕進度。<span class="tag">重點</span></div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5h6M9 9h6M9 13h4M5 3h14v18H5z"/></svg>廠商派工單</div><div class="d">依廠商彙整待辦、出派工單 PDF、廠商成績單（完成率／工作天）。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M20.6 3.4a2 2 0 0 0-2.8 0l-9 9L7 17l4.6-1.8 9-9a2 2 0 0 0 0-2.8z"/></svg>自動填入規則</div><div class="d">設「關鍵字→廠商＋預計完成日」，新增缺失時自動帶入。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>交屋行事曆</div><div class="d">依驗收日排格子、排接待人力；批次排程、雙週視圖。</div></div>
+  </div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l3-3 3 3 5-6"/></svg>報表與名冊</h2>
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>驗屋/使照日報</div><div class="d">今日驗屋、累計完成、初複驗與交屋統計，自動產生文字日報。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l3-4 3 2 5-7"/></svg>報表中心</div><div class="d">驗收統計、驗屋缺失分析、交屋進度報告、進度里程碑。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9"/></svg>客戶清單</div><div class="d">屋主資料、電話、交屋資訊、驗次紀錄（可加減驗次輪次）。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>管理人員</div><div class="d">接待人員排班、固定不排時段、休假、支援人力。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg>戶況總表</div><div class="d">以「棟＋樓＝一戶」彙整全案各戶狀態總覽。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2v6M4 12h16M4 12v8h16v-8"/></svg>使照進度</div><div class="d">使用執照各節點進度追蹤。</div></div>
+  </div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>維護與工具</h2>
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>更新紀錄</div><div class="d">誰改了什麼，完整變更軌跡。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 4h6v3H9z"/></svg>重複作業</div><div class="d">偵測重複缺失，安全去重（同缺失不同廠商不會誤刪）。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>已完成/垃圾桶</div><div class="d">完成工作歸檔；刪除進垃圾桶可還原（墓碑機制）。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>備份／還原</div><div class="d">一鍵匯出完整備份 JSON；必要時可還原。</div></div>
+  </div>
+  <div class="note"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> 手機版把常用看板收在「首頁看板中心」，各看板有專屬底部工具列，隨時可切「完整版」回到電腦大表。</div>
+</section>
+
+<!-- ═══ 使用說明 ═══ -->
+<section class="pane" id="use">
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>快速上手（五步）</h2>
+  <p class="lead">下面是最常用的一條主線流程；每個步驟可點開看細節。</p>
+  <div class="step"><div class="n">1</div><div class="b"><b>登入</b>：開系統網址，用授權名單內的帳號登入（限 10 人可寫入）。看到頂端「已同步」綠燈就代表資料連上了。</div></div>
+  <div class="step"><div class="n">2</div><div class="b"><b>新增缺失</b>：到「追蹤總表」按＋新增，填戶別／樓層／廠商／缺失內容；設了自動規則會自動帶廠商與預計完成日。也可 Excel 匯入一整批。</div></div>
+  <div class="step"><div class="n">3</div><div class="b"><b>派工給廠商</b>：到「廠商派工單」依廠商彙整待辦、出派工單 PDF 給師傅。</div></div>
+  <div class="step"><div class="n">4</div><div class="b"><b>修繕→複驗</b>：修完在缺失上勾「完成」；到「驗收/修繕進度」看哪些戶缺失全修完＝<b>可複驗</b>，安排複驗。</div></div>
+  <div class="step"><div class="n">5</div><div class="b"><b>排驗收/交屋</b>：到「交屋行事曆」排驗收日與接待人力；缺失清零＋已複驗＝<b>可交屋</b>，標記交屋完成。</div></div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>各功能操作重點</h2>
+  <details><summary><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M3 9h18"/></svg>追蹤總表<svg class="ic arw" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="body">頂端統計卡（總項目／已完成／逾期／3天警示）。用「篩選▾」依戶別/樓層/廠商/輪次/狀態縮小；「搜尋」找缺失內容；「匯出▾」出 CSV/PDF。日期欄「預/實」分別填預計與實際完成日。</div></details>
+  <details><summary><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg>驗收/修繕進度<svg class="ic arw" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="body">六色卡片當篩選：點「可複驗」只看修完待複驗的戶。「通知業務·名單」一鍵產出戶別＋屋主＋電話清單存圖傳給業務。<b>「已初驗」＝有初驗紀錄實際完成才算</b>（跟驗屋日報一致；還沒驗、業主代驗屋主沒到的不算）。</div></details>
+  <details><summary><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>交屋行事曆<svg class="ic arw" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="body">格子只看「驗收日」排（清潔日另記、不會混到）。可自動排接待人力、批次排程、批次標記已交屋；上下午分頁列印。</div></details>
+  <details><summary><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M3 8h18"/></svg>手機版<svg class="ic arw" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="body">進 App 落在「首頁看板中心」，卡片可自訂（右上「編輯」增減）。各看板有專屬底部工具列；任何看板都能按「完整版」切回電腦大表。可加到主畫面當 App 用。</div></details>
+  <details><summary><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>備份與更新<svg class="ic arw" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+    <div class="body">頂端「匯出備份」隨時存一份 JSON。系統更新後，請大家在頁面按 <b>Ctrl+Shift+R</b>（手機關掉重開）換到新版；偵測到新版會自動提示並倒數重整。</div></details>
+
+  <div class="note"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> 小提醒：分頁排序是每個人自己排的（頂端「編輯排序」）；「已同步」變「連線中」多半是網路慢或第一次載入大量資料，稍等即可。</div>
+</section>
+
+<!-- ═══ 技術架構 ═══ -->
+<section class="pane" id="tech">
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M4 17l6-6-6-6M12 19h8"/></svg>技術架構一覽</h2>
+  <p class="lead">給工程/交接看的技術面。整套系統刻意做得極簡：一個 HTML 檔＋雲端資料庫，沒有後端伺服器要維護。</p>
+
+  <div class="arch">
+    <svg viewBox="0 0 720 260" width="100%" style="max-width:720px;font-family:inherit">
+      <style>.bx{fill:#EAF4FC;stroke:#5B9BD5;stroke-width:1.6}.bx2{fill:#fff;stroke:#334756;stroke-width:1.4}.lb{fill:#26215C;font-size:13px;font-weight:700}.sm{fill:#5b6b85;font-size:11px}.ln{stroke:#5B9BD5;stroke-width:1.6;fill:none}</style>
+      <rect class="bx" x="40" y="20" width="180" height="70"/><text class="lb" x="130" y="48" text-anchor="middle">電腦瀏覽器</text><text class="sm" x="130" y="66" text-anchor="middle">index.html（單一檔）</text>
+      <rect class="bx" x="40" y="150" width="180" height="70"/><text class="lb" x="130" y="178" text-anchor="middle">手機瀏覽器 / PWA</text><text class="sm" x="130" y="196" text-anchor="middle">同一份 index.html</text>
+      <rect class="bx2" x="300" y="85" width="180" height="90"/><text class="lb" x="390" y="120" text-anchor="middle">Firebase</text><text class="lb" x="390" y="140" text-anchor="middle">Firestore</text><text class="sm" x="390" y="160" text-anchor="middle">即時資料庫 g95-work</text>
+      <rect class="bx" x="540" y="20" width="150" height="70"/><text class="lb" x="615" y="48" text-anchor="middle">GitHub Pages</text><text class="sm" x="615" y="66" text-anchor="middle">部署／存放網頁</text>
+      <rect class="bx" x="540" y="150" width="150" height="70"/><text class="lb" x="615" y="178" text-anchor="middle">點工派遣</text><text class="sm" x="615" y="196" text-anchor="middle">連動讀缺失</text>
+      <path class="ln" d="M220 55 H300 V110"/><path class="ln" d="M220 185 H300 V150"/>
+      <path class="ln" d="M480 110 H660 V90" stroke-dasharray="4 3"/>
+      <path class="ln" d="M480 150 H615 V150"/>
+      <text class="sm" x="255" y="46" text-anchor="middle">即時同步</text>
+    </svg>
+  </div>
+
+  <div class="grid">
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16"/></svg>單一 HTML</div><div class="d">整個系統就是一個 index.html（HTML＋CSS＋JS 全在裡面），沒有後端、免安裝、免部署伺服器。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>Firebase Firestore</div><div class="d">雲端即時資料庫，多人同一秒同步；登入後才連庫，寫入限 10 人名單（Firestore 安全規則把關）。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M16 3h5v5M21 3l-9 9M8 21H3v-5"/></svg>GitHub Pages 部署</div><div class="d">網頁放 GitHub Pages 免費託管；更新＝推一次、大家重整即換新版。</div></div>
+    <div class="fcard"><div class="t"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>版本閘門</div><div class="d">偵測到新版部署，舊版自動存檔後禁止寫入並倒數 10 秒自動重整，避免新舊版打架。</div></div>
+  </div>
+
+  <h2 class="sec"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/></svg>資料層設計（防掉資料）</h2>
+  <table>
+    <tr><th>設計</th><th>作用</th></tr>
+    <tr><td>每筆缺失一份文件<br>（<code>defects/{key}</code>）</td><td>不再整包互蓋——一個人改一筆只寫那一筆，物理上不可能刷掉別人剛輸入的缺失（＝根治「掉資料」）。</td></tr>
+    <tr><td>穩定碼 <code>_k</code></td><td>每筆缺失有固定身分碼，重新編號也不會搬家、不會錯亂。</td></tr>
+    <tr><td>墓碑刪除</td><td>刪除是打標記不是真消失，可從垃圾桶還原、也防「刪掉又復活」。</td></tr>
+    <tr><td>增量同步</td><td>只重讀有變動的欄位，省 Firebase 流量與費用。</td></tr>
+    <tr><td>防翻倍三件套</td><td><b>認領</b>（存檔前比對內容、相同就沿用不新增）＋<b>健檢</b>（開機掃重複、超標跳警示）＋<b>一鍵安全去重</b>（預覽後才刪、用墓碑可還原）。</td></tr>
+  </table>
+
+  <div class="note"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> 交接重點：完整逐版歷史、函式索引與已知陷阱見 <code>CLAUDE.md</code>（自動載入）與 <code>G95-接手筆記</code>。動資料層前務必先 <code>g95FullBackup()</code>＋健檢診斷。</div>
+</section>
+
+</main>
+
+<footer>
+  G95 工程管理系統 介紹說明 ・ 對應現行 V0721-10（CODE_VERSION 263）／點工派遣 D0721-02<br>
+  單一 HTML ＋ Firebase Firestore ・ GitHub Pages 部署 ・ 10 人即時協作
+</footer>
+
+<script>
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+      document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('on')});
+      t.classList.add('on');
+      document.getElementById(t.dataset.t).classList.add('on');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+</script>
+</body>
+</html>
