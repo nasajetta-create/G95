@@ -16,7 +16,9 @@
   a{color:var(--sky-d)}
   .ic{width:1em;height:1em;vertical-align:-.14em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:inline-block}
   header{background:linear-gradient(120deg,var(--sky),var(--sky-d));color:#fff;padding:26px 20px 20px}
-  header .wrap{max-width:980px;margin:0 auto}
+  header .wrap{max-width:980px;margin:0 auto;position:relative}
+  .backsys{position:absolute;top:2px;right:0;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:5px 12px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .backsys:hover{background:rgba(255,255,255,.32)}
   header h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:12px}
   header p{margin:8px 0 0;opacity:.95;font-size:15px}
   header .meta{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
@@ -63,11 +65,12 @@
   .kpi .k{flex:1 1 130px;background:var(--card);border:1px solid var(--border);padding:14px;text-align:center}
   .kpi .k b{display:block;font-size:24px;color:var(--sky-d);font-weight:800}
   .kpi .k span{font-size:12.5px;color:var(--text2)}
-  @media(max-width:600px){header h1{font-size:21px}.tab{padding:12px 14px;font-size:14px}main{padding:18px 14px 50px}}
+  @media(max-width:600px){header h1{font-size:21px;clear:both}.tab{padding:12px 14px;font-size:14px}main{padding:18px 14px 50px}.backsys{position:static;float:right;font-size:12px;padding:4px 9px;margin-left:8px}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
+  <a class="backsys" href="https://nasajetta-create.github.io/G95/" title="回到 G95 系統">← 回系統</a>
   <h1><svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 11h.01M15 11h.01"/></svg>G95 工程管理系統</h1>
   <p>建案交屋前的「工程缺失追蹤 × 驗收修繕 × 廠商派工」即時協作平台</p>
   <div class="meta">
@@ -75,7 +78,7 @@
     <span class="chip">Firebase 即時多人同步</span>
     <span class="chip">電腦＋手機</span>
     <span class="chip">10 人協作</span>
-    <span class="chip">現行 V0721-10</span>
+    <span class="chip">現行 V0721-11</span>
   </div>
 </div></header>
 
@@ -101,9 +104,9 @@
       <div class="k"><b>2026.06.01</b><span>系統建立</span></div>
       <div class="k"><b>6/27</b><span>第一個正式版（含登入/權限）</span></div>
       <div class="k"><b>260+</b><span>累計改動次數</span></div>
-      <div class="k"><b>263</b><span>CODE_VERSION（每上線遞增）</span></div>
+      <div class="k"><b>264</b><span>CODE_VERSION（每上線遞增）</span></div>
     </div>
-    <p style="color:var(--text2);font-size:13.5px">系統建立於 <b>2026 年 6 月 1 日</b>；第一個有登入與權限鎖的正式版在 6/27（V0624 系列）。到現在約 <b>7～8 週</b>，光「正式部署」就到 CODE_VERSION 263，加上早期開發存檔——整套系統前前後後<b>改了 250～300 次以上</b>。它不是小工具，是被磨了幾百輪的東西。</p>
+    <p style="color:var(--text2);font-size:13.5px">系統建立於 <b>2026 年 6 月 1 日</b>；第一個有登入與權限鎖的正式版在 6/27（V0624 系列）。到現在約 <b>7～8 週</b>，光「正式部署」就到 CODE_VERSION 264，加上早期開發存檔——整套系統前前後後<b>改了 250～300 次以上</b>。它不是小工具，是被磨了幾百輪的東西。</p>
   </div>
 
   <div class="card">
@@ -274,7 +277,7 @@
 </main>
 
 <footer>
-  G95 工程管理系統 介紹說明 ・ 對應現行 V0721-10（CODE_VERSION 263）／點工派遣 D0721-02<br>
+  G95 工程管理系統 介紹說明 ・ 對應現行 V0721-11（CODE_VERSION 264）／點工派遣 D0721-02<br>
   單一 HTML ＋ Firebase Firestore ・ GitHub Pages 部署 ・ 10 人即時協作
 </footer>
 
