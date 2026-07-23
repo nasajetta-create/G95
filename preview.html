@@ -3810,7 +3810,7 @@ function helperTag(r){
   return `<div class="no-print" onclick="event.stopPropagation();_editHelper(${r.id})" title="設定代工／幫手（不計入缺失排行）" style="margin-top:2px;font-size:10px;color:var(--text3);cursor:pointer">＋代工</div>`;
 }
 // V0723-02 需求3：代工／幫手改「可搜尋下拉」（取代手打 prompt·沿用廠商清單資料·預設 A301金藏點工·留空清除）
-function _helperDefaultName(){return 'A301金藏點工';}
+function _helperDefaultName(){return 'A301金藏(點工)';}
 function _editHelper(id){
   var r=S.rows.find(function(x){return x.id===id;});if(!r)return;
   window._helperEditId=id;
