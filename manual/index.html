@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>G95 使用說明書</title>
+<style>
+  *{box-sizing:border-box;border-radius:0!important}
+  :root{--blue:#5B9BD5;--deep:#185FA5;--bg:#CFE3F4;--card:#EAF4FC;--ink:#243447;--sub:#5a6b7d}
+  body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75}
+  a{color:var(--deep)}
+  .top{background:var(--blue);color:#fff;padding:14px 18px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .top h1{margin:0;font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .top .ver{font-size:11.5px;opacity:.85;font-weight:400}
+  .wrap{max-width:860px;margin:0 auto;padding:14px 14px 80px}
+  /* 搜尋 */
+  .searchbox{background:#fff;border:2px solid var(--blue);display:flex;align-items:center;gap:8px;padding:10px 12px;margin:6px 0 4px}
+  .searchbox input{border:none;outline:none;flex:1;font-size:15px;font-family:inherit;background:transparent}
+  .shint{font-size:12px;color:var(--sub);margin:2px 0 14px;padding-left:2px}
+  #sresults{margin:0 0 14px}
+  .sr{background:#fff;border:1px solid #C3D8EC;border-left:4px solid var(--blue);padding:10px 14px;margin:8px 0;cursor:pointer}
+  .sr b{font-size:14.5px}
+  .sr .ex{font-size:12.5px;color:var(--sub);margin-top:2px}
+  .sr-none{background:#FFF6D6;border:1px solid #E9CE6A;padding:10px 14px;font-size:13.5px}
+  /* 目錄 */
+  .toc{background:#fff;border:1px solid #C3D8EC;padding:14px 16px;margin:0 0 20px}
+  .toc h2{margin:0 0 8px;font-size:15px}
+  .toc a{display:block;padding:7px 4px;border-bottom:1px solid #eef2f6;text-decoration:none;font-size:14.5px}
+  .toc a:last-child{border-bottom:none}
+  .toc .soon{color:#9aa7b4;pointer-events:none}
+  .toc .soon i{font-style:normal;font-size:11px;background:#E7EAF0;color:#5A6478;padding:1px 7px;margin-left:8px}
+  /* 章節 */
+  section{background:#fff;border:1px solid #C3D8EC;padding:18px 20px;margin:20px 0}
+  section h2{margin:0 0 4px;font-size:19px;color:var(--deep);display:flex;align-items:center;gap:9px}
+  section h2 .cnum{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;background:var(--deep);color:#fff;font-size:15px;font-weight:700;flex:none}
+  section .who{font-size:12px;color:var(--sub);margin-bottom:14px}
+  h3{font-size:16px;margin:22px 0 6px;padding-left:9px;border-left:4px solid var(--blue)}
+  .steps{margin:8px 0;padding:0;counter-reset:st}
+  .steps li{list-style:none;position:relative;padding:5px 0 5px 34px;counter-increment:st}
+  .steps li:before{content:counter(st);position:absolute;left:0;top:6px;width:22px;height:22px;background:var(--blue);color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:50%!important}
+  .shot{border:1px solid #C9DCEE;background:#F7FAFD;padding:8px;margin:10px 0}
+  .shot img{max-width:100%;display:block;border:1px solid #dde6ef}
+  .shot .cap{font-size:12px;color:var(--sub);margin-top:6px}
+  .todo-shot{border:2px dashed #9db8d0;background:#F3F7FB;color:#7a8ea1;padding:26px 14px;text-align:center;font-size:13px;margin:10px 0}
+  .tip{background:#EAF6EC;border:1px solid #B7DCC0;color:#1F5E33;padding:9px 13px;font-size:13.5px;margin:10px 0}
+  .warn{background:#FBECEC;border:1px solid #E7B7B7;color:#791F1F;padding:9px 13px;font-size:13.5px;margin:10px 0}
+  .kbd{display:inline-block;background:#EEF2F7;border:1px solid #C9D4E0;padding:0 7px;font-size:13px;font-weight:700;color:var(--deep)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}
+  th,td{border:1px solid #C9DCEE;padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#DCEAF7}
+  footer{text-align:center;font-size:12px;color:var(--sub);padding:20px 0}
+  .backtop{position:fixed;right:14px;bottom:14px;background:var(--blue);color:#fff;border:none;padding:9px 13px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  mark{background:#FAC775;padding:0 1px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>📖 G95 使用說明書 <span class="ver">含點工派遣 · 對應版本 V0724-01 · 截圖已去識別化</span></h1>
+</div>
+<div class="wrap">
+
+  <!-- ⓪ 搜尋 -->
+  <div class="searchbox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B9BD5" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="打關鍵字或直接問，例如「怎麼銷案」「為什麼跟別人畫面不一樣」" oninput="doSearch(this.value)" autocomplete="off">
+  </div>
+  <div class="shint">怎麼講都通：「銷案／完成／勾掉」「對不上／舊資料／不同步」都找得到對的答案。</div>
+  <div id="sresults"></div>
+
+  <!-- 目錄 -->
+  <div class="toc">
+    <h2>目錄</h2>
+    <a href="#ch1">① 三分鐘上手（所有人）</a>
+    <a class="soon">② 現場驗屋 <i>製作中</i></a>
+    <a class="soon">③ 追廠商・銷案 <i>製作中</i></a>
+    <a class="soon">④ 交屋排程 <i>製作中</i></a>
+    <a class="soon">⑤ 驗收/修繕進度 <i>製作中</i></a>
+    <a class="soon">⑥ 報表中心 <i>製作中</i></a>
+    <a class="soon">⑦ 點工派遣 <i>製作中</i></a>
+    <a href="#ch8">⑧ 狀況排除 SOP（最重要）</a>
+    <a class="soon">⑨ 常見問答 FAQ <i>製作中</i></a>
+  </div>
+
+  <!-- ① 三分鐘上手 -->
+  <section id="ch1">
+    <h2><span class="cnum">1</span>三分鐘上手</h2>
+    <div class="who">給所有人 · 第一次用只要看這章</div>
+
+    <h3 id="s1-login">登入</h3>
+    <ol class="steps">
+      <li>打開系統網址（或手機主畫面的 G95 圖示）。</li>
+      <li>用公司核可的 Google 帳號登入——<b>不用另外記密碼</b>。</li>
+      <li>換手機、換電腦都一樣：開網址→同一個帳號登入，資料都在雲端。</li>
+    </ol>
+    <div class="tip">💡 手機第一次開會多等幾秒（在下載雲端資料），之後就快了。加到主畫面：頁面最下方點「加到手機主畫面」。</div>
+
+    <h3 id="s1-header">看懂最上面那條藍色列</h3>
+    <div class="shot"><img src="ui-header.png" alt="頂列"><div class="cap">電腦版頂列：版本號 → 已同步 → 在線人數 → 資料筆數 → 重抓 → 右邊是備份/登出等工具</div></div>
+    <table>
+      <tr><th style="width:110px">項目</th><th>意思</th></tr>
+      <tr><td>V0724-01</td><td>目前系統版本。有新版時會自動提示並更新，不用自己管。</td></tr>
+      <tr><td>🟢 已同步</td><td>你做的修改都存進雲端了。顯示「儲存中…」就等它變綠。</td></tr>
+      <tr><td>1 人</td><td>現在幾個人開著系統。</td></tr>
+      <tr><td><b>8,528 筆</b></td><td><b>這台載入的資料筆數。跟同事的數字不一樣＝有一台沒同步，數字少的那台點「重抓」。</b></td></tr>
+      <tr><td>重抓</td><td>畫面跟別人對不上時的萬靈丹：清這台的快取、重新從雲端下載。不會刪資料、不會登出。</td></tr>
+    </table>
+
+    <h3 id="s1-home">手機首頁十宮格</h3>
+    <div class="todo-shot">📱 待補：手機首頁截圖（首頁看板中心十宮格）</div>
+    <ol class="steps">
+      <li>手機開啟後落在「看板中心」：公告、行事曆、追蹤總表、驗收/修繕進度…一格一個看板，數字是即時統計。</li>
+      <li>點格子進看板；每個看板底部都有自己的工具列，最左邊 <span class="kbd">⌂</span> 隨時回首頁。</li>
+      <li>找不到的功能在「更多」（報表/戶況/回收）跟「設定」裡。</li>
+      <li>右上「編輯」可以調整格子的順序跟名稱（注意：改了是<b>全部人一起變</b>）。</li>
+    </ol>
+    <div class="tip">💡 手機看板都能匯出成圖片存相簿；要用完整功能點「完整版」切到電腦版畫面。</div>
+  </section>
+
+  <!-- ⑧ 狀況排除 -->
+  <section id="ch8">
+    <h2><span class="cnum">8</span>狀況排除 SOP</h2>
+    <div class="who">給所有人 · 遇到怪怪的先來這裡對症下藥</div>
+
+    <h3 id="s8-resync">畫面跟別人對不上／我的資料比較舊</h3>
+    <ol class="steps">
+      <li>先對頂列的<b>筆數</b>：兩台數字不同＝少的那台沒同步。</li>
+      <li>在那台點頂列「<b>重抓</b>」→ 確認 → 等它重新載入完成。</li>
+      <li>重抓<b>不會</b>刪任何雲端資料、也不會登出，放心按。</li>
+    </ol>
+    <div class="warn">⚠ 重新整理（F5）解決不了這個問題——一定要用「重抓」。</div>
+
+    <h3 id="s8-idle">跳出黃色橫幅「已閒置，已暫停存檔」</h3>
+    <div class="shot"><img src="sop-idle.png" alt="閒置橫幅"><div class="cap">放著超過 5 分鐘沒動就會出現，避免舊畫面把別人的修改蓋掉</div></div>
+    <ol class="steps">
+      <li>點右邊藍色「<b>重新連線</b>」→ 系統自動抓最新資料。</li>
+      <li>載入完成就能繼續操作，之前打到一半的東西建議重新確認一次。</li>
+    </ol>
+
+    <h3 id="s8-stale">跳出紅色橫幅「目前畫面是舊快照」</h3>
+    <div class="shot"><img src="sop-stale.png" alt="舊快照橫幅"><div class="cap">代表這台還沒把雲端資料載完（通常是網路慢），畫面先給你看舊的、但不讓你存</div></div>
+    <ol class="steps">
+      <li>先確認網路（工地訊號差就先走到訊號好的地方）。</li>
+      <li>點橫幅上的「<b>重抓</b>」重新載入。</li>
+      <li>紅色橫幅在＝存檔被鎖住，<b>這是保護</b>：舊畫面存回去會蓋掉別人的修改。</li>
+    </ol>
+
+    <h3 id="s8-restore">不小心刪掉了怎麼救</h3>
+    <div class="shot"><img src="sop-trash.png" alt="垃圾桶"><div class="cap">垃圾桶：每筆都有「還原」，刪除的東西保留 30 天</div></div>
+    <ol class="steps">
+      <li>到「垃圾桶」（手機：更多 → 回收 → 垃圾桶）。</li>
+      <li>找到那筆，點「<b>還原</b>」就回到原位。</li>
+      <li>垃圾桶保留 30 天，超過才會真的清掉。</li>
+    </ol>
+
+    <h3 id="s8-tomb">跳出藍色橫幅「系統保養：可清理的墓碑紀錄」</h3>
+    <div class="shot"><img src="sop-tomb.png" alt="保養橫幅"><div class="cap">系統定期保養提醒，清了大家的手機會載入更快</div></div>
+    <ol class="steps">
+      <li>一般同事：點「<b>我知道了</b>」關掉就好，不影響使用。</li>
+      <li>管理者：點「立即清理」→ 依畫面指示操作（需要認證碼，請洽管理者）。</li>
+    </ol>
+
+    <h3 id="s8-update">跳出「偵測到新版本」</h3>
+    <ol class="steps">
+      <li>不用做任何事：10 秒倒數後自動更新到新版，已做的修改會先自動存好。</li>
+    </ol>
+
+    <h3 id="s8-slow">手機開很久都在「連線中」</h3>
+    <ol class="steps">
+      <li>第一次開、或剛按過「重抓」＝正在下載全部雲端資料，手機網路要一點時間，<b>等它跑完</b>再操作。</li>
+      <li>等很久還是不行 → 換訊號好的地方再點一次「重抓」。</li>
+    </ol>
+  </section>
+
+  <footer>G95 工程缺失追蹤系統 使用說明書 · 對應版本 V0724-01 · 其餘章節製作中<br>找不到答案？請洽系統管理者。</footer>
+</div>
+<button class="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ 回頂端</button>
+
+<script>
+// ⓪ 搜尋＋問句比對：純前端、零費用。同義詞展開 → 關鍵字計分 → 前 3 名。
+var IDX=[
+ {t:'畫面跟別人對不上／資料比較舊 → 點「重抓」',a:'#s8-resync',ex:'先對頂列筆數，少的那台點「重抓」；F5 沒有用',k:'對不上 不一樣 不同步 舊資料 舊的 落後 差異 筆數 重抓 同步 更新 抓不到 沒更新 畫面 快取 為什麼'},
+ {t:'黃色橫幅：已閒置、暫停存檔',a:'#s8-idle',ex:'放 5 分鐘沒動會出現，點「重新連線」',k:'黃色 橫幅 閒置 暫停存檔 重新連線 鎖住 不能存 放著 idle'},
+ {t:'紅色橫幅：畫面是舊快照',a:'#s8-stale',ex:'雲端沒載完，確認網路後點「重抓」',k:'紅色 橫幅 舊快照 載入 未完成 網路 存不了 鎖 快照'},
+ {t:'誤刪救回：垃圾桶還原',a:'#s8-restore',ex:'垃圾桶找到那筆按「還原」，保留 30 天',k:'刪掉 誤刪 刪錯 救回 還原 復原 垃圾桶 恢復 不見了 消失'},
+ {t:'藍色橫幅：系統保養（墓碑清理）',a:'#s8-tomb',ex:'一般同事點「我知道了」即可；清理請洽管理者',k:'藍色 橫幅 保養 墓碑 清理 提醒'},
+ {t:'偵測到新版本',a:'#s8-update',ex:'10 秒自動更新，不用做任何事',k:'新版本 更新 倒數 版本 升級'},
+ {t:'手機一直「連線中」很慢',a:'#s8-slow',ex:'第一次開或剛重抓＝正在下載雲端資料，等它跑完',k:'連線中 很慢 很久 轉圈 卡住 載入 首次 第一次 慢'},
+ {t:'登入方式',a:'#s1-login',ex:'公司核可的 Google 帳號，不用記密碼，換手機也能用',k:'登入 帳號 密碼 google 換手機 換電腦 登不進 怎麼進'},
+ {t:'頂列圖示是什麼意思（已同步/筆數/重抓）',a:'#s1-header',ex:'筆數＝這台載入的資料量，兩台一對就知道誰沒同步',k:'頂列 藍色列 已同步 筆數 人數 圖示 上面那排 版本'},
+ {t:'手機首頁十宮格怎麼用',a:'#s1-home',ex:'一格一個看板，底部工具列最左回首頁，右上編輯可調整',k:'首頁 十宮格 看板 卡片 格子 編輯 順序 更多 設定 完整版 主畫面'},
+ {t:'怎麼銷案／標記完成（詳細版製作中）',a:'#ch8',ex:'追蹤總表勾完成或派工單核對銷案；詳細步驟在第③章（製作中）。若銷案後隔天變回未完成＝見「畫面跟別人對不上」',k:'銷案 完成 勾掉 結案 核對 標完成 打勾 變回 未完成 復活'},
+ {t:'新增缺失（詳細版製作中）',a:'#ch1',ex:'追蹤總表「＋新增」，廠商用下拉搜尋選；詳細步驟在第②章（製作中）',k:'新增 缺失 輸入 登記 廠商 下拉 代工 幫手'}
+];
+function doSearch(q){
+  var box=document.getElementById('sresults');
+  q=String(q||'').trim();
+  if(!q){box.innerHTML='';return;}
+  var toks=q.toLowerCase().replace(/[？?！!。，,\s]+/g,' ').split(' ').filter(function(x){return x.length>=1;});
+  var scored=IDX.map(function(e){
+    var hay=(e.t+' '+e.ex+' '+e.k).toLowerCase(),sc=0;
+    toks.forEach(function(tk){ if(tk.length<1)return; if(hay.indexOf(tk)>=0) sc+=tk.length>=2?2:1; });
+    // 整句子也掃一次（連續兩字詞）
+    for(var i=0;i+2<=q.length;i++){ var bi=q.slice(i,i+2).toLowerCase(); if(/^[一-鿿]{2}$/.test(bi)&&hay.indexOf(bi)>=0) sc+=2; }
+    return {e:e,sc:sc};
+  }).filter(function(x){return x.sc>0;}).sort(function(a,b){return b.sc-a.sc;}).slice(0,3);
+  if(!scored.length){ box.innerHTML='<div class="sr-none">找不到相關內容——這本說明書還在擴充中，請洽系統管理者，或換個關鍵字（例：重抓、銷案、垃圾桶）。</div>'; return; }
+  box.innerHTML=scored.map(function(x){
+    return '<div class="sr" onclick="location.hash=\''+x.e.a+'\';document.getElementById(\'sresults\').innerHTML=\'\';document.getElementById(\'q\').value=\'\'"><b>'+x.e.t+'</b><div class="ex">'+x.e.ex+'</div></div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
