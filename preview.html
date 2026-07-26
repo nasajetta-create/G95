@@ -7180,7 +7180,7 @@ function _riCompCell(s){
   var pct=Math.round((s.tot-s.pend)/s.tot*100);
   return '<span style="color:#B45309;font-weight:700">'+s.pend+' 筆待修 · '+pct+'%</span><br>'+_riAgeBadge(s);
 }
-function _riRowHTML(s,ownerCnt,isAction,actWord,idx,isRe,isRe){
+function _riRowHTML(s,ownerCnt,isAction,actWord,idx,isRe){
   var td='padding:8px;border-bottom:1px solid rgba(0,0,0,.06);vertical-align:middle';
   var bcol=s.block==='B'?'#0A6640':s.block==='店'?'#B08900':'#185FA5';
   var blab=s.block==='店'?'店':s.block;
@@ -7649,7 +7649,7 @@ function _riNotifyRows(filter){
     var ok=(filter==='deliverable')?(s.stage==='deliverable'):(s.stage==='reinsp');if(!ok)return;
     var blk=_riBlockOf(key);if(_riBlock!=='all'&&!(_riBlock==='S'?blk==='店':blk===_riBlock))return;
     var cl=(S.clientData&&S.clientData[key])||{};
-    rows.push({disp:unitDisplayName(key),owner:_riOwnerName(key),tel:cl.tel||'',insp1:s.insp1,tot:s.tot,mgr:_riNotifyMgr(s.dr),recheck:_riRecheckOf(key),slot:_riSlotOf(key)});   // V0726-02 ㊾100：帶上約定複驗日／時段
+    rows.push({disp:unitDisplayName(key),owner:_riOwnerName(key),tel:cl.tel||'',insp1:s.insp1,tot:s.tot,mgr:_riNotifyMgr(s.dr),recheck:_riRecheckOf(key),slot:_riSlotOf(key)});
   });
   rows.sort(function(a,b){var ai=a.insp1||'',bi=b.insp1||'';return ai<bi?-1:ai>bi?1:(a.disp<b.disp?-1:1);});
   return rows;
@@ -7761,6 +7761,7 @@ function renderReinsp(){
     +((window._riAnom&&window._riAnom.length)?'<button class="btn btn-sm" onclick="_riDateAudit()" style="height:32px;background:#FBEFCB;border-color:#B45309;color:#B45309;font-weight:800" title="完成日早於初驗日的戶，點開稽核清單"><svg class="g95ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M12 3 2 20h20Z"/><path d="M12 9v5M12 17h.01"/></svg>日期異常 '+window._riAnom.length+' 戶</button>':'')
     +'<button class="btn btn-sm" onclick="_riSchedMenu()" style="height:32px;background:#185FA5;border-color:#185FA5;color:#fff;font-weight:800">複驗排程 ▾</button>'
 +'</div>';
+  var isRe=(_riFilter==='reinsp'||_riFilter==='soon');   // 複驗類＝多出「等待／約定複驗日」兩欄
   var COLG=isRe
     ?'<colgroup><col style="width:120px"><col style="width:74px"><col style="width:80px"><col style="width:78px"><col><col style="width:116px"><col style="width:132px"><col style="width:150px"></colgroup>'
     :'<colgroup><col style="width:120px"><col style="width:74px"><col style="width:80px"><col><col style="width:116px"><col style="width:150px"></colgroup>';
@@ -7773,7 +7774,6 @@ function renderReinsp(){
   var TBL='width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed';
   var isAction=(_riFilter==='reinsp'||_riFilter==='deliverable'||_riFilter==='soon');
   var actWord=_riFilter==='deliverable'?'約交屋':'約複驗';
-  var isRe=(_riFilter==='reinsp'||_riFilter==='soon');   // 複驗類＝多出「等待／約定複驗日」兩欄
   var listHTML='';
   if(_riFilter==='overdue'){
     var vmap={};
