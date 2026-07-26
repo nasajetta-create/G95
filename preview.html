@@ -2874,6 +2874,22 @@ function _irRound(r){ var v=String(((typeof r==='object'&&r)?r.round:r)||'').tri
 // 🔴 V0726-05：戶別代碼統一後，這一層要「兩種寫法都吃得下」——雲端既有文件名還是「地A6-12@初驗」，
 //    而缺失列現在算出來的代碼是「A6-12」。不正規化的話規則B 會變成 19→0、規則A 會變成「沒登記」＝新一批假警報。
 function _irNK(k){ return String(k==null?'':k).replace(/^(地|業)/,''); }
+// 舊登記紀錄的鑰匙可能是店舖的「店A1」「店C1」（因為當時算出來就是那樣）＝要對到真正的店舖代碼 A1-1／C1-2。
+function _irUKey(u){
+  var s=_irNK(u); if(!s) return s;
+  if(/^[A-Za-z]+\d*-\d+$/.test(s)) return s;                 // 已經是「欄位-樓層」格式
+  var bare=s.replace(/[（(][^）)]*[）)]/g,'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  if(!bare) return s;
+  try{
+    var hit=null;
+    Array.from(G95_SHOP_KEYS||[]).forEach(function(k){   // 注意：G95_SHOP_KEYS 是 let，不在 window 上
+      var kb=_irNK(k).split('-')[0].toUpperCase();
+      if(kb===bare&&!hit) hit=_irNK(k);
+    });
+    if(hit) return hit;
+  }catch(e){}
+  return s;
+}
 function _irId(key,round){ return _irNK(key).replace(/[\/\s]/g,'_')+'@'+String(round); }
 var _irNormCache=null,_irNormSrc=null;
 function _irNorm(){                       // 把登記表的鑰匙一律拿掉地／業字首（新舊都在就取較新那筆）
@@ -2882,7 +2898,7 @@ function _irNorm(){                       // 把登記表的鑰匙一律拿掉�
   var m={};
   Object.keys(IR).forEach(function(id){
     var rec=IR[id]||{}; var at=String(id).indexOf('@');
-    var u=_irNK(rec.u||(at>0?String(id).slice(0,at):id));
+    var u=_irUKey(rec.u||(at>0?String(id).slice(0,at):id));
     var rd=String(rec.r||(at>0?String(id).slice(at+1):'')||'初驗');
     var nid=_irId(u,rd), old=m[nid];
     if(!old||(rec.ts||0)>=(old.ts||0)){ var c={}; Object.keys(rec).forEach(function(f){ c[f]=rec[f]; }); c.u=u; c.r=rd; c._id=id; m[nid]=c; }
@@ -3189,12 +3205,15 @@ window._irUnifyKeys=function(code, opts){
   if(typeof window._irSave!=='function'||typeof window._irDelete!=='function'){ console.warn('雲端還沒就緒，請等「已同步」再試'); return; }
   var all=window._IR||{}, plan=[], coll=[];
   Object.keys(all).forEach(function(id){
-    if(!/^[地業]/.test(id)) return;
-    var nid=id.replace(/^(地|業)/,'');
+    var rec=all[id]||{}, at=String(id).indexOf('@');
+    var rawU=rec.u||(at>0?String(id).slice(0,at):id);
+    var rd=String(rec.r||(at>0?String(id).slice(at+1):'')||'初驗');
+    var nu=_irUKey(rawU);                       // 地／業字首拿掉＋店A1→A1-1
+    var nid=_irId(nu,rd);
+    if(nid===id) return;                        // 已經是正確名字
     if(all[nid]){ coll.push(id+' 撞 '+nid); return; }
-    var rec=all[id]||{}, nrec={};
-    Object.keys(rec).forEach(function(f){ nrec[f]=rec[f]; });
-    if(nrec.u) nrec.u=String(nrec.u).replace(/^(地|業)/,'');
+    var nrec={}; Object.keys(rec).forEach(function(f){ nrec[f]=rec[f]; });
+    nrec.u=nu; nrec.r=rd;
     plan.push({from:id,to:nid,rec:nrec});
   });
   console.log('要改名 '+plan.length+' 份；撞名（跳過）'+coll.length+' 份');
@@ -12221,12 +12240,13 @@ function _clmEditHTML(key){
 }
 function _clmRowHTML(key){
   var cl=S.clientData[key]||{};var type=_clmTypeOf(key);
-  var lc=type==='地主戶'?'#185FA5':(type==='業主戶'?'#0F6E3D':'#B7B7B2');
+  // V0726-05：使用者明訂不要左側色條 → 改用「淡底色」區分身分（徽章照舊）
+  var rowBg=type==='地主戶'?'#F4F8FD':(type==='業主戶'?'#F2F9F5':'#fff');
   var tb=type==='地主戶'?'background:#EAF1FB;color:#185FA5;border:1px solid #B9D0EC':(type==='業主戶'?'background:#E6F3EE;color:#0F6E3D;border:1px solid #AEDBC8':'background:#F1F0ED;color:#6b6a66;border:1px solid #D3D1CC');
   var tl=type==='地主戶'?'地主':(type==='業主戶'?'業主':'自購');
   var pct=null;try{pct=hoUnitPct(key)||hoUnitPct(unitDisplayName(key));}catch(e){}
   var exp=(_clientExpanded===key);
-  var row='<div onclick="_clmToggle(\''+esc(key)+'\')" style="display:flex;align-items:center;gap:10px;border:1px solid #e0e3e8;border-left:3px solid '+lc+';padding:10px 11px;margin-bottom:6px;background:#fff;cursor:pointer">'
+  var row='<div onclick="_clmToggle(\''+esc(key)+'\')" style="display:flex;align-items:center;gap:10px;border:1px solid #e0e3e8;padding:10px 11px;margin-bottom:6px;background:'+rowBg+';cursor:pointer">'
     +'<span style="font-size:15px;font-weight:800;min-width:58px">'+esc(unitDisplayName(key))+'</span>'
     +'<span style="flex:1;font-size:13.5px;color:#3a3a38;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+(cl.name?esc(cl.name):'—')+'</span>'
     +(pct!=null?'<span style="font-size:11px;color:#8A8783">'+pct+'%</span>':'')
