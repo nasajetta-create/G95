@@ -2298,11 +2298,30 @@ async function load(){
 // 這個 migrate 每次開機都跑＝還原舊備份、或舊版分頁寫回舊鑰匙，都會自動洗乾淨（可重複執行、不會重複搬）。
 var _UNIT_KEYED=['handoverUnits','clientData','reCheckUF','reCheckSlot'];
 function _unifyUnitKeys(d){
-  var moved=0, coll=[];
-  function isEmptyVal(v){
+  var moved=0, dropped=0, coll=[];
+  // 「實質空白」＝只有預設值、沒有真正填過東西（客戶清單只剩類型、交屋資料只剩自動補的清潔日）
+  function isEmptyVal(f,v){
     if(v==null||v==='') return true;
-    if(typeof v==='object'&&!Array.isArray(v)) return Object.keys(v).length===0;
-    return false;
+    if(typeof v==='string') return !v.trim();
+    if(typeof v!=='object') return false;
+    if(Array.isArray(v)) return v.filter(function(x){return String(x==null?'':x).trim()!=='';}).length===0;
+    if(f==='clientData'){
+      var has=['name','tel','phone','note'].some(function(x){return String(v[x]==null?'':v[x]).trim()!=='';});
+      var pk=v.parkings||v.parking;
+      if(Array.isArray(pk)) has=has||pk.filter(function(y){return String(y==null?'':y).trim()!=='';}).length>0;
+      else has=has||String(pk==null?'':pk).trim()!=='';
+      return !has;                              // 只有「類型」＝空殼
+    }
+    if(f==='handoverUnits'){
+      return !Object.keys(v).filter(function(x){return x!=='cleanPlanDate'&&x!=='cleanSlot';}).some(function(x){
+        var y=v[x];
+        if(y==null||y===''||y===false) return false;
+        if(Array.isArray(y)) return y.length>0;
+        if(typeof y==='object') return Object.keys(y).length>0;
+        return true;
+      });
+    }
+    return Object.keys(v).length===0;
   }
   _UNIT_KEYED.forEach(function(f){
     var o=d[f]; if(!o||typeof o!=='object') return;
@@ -2310,8 +2329,12 @@ function _unifyUnitKeys(d){
       if(!/^[地業]/.test(k)) return;
       var nk=k.replace(/^(地|業)/,'');
       if(!nk||nk===k) return;
-      if(Object.prototype.hasOwnProperty.call(o,nk)&&!isEmptyVal(o[nk])){ coll.push(f+' → '+k+' 撞 '+nk); return; }  // 撞名＝兩邊都有料，留著不動、列給使用者決定
-      o[nk]=o[k]; delete o[k]; moved++;
+      var hasNew=Object.prototype.hasOwnProperty.call(o,nk);
+      if(!hasNew){ o[nk]=o[k]; delete o[k]; moved++; return; }
+      var newEmpty=isEmptyVal(f,o[nk]), oldEmpty=isEmptyVal(f,o[k]);
+      if(newEmpty&&!oldEmpty){ o[nk]=o[k]; delete o[k]; moved++; return; }   // 不帶字首那筆是空殼→用舊的蓋過去
+      if(oldEmpty){ delete o[k]; dropped++; return; }                        // 帶字首那筆是空殼→直接丟
+      coll.push(f+' → '+k+' 撞 '+nk);                                        // 🔴 兩邊都有料＝不自動合併，列給使用者決定
     });
   });
   // 身分補進客戶清單（只補「本來就有這一戶、但沒填類型」的，不新增空白戶）
@@ -2347,10 +2370,11 @@ function _unifyUnitKeys(d){
       if(Array.isArray(d.zoneUnits[z])) d.zoneUnits[z]=d.zoneUnits[z].map(function(u){return String(u==null?'':u).replace(/^(地|業)/,'');});
     });
   }
-  window._unifyMoved=moved; window._unifyCollisions=coll;
+  window._unifyMoved=moved; window._unifyDropped=dropped; window._unifyCollisions=coll;
   if(moved) console.log('[戶別代碼統一] 已把 '+moved+' 筆鑰匙改成不帶地／業');
-  if(coll.length) console.warn('[戶別代碼統一] 有 '+coll.length+' 筆撞名沒有動（請看 window._unifyCollisions）：',coll);
-  return {moved:moved,coll:coll};
+  if(dropped) console.log('[戶別代碼統一] 丟掉 '+dropped+' 筆帶字首的空殼（同一戶已有正式資料）');
+  if(coll.length) console.warn('[戶別代碼統一] 有 '+coll.length+' 筆兩邊都有料、沒有自動合併（請看 window._unifyCollisions）：',coll);
+  return {moved:moved,dropped:dropped,coll:coll};
 }
 function migrateState(d){
   if(!d.zones)d.zones=[{id:'indoor',label:'室內缺失',color:'#534AB7'},{id:'pub_ab',label:'公設 梯廳/樓梯間',color:'#0F6E56'},{id:'pub_cd',label:'公設 RF/2F/1F/店鋪',color:'#993C1D'},{id:'basement',label:'地下室',color:'#185FA5'}];
@@ -9050,6 +9074,13 @@ function _pwoUnitKey(r){
   const fn=_pwoFloorNum(r);
   if(fn>-999){k=tk(String(r.unit||'')+'-'+fn);if(k)return k;k=tk(String(unitDisplayName(r.unit)||'')+'-'+fn);if(k)return k;}
   k=tk(unitDisplayName(r.unit));if(k)return k;
+  // 🔴 V0726-05：店舖的缺失列「戶別」寫成「店A20」＋樓層 1F，但交屋鑰匙是「A20-1」⇒ 原本這裡對不到，
+  //    驗收登記巡檢就把 A1-1/A20-1/A21-1/A7-1/A8-1/C1-2 誤判成「驗收後尚未輸入缺失」。
+  //    做法比照 getDefectRows：把中文字／括號去掉只留英數（店A20→A20），再接樓層組成鑰匙。
+  if(fn>-999){
+    const bare=String(r.unit||'').replace(/[（(][^）)]*[）)]/g,'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+    if(bare){ k=tk(bare+'-'+fn); if(k)return k; }
+  }
   return r.unit;
 }
 function _pwoRoundDate(r){
