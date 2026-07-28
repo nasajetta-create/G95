@@ -18106,6 +18106,10 @@ try{
   var BKEY_ROWS='g95demo_rows', BKEY_FB='g95demo_feedback';
   var PT_FLAGS={'A301 清潔(金藏)':1,'E441 油漆(璟福)':1};   // 教學版的「點工廠商」旗標
 
+  /* 教學版裡點「點工派遣」→ 開派遣練習版（不是正式版）；同層級推算、本機測試也通 */
+  try{ DISPATCH_URL=new URL('../dispatch/demo.html',location.href).href; }
+  catch(e){ DISPATCH_URL='https://nasajetta-create.github.io/dispatch/demo.html'; }
+
   function entered(){ return !!document.getElementById('demo-bar'); }
   function pub(){
     if(!entered())return;
