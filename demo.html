@@ -18091,6 +18091,68 @@ try{
   if(location.search.indexOf('auto=1')>=0) setTimeout(enter, 900);   // 給截圖／錄影自動進入用
 })();
 </script>
+
+<script>
+/* ══ G95 教學版 本機橋（2026-07-28）：與 /dispatch/demo.html 練習版連動 ══
+   ・發布：把教學版目前的缺失（未完成＋已完成）寫進 localStorage g95demo_rows
+     （含點工廠商旗標）→ 派遣練習版的「待帶入」讀這把 key
+   ・接收：派遣練習版勾完成寫 g95demo_feedback → 這裡餵給既有的
+     「點工派遣回報」橫幅（_dispatchFb／_renderDispatchFb／pwoMarkDone 全沿用）
+   ・教學版一律「手動確認」（不動正式系統的自動確認設定鍵）
+   只在教學版（__G95DEMO）生效。 */
+(function(){
+  var IS_DEMO=/demo\.html/i.test(location.pathname)||location.search.indexOf('demo=1')>=0;
+  if(!IS_DEMO)return;
+  var BKEY_ROWS='g95demo_rows', BKEY_FB='g95demo_feedback';
+  var PT_FLAGS={'A301 清潔(金藏)':1,'E441 油漆(璟福)':1};   // 教學版的「點工廠商」旗標
+
+  function entered(){ return !!document.getElementById('demo-bar'); }
+  function pub(){
+    if(!entered())return;
+    var S=null; try{S=window._getState&&window._getState();}catch(e){}
+    if(!S||!Array.isArray(S.rows))return;
+    var rows=[];
+    S.rows.forEach(function(r){ rows.push({id:r.id,unit:r.unit,floor:r.floor,vendor:r.vendor,issue:r.issue,note:r.note||'',manager:r.manager||'',planDone:r.planDone||'',round:r.round||'初驗'}); });
+    (S.completed||[]).forEach(function(r){ rows.push({id:r.id,unit:r.unit,floor:r.floor,vendor:r.vendor,issue:r.issue,note:r.note||'',manager:r.manager||'',planDone:r.planDone||'',round:r.round||'初驗',actualDone:r.actualDone||r.completedAt||'1'}); });
+    try{localStorage.setItem(BKEY_ROWS,JSON.stringify({mt:Date.now(),flags:PT_FLAGS,rows:rows}));}catch(e){}
+  }
+
+  /* 存檔（教學版 save 已是空殼）之後永遠跟著發布一次 */
+  var _save0=window.save;
+  window.save=function(){ try{if(_save0)_save0.apply(this,arguments);}catch(e){} try{pub();}catch(e){} };
+
+  /* 接收回報 → 餵既有橫幅；只畫、不跑自動確認（不碰正式設定鍵） */
+  function fbSync(){
+    if(!entered())return;
+    var obj={}; try{obj=JSON.parse(localStorage.getItem(BKEY_FB)||'{}')||{};}catch(e){}
+    var arr=Object.keys(obj).map(function(k){var v=obj[k]||{};v._id=k;return v;});
+    arr.sort(function(a,b){return (a.at||0)-(b.at||0);});
+    window._dispatchFb=arr;
+    try{ if(window._dispFbDebug&&window._dispFbDebug.paint)window._dispFbDebug.paint(); }catch(e){}
+  }
+  window._dispatchFbDelete=function(id){
+    var obj={}; try{obj=JSON.parse(localStorage.getItem(BKEY_FB)||'{}')||{};}catch(e){}
+    delete obj[String(id)];
+    try{localStorage.setItem(BKEY_FB,JSON.stringify(obj));}catch(e){}
+    return Promise.resolve();
+  };
+  /* 教學版的橫幅重畫一律走「只畫不自動」 */
+  window._renderDispatchFb=function(){ fbSync(); };
+
+  window.addEventListener('storage',function(e){ if(e&&e.key===BKEY_FB)fbSync(); if(e&&e.key===BKEY_ROWS)return; });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){fbSync();} });
+  setInterval(function(){ pub(); fbSync(); },3000);
+
+  /* 進場後首次發布＋清掉上一輪殘留的回報 */
+  var n=0,iv=setInterval(function(){
+    if(entered()){ clearInterval(iv);
+      try{localStorage.removeItem(BKEY_FB);}catch(e){}
+      pub(); fbSync();
+    } else if(++n>120){ clearInterval(iv); }
+  },300);
+})();
+</script>
+
 </body>
 </html>
 <!-- v0727-04 demo -->
