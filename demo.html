@@ -18252,6 +18252,18 @@ try{
   }
   _demoSeal();
   setInterval(_demoSeal, 500);   // module 載入完成後也會立刻被重新封住；永久循環（成本極低）
+  /* v2：假資料守門——已登入編輯者開教學版時，login→load() 會把整份 S 換成真資料（把 seed 蓋掉、畫面顯示正式內容＝教學錯亂）。
+     旗標 S.__demoSeed 藏在 S 裡：S 被整份換掉＝旗標消失＝立刻重播假資料。使用者練習中的改動（旗標還在）不會被重播洗掉。 */
+  setInterval(function(){
+    try{
+      if(!window.__demoEntered) return;
+      if(window.S && S.__demoSeed) return;
+      if(!seed()) return;
+      S.__demoSeed=true;
+      try{ renderAll(); }catch(e){}
+      console.log('[DEMO] 真實資料蓋入偵測→已重播教學假資料');
+    }catch(e){}
+  }, 700);
 
   /* ② 假資料 */
   function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -18351,6 +18363,7 @@ try{
     try{ window._loginOnAuth=function(){ try{_loginHide();}catch(e){} }; }catch(e){}
     try{ _loginHide(); }catch(e){}
     if(!seed()){ alert('教學版載入失敗，請重新整理'); return; }
+    S.__demoSeed=true; window.__demoEntered=true;   // v2：假資料水位旗標（load() 換掉整份 S＝旗標消失＝被真資料蓋掉→守門重播）
     banner();
     try{ switchTab('hcal'); }catch(e){}
     try{ renderAll(); }catch(e){}
