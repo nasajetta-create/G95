@@ -19407,6 +19407,82 @@ try{
       'B8-16':{name:'吳俊宏', phone:'0912-000-606', type:'地主戶'}
     };
 
+
+    /* ══════════════════════════════════════════════════════════════════
+       V0804-03 重建追加：歷史戶（已完成初驗）＝讓 306 的新看板有東西可教
+       上面那 7 戶是「今天／這幾天要驗收」，沒有初驗完成日 ⇒ 驗收/修繕進度、
+       衝複驗目標、主任確認、每週進度 全部會是 0。這裡補 9 戶已初驗的戶，
+       刻意把「剩幾筆」鋪在各層，讓六態卡／三段目標／施壓榜／週月切換都有數字。
+       done=null ⇒ 未完成；數字＝完成日距今天幾天（負數）。
+       ══════════════════════════════════════════════════════════════════ */
+    var W='013 水電(群豐)', N='021 泥作(大進)', Y2='023 浴櫃(新龍)',
+        K='D436 矽利康(正格)', P='E441 油漆(璟福)', M='F426 木門(俊林)', L='J101 鋁窗(佑達)';
+    var HIST=[
+      /* ③可複驗·主任已確認 ⇒ 落在功能三「第二段」 */
+      {k:'A5-23', ins:-18, mgr:'高國翔', own:'鄭淑貞', tp:'地主戶', chief:true, d:[
+        [W,'主臥插座無電',-14],[N,'客廳地磚空心',-12],[P,'天花板批土裂痕',-11],
+        [M,'更衣室門片刮傷',-9],[K,'廚房檯面矽利康發霉',-7],[L,'客廳落地窗軌道異音',-5]]},
+      /* ③可複驗·尚待主任確認 ⇒ 落在功能三「第一段」（點六態卡會捲到這裡） */
+      {k:'A6-12', ins:-15, mgr:'賈秉叡', own:'許志明', tp:'地主戶', outsource:true, d:[
+        [N,'次臥牆面不平整',-12],[P,'玄關油漆流掛',-10],[W,'廚房排油煙機無電',-8],
+        [M,'主臥門檔缺件',-6],[K,'浴缸周邊矽利康收邊粗糙',-4]]},
+      /* ④剩 1~4 筆（臨門一腳）：只剩泥作一家 ⇒ 施壓榜「做完就能約」 */
+      {k:'B2-16', ins:-12, mgr:'陳柏彬', own:'蔡佳蓉', tp:'地主戶', d:[
+        [W,'客浴排風不順',-9],[P,'客廳牆面色差',-8],[M,'書房門把鬆動',-6],
+        [L,'主臥窗紗窗破損',-5],[K,'廚房水槽矽利康脫落',-3],
+        [N,'陽台地坪洩水不良',null],[N,'次浴壁磚裂',null]]},
+      /* ④剩 1~4 筆：泥作＋油漆兩家 ⇒ 泥作做完仍要等油漆（教「另 N 戶還要等別家」） */
+      {k:'B6-24', ins:-10, mgr:'陳柏彬', own:'劉世昌', tp:'業主戶', d:[
+        [W,'廚房淨水器出水小',-7],[L,'後陽台鋁門下軌積水',-4],
+        [N,'主浴門檻收邊',null],[N,'客廳踢腳板脫落',null],[P,'次臥天花板補漆',null]]},
+      /* ⑤剩 5~9 筆（7 天內可完成） */
+      {k:'A7-21', ins:-9, mgr:'高國翔', own:'周建宏', tp:'地主戶', d:[
+        [W,'全室弱電箱未收尾',-6],[N,'廚房壁磚溝縫',-5],[P,'走道牆面刮痕',-4],
+        [M,'儲藏室門片變形',-3],[K,'洗手台矽利康',-2],
+        [W,'主臥開關面板歪',null],[W,'陽台燈具未裝',null],[P,'次臥牆面補漆',null],
+        [P,'天花板接縫裂',null],[Y2,'主浴浴櫃抽屜卡',null],[L,'客廳窗簾盒未修',null]]},
+      /* 剩 ≥10 筆（暫不列目標）＋逾期未修（初驗後 21 天還沒清光） */
+      {k:'B8-27', ins:-21, mgr:'賈秉叡', own:'謝美玲', tp:'地主戶', d:[
+        [K,'廚房矽利康',-17],[M,'玄關門檻',-15],[N,'客廳地坪不平',-11],
+        [W,'主臥插座位置錯',null],[W,'客浴抽風機異音',null],[W,'陽台防水插座缺',null],
+        [P,'全室天花板批土',null],[P,'次臥牆面色差',null],[P,'走道踢腳板補漆',null],
+        [L,'主臥窗滲水',null],[L,'客廳落地窗軌道',null],[L,'後陽台窗紗破',null],
+        [Y2,'主浴浴櫃門片',null],[Y2,'客浴鏡櫃燈不亮',null]]},
+      /* 店鋪（教棟別細分 A棟/B棟/店鋪）：只剩水電一家 ⇒ 施壓榜「做完就能約」 */
+      {k:'A20-1', ins:-16, mgr:'高國翔', own:'合豐商行', tp:'業主戶', d:[
+        [N,'店面地坪整平',-13],[P,'外牆油漆補色',-11],[L,'捲門旁固定窗滲水',-8],
+        [W,'招牌電源未配',null]]},
+      /* 已複驗 ⇒ 可交屋 */
+      {k:'B1-7', ins:-7, mgr:'賈秉叡', own:'邱文彬', tp:'地主戶', re:-2, d:[
+        [W,'廚房插座無電',-5],[P,'客廳牆面補漆',-4],[K,'浴室矽利康',-3]]},
+      /* 已交屋 */
+      {k:'A3-14', ins:-25, mgr:'高國翔', own:'洪世傑', tp:'地主戶', re:-12, dlv:-8, d:[
+        [W,'主臥插座',-22],[N,'客浴壁磚',-20],[P,'全室補漆',-18],[M,'木門調整',-15]]}
+    ];
+
+    HIST.forEach(function(u){
+      var insDate=addD(u.ins);
+      var col=u.k.split('-')[0], fl=u.k.split('-')[1]+'F';
+      var insps=[{type:'初驗',date:insDate}];
+      if(u.re)insps.push({type:'複驗1',date:addD(u.re)});
+      var hu={planDate:insDate, slot:S1, inspTypes:u.outsource?['委外代驗']:['自驗'], inspections:insps};
+      if(u.dlv){ hu.delivered=true; hu.deliveredDate=addD(u.dlv); }
+      if(u.chief){ hu.reCheckOK=true; hu.reCheckOKBy='高國翔'; hu.reCheckOKAt=addD(-3)+'T09:00'; hu.reCheckOKN=u.d.length; }
+      S.handoverUnits[u.k]=hu;
+      S.clientData[u.k]={name:u.own, phone:'0912-000-'+(700+HIST.indexOf(u)), type:u.tp};
+      if(S.zoneUnits['indoor'].indexOf(col)<0)S.zoneUnits['indoor'].push(col);
+      u.d.forEach(function(x){
+        var base={id:S.nextId++, createdAt:Date.now(), round:'初驗', zone:'indoor',
+          manager:u.mgr, unit:col, floor:fl, vendor:x[0], issue:x[1], note:'',
+          planIn:'', planDone:'', actualIn:'', actualDone:'', isOwner:(u.tp==='地主戶')};
+        if(x[2]==null){ S.rows.push(base); return; }
+        var dd=addD(x[2]);
+        if(dd<insDate)dd=insDate;                       // 🔴 完成日不可早於初驗日（否則觸發每週進度的紅色警語）
+        base.actualIn=insDate; base.actualDone=dd;
+        S.completed.push(Object.assign({},base,{compId:S.nextCompId++, completedAt:dd}));
+      });
+    });
+
     /* 接待人力：工讀生預設不排班（跟正式系統一致） */
     S.recepMode='balance';
     S.recepOff=['工讀生'];
