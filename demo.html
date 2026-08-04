@@ -19564,6 +19564,28 @@ try{
   var n=0;
   var iv=setInterval(function(){ decorate(); if(++n>60) clearInterval(iv); }, 200);
   if(location.search.indexOf('auto=1')>=0) setTimeout(enter, 900);   // 給截圖／錄影自動進入用
+
+  /* 🔴🔴 V0804-03 重建時線上實測抓到的洞（0728 建 demo 時就有、本次一併修）：
+     **已登入的編輯者**開 demo.html 時，Firebase 的 auth 回呼會直接把登入畫面關掉 ⇒
+     decorate() 找不到 #login-ov、那顆「直接進入」綠鈕根本掛不上去 ⇒ enter() 從沒被呼叫 ⇒
+     沒有假資料、沒有教學條，而 load() 已經把**正式的交屋／客戶／公告**灌進畫面
+     （2026-08-04 線上實測：432 戶真實客戶名都看得到）。
+     寫入端本來就封死（缺失 0 筆、_fbSave/_g95AllocIds/_riChiefApply 全 stub）＝看得到、改不到，
+     但教學版顯示真客戶姓名電話本身就不可接受。
+     解法＝**不再只靠那顆按鈕**：只要「登入畫面已經不在」就自動進入教學版。 */
+  function _loginGone(){
+    var o=document.getElementById('login-ov');
+    if(!o) return true;
+    try{ var st=getComputedStyle(o); if(st.display==='none'||st.visibility==='hidden'||o.hidden) return true; }catch(e){}
+    return false;
+  }
+  var m=0, iv2=setInterval(function(){
+    if(window.__demoEntered){ clearInterval(iv2); return; }
+    if(++m>2000){ clearInterval(iv2); return; }        // 保險絲（約 10 分鐘）
+    if(typeof window._getState!=='function') return;   // classic 還沒起來
+    if(!_loginGone()) return;                          // 還在登入畫面＝等使用者自己按綠色鈕
+    try{ enter(); }catch(e){ console.warn('[DEMO] 自動進入失敗', e); }
+  }, 300);
 })();
 </script>
 
