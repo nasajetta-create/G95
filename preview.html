@@ -9005,18 +9005,18 @@ function _riRushVSum(u){
 //    「這家本週做了幾筆」直接算得出來 ⇒ 不寫任何資料、不佔額外文件、換裝置也一致、還能回頭看歷史。
 //    週界＝沿用每週進度的 _wpWkStart（週一起算），兩個看板講「本週」是同一個週。
 function _riRushRowKey(r){ try{ return _pwoUnitKey(r); }catch(e){ return (r&&r.unit)||''; } }
-function _riRushActIdx(scopeKeys){
+function _riRushActIdx(scopeKeys,tgtKeys){
   var t=todayISO();
   var wk=(typeof _wpWkStart==='function')?_wpWkStart(t):t;
   var y='',d7='';
   try{var a=new Date(t+'T00:00:00');a.setDate(a.getDate()-1);y=_isoL(a);}catch(e){}
   try{var b=new Date(t+'T00:00:00');b.setDate(b.getDate()-6);d7=_isoL(b);}catch(e){}
-  var A={},U={},Y={},tot7=0;
+  var A={},U={},Y={},S7={},tot7=0,tgt7=0;
   ((typeof S!=='undefined'&&S.completed)||[]).forEach(function(r){
-    if(_voidRow(r))return;
+    if(_voidRow(r))return;                                  // 空白缺失不進統計（沿用全站規則）
     var dd=r.actualDone||''; if(!dd||dd>t)return;
-    var v=_riRushVName(r);
-    if(d7&&dd>=d7)tot7++;
+    var v=_riRushVName(r), inT=!!(tgtKeys&&tgtKeys[_riRushRowKey(r)]);
+    if(d7&&dd>=d7){ tot7++; S7[v]=(S7[v]||0)+1; if(inT)tgt7++; }
     if(y&&dd===y)Y[v]=(Y[v]||0)+1;
     if(dd>=wk){
       A[v]=(A[v]||0)+1;
@@ -9024,10 +9024,17 @@ function _riRushActIdx(scopeKeys){
     }
   });
   var wkWork=_riSpan(wk,t).work+(_riIsRest(wk)?0:1);   // 含週一當天（_riSpan 是從隔天起算）
-  return {wk:wk,yest:y,all:A,unit:U,y:Y,avg7:Math.round(tot7/7*10)/10,tot7:tot7,wkWork:(wkWork||1)};
+  return {wk:wk,yest:y,all:A,unit:U,y:Y,d7:S7,
+          avg7:Math.round(tot7/7*10)/10,          // 全工地平均（參考用）
+          avgTgt7:Math.round(tgt7/7*10)/10,       // 🔴 只算「落在目標戶」的平均＝進度尺該用的那個
+          tot7:tot7,tgt7:tgt7,wkWork:(wkWork||1)};
 }
-// 狀態燈：本週 0 筆＝停擺／本週 < 他欠的一半＝偏慢／其餘＝在動（看的是「全工地」＝他到底有沒有在上工）
-function _riRushLamp(x){ return x.wkAll===0?'stop':(x.wkAll<Math.ceil(x.n/2)?'slow':'go'); }
+// 🔴 狀態燈看「近 7 天·全工地」不看「本週」——2026-08-04 線上實測（週二·本週只有 8/03~8/04 兩天）：
+//    27 家裡 18 家被本週判成停擺，其中 08B(業)玄關門(金亞) 近 7 天其實做了 186 筆、033B 鋁窗(三協) 10 筆、
+//    A300 金藏 19 筆，全是冤枉的。成因＝工地的完成登錄是一批一批進的（7/30 246 筆·7/31 171·8/01 128·
+//    8/03 232·8/04 170），一家廠商很可能剛好這兩天沒輪到。近 7 天是滾動窗，週幾看都一樣長。
+//    「本週」兩欄依使用者定案照常顯示，只是燈不拿它當依據。
+function _riRushLamp(x){ return x.d7===0?'stop':(x.d7<Math.ceil(x.n/2)?'slow':'go'); }
 var _RUSH_LAMP={stop:{t:'停擺',bg:'#FBE9E9',fg:'#B3261E',bd:'#E39B9B'},
                 slow:{t:'偏慢',bg:'#FEF3C7',fg:'#92400E',bd:'#FCD34D'},
                 go:{t:'在動',bg:'#E7F3E9',fg:'#1E6B34',bd:'#A9D3B4'}};
@@ -9067,9 +9074,12 @@ function _riRushPace(D){
   function sum(list){var n=0;list.forEach(function(u){n+=u.pend;});return n;}
   var realU=D.ready.length+D.near.length, realN=sum(D.near);
   var allU=D.goalTotal,                 allN=sum(D.near)+sum(D.week);
-  var avg=(D.act&&D.act.avg7)||0;
+  // 🔴 拿來對照的必須是「落在這批目標戶」的速度，不是全工地。
+  //    2026-08-04 線上實測：全工地近 7 天 135.3 筆/天，但真正落在這 131 戶的只有 33.4 筆/天。
+  //    用全工地去比會說出「全部 131 戶也追得上」（110<135.3）＝明顯不實；用目標戶比才是對的（110>33.4）。
+  var avg=(D.act&&D.act.avgTgt7)||0, avgAll=(D.act&&D.act.avg7)||0;
   return {work:work, realU:realU, realN:realN, realPer:Math.ceil(realN/work),
-          allU:allU, allN:allN, allPer:Math.ceil(allN/work), avg7:avg,
+          allU:allU, allN:allN, allPer:Math.ceil(allN/work), avg7:avg, avgAll:avgAll,
           allOK:(avg>0&&Math.ceil(allN/work)<=avg), realOK:(avg>0&&Math.ceil(realN/work)<=avg)};
 }
 // ⑦ 廠商施壓榜：統計範圍由 ① 決定（V0804-04 前固定 ④＋⑤）
@@ -9120,11 +9130,13 @@ function _riRushData(){
   D.scopeN=scopeList.length;
   D.vendors=_riRushVendors(scopeList);
   var sk={}; scopeList.forEach(function(u){sk[u.key]=1;});
-  D.act=_riRushActIdx(sk);                                   // V0804-04 ②：本週／昨天完成（純算 actualDone）
+  var tk={}; [].concat(D.ready,D.near,D.week).forEach(function(u){tk[u.key]=1;});   // ⑥ 進度尺的目標戶
+  D.act=_riRushActIdx(sk,tk);                                // V0804-04 ②：本週／昨天／近7天（純算 actualDone）
   D.vendors.forEach(function(x){
     x.wkAll=(D.act.all[x.v]||0);      // 本週·全工地＝他到底有沒有在上工
     x.wkUnit=(D.act.unit[x.v]||0);    // 本週·這批戶＝他有沒有在做我要的這幾戶
     x.yest=(D.act.y[x.v]||0);
+    x.d7=(D.act.d7[x.v]||0);          // 近 7 天·全工地＝狀態燈的依據（週界太短會冤枉人）
     x.lamp=_riRushLamp(x);
   });
   _riRushVSortApply(D.vendors);                              // V0804-04 ③④
@@ -9181,11 +9193,11 @@ function _riRushCopyText(){
   // V0804-04：另附一段「本週停擺」名單（欠很多又沒在動＝催單重點）
   var stop=D.vendors.filter(function(x){return x.lamp==='stop';})
     .sort(function(a,b){return b.n-a.n;})
-    .map(function(x){return x.v+'（未完成 '+x.n+' 筆·本週 0 筆）';});
+    .map(function(x){return x.v+'（未完成 '+x.n+' 筆·近 7 天 0 筆）';});
   if(!segs.length&&!stop.length)return '';
   var out='衝複驗目標 · 廠商施壓（'+_riRushScopeLabel(D)+'）';
   if(segs.length)out+='\n'+segs.join('\n');
-  if(stop.length)out+='\n【本週完全沒動】'+stop.join('、');
+  if(stop.length)out+='\n【近 7 天完全沒動】'+stop.join('、');
   return out+'\n（統計至 '+_riRushMD(todayISO())+(c.goal?('·目標 '+_riRushMD(c.goal)):'')+'）';
 }
 function _riRushCopy(){
@@ -9207,16 +9219,16 @@ function _riRushImgPageHTML(rows,pageNo,totalPages,D){
       +'<td style="'+td+';color:#B3261E;font-weight:800;font-size:17px;white-space:nowrap">'+x.fix+' 戶</td>'
       +'<td style="'+td+';white-space:nowrap">'+x.tot+' 戶<span style="font-size:12px;color:#8A8783">（另 '+x.other+' 戶等別家）</span></td>'
       +'<td style="'+td+';font-weight:700;white-space:nowrap">'+x.n+' 筆</td>'
-      +'<td style="'+td+';white-space:nowrap;text-align:right;font-weight:700;color:'+(x.wkAll?'#1E6B34':'#B3261E')+'">'+x.wkAll+'</td>'
+      +'<td style="'+td+';white-space:nowrap;text-align:right;font-weight:700;color:'+(x.d7?'#1E6B34':'#B3261E')+'">'+x.d7+'<span style="font-size:11px;color:#8A8783;font-weight:500">（本週 '+x.wkAll+'）</span></td>'
       +'<td style="'+td+';white-space:nowrap"><span style="font-size:13px;font-weight:800;padding:2px 9px;background:'+(_RUSH_LAMP[x.lamp]||_RUSH_LAMP.go).bg+';color:'+(_RUSH_LAMP[x.lamp]||_RUSH_LAMP.go).fg+';border:1px solid '+(_RUSH_LAMP[x.lamp]||_RUSH_LAMP.go).bd+'">'+(_RUSH_LAMP[x.lamp]||_RUSH_LAMP.go).t+'</span></td></tr>';
   }).join('');
   return '<div style="font-family:\'Noto Sans TC\',\'Microsoft JhengHei\',sans-serif;background:#fff;color:#26215C;width:900px">'
     +'<div style="background:#334756;color:#fff;padding:14px 18px"><div style="font-size:20px;font-weight:800">廠商施壓榜 · G95 工程缺失追蹤</div>'
     +'<div style="font-size:12.5px;opacity:.92;margin-top:4px">統計範圍：'+_riRushScopeLabel(D)+'　｜　統計至 '+todayISO()+(c.goal?('　｜　目標 '+_riRushMD(c.goal)):'')+'　｜　第 '+pageNo+' / '+totalPages+' 頁</div></div>'
     +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
-    +'<th style="'+th+'">廠商</th><th style="'+th+'">做完就能約</th><th style="'+th+'">他有份的戶</th><th style="'+th+'">未完成</th><th style="'+th+';text-align:right">本週完成</th><th style="'+th+'">狀態</th></tr></thead>'
+    +'<th style="'+th+'">廠商</th><th style="'+th+'">做完就能約</th><th style="'+th+'">他有份的戶</th><th style="'+th+'">未完成</th><th style="'+th+';text-align:right">近 7 天完成</th><th style="'+th+'">狀態</th></tr></thead>'
     +'<tbody>'+body+'</tbody></table>'
-    +'<div style="padding:10px 18px;font-size:12px;color:#7A7770;line-height:1.7">做完就能約＝該戶剩的缺失全是他一家，做完立刻可約複驗　·　他有份的戶＝這些戶裡有他的未完成缺失<br>本週完成＝該廠商本週（'+_riRushMD(D.act.wk)+' 起）在整個工地實際完成的缺失筆數　·　本週 0 筆＝停擺<br>只列「做完就能約 ≥1」或「停擺」的廠商（＝現在該催的人）</div>'
+    +'<div style="padding:10px 18px;font-size:12px;color:#7A7770;line-height:1.7">做完就能約＝該戶剩的缺失全是他一家，做完立刻可約複驗　·　他有份的戶＝這些戶裡有他的未完成缺失<br>近 7 天完成＝該廠商最近 7 天在整個工地實際完成的缺失筆數（括號內為本週·'+_riRushMD(D.act.wk)+' 起）　·　近 7 天 0 筆＝停擺<br>只列「做完就能約 ≥1」或「停擺」的廠商（＝現在該催的人）</div>'
     +'</div>';
 }
 function _riRushExportImg(){
@@ -9246,7 +9258,7 @@ function _riRushPaceHTML(D,mob){
     +seg('到 '+_riRushMD(_riRushCfg().goal)+' 還有',P.work+' 個工作天','含今天·扣週日與國定假日')
     +seg('務實目標（可複驗＋臨門一腳）',P.realU+' 戶　'+P.realN+' 筆','今天要清 '+P.realPer+' 筆')
     +seg('全部目標（＋7 天內可完成）',P.allU+' 戶　'+P.allN+' 筆','今天要清 '+P.allPer+' 筆')
-    +seg('最近 7 天實際速度',P.avg7+' 筆/天','全工地·含已複驗的戶')
+    +seg('最近 7 天實際速度',P.avg7+' 筆/天','只算落在這批目標戶（全工地 '+P.avgAll+'）')
     +(P.avg7>0?('<span id="ri-rush-pace-v" style="align-self:center;font-size:'+(mob?'11.5px':'12.5px')+';font-weight:800;padding:4px 10px;background:'+(warn?'#B3261E':'#1E6B34')+';color:#fff;white-space:nowrap">'
         +(warn?('全部目標要 '+P.allPer+' 筆/天　超過目前速度'):'照目前速度追得上')+'</span>'):'')
     +'</div>';
@@ -9341,7 +9353,8 @@ function _riRushVendorRowHTML(x,i,maxFix,mob){
     +'<td style="'+td+';color:#334756">'+x.tot+' 戶'+(x.other?(' <span style="font-size:11.5px;color:#8A8783">（另 '+x.other+' 戶還要等別家）</span>'):'')+'</td>'
     +'<td class="rush-pend" style="'+td+num+';color:#334756;font-weight:700">'+x.n+' 筆</td>'
     +'<td class="rush-yest" style="'+td+num+';color:'+(x.yest?'#334756':'#B9B7B0')+'">'+x.yest+'</td>'
-    +'<td class="rush-wkall" style="'+td+num+';font-weight:800;color:'+(x.wkAll?'#1E6B34':'#B3261E')+'">'+x.wkAll+'</td>'
+    +'<td class="rush-wkall" style="'+td+num+';font-weight:800;color:'+(x.wkAll?'#1E6B34':'#B3261E')+'">'+x.wkAll
+      +'<div class="rush-d7" style="font-size:10.5px;font-weight:600;color:'+(x.d7?'#7A7770':'#B3261E')+'">近7天 '+x.d7+'</div></td>'
     +'<td class="rush-wkunit" style="'+td+num+';color:'+(x.wkUnit?'#334756':'#B9B7B0')+'">'+x.wkUnit+'</td>'
     +'<td style="'+td+'">'+_riRushLampHTML(x)+'</td>'
     +'<td style="'+td+'"><span onclick="_riRushTogV(\''+_riEscJs(x.v)+'\')" style="font-size:11.5px;font-weight:700;color:#185FA5;border:1px solid #9DC3E6;background:#fff;padding:2px 8px;cursor:pointer;white-space:nowrap">'+(open?'▾ 收合':'▾ 明細')+'</span></td></tr>';
@@ -9356,7 +9369,7 @@ function _riRushVendorCardHTML(x,maxFix){   // 手機：一廠商一卡
     +'<div style="font-size:13.5px;font-weight:800;color:#26215C;display:flex;align-items:center;gap:6px">'+_riRushLampHTML(x)+'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.v)+'</span><span style="font-size:11.5px;color:#334756;font-weight:700;flex:none">'+(open?'▾':'▸')+' 明細</span></div>'
     +'<div style="font-size:12px;margin-top:4px"><span class="rush-fix" style="color:#B3261E;font-weight:800">做完就能約 '+x.fix+' 戶</span>'
     +'<span style="color:#8A8783"> ｜ 他有份 '+x.tot+' 戶 ｜ 未完成 '+x.n+' 筆</span>'+bar+'</div>'
-    +'<div class="rush-act" style="font-size:11.5px;margin-top:4px;color:#7A7770">昨天 <b style="color:#334756">'+x.yest+'</b>　本週·全工地 <b style="color:'+(x.wkAll?'#1E6B34':'#B3261E')+'">'+x.wkAll+'</b>　本週·這批戶 <b style="color:#334756">'+x.wkUnit+'</b></div></div>'
+    +'<div class="rush-act" style="font-size:11.5px;margin-top:4px;color:#7A7770">昨天 <b style="color:#334756">'+x.yest+'</b>　本週·全工地 <b style="color:'+(x.wkAll?'#1E6B34':'#B3261E')+'">'+x.wkAll+'</b>　本週·這批戶 <b style="color:#334756">'+x.wkUnit+'</b>　<span class="rush-d7">近7天 <b style="color:'+(x.d7?'#334756':'#B3261E')+'">'+x.d7+'</b></span></div></div>'
     +(open?('<div style="padding:0 6px 8px">'+_riRushDetHTML(x,true)+'</div>'):'')+'</div>';
 }
 function _riRushVendorHTML(D,mob){
@@ -9365,7 +9378,8 @@ function _riRushVendorHTML(D,mob){
     +'做完就能約＝該戶剩的缺失<b>全是他一家</b>，做完立刻可約複驗　·　他有份的戶＝這些戶裡有他的未完成缺失<br>'
     +'<b>昨天／本週</b>＝該廠商實際完成日落在那天／本週的缺失筆數（<b>直接算既有資料，沒有另外存快照</b>）。本週＝'+_riRushMD(D.act.wk)+' 起算（週一），到今天已過 <b>'+D.act.wkWork+'</b> 個工作天。<br>'
     +'<b>本週·全工地</b>＝他在整個工地做了幾筆（＝人有沒有進場）；<b>本週·這批戶</b>＝其中落在上面統計範圍那些戶的筆數（＝有沒有在做我要的這幾戶）。<br>'
-    +'狀態燈：本週·全工地 0 筆＝<b>停擺</b>／不到他欠的一半＝<b>偏慢</b>／其餘＝<b>在動</b>。停擺的整列淡紅底、排最前面。</div>';
+    +'🔴 <b>狀態燈看的是「近 7 天·全工地」不是「本週」</b>：近 7 天 0 筆＝<b>停擺</b>／不到他欠的一半＝<b>偏慢</b>／其餘＝<b>在動</b>。'
+    +'原因＝工地的完成登錄是一批一批進的，週一、週二時「本週」只有 1~2 天，很多其實有在做的廠商會被誤判成停擺（2026-08-04 實測 27 家有 4 家被冤枉，其中一家近 7 天做了 186 筆）。停擺的整列淡紅底、排最前面。</div>';
   var head='<div class="rush-tier-h" style="display:flex;align-items:center;gap:8px;background:#E7EFF8;padding:7px 10px;font-size:13px;font-weight:800;color:#185FA5">廠商施壓榜'
     +'<span class="rush-n" style="background:#185FA5;color:#fff;font-size:11.5px;font-weight:800;padding:1px 8px">'+D.vendors.length+' 家</span></div>';
   if(!D.vendors.length)
