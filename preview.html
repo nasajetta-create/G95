@@ -2707,15 +2707,9 @@ function migrateState(d){
   d.tabOrder=d.tabOrder.filter(function(id){return id!=='handover';});  // V0720-08：交屋狀態表已移除，從既有排序剔除（功能已搬客戶清單/行事曆）
   if(!d.tabOrder.includes('reinsp'))d.tabOrder.push('reinsp');   // V0720-01 驗收/修繕進度：新分頁補在最後，位置由使用者用「編輯排序」自行擺（AI 不重排 tabOrder）
   if(!d.tabOrder.includes('ulookup'))d.tabOrder.push('ulookup'); // V0720-13 戶別查詢：新分頁補在最後，位置由使用者自行擺
-  // V0813-07：「複驗交屋追蹤表」放進釘選區（使用者 2026-08-13 明訂：新看板一律先釘選）
-  // 🔴 每台裝置只做一次（localStorage 旗標）＝使用者之後自己取消釘選就不會再被加回來
-  //    pins 走 meta 同步＝全員共用，所以第一台做過之後其他台看到已存在就是 no-op
-  try{
-    if(!localStorage.getItem('g95_rtPinOnce')){
-      localStorage.setItem('g95_rtPinOnce','1');
-      if(d.layoutCfg&&Array.isArray(d.layoutCfg.pins)&&d.layoutCfg.pins.indexOf('ulookup')<0)d.layoutCfg.pins.push('ulookup');
-    }
-  }catch(e){}
+  // V0813-07：釘選「複驗交屋追蹤表」的動作不放這裡——migrateState 跑的時候雲端 layoutCfg 還沒到，
+  // 寫了會被雲端整包蓋回去（2026-08-13 線上實測證實：pins 沒進去、旗標卻已設 ⇒ 永遠不再試）。
+  // 改成 _rtPinTick()：綁資料就緒旗標，成功寫入才設旗標。見下方。
   if(!d.tabOrder.includes('hstats'))d.tabOrder.push('hstats');
   if(!d.tabOrder.includes('clients'))d.tabOrder.push('clients');
   if(!d.tabOrder.includes('hcal'))d.tabOrder.push('hcal');
@@ -17489,6 +17483,7 @@ function switchTab(id){
 var _ulq={units:[],skipOwner:{},tag:{},src:{},notfound:[],
           doneOpen:{},        // V0813-07 ⑩ 每戶「已完成」折疊段的展開狀態（預設收合）
           vOpen:{},           // V0813-07 ⑧ 廠商彙總展開中的廠商
+          tagOpen:false,      // V0813-07 轉換說明預設收合（真資料 10 戶會佔 3 行）
           paste:false};       // V0813-07 ② 貼上／匯入面板是否展開
 function _ulqAllOptions(){
   var out=[],seen={};
@@ -17496,6 +17491,31 @@ function _ulqAllOptions(){
   out.sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true});});
   return out;
 }
+// ── V0813-07：把「複驗交屋追蹤表」加進釘選區（使用者 2026-08-13 明訂：新看板一律先釘選）──
+// 🔴 一定要等資料就緒才動：pins 走 meta 同步＝全員共用，搶在雲端 layoutCfg 到達前寫會被整包蓋回去
+//    （這正是 V0727-02 那條鐵律：判定/寫入不准用計時器猜，要綁 _dfActive/_dfServerOk 這類就緒旗標）
+// 🔴 成功寫入才設 localStorage 旗標 ⇒ 每台最多做一次；使用者之後自己取消釘選，那台不會再加回來
+var _rtPinTries=0,_rtPinTimer=null;
+function _rtPinTick(){
+  try{
+    if(localStorage.getItem('g95_rtPinOnce')){clearInterval(_rtPinTimer);return;}
+    if(window._VIEW_ONLY||window._readonly||window._versionBlocked||window._dfStale||window._dfPartial||window._idleLocked)return;
+    if(window._dfActive&&!window._dfServerOk)return;            // 還沒與伺服器對帳完成
+    if(!S||!S.layoutCfg||!Array.isArray(S.layoutCfg.pins))return;
+    if(++_rtPinTries>60){clearInterval(_rtPinTimer);return;}     // 最多等 5 分鐘就放棄（不鎖死、不重試到天荒地老）
+    if(S.layoutCfg.pins.indexOf('ulookup')>=0){                  // 已經有人加過＝不用再動
+      localStorage.setItem('g95_rtPinOnce','1');clearInterval(_rtPinTimer);return;
+    }
+    S.layoutCfg.pins.push('ulookup');
+    save();
+    try{renderTabBar();}catch(e){}
+    try{logChange('📌 釘選看板','複驗交屋追蹤表 加入釘選區',{tab:'ulookup'});}catch(e){}
+    localStorage.setItem('g95_rtPinOnce','1');
+    clearInterval(_rtPinTimer);
+  }catch(e){}
+}
+try{ _rtPinTimer=setInterval(_rtPinTick,5000); }catch(e){}
+
 // ══════════ V0813-07 戶別代碼容錯比對（單一真相；交屋行事曆 _bsl 系列共用）══════════
 // 🔴 嚴格優先：先用原樣比對，對到就用；只有對不到才逐條放寬
 //    ⇒ 既有寫法的比對結果「結構上」不可能改變（rt_key_test 對 433 個真實 key 有 identity 斷言）
@@ -17557,7 +17577,7 @@ function _ulqAddInput(v,keepNF){
   if(nf.length){try{toast('有 '+nf.length+' 筆找不到對應戶別，已列在上方','⚠️');}catch(e){}}
 }
 function _ulqRemove(k){var i=_ulq.units.indexOf(k);if(i>=0)_ulq.units.splice(i,1);delete _ulq.tag[k];delete _ulq.src[k];renderUnitLookup();}
-function _ulqClear(){_ulq.units=[];_ulq.skipOwner={};_ulq.tag={};_ulq.src={};_ulq.notfound=[];_ulq.doneOpen={};_ulq.vOpen={};renderUnitLookup();}
+function _ulqClear(){_ulq.units=[];_ulq.skipOwner={};_ulq.tag={};_ulq.src={};_ulq.notfound=[];_ulq.doneOpen={};_ulq.vOpen={};_ulq.tagOpen=false;renderUnitLookup();}
 // ── V0813-07 ② 貼上／匯入面板 ──────────────────────────────────────────
 function _ulqPasteTog(){_ulq.paste=!_ulq.paste;renderUnitLookup();}
 function _ulqPasteApply(){
@@ -17675,7 +17695,11 @@ function _ulqData(){
     var rows=_ulqDefRows(k);
     var st=null;try{st=_riStat(k);}catch(e){}
     var pend=[],dn=[];
-    rows.forEach(function(r){(_ulqDone(r)?dn:pend).push(r);});
+    // 🔴🔴 未完成的判準＝ r.compId==null，與 _riStat／六態卡／催工進度／衝刺區「同一把尺」。
+    //    絕不可用 _ulqDone（它把「有完成日但還沒銷案」也算成完成）——線上實測 A5-11 的
+    //    #1188 就是這種列，會造成「摘要說未完成 0、階段徽章說修繕中」同一張畫面自相矛盾。
+    //    那種列現在照樣留在未完成清單，狀態徽章顯示「已完成·缺日期」＝正好提醒該銷案，不藏起來。
+    rows.forEach(function(r){(r.compId!=null?dn:pend).push(r);});
     var si=_ulqStageInfo(k,st);
     var u={key:k,disp:unitDisplayName(k),block:(typeof _riBlockOf==='function'?_riBlockOf(k):'A'),
            rows:rows,pend:pend,done:dn,st:st,si:si,owner:_ownerOf(k),insp1:(st&&st.insp1)||''};
@@ -17759,13 +17783,20 @@ function _ulqNfHTML(){
     +'<button class="btn btn-sm" onclick="_ulqNfClear()" style="font-size:12px;margin-top:7px">知道了</button></div>';
 }
 // 轉換說明：哪幾戶是靠容錯對上的（讓使用者看得見，不在不知情下用到別戶）
+// 🔴 2026-08-13 線上真資料才看得出來：10 戶全列會變成 330 字、佔 3 行＝把摘要擠到螢幕外。
+//    改成預設一行、點才展開（明細一定要看得到，但不能預設就淹版面）。
+function _ulqTagTog(){_ulq.tagOpen=!_ulq.tagOpen;renderUnitLookup();}
 function _ulqTagHTML(){
   var ks=Object.keys(_ulq.tag||{}).filter(function(k){return _ulq.units.indexOf(k)>=0;});
   if(!ks.length)return '';
-  return '<div style="border:1px solid #A9C48F;background:#F1F7EC;padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:#3B6D11">'
-    +'以下戶別是自動轉換後對上的：'
+  var op=!!_ulq.tagOpen;
+  var h='<div style="border:1px solid #A9C48F;background:#F1F7EC;margin-bottom:12px;font-size:12.5px;color:#3B6D11">'
+    +'<div onclick="_ulqTagTog()" style="cursor:pointer;padding:7px 12px">'+(op?'▾':'▸')
+    +' 其中 <b>'+ks.length+'</b> 戶是自動轉換後對上的'+(op?'':'（點開看怎麼轉的）')+'</div>';
+  if(op)h+='<div style="padding:0 12px 8px;line-height:1.9">'
     +ks.map(function(k){return '<b>'+esc(_ulq.src[k]||'')+'</b> → '+esc(unitDisplayName(k))+'（'+esc(_ulq.tag[k])+'）';}).join('　·　')
     +'</div>';
+  return h+'</div>';
 }
 // ⑮ 整群動作列
 function _ulqActBarHTML(D){
@@ -17957,8 +17988,12 @@ function _ulqUnmarkEarly(key){
 function _ulqUnitBlock(key,idx,pre){
   var disp=unitDisplayName(key);var owner=(pre&&pre.owner)||_ownerOf(key);var typeL=(typeof _riTypeLabel==='function')?_riTypeLabel(key):'';
   var cl=(S.clientData&&S.clientData[key])||{};var rounds=_ulqRounds(key);var rows=(pre&&pre.rows)||_ulqDefRows(key);
-  var tot=rows.length,done=0,miss=0;rows.forEach(function(r){if(_ulqDone(r))done++;if(_ulqMiss(r))miss++;});
-  var notDone=tot-done;var st=(pre&&pre.st)||((typeof _riStat==='function')?_riStat(key):{inspected:false});
+  // 🔴 與 _ulqData 同一把尺（compId==null＝未完成）；pre 有就直接用，沒有才自己分一次
+  var _pendR=(pre&&pre.pend)?pre.pend:null,_doneR=(pre&&pre.done)?pre.done:null;
+  if(!_pendR||!_doneR){_pendR=[];_doneR=[];rows.forEach(function(r){(r.compId!=null?_doneR:_pendR).push(r);});}
+  var tot=rows.length,miss=0;rows.forEach(function(r){if(_ulqMiss(r))miss++;});
+  var done=_doneR.length,notDone=_pendR.length;
+  var st=(pre&&pre.st)||((typeof _riStat==='function')?_riStat(key):{inspected:false});
   var h='<div id="ulq-u-'+idx+'" style="border:1px solid var(--pborder);margin-top:14px">';
   h+='<div style="background:#F5F8FC;border-bottom:1px solid var(--pborder);padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
     +'<span style="font-size:16px;font-weight:800">'+esc(disp)+'</span>'
@@ -17987,8 +18022,6 @@ function _ulqUnitBlock(key,idx,pre){
     h+=rh;
   }
   // ── V0813-07 ⑩：未完成直接列出、已完成預設收合（點開才看）──────────────
-  var _pendR=[],_doneR=[];
-  rows.forEach(function(r){(_ulqDone(r)?_doneR:_pendR).push(r);});
   var thb='border:1px solid var(--pborder);background:#F5F8FC;padding:6px 9px;font-size:12px;color:var(--text2);text-align:left';
   var tdb='border:1px solid var(--pborder);padding:6px 9px';
   h+='<div style="font-size:13px;font-weight:800;margin:14px 0 7px">未完成 <span style="color:#B3261E">'+_pendR.length+'</span> 筆'
