@@ -12693,7 +12693,12 @@ function _pwoBaseRows(){const r=_pwoRows();return _pwoDay?r.filter(x=>_pwoRoundD
 function _pwoFilterRows(rows){const q=_pwoSearch.trim().toLowerCase();if(!q)return rows;return rows.filter(r=>String(r.vendor||'').toLowerCase().includes(q)||(unitDisplayName(r.unit)||'').toLowerCase().includes(q)||String(r.issue||'').toLowerCase().includes(q)||('#'+r.id).includes(q));}
 function _pwoGroup(rows){const byV={};rows.forEach(r=>{const v=r.vendor||'（未指定）';(byV[v]=byV[v]||[]).push(r);});return byV;}
 function _pwoCurrentVendors(){return Object.keys(_pwoGroup(_pwoFilterRows(_pwoBaseRows())));}
-function _pwoSort(a,b){if(_pwoRowSort==='prio')return _pwoPrio(a,b);var _D=_pwoRowDir||1;
+function _pwoSort(a,b){
+  // V0817-01 使用者紅字指定：限辦日期(planDone)有值的列一律置頂＝需要優先作業（限辦近→遠·之後才走選擇的排序）
+  var _pa=a.planDone||'', _pb=b.planDone||'';
+  if(!!_pa!==!!_pb) return _pa?-1:1;
+  if(_pa&&_pb&&_pa!==_pb) return _pa<_pb?-1:1;
+  if(_pwoRowSort==='prio')return _pwoPrio(a,b);var _D=_pwoRowDir||1;
   if(_pwoRowSort==='wait'){var _la=_pwoRoundDate(a),_lb=_pwoRoundDate(b);var _wa=_la?(-du(_la)):-99999,_wb=_lb?(-du(_lb)):-99999;if(_wa!==_wb)return (_wb-_wa)*_D;}
   if(_pwoRowSort==='round'){var _ra=_pwoRoundDate(a)||'9999-99',_rb=_pwoRoundDate(b)||'9999-99';if(_ra!==_rb)return (_ra<_rb?-1:1)*_D;}
   if(_pwoRowSort==='floor'){var _f1=_pwoFloorNum(a),_f2=_pwoFloorNum(b);if(_f1!==_f2)return (_f2-_f1)*_D;return String(unitDisplayName(a.unit)).localeCompare(String(unitDisplayName(b.unit)),'zh-Hant')||(a.id||0)-(b.id||0);}
