@@ -22209,7 +22209,7 @@ document.addEventListener('firebase-ready',()=>{
 <script>
 // ── 登入（Firebase Auth）──────────────────────────────────
 const LOGIN_GATE = true;
-const LOGIN_ALLOW = ['a0972955084@gmail.com','benchiapj@gmail.com','54jasonju@gmail.com','nasa.jetta@gmail.com','guoxiang0821@gmail.com','chenbobin371@gmail.com','abc128154614@gmail.com','cchaling@gmail.com','jasonchao209@gmail.com'];
+const LOGIN_ALLOW = ['a0972955084@gmail.com','benchiapj@gmail.com','54jasonju@gmail.com','nasa.jetta@gmail.com','guoxiang0821@gmail.com','chenbobin371@gmail.com','abc128154614@gmail.com','cchaling@gmail.com','jasonchao209@gmail.com','huchingmingian@gmail.com'];
 const LOGIN_PASSCODES = [{code:'KIMZOG95'}];   // 檢視通行碼（碼固定於此；到期/啟用由 S.viewPass 雲端控制）
 function _loginAllowed(email){const e=String(email||'').toLowerCase();return LOGIN_ALLOW.map(function(x){return String(x).toLowerCase();}).indexOf(e)>=0;}
 function _passcodeOk(code){const t=todayISO();return LOGIN_PASSCODES.some(function(p){return p.code===code&&(!p.expire||p.expire>=t);});}
