@@ -15153,11 +15153,17 @@ function _recepSlotOf(k,round){var h=(S.handoverUnits||{})[k]||{};
 function _recepRoundLabel(r){return r==='re'?'複驗':'初驗';}
 // ══ V0818-01：複驗「已敲定」判準＝有日期＋有時段（全站唯一出處）══
 // 🔴 行事曆落格／統計列／手機日檢視／本週有無活動 一律走這一支，不准各寫一份。
-function _reBooked(key){
-  var h=(S.handoverUnits||{})[key]||{}; if(h.delivered)return null;
-  var d=_recepDateOf(key,'re'), sl=_recepSlotOf(key,'re');
+// 🔴 V0818-02：判定層抽出來（_reBookedRaw）＝「已敲定」的唯一判準；_reBooked 只是取值層的薄包裝。
+//    這樣需要快速批次判定時（_ulqBookedIdx 掃全庫），可以用便宜的取值路徑餵同一支判定，
+//    而不是複製一份判準（V0813-12 的教訓：_riUsKey 每戶要掃一次缺失表，433 戶全冷＝817ms）。
+function _reBookedRaw(d,sl,delivered){
+  if(delivered)return null;
   if(!d||HCAL_SLOTS.indexOf(sl)<0)return null;
   return {date:d, slot:sl};
+}
+function _reBooked(key){
+  var h=(S.handoverUnits||{})[key]||{};
+  return _reBookedRaw(_recepDateOf(key,'re'), _recepSlotOf(key,'re'), h.delivered);
 }
 // ══ V0818-01：未到／取消 每輪各一份（初驗 cancelled/noShow；複驗 cancelledRe/noShowRe）══
 // 使用者 2026-08-18 定案「複驗當天客戶沒到，要能標記」。舊版是每戶一個布林，標了複驗初驗那格也會變灰 ⇒ 非拆不可。
@@ -18485,11 +18491,29 @@ function _ulqBkClear(){_ulqBkC=null;}
 function _ulqBookedIdx(){
   if(_ulqBkC)return _ulqBkC;
   var idx={};
+  function put(k,b){ if(b&&b.date){ if(!idx[b.date])idx[b.date]=[]; idx[b.date].push(k); } }
   try{
-    (_riAllKeys()||[]).forEach(function(k){
-      var b=null;try{b=(typeof _reBooked==='function')?_reBooked(k):null;}catch(e){}
-      if(b&&b.date){ if(!idx[b.date])idx[b.date]=[]; idx[b.date].push(k); }
+    var uf=S.reCheckUF||{}, sl=S.reCheckSlot||{}, hu=S.handoverUnits||{};
+    var uks=Object.keys(uf).filter(function(x){return !!uf[x];});
+    if(!uks.length){_ulqBkC=idx;return idx;}
+    // 🔴 V0813-12 同法：先用便宜寫法（unitDisplayName＋數字結尾補 F＝_riUsKey 的退路那一行）建反查表，
+    //    不對全站 433 戶跑 _riUsKey（那支每戶要掃 getDefectRows；線上實測全冷要 817ms）。
+    var all=_riAllKeys()||[], m={}, done={}, hard=false;
+    all.forEach(function(k){ var d=unitDisplayName(k); m[/-\d+$/.test(d)?(d+'F'):d]=k; m[d]=k; });
+    uks.forEach(function(uk){
+      var k=m[uk];
+      if(!k){hard=true;return;}
+      done[k]=1;
+      put(k,_reBookedRaw(uf[uk], sl[uk]||'', (hu[k]||{}).delivered));   // 判準仍是同一支
     });
+    // 有對不到的鍵才付昂貴代價（結果與逐戶跑 _reBooked 完全相同，不是「猜對就好」）
+    if(hard){
+      all.forEach(function(k){
+        if(done[k])return;
+        var b=null;try{b=_reBooked(k);}catch(e){}
+        put(k,b);
+      });
+    }
   }catch(e){}
   _ulqBkC=idx;return idx;
 }
