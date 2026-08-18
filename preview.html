@@ -18486,16 +18486,28 @@ function _ulqBadge(si){
 //    一邊「有日期」），線上接待人力警示直接從 3 筆爆到 123 筆。這裡不再犯。
 // 🔴 效能：索引一次算好、render 級快取，失效點與 _buildDefectCache 同一處清（V0813-12：量暖快取
 //    等於沒量，使用者走的永遠是冷的那條）。
-var _ulqBkC=null;
-function _ulqBkClear(){_ulqBkC=null;}
+var _ulqBkC=null,_ulqBkFpC='';
+function _ulqBkClear(){_ulqBkC=null;_ulqBkFpC='';}
+// 🔴 指紋＝這份索引的三個輸入（複驗日／時段／已交屋＋缺失筆數）。指紋沒變就跨 render 重用：
+//    線上實測有 3 個店舖鍵（店A18-1F…）便宜表對不到 ⇒ 一定要走全站昂貴退路（432 戶×0.8ms＝345ms），
+//    如果每次重畫都付這筆，等於把 V0813-12 修好的效能又賠回去。指紋算一次 <1ms。
+function _ulqBkFp(){
+  try{
+    var hu=S.handoverUnits||{},d=0;
+    for(var k in hu){if(hu[k]&&hu[k].delivered)d++;}
+    return JSON.stringify(S.reCheckUF||{})+''+JSON.stringify(S.reCheckSlot||{})
+      +''+d+''+((S.rows||[]).length)+'/'+((S.completed||[]).length);
+  }catch(e){return '';}
+}
 function _ulqBookedIdx(){
-  if(_ulqBkC)return _ulqBkC;
+  var fp=_ulqBkFp();
+  if(_ulqBkC&&fp&&fp===_ulqBkFpC)return _ulqBkC;
   var idx={};
   function put(k,b){ if(b&&b.date){ if(!idx[b.date])idx[b.date]=[]; idx[b.date].push(k); } }
   try{
     var uf=S.reCheckUF||{}, sl=S.reCheckSlot||{}, hu=S.handoverUnits||{};
     var uks=Object.keys(uf).filter(function(x){return !!uf[x];});
-    if(!uks.length){_ulqBkC=idx;return idx;}
+    if(!uks.length){_ulqBkC=idx;_ulqBkFpC=fp;return idx;}
     // 🔴 V0813-12 同法：先用便宜寫法（unitDisplayName＋數字結尾補 F＝_riUsKey 的退路那一行）建反查表，
     //    不對全站 433 戶跑 _riUsKey（那支每戶要掃 getDefectRows；線上實測全冷要 817ms）。
     var all=_riAllKeys()||[], m={}, done={}, hard=false;
@@ -18515,7 +18527,7 @@ function _ulqBookedIdx(){
       });
     }
   }catch(e){}
-  _ulqBkC=idx;return idx;
+  _ulqBkC=idx;_ulqBkFpC=fp;return idx;
 }
 function _ulqBookedDates(){return Object.keys(_ulqBookedIdx()).sort();}
 function _ulqWeekOf(iso){
@@ -19788,7 +19800,7 @@ function _ulqMobMoreTog(){_ulq.mobMore=!_ulq.mobMore;renderUnitLookup();}
 function _ulqMobRender(){
   var mc=document.getElementById('pane-ulookup');if(!mc)return;
   try{_buildDefectCache();}catch(e){}
-  _ulqBkClear();   // V0818-02：同桌機（手機是另一支 render，桌機改完一定要另外改）
+  // V0818-02：同桌機，索引由指紋控制失效（手機是另一支 render，桌機改完一定要另外改）
   var opts=_ulqAllOptions();
   var dl='<datalist id="ulq-dl">'+opts.map(function(o){return '<option value="'+esc(o)+'">';}).join('')+'</datalist>';
   var chips=_ulq.units.map(function(k){return '<span style="background:#EAF4FC;border:1px solid #5B9BD5;color:#185FA5;font-size:13px;font-weight:800;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;margin:2px">'+esc(unitDisplayName(k))+' <span onclick="_ulqRemove(\''+String(k).replace(/'/g,"\\'")+'\')" style="cursor:pointer;font-weight:900">✕</span></span>';}).join('');
@@ -19825,7 +19837,7 @@ function renderUnitLookup(){
   var mc=document.getElementById('pane-ulookup');if(!mc)return;
   if(window.innerWidth<=700&&typeof _mnavEnabled==='function'&&_mnavEnabled()&&!window._ulqFull){_ulqMobRender();return;}
   try{_buildDefectCache();}catch(e){}
-  _ulqBkClear();   // V0818-02：已敲定索引的失效點與 _buildDefectCache 同一處（每次重畫重算一次，不是每次呼叫都算）
+  // V0818-02：已敲定索引改由 _ulqBkFp() 指紋控制失效（資料沒變就跨重畫重用；線上有店舖鍵對不到＝重算要 345ms）
   var opts=_ulqAllOptions();
   var dl='<datalist id="ulq-dl">'+opts.map(function(o){return '<option value="'+esc(o)+'">';}).join('')+'</datalist>';
   var chips=_ulq.units.map(function(k){return '<span style="background:#EAF4FC;border:1px solid #5B9BD5;color:#185FA5;font-size:13px;font-weight:800;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;margin:2px">'+esc(unitDisplayName(k))+' <span onclick="_ulqRemove(\''+String(k).replace(/'/g,"\\'")+'\')" style="cursor:pointer;font-weight:900">✕</span></span>';}).join('');
