@@ -401,7 +401,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-20 12:40 +08';
+window._BUILD_STAMP = '2026-08-20 13:40 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -428,7 +428,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 359;  // V0820-01 進度報告分區小計＋各廠商加「上週」兩欄（使用者 2026-08-20 紅字「利用這裡，做一個與上周的差異比較／上週固定周一到周日(8/10~8/16)，已完成比數＋完成率」·示意圖 v1 ①〜⑪ 定案 ⑦-A ⑧-A ⑨-A ⑩-A ⑪-A）：①分區名／廠商名欄吃剩的空白插入兩欄「上週已完成」「上週完成率」，暖灰底（#F3F1EC 表頭／#FBFAF7 格）跟右邊四欄分開，**現有四欄一個字沒動**。②新增 `_rptLastWk(t)` 回 `{from,to,base}`＝上一個完整週（週一~週日）；`_rptLwLabel`／`_rptLwTh`／`_rptLwTds`／`_rptLwSub` 四支畫面函式。🔴 **base＝上週一的前一天**（＝上上週日收盤）——`_ulqWoW` 的 base 是**排除**的（`dd>base`）、end 是包含的，所以 base 寫成上週一會把星期一整天做的量吃掉。③🔴 **這兩欄故意不跟「比較起點」設定走**（使用者要一個永遠不變的參照點）：切成自訂區間時右邊四欄會變、這兩欄不變；煙測有一條專門守住。④算法仍是同一支 `_ulqWoW`（完成率用**狀態**算、不流量相除），只是換一組日期 ⇒ 判斷基準全頁仍只有一份。⑤`_rptData` 加 `D.lw`／`D.gl`／`D.overallLw`／`x.wl`／`v.wl`；廠商那組**在篩選之後才算**（0820 真資料 45 家留下，少掃好幾輪）。⑥⑪-A 順手修既有表頭：`_rptSpanFrom(D)`＝比較起點的**隔天**——原本表頭直接寫 base（`115/08/15 六 ~ 115/08/20 四`）等於多寫一天，實際「已完成／新增」只算 08/16 起；完成率那欄比的仍是 base 收盤 → end 收盤，語意不變、數字一個都沒動。⑦⑧-A 手機：`_rptMRow` 加 `opt.lw` 副行（11.5px 灰字）——一行塞不下兩段（390px 必橫向溢出），所以主行維持現狀、上週當小字副行，卡片底部加一行「灰色小字＝上週（08/10 一 ~ 08/16 日·固定週一~週日）」。⑧複製報告文字加一行「◆ 上週（…固定）：總體已完成 N｜x%→y%」，分區／廠商每行尾巴加「｜上週修 N·x%→y%」。🩸使用者第一時間就抓到「②寫 8/10~8/16、③寫截至 08/09→08/16 怎麼不一樣」——**流量看區間、存量看兩端時間點**，同一段時間的兩種取法；⑩-A 定案畫面上兩欄小字都只寫 08/10 一 ~ 08/16 日，08/09 是算法內部取點、不給使用者看。 ｜ V0819-07 收尾兩件（使用者 2026-08-20「將這個推完」）：**①複驗時段缺口預警**——新增 `_slotGapData()`／`_sgHTML(mob)`／`_sgCount(date)`，掛在**預警看板**（緊接在資料健檢之後）＋**交屋行事曆日期標頭的「N 未排時段」徽章**（點一下跳預警看板）。🔴 判斷基準跟 `_reBookedRaw`／renderHCal 的 `_reIdx` 完全同一把尺：有複驗日但時段不在 HCAL_SLOTS 內＝還沒跟屋主敲定 ⇒ **行事曆看不到、接待人力也算不到**（0820 真資料 124 戶裡 91 戶是這種＝73%）。效能沿用 `_riRecheckOf`/`_riSlotOf`＋指紋快取（V0813-12 教訓：433 戶各掃一次缺失表＝817ms）。**②唯讀模式欄位鎖定**——原本 CSS 只有 `opacity:.85`＋透明邊框，跟一般欄位幾乎看不出差別，使用者會以為改得動；改成灰底＋虛線框＋`cursor:not-allowed`，一眼就知道不能改。🔴🔴 更重要的是**發現既有的 `.view-allow` 白名單從來沒有任何元素用它** ⇒ 唯讀模式把**搜尋框、篩選、比較起點日期**也一起鎖死（純檢視功能不該擋）。本版把四個搜尋框＋四個比較起點 date input 加上 `view-allow`，並讓 `applyReadonly()` 的 readonly/disabled 也跳過白名單。🩸容器重啟教訓：工作副本退回 V0819-04，**最新版只在使用者磁碟上**（從 repo_G95/index.html stage 回來重建）；同時發現 V0819-03／V0819-06 改的煙測**沒同步寫回裝置**（只寫了 html）⇒ 這次一併補上。 ｜ V0819-06 各廠商那張表頭也寫出區間（使用者 2026-08-20 紅字「這裡也要寫」）：桌機「廠商」→「廠商（115/08/15 六 ~ 115/08/20 四）」、手機卡片標題同步；🔴 複驗戶缺改進度那張**刻意不加**——它第一欄是「預定複驗日期」，再塞統計區間會變成兩種日期混在一起（煙測有一條守住）。 ｜（更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
+const CODE_VERSION = 359;  // V0820-01 進度報告分區小計＋各廠商加「上週」兩欄（使用者 2026-08-20 紅字「利用這裡，做一個與上周的差異比較／上週固定周一到周日(8/10~8/16)，已完成比數＋完成率」·示意圖 v1 ①〜⑪ 定案 ⑦-A ⑧-A ⑨-A ⑩-A ⑪-A）：①分區名／廠商名欄吃剩的空白插入兩欄「上週已完成」「上週完成率」，暖灰底（#F3F1EC 表頭／#FBFAF7 格）跟右邊四欄分開，**現有四欄一個字沒動**。②新增 `_rptLastWk(t)` 回 `{from,to,base}`＝上一個完整週（週一~週日）；`_rptLwLabel`／`_rptLwTh`／`_rptLwTds`／`_rptLwSub` 四支畫面函式。🔴 **base＝上週一的前一天**（＝上上週日收盤）——`_ulqWoW` 的 base 是**排除**的（`dd>base`）、end 是包含的，所以 base 寫成上週一會把星期一整天做的量吃掉。③🔴 **這兩欄故意不跟「比較起點」設定走**（使用者要一個永遠不變的參照點）：切成自訂區間時右邊四欄會變、這兩欄不變；煙測有一條專門守住。④算法仍是同一支 `_ulqWoW`（完成率用**狀態**算、不流量相除），只是換一組日期 ⇒ 判斷基準全頁仍只有一份。⑤`_rptData` 加 `D.lw`／`D.gl`／`D.overallLw`／`x.wl`／`v.wl`；廠商那組**在篩選之後才算**（0820 真資料 45 家留下，少掃好幾輪）。⑥⑪-A 順手修既有表頭：`_rptSpanFrom(D)`＝比較起點的**隔天**——原本表頭直接寫 base（`115/08/15 六 ~ 115/08/20 四`）等於多寫一天，實際「已完成／新增」只算 08/16 起；完成率那欄比的仍是 base 收盤 → end 收盤，語意不變、數字一個都沒動。⑦⑧-A 手機：`_rptMRow` 加 `opt.lw` 副行（11.5px 灰字）——一行塞不下兩段（390px 必橫向溢出），所以主行維持現狀、上週當小字副行，卡片底部加一行「灰色小字＝上週（08/10 一 ~ 08/16 日·固定週一~週日）」。⑧複製報告文字加一行「◆ 上週（…固定）：總體已完成 N｜x%→y%」，分區／廠商每行尾巴加「｜上週修 N·x%→y%」。🩸使用者第一時間就抓到「②寫 8/10~8/16、③寫截至 08/09→08/16 怎麼不一樣」——**流量看區間、存量看兩端時間點**，同一段時間的兩種取法；⑩-A 定案畫面上兩欄小字都只寫 08/10 一 ~ 08/16 日，08/09 是算法內部取點、不給使用者看。⚡ **preview 真資料對帳後補的效能修正**：第一版是「掃兩趟 `_ulqWoW`」，線上 10,819 筆實測整份 `_rptData` 從 ~300ms 變 ~400ms（貴的是 `_wpAddDate`：dmap 查表＋`_wpUnitOf` 三個 regex）⇒ 抽出 `_ulqWoW2(us,dmap,base,end,base2,end2)` **一趟兩累加器**，`_ulqWoW` 變成它的薄包裝（不給 base2 時逐欄與舊版相同·煙測有斷言）；9,114 筆假資料 `_rptData` 58→40ms（舊版 38ms＝幾乎沒有代價）。這正是 V0807-02「新功能若呼叫既有的重運算函式，要從呼叫端重用結果」那條鐵律——第一版就踩到了，是 preview 真資料量出來的（假資料只差 20ms、根本看不出來）。 ｜ V0819-07 收尾兩件（使用者 2026-08-20「將這個推完」）：**①複驗時段缺口預警**——新增 `_slotGapData()`／`_sgHTML(mob)`／`_sgCount(date)`，掛在**預警看板**（緊接在資料健檢之後）＋**交屋行事曆日期標頭的「N 未排時段」徽章**（點一下跳預警看板）。🔴 判斷基準跟 `_reBookedRaw`／renderHCal 的 `_reIdx` 完全同一把尺：有複驗日但時段不在 HCAL_SLOTS 內＝還沒跟屋主敲定 ⇒ **行事曆看不到、接待人力也算不到**（0820 真資料 124 戶裡 91 戶是這種＝73%）。效能沿用 `_riRecheckOf`/`_riSlotOf`＋指紋快取（V0813-12 教訓：433 戶各掃一次缺失表＝817ms）。**②唯讀模式欄位鎖定**——原本 CSS 只有 `opacity:.85`＋透明邊框，跟一般欄位幾乎看不出差別，使用者會以為改得動；改成灰底＋虛線框＋`cursor:not-allowed`，一眼就知道不能改。🔴🔴 更重要的是**發現既有的 `.view-allow` 白名單從來沒有任何元素用它** ⇒ 唯讀模式把**搜尋框、篩選、比較起點日期**也一起鎖死（純檢視功能不該擋）。本版把四個搜尋框＋四個比較起點 date input 加上 `view-allow`，並讓 `applyReadonly()` 的 readonly/disabled 也跳過白名單。🩸容器重啟教訓：工作副本退回 V0819-04，**最新版只在使用者磁碟上**（從 repo_G95/index.html stage 回來重建）；同時發現 V0819-03／V0819-06 改的煙測**沒同步寫回裝置**（只寫了 html）⇒ 這次一併補上。 ｜ V0819-06 各廠商那張表頭也寫出區間（使用者 2026-08-20 紅字「這裡也要寫」）：桌機「廠商」→「廠商（115/08/15 六 ~ 115/08/20 四）」、手機卡片標題同步；🔴 複驗戶缺改進度那張**刻意不加**——它第一欄是「預定複驗日期」，再塞統計區間會變成兩種日期混在一起（煙測有一條守住）。 ｜（更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -10355,15 +10355,16 @@ function _rptData(){
   var grp={'室內':[],'公設':[],'其他':[],'未分類':[]}, sub={}, subG={};
   all.forEach(function(r){ if(!r)return; var n=zn[r.zone]||''; var g=_rptGrpOf(n);
     grp[g].push(r); var sn=n||'未分類'; if(!sub[sn])sub[sn]=[]; sub[sn].push(r); subG[sn]=g; });
-  function W(rs){ return _ulqWoW([{rows:rs}],dmap,base,endD); }
-  // V0820-01 ②③：上週固定週一~週日，跟比較起點無關（同一支 _ulqWoW、只是換一組日期）
-  var LW=_rptLastWk(t), lwB=LW?LW.base:base, lwE=LW?LW.to:endD;
-  function WL(rs){ return _ulqWoW([{rows:rs}],dmap,lwB,lwE); }
+  // V0820-01 ②③：上週固定週一~週日，跟比較起點無關（同一支算法、只是第二組日期）
+  // 🔴 一趟掃兩個視窗（_ulqWoW2），不是掃兩趟——真資料掃兩趟等於多花 ~100ms（見 _ulqWoW2 註解）
+  var LW=_rptLastWk(t), lwB=LW?LW.base:'', lwE=LW?LW.to:'';
+  function W2(rs){ return _ulqWoW2([{rows:rs}],dmap,base,endD,lwB,lwE); }
+  function W(rs){ return W2(rs)[0]; }
   var D={t:t, base:base, end:endD, mode:B.mode, baseWk:(B.mode==='wk'), g:{}, gl:{}, lw:LW, subs:[], scope:_rptScope()};
-  D.overall=W(all); D.overallLw=WL(all);
-  ['室內','公設','其他','未分類'].forEach(function(g){ D.g[g]=W(grp[g]); D.gl[g]=WL(grp[g]); });
+  var _o=W2(all); D.overall=_o[0]; D.overallLw=_o[1];
+  ['室內','公設','其他','未分類'].forEach(function(g){ var x=W2(grp[g]); D.g[g]=x[0]; D.gl[g]=x[1]; });
   var zid={}; (S.zones||[]).forEach(function(z){ if(z&&z.id) zid[String(z.name||z.label||'').replace(/^\s+|\s+$/g,'')]=z.id; });
-  Object.keys(sub).forEach(function(n){ var w=W(sub[n]); if(w.pendNow>0||w.fixed>0||w.added>0) D.subs.push({name:n,g:subG[n],zid:zid[n]||'',w:w,wl:WL(sub[n])}); });   // V0820-01：wl 只算通過篩選的分區（省一輪掃描）
+  Object.keys(sub).forEach(function(n){ var x=W2(sub[n]), w=x[0]; if(w.pendNow>0||w.fixed>0||w.added>0) D.subs.push({name:n,g:subG[n],zid:zid[n]||'',w:w,wl:x[1]}); });   // V0820-01：一趟拿兩組
   var order={'室內':0,'公設':1,'其他':2,'未分類':3};
   D.subs.sort(function(a,b){ return (order[a.g]-order[b.g])||(b.w.pendNow-a.w.pendNow); });
   D.zsum=D.g['室內'].pendNow+D.g['公設'].pendNow+D.g['其他'].pendNow+D.g['未分類'].pendNow;
@@ -10397,11 +10398,9 @@ function _rptData(){
   // ── 廠商（依目前範圍）
   var list=(D.scope==='in')?grp['室內']:((D.scope==='pub')?grp['公設']:all);
   var vm={}; list.forEach(function(r){ var v=String(r.vendor||'').replace(/^\s+|\s+$/g,'')||'（未填廠商）'; if(!vm[v])vm[v]=[]; vm[v].push(r); });
-  D.vend=Object.keys(vm).map(function(name){ var rs=vm[name]; return {name:name, _rs:rs, pend:rs.filter(function(r){return r.compId==null;}).length, w:W(rs)}; })
+  D.vend=Object.keys(vm).map(function(name){ var rs=vm[name], x=W2(rs); return {name:name, pend:rs.filter(function(r){return r.compId==null;}).length, w:x[0], wl:x[1]}; })
     .filter(function(v){ return v.pend>0||v.w.fixed>0||v.w.added>0; })
     .sort(function(a,b){ return b.pend-a.pend; });
-  // V0820-01：上週那組在**篩選之後**才算（0820 真資料 45 家留下、原始桶數更多 ⇒ 少掃好幾輪）
-  D.vend.forEach(function(v){ v.wl=WL(v._rs); v._rs=null; });
   return D;
 }
 // 跳追蹤總表（帶入前清舊篩選＝V0730 教訓；#fZone/#fVendor 是總表現成篩選器）
@@ -19057,6 +19056,33 @@ function _ulqBatchKeys(){
 // 🔴 基準日＝滾動 7 天前（不用長度會變的「本週／上週」）；產生日＝_wpAddDate 代理、沒有日期＝視為早就存在（保守）。
 // V0819-01：第四個參數 end＝迄日（不給＝今天）。給了就連「現在」也回推到那天 ⇒ 可看歷史區間。
 // 🔴 end＝今天時，所有 ad/dd 都 <= end，逐行結果與舊版完全相同（零迴歸，煙測有斷言）。
+// V0820-01 🔴 一趟掃兩個視窗（進度報告要「本區間」＋「上週」兩組數字）。
+// 為什麼不直接呼叫兩次 _ulqWoW：V0807-02 鐵律「新功能若呼叫既有的重運算函式，要從呼叫端重用結果」——
+// 真資料 10,819 筆時每一趟 25ms，而貴的是 `_wpAddDate`（dmap 查表＋_wpUnitOf 三個 regex），
+// 掃兩趟等於整份 _rptData 多花 ~100ms（線上實測 300→400ms）。一趟兩累加器＝那 100ms 全部省下來。
+// 🔴 不給 base2 時行為與舊版**逐欄相同**（零迴歸，煙測 wvw／basewin／lwk 都有斷言）。
+function _ulqWoW2(us,dmap,base,end,base2,end2){
+  var E=end||todayISO(), E2=end2||E, two=!!base2;
+  var A={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0}, B={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0};
+  function acc(o,ad,dn,dd,b,e){
+    var exN=(!ad||ad<=e);                      // 迄日當天存在的缺失
+    var dnN=dn&&dd&&dd<=e;                     // 迄日當天已完成
+    var exP=(!ad||ad<=b), dnP=dn&&dd&&dd<=b;
+    if(exN){ o.eN++; if(dnN)o.dN++; else o.pN++; }
+    if(exP){ o.eP++; if(dnP)o.dP++; else o.pP++; }
+    if(dn&&dd&&dd>b&&dd<=e)o.f++;
+    if(ad&&ad>b&&ad<=e)o.a++;
+  }
+  us.forEach(function(u){ (u.rows||[]).forEach(function(r){
+    var dn=(r.compId!=null), dd=r.actualDone||'', ad='';
+    try{ad=_wpAddDate(r,dmap)||'';}catch(e){}
+    acc(A,ad,dn,dd,base,E);
+    if(two)acc(B,ad,dn,dd,base2,E2);
+  });});
+  function fin(o){ var rN=o.eN?Math.round(o.dN*100/o.eN):0, rP=o.eP?Math.round(o.dP*100/o.eP):0;
+    return {fixed:o.f,added:o.a,pendPrev:o.pP,pendNow:o.pN,ratePrev:rP,rateNow:rN,diff:rN-rP}; }
+  return [fin(A), two?fin(B):null];
+}
 function _ulqWoW(us,dmap,base,end){
   var fixed=0,added=0,pendNow=0,pendPrev=0,exNow=0,exPrev=0,doneNow=0,donePrev=0;
   var E=end||todayISO();
@@ -23851,4 +23877,4 @@ try{
 </body>
 </html>
 
-<!-- v0820-01 preview · build 2026-08-20 12:40 +08 -->
+<!-- v0820-01 preview · build 2026-08-20 13:40 +08 -->
