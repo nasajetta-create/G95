@@ -23939,7 +23939,13 @@ try{
       window._dfResetFromLegacy = function(){ console.log('教學版不可用'); };
       window._dfImportLegacyDiff = function(){ console.log('教學版不可用'); };
       window._irUnifyKeys = function(){ console.log('教學版不可用'); };
-      window._fbMigrateSplit = async function(){ console.log('教學版不可用'); };   // 2026-08-20 重建時補：meta 拆文件遷移＝真寫入路徑
+      window._fbMigrateSplit = async function(){ console.log('教學版不可用'); };
+      /* 🔴 2026-08-20 線上實測補（煙測離線跑，測不到這段）：把「雲端讀進來」的兩個入口也封掉。
+         V0817-04 起資料層改成逐欄增量更新 ⇒ 已登入的編輯者開教學版，_fbListen 會把真公告／真設定
+         一欄一欄塞進 S，而 S.__demoSeed 旗標還在＝守門不會醒。這兩支都是 window 曝露的，
+         classic 段封得到（module 段的 applyRemote 封不到＝兩段作用域隔離）。 */
+      window._fbListen = function(){};   // 逐欄增量訂閱＝真資料流進畫面的入口
+      window._irListen = function(){};   // 驗收登記全量同步（真登記數 vs 假缺失＝資料健檢誤報的來源）   // 2026-08-20 重建時補：meta 拆文件遷移＝真寫入路徑
       window._g95SnapWrite = async function(){};
       window._g95SnapPrune = async function(){};
       window._fbForceResync = async function(){ location.reload(); };
@@ -23992,6 +23998,22 @@ try{
   var T=addD(0), Y=addD(-1), T1=addD(1), T2=addD(2), T3=addD(3);
   var S1='09:00–10:20', S2='10:30–11:50', S3='14:00–15:20';
 
+  /* 假公告（2026-08-20 新增）：三則各一種類型，長度比照現場真公告，教學時看得到公告欄長什麼樣。
+     結構照 annSave()：id/type/author/ts/readBy/pinned/title/content/unit/mustRead ＋各型別欄位 */
+  var ANNS=[
+    {id:'aDEMO1',type:'ann',author:'教學版',ts:new Date(Date.now()-86400000).toISOString(),readBy:[],pinned:true,
+     mustRead:true,unit:'',evDate:'',
+     title:'本週 A2、B5 棟走廊油漆施工，驗屋動線改走東側樓梯',
+     content:'油漆廠商 進場三天，走廊會封閉。帶客戶驗屋請改走東側樓梯，並提醒客戶注意地面防護板。'},
+    {id:'aDEMO2',type:'task',author:'教學版',ts:new Date(Date.now()-172800000).toISOString(),readBy:[],pinned:false,
+     mustRead:false,unit:'B5-24',assignee:'王大明',due:'',status:'todo',
+     title:'B5-24 尚未安排清潔，交屋前要補排',
+     content:'這戶驗收日已排但清潔沒排，行事曆會跳未清潔警示。請聯絡 A301 清潔(金藏) 補一個時段。'},
+    {id:'aDEMO3',type:'qa',author:'教學版',ts:new Date(Date.now()-259200000).toISOString(),readBy:[],pinned:false,
+     mustRead:false,unit:'',evDate:'',answer:'',answered:false,
+     title:'客戶自備的窗簾盒沒對到預留孔，算不算缺失？',
+     content:'現場量測後與設計圖不符，想確認要開缺失單給哪一家。'}
+  ];
   var VEND=['013 水電(群豐)','021 泥作(大進)','023 浴櫃(新龍)','A301 清潔(金藏)','D436 矽利康(正格)','E441 油漆(璟福)','F426 木門(俊林)','J101 鋁窗(佑達)'];
   var MGRS=['高國翔','賈秉叡','陳柏彬','李文君'];
   var MGRD={'高國翔':{title:'主任'},'賈秉叡':{title:'主任'},'陳柏彬':{title:'工程師'},'李文君':{title:'工讀生'}};
@@ -24148,6 +24170,24 @@ try{
 
     /* 行事曆預設把「缺失筆數」打開＝教學時看得到卡片上的數字 */
     try{ window._hcalShowCount=true; localStorage.setItem('g95_hcalShowCount','1'); }catch(e){}
+
+    /* 🔴 2026-08-20 線上實測補：seed 原本只清 rows／handoverUnits／clientData 那幾個。
+       已登入的編輯者開教學版時 load() 會把整份真資料放進 S，守門偵測旗標消失就重播 seed，
+       但**seed 沒碰過的欄位會原封留著真資料**：真公告 18 則、真驗收登記（433 戶）
+       ⇒ 資料健檢當場誤報「215 戶的缺失比登記的少」，學員第一眼看到紅色錯誤。
+       這裡把「雲端會送來、上面卻沒設定到」的欄位一次清乾淨（型別照 migrateState 預設）。 */
+    S.announcements = ANNS.map(function(a){ return JSON.parse(JSON.stringify(a)); });
+    S.reCheckUF={}; S.reCheckSlot={};
+    S.rptSaved={}; S.rptFc={};
+    S.mgrFixedBusy={}; S.mgrSupport={};
+    S.recepMgrOff=[]; S.recepMgrOrder=[]; S.recepOrder=[];
+    S.rushNudge={};
+    /* 使照進度：不要設 null（那個分頁會整個空掉）。改成「空白範本」＝節點在、日期全空，
+       正好是教學要的樣子；雲端來的真 uso 會帶真實日期，這裡一律蓋掉。 */
+    try{ S.uso = (typeof usoSeed==='function')
+           ? {nodes:usoSeed(),goalId:6,contract:'',start:'',startNode:null,view:'beads',flagStyle:'badge',nextId:7}
+           : null; }catch(e){ S.uso=null; }
+    S.annAuthCode='MONGA';
 
     try{ if(typeof _buildDefectCache==='function') _buildDefectCache(); }catch(e){}
     return true;
@@ -24307,4 +24347,4 @@ try{
 </body>
 </html>
 
-<!-- v0820-02 demo · build 2026-08-20 16:49 +08 -->
+<!-- v0820-02b demo · build 2026-08-20 17:24 +08 -->
