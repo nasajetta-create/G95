@@ -401,7 +401,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-20 08:14 +08';
+window._BUILD_STAMP = '2026-08-20 11:25 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -428,7 +428,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 357;  // V0819-06 各廠商那張表頭也寫出區間（使用者 2026-08-20 紅字「這裡也要寫」）：桌機「廠商」→「廠商（115/08/15 六 ~ 115/08/20 四）」、手機卡片標題同步；🔴 複驗戶缺改進度那張**刻意不加**——它第一欄是「預定複驗日期」，再塞統計區間會變成兩種日期混在一起（煙測有一條守住）。 ｜ V0819-05 資料健檢＋一鍵更正（使用者 2026-08-19 定案「兩邊都放」「拜託你快這樣做」）：新增 `_dchkData()`／`_dchkHTML(mob)`＝純唯讀現算的六條檢查，掛在**進度報告最上面＋預警看板最上面**（手機版同步）；全部 0 筆時整塊不出現。點 #號跳到那一筆。🔴 六條規則是「量過真資料才留下的」：原本第七條「完成日早於缺失產生日」在真資料上有 **2,652 筆**——因為產生日＝該戶該輪次的驗收日，而很多缺失在驗收前的自檢階段就修掉了 ⇒ **那是正常現象不是錯，故不做**（做了等於每天噴 2,652 筆假警報，使用者會直接關掉）。這就是「用某欄位當判斷基準前先查真資料」那條鐵律的實例。🔴 `_dchkFixIn()`＝「完成日早於進場日」的一鍵更正（真資料 503 筆·23 組配對·每組幾乎同一廠商同一天銷案 ⇒ 批次填錯欄，不是逐筆手誤）：**只把 actualIn 改成等於 actualDone，完成日一個字都不動** ⇒ 完成率／回推統計完全不受影響（佐證：全站正常的 8,096 筆有 6,475 筆＝80% 本來就是進場日＝完成日同一天）。按下去先 confirm、再下載改動前備份 JSON、才改、寫 changelog、save()。唯讀模式連按鈕都不給。🩸 為什麼做成畫面按鈕：原本要使用者自己開 F12 貼 console 腳本，他回「Console這是?」「拜託你寫清楚一點」——**能做成按鈕就不要叫使用者開 console**；我要代跑時也被安全機制擋下（正式站批次寫入不該由 AI 觸發），做成按鈕兩邊都解決。 ｜ V0819-04 🔧 三項體質改善（使用者 2026-08-19「都作業」）：①**這一行瘦身**——原本 140,507 bytes 的完整註解史全部搬到 `refs/CODE_VERSION註解史.md`（原封不動、一段都沒刪），程式裡只留最近 3 版；往後改版照舊「新註解＋｜＋原本整串」，但只保留 3 版，被擠掉那版貼回註解史最上面。②新增 `BUILD_STAMP`＝建置時間（Asia/Taipei），顯示在標頭版本號的 tooltip，檔尾標記也帶時間——🩸0819 兩次把「Pages 部署延遲」誤判成使用者推錯版本，有了這個一眼就知道線上是哪一份。③**唯讀模式不再靜默失敗**：`save()`／`manualSave()` 被 `_VIEW_ONLY` 擋掉時跳提示（`_voWarn()`·4 秒節流，manualSave 強制跳），標頭加常駐「🔒 唯讀」膠囊——原本 `save()` 開頭直接 return、一個字都沒有，用唯讀碼進來的人改完按儲存會以為存好了。 ｜ V0819-03 「複驗批進度」→「複驗戶缺改進度」（使用者 2026-08-19 紅字＋示意圖 v3 定案·表格形式對齊「複驗交屋追蹤表」那張矩陣表）：①段名／收合列／截圖檔名／複製報告文字的段名全改；摘要「N 批」→「N 個複驗日」、日期改民國年＋星期。②表格換成暖灰系（段標題 #E7EAF0、表頭 #F3F1EC、框線 var(--pborder)、靠左、主標＋副標兩行、每一格都有實線框——使用者原話「表格我要有畫線」）。③表頭「批」→「預定複驗日期」，列不再寫「複驗」兩字，改 115/08/19（三）；最近那一個複驗日整列標紅（同複驗交屋追蹤表）。④時段當副標小字寫在日期底下，一律「時段 ×N戶」——真資料 11 個複驗日有 3 天完全沒排、08/26 更是三種混在一起 ⇒ 不可能只寫一個；沒排的寫「尚未安排 ×N戶」。⑤「戶」拆成 A棟／B棟／店鋪／合計（＋對不到棟別時多一欄「其他」，寧可現形也不藏）；店鋪全部都 0 才整欄收起來（使用者定案）。🔴 棟別直接數 _rptData 已建好的那份 ks（跟戶數同一份）⇒ A+B+店+其他 恆等於合計，不另立一把尺；煙測有一條專門守住。⑥拿掉「新增」欄。⑦手機版寫成「A棟 11 ＋B棟 11 ＋店鋪 3 ＝ 25」，那天沒店鋪就不串。⑧分區小計表頭區間加星期幾：分區（115/08/15 六 ~ 115/08/19 三）＝新增 _rptDow／_rptRocD／_rptRocDay。🩸0819 preview 真資料抓到：日期欄放不下時「尚未安排 ×16戶」會被斷成「尚未／安排」兩行 ⇒ 時段每一段各自 white-space:nowrap，換行只發生在段與段之間。🩸示意圖踩坑：第一版 SVG 先畫直線再蓋白色列方塊，直線被蓋掉 ⇒ 使用者「表格我要有畫線」。改用真 HTML 表格截圖當示意圖，格線就是真的。 ｜ V0819-02 進度報告三張表欄名統一＋表頭寫出區間（使用者 2026-08-19 紅字定案）：「還欠」→「未完成(含新增)」、「修掉」→「已完成」、「新增」不變（分區小計／複驗批進度／各廠商三張一起改·手機版縮寫同步成「未完成 N｜已完成 N」）；分區小計表頭第一欄改「分區（115/08/16~115/08/19）」＝民國年區間（_rptRoc／_rptRocRange，跟著比較起點走）·截圖貼出去就知道是哪一段；colgroup 欄寬跟著放寬。🔧 同日資料訂正：#11232 B8-10F 開關箱門片凹痕 的分區是孤兒 id z1786953001847_dx5r（S.zones 裡沒有這一區·createdAt 只差 3ms ⇒ 建缺失當下順手新建分區但沒存進去），改成室內B棟 z1780477117240（同戶其他 733 筆都是這區）⇒「未分類（缺分區）」那一列整列消失，恆等式仍成立。 ｜ V0819-01 比較起點三選一（近7天／上週一／自訂區間·使用者 2026-08-18 定案「B 起訖都給＋驗收修繕一起變」）：_wvwBase() 回 {d,end,mode}＋新增 custom 模式（g95_wvwFrom/To 存本機）；_ulqWoW 加第4參數 end（不給＝今天⇒零迴歸）；prpt 的 _rptData 傳 endD、工具列改 _rptBaseBar 三顆鈕＋起訖日期（手機同步）；wvw 的 _wvwData 加 histMode——自訂且迄日<今天時「現在」那半改用與「上週」完全相同的回推算法（pendAt/totAt/主任確認/逾期）；「較上週」文字走 _wvwCmpWord()；期間文字統一走 _wvwPrevWord()／_wvwSpanWord()（首屏大數字、全工地小計、複製報告文字三處共用，自訂時寫「本區間」「起日」、複製文字寫實際日期「07/25→08/14 期間」）；報告文字抽成 _rptCopyText() 單一出處（原本埋在 _rptCopy 裡，煙測讀不到）。；🔴 ulookup 批次「跟上週比」也改跟這組設定走（使用者 2026-08-19：「要一起跟」）＝_ulqData 不再自己寫死 _riAddDays(today,-7)，改讀 _wvwBase() 並把 end 傳進 _ulqWoW；膠囊在自訂模式時把區間寫出來（那裡沒有切換鈕，切換在進度報告／驗收修繕兩處）。🔴 廠商修繕進度（_vpData）也一起跟（使用者 2026-08-19：「要一起」）＝t/p7 改讀 _wvwBase()，文案走 _vpPrevW()／_vpSpanW() 薄包裝（仍以 _wvwPrevWord/_wvwSpanWord 為單一出處）。⚠ 催工清單的狀態燈**故意不跟**：V0804-04 線上實測定案「狀態燈固定看近 7 天·全工地」，週界太短會冤枉廠商（27 家有 4 家被誤判停擺，其中一家近 7 天其實做了 186 筆）⇒ 這是兩件事、本來就該兩把尺，煙測有一條專門守住它。廠商那塊沒有切換鈕 ⇒ 標題/小標寫實際日期（_vpSpanF）、欄名用短版「區間內」（_vpSpanW）——第一版兩欄都用長版，表頭變成「跟起日｜本區間」連著看像亂碼；口徑列兩端都改寫實際日期。✅ 0819 第二次 preview 真資料複驗：自訂＋迄日今天＋同起日 ≡ 近7天（vp 與 ulq 每一欄相同）、狀態燈字串比對完全沒變、回推 07/25→08/14 vp 整體 70.3%（今天 82.6%）·ulq 未完成 401（今天 185）方向合理；#624 訂正後 ulq 未完成 186→185。✅ 0819 preview 真資料對帳：自訂＋迄日今天＋同起日 ≡ 近7天（每一欄相同＝零迴歸）；回推 07/25→08/14 未完成 3358＞今天 2175、完成率 68%＜今天 80%（方向合理）；pendNow 2175 比 S.rows 2174 多 1＝#624 A2-14F「主浴壁磚汙損」完成日被打成 2026-09-05（未來日）⇒ 回推口徑下今天算未完成，是資料錯不是程式錯。🩸煙測種子踩坑：缺失的「產生日」不是 r.actualIn，_ulqWoW 走 _wpAddDate ⇒ 讀 handoverUnits[戶].inspections 的驗收日；第一版把 5 筆缺失全塞同一戶＋同一個初驗日，5 筆的產生日全變同一天，測出來的 added/fixed 當然對不上——是測試錯不是程式錯，改成一戶一筆各給各的初驗日。。🩸本輪又用 python text mode 把整檔 CRLF 換成 LF（少 17.5KB），靠「檔案變小就是警訊」第二次攔到  ｜（更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
+const CODE_VERSION = 358;  // V0819-07 收尾兩件（使用者 2026-08-20「將這個推完」）：**①複驗時段缺口預警**——新增 `_slotGapData()`／`_sgHTML(mob)`／`_sgCount(date)`，掛在**預警看板**（緊接在資料健檢之後）＋**交屋行事曆日期標頭的「N 未排時段」徽章**（點一下跳預警看板）。🔴 判斷基準跟 `_reBookedRaw`／renderHCal 的 `_reIdx` 完全同一把尺：有複驗日但時段不在 HCAL_SLOTS 內＝還沒跟屋主敲定 ⇒ **行事曆看不到、接待人力也算不到**（0820 真資料 124 戶裡 91 戶是這種＝73%）。效能沿用 `_riRecheckOf`/`_riSlotOf`＋指紋快取（V0813-12 教訓：433 戶各掃一次缺失表＝817ms）。**②唯讀模式欄位鎖定**——原本 CSS 只有 `opacity:.85`＋透明邊框，跟一般欄位幾乎看不出差別，使用者會以為改得動；改成灰底＋虛線框＋`cursor:not-allowed`，一眼就知道不能改。🔴🔴 更重要的是**發現既有的 `.view-allow` 白名單從來沒有任何元素用它** ⇒ 唯讀模式把**搜尋框、篩選、比較起點日期**也一起鎖死（純檢視功能不該擋）。本版把四個搜尋框＋四個比較起點 date input 加上 `view-allow`，並讓 `applyReadonly()` 的 readonly/disabled 也跳過白名單。🩸容器重啟教訓：工作副本退回 V0819-04，**最新版只在使用者磁碟上**（從 repo_G95/index.html stage 回來重建）；同時發現 V0819-03／V0819-06 改的煙測**沒同步寫回裝置**（只寫了 html）⇒ 這次一併補上。 ｜ V0819-06 各廠商那張表頭也寫出區間（使用者 2026-08-20 紅字「這裡也要寫」）：桌機「廠商」→「廠商（115/08/15 六 ~ 115/08/20 四）」、手機卡片標題同步；🔴 複驗戶缺改進度那張**刻意不加**——它第一欄是「預定複驗日期」，再塞統計區間會變成兩種日期混在一起（煙測有一條守住）。 ｜ V0819-05 資料健檢＋一鍵更正（使用者 2026-08-19 定案「兩邊都放」「拜託你快這樣做」）：新增 `_dchkData()`／`_dchkHTML(mob)`＝純唯讀現算的六條檢查，掛在**進度報告最上面＋預警看板最上面**（手機版同步）；全部 0 筆時整塊不出現。點 #號跳到那一筆。🔴 六條規則是「量過真資料才留下的」：原本第七條「完成日早於缺失產生日」在真資料上有 **2,652 筆**——因為產生日＝該戶該輪次的驗收日，而很多缺失在驗收前的自檢階段就修掉了 ⇒ **那是正常現象不是錯，故不做**（做了等於每天噴 2,652 筆假警報，使用者會直接關掉）。這就是「用某欄位當判斷基準前先查真資料」那條鐵律的實例。🔴 `_dchkFixIn()`＝「完成日早於進場日」的一鍵更正（真資料 503 筆·23 組配對·每組幾乎同一廠商同一天銷案 ⇒ 批次填錯欄，不是逐筆手誤）：**只把 actualIn 改成等於 actualDone，完成日一個字都不動** ⇒ 完成率／回推統計完全不受影響（佐證：全站正常的 8,096 筆有 6,475 筆＝80% 本來就是進場日＝完成日同一天）。按下去先 confirm、再下載改動前備份 JSON、才改、寫 changelog、save()。唯讀模式連按鈕都不給。🩸 為什麼做成畫面按鈕：原本要使用者自己開 F12 貼 console 腳本，他回「Console這是?」「拜託你寫清楚一點」——**能做成按鈕就不要叫使用者開 console**；我要代跑時也被安全機制擋下（正式站批次寫入不該由 AI 觸發），做成按鈕兩邊都解決。 ｜ V0819-04 🔧 三項體質改善（使用者 2026-08-19「都作業」）：①**這一行瘦身**——原本 140,507 bytes 的完整註解史全部搬到 `refs/CODE_VERSION註解史.md`（原封不動、一段都沒刪），程式裡只留最近 3 版；往後改版照舊「新註解＋｜＋原本整串」，但只保留 3 版，被擠掉那版貼回註解史最上面。②新增 `BUILD_STAMP`＝建置時間（Asia/Taipei），顯示在標頭版本號的 tooltip，檔尾標記也帶時間——🩸0819 兩次把「Pages 部署延遲」誤判成使用者推錯版本，有了這個一眼就知道線上是哪一份。③**唯讀模式不再靜默失敗**：`save()`／`manualSave()` 被 `_VIEW_ONLY` 擋掉時跳提示（`_voWarn()`·4 秒節流，manualSave 強制跳），標頭加常駐「🔒 唯讀」膠囊——原本 `save()` 開頭直接 return、一個字都沒有，用唯讀碼進來的人改完按儲存會以為存好了。 ｜ V0819-03 「複驗批進度」→「複驗戶缺改進度」（使用者 2026-08-19 紅字＋示意圖 v3 定案·表格形式對齊「複驗交屋追蹤表」那張矩陣表）：①段名／收合列／截圖檔名／複製報告文字的段名全改；摘要「N 批」→「N 個複驗日」、日期改民國年＋星期。②表格換成暖灰系（段標題 #E7EAF0、表頭 #F3F1EC、框線 var(--pborder)、靠左、主標＋副標兩行、每一格都有實線框——使用者原話「表格我要有畫線」）。③表頭「批」→「預定複驗日期」，列不再寫「複驗」兩字，改 115/08/19（三）；最近那一個複驗日整列標紅（同複驗交屋追蹤表）。④時段當副標小字寫在日期底下，一律「時段 ×N戶」——真資料 11 個複驗日有 3 天完全沒排、08/26 更是三種混在一起 ⇒ 不可能只寫一個；沒排的寫「尚未安排 ×N戶」。⑤「戶」拆成 A棟／B棟／店鋪／合計（＋對不到棟別時多一欄「其他」，寧可現形也不藏）；店鋪全部都 0 才整欄收起來（使用者定案）。🔴 棟別直接數 _rptData 已建好的那份 ks（跟戶數同一份）⇒ A+B+店+其他 恆等於合計，不另立一把尺；煙測有一條專門守住。⑥拿掉「新增」欄。⑦手機版寫成「A棟 11 ＋B棟 11 ＋店鋪 3 ＝ 25」，那天沒店鋪就不串。⑧分區小計表頭區間加星期幾：分區（115/08/15 六 ~ 115/08/19 三）＝新增 _rptDow／_rptRocD／_rptRocDay。🩸0819 preview 真資料抓到：日期欄放不下時「尚未安排 ×16戶」會被斷成「尚未／安排」兩行 ⇒ 時段每一段各自 white-space:nowrap，換行只發生在段與段之間。🩸示意圖踩坑：第一版 SVG 先畫直線再蓋白色列方塊，直線被蓋掉 ⇒ 使用者「表格我要有畫線」。改用真 HTML 表格截圖當示意圖，格線就是真的。 ｜ V0819-02 進度報告三張表欄名統一＋表頭寫出區間（使用者 2026-08-19 紅字定案）：「還欠」→「未完成(含新增)」、「修掉」→「已完成」、「新增」不變（分區小計／複驗批進度／各廠商三張一起改·手機版縮寫同步成「未完成 N｜已完成 N」）；分區小計表頭第一欄改「分區（115/08/16~115/08/19）」＝民國年區間（_rptRoc／_rptRocRange，跟著比較起點走）·截圖貼出去就知道是哪一段；colgroup 欄寬跟著放寬。🔧 同日資料訂正：#11232 B8-10F 開關箱門片凹痕 的分區是孤兒 id z1786953001847_dx5r（S.zones 裡沒有這一區·createdAt 只差 3ms ⇒ 建缺失當下順手新建分區但沒存進去），改成室內B棟 z1780477117240（同戶其他 733 筆都是這區）⇒「未分類（缺分區）」那一列整列消失，恆等式仍成立。 ｜ V0819-01 比較起點三選一（近7天／上週一／自訂區間·使用者 2026-08-18 定案「B 起訖都給＋驗收修繕一起變」）：_wvwBase() 回 {d,end,mode}＋新增 custom 模式（g95_wvwFrom/To 存本機）；_ulqWoW 加第4參數 end（不給＝今天⇒零迴歸）；prpt 的 _rptData 傳 endD、工具列改 _rptBaseBar 三顆鈕＋起訖日期（手機同步）；wvw 的 _wvwData 加 histMode——自訂且迄日<今天時「現在」那半改用與「上週」完全相同的回推算法（pendAt/totAt/主任確認/逾期）；「較上週」文字走 _wvwCmpWord()；期間文字統一走 _wvwPrevWord()／_wvwSpanWord()（首屏大數字、全工地小計、複製報告文字三處共用，自訂時寫「本區間」「起日」、複製文字寫實際日期「07/25→08/14 期間」）；報告文字抽成 _rptCopyText() 單一出處（原本埋在 _rptCopy 裡，煙測讀不到）。；🔴 ulookup 批次「跟上週比」也改跟這組設定走（使用者 2026-08-19：「要一起跟」）＝_ulqData 不再自己寫死 _riAddDays(today,-7)，改讀 _wvwBase() 並把 end 傳進 _ulqWoW；膠囊在自訂模式時把區間寫出來（那裡沒有切換鈕，切換在進度報告／驗收修繕兩處）。🔴 廠商修繕進度（_vpData）也一起跟（使用者 2026-08-19：「要一起」）＝t/p7 改讀 _wvwBase()，文案走 _vpPrevW()／_vpSpanW() 薄包裝（仍以 _wvwPrevWord/_wvwSpanWord 為單一出處）。⚠ 催工清單的狀態燈**故意不跟**：V0804-04 線上實測定案「狀態燈固定看近 7 天·全工地」，週界太短會冤枉廠商（27 家有 4 家被誤判停擺，其中一家近 7 天其實做了 186 筆）⇒ 這是兩件事、本來就該兩把尺，煙測有一條專門守住它。廠商那塊沒有切換鈕 ⇒ 標題/小標寫實際日期（_vpSpanF）、欄名用短版「區間內」（_vpSpanW）——第一版兩欄都用長版，表頭變成「跟起日｜本區間」連著看像亂碼；口徑列兩端都改寫實際日期。✅ 0819 第二次 preview 真資料複驗：自訂＋迄日今天＋同起日 ≡ 近7天（vp 與 ulq 每一欄相同）、狀態燈字串比對完全沒變、回推 07/25→08/14 vp 整體 70.3%（今天 82.6%）·ulq 未完成 401（今天 185）方向合理；#624 訂正後 ulq 未完成 186→185。✅ 0819 preview 真資料對帳：自訂＋迄日今天＋同起日 ≡ 近7天（每一欄相同＝零迴歸）；回推 07/25→08/14 未完成 3358＞今天 2175、完成率 68%＜今天 80%（方向合理）；pendNow 2175 比 S.rows 2174 多 1＝#624 A2-14F「主浴壁磚汙損」完成日被打成 2026-09-05（未來日）⇒ 回推口徑下今天算未完成，是資料錯不是程式錯。🩸煙測種子踩坑：缺失的「產生日」不是 r.actualIn，_ulqWoW 走 _wpAddDate ⇒ 讀 handoverUnits[戶].inspections 的驗收日；第一版把 5 筆缺失全塞同一戶＋同一個初驗日，5 筆的產生日全變同一天，測出來的 added/fixed 當然對不上——是測試錯不是程式錯，改成一戶一筆各給各的初驗日。。🩸本輪又用 python text mode 把整檔 CRLF 換成 LF（少 17.5KB），靠「檔案變小就是警訊」第二次攔到  ｜（更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1330,7 +1330,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0819-06</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0819-07</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -4142,7 +4142,7 @@ function showInlineAdd(){
       </div>
       <div id="ia-multi-unit-panel" style="display:none;margin-top:6px;padding:8px;background:#fff;border:1px solid var(--pborder);border-radius:var(--rs)">
         <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="ia-multi-search" placeholder="搜尋戶別..." oninput="renderMultiUnitList()" style="font-size:11px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
+          <input type="text" class="view-allow" id="ia-multi-search" placeholder="搜尋戶別..." oninput="renderMultiUnitList()" style="font-size:11px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
           <button class="btn btn-sm" onclick="multiUnitSelectAll(true)">全選</button>
           <button class="btn btn-sm" onclick="multiUnitSelectAll(false)">取消全選</button>
         </div>
@@ -6064,7 +6064,7 @@ function _mmRender(){
  var pageData=data.slice(_mm.page*PAGE_SIZE,(_mm.page+1)*PAGE_SIZE);
  var h=_navBackBarHTML()+_mainScopeChipHTML()   /* V0812-01 只看這戶：膠囊置頂＋清單下方唯讀已完成段 */
   +'<div style="display:flex;gap:6px;align-items:center;padding:2px 0 8px">'
-  +'<input type="search" value="'+esc(_mm.q)+'" placeholder="搜尋缺失/戶別/#ID…" onchange="_mmSet(\'q\',this.value)" style="flex:1;font-size:16px;padding:8px;border:1px solid var(--pborder)">'
+  +'<input class="view-allow" type="search" value="'+esc(_mm.q)+'" placeholder="搜尋缺失/戶別/#ID…" onchange="_mmSet(\'q\',this.value)" style="flex:1;font-size:16px;padding:8px;border:1px solid var(--pborder)">'
   +'<button class="btn btn-sm" onclick="_mmFilterSheet()" style="font-size:14px">篩選'+(fltN?'('+fltN+')':'')+'</button>'
   +'<button class="btn btn-sm" onclick="window._mmFull=true;renderMain()" title="桌機畫面＝批次/匯入/匯出/重點提示/重新編號" style="font-size:14px">完整版<svg class="g95ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></button></div>'
   +'<div style="font-size:12px;color:var(--text3);padding-bottom:6px">共 '+total+' 筆 · <span onclick="_mmStatTog(\'overdue\')" style="color:#B3261E;font-weight:700;cursor:pointer;border-bottom:1px dashed #B3261E'+(_mm.status==='overdue'?';background:#FCF0F0':'')+'">逾期 '+over+'</span> · <span onclick="_mmStatTog(\'done\')" style="color:#0A6640;font-weight:700;cursor:pointer;border-bottom:1px dashed #0A6640'+(_mm.status==='done'?';background:#EFF8F1':'')+'">已完成 '+done+'</span> · 第 '+(_mm.page+1)+'/'+pages+' 頁</div>'
@@ -6223,7 +6223,7 @@ function renderMain(){
         const _newTag=_newN?`<span style="font-size:10px;padding:1px 5px;border-radius:0;background:${on?'rgba(255,255,255,.85)':'#FFF3F3'};color:#791F1F;border:1px solid ${on?'#fff':'#E9A7A6'};font-weight:600;white-space:nowrap;display:inline-block">今天新增 ${_newN}</span>`:'';
         return `<button class="btn no-print" onclick="toggleMissingVendorFilter()" title="${on?'篩選中，點此關閉':'只看未填廠商的缺失'}" style="background:${on?'#E24B4A':'#FCEBEB'};color:${on?'#fff':'#791F1F'};border-color:#E24B4A;border-radius:0;font-size:12px;padding:0 10px;height:32px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px"><svg class="g95ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg> <span style="white-space:nowrap">未填廠商${on?'（篩選中·點此關閉）':''}</span> <span style="font-size:10px;padding:1px 5px;border-radius:0;background:${on?'#fff':'#E24B4A'};color:${on?'#E24B4A':'#fff'};font-weight:600">${missVendorCnt}</span>${_newTag}</button>`;})()}
       <input id="fRowId" type="text" placeholder="#ID" style="width:56px;font-size:12px;padding:0 6px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);text-align:center;vertical-align:middle" title="輸入#編號跳轉" onkeydown="if(event.key==='Enter'&&this.value.trim()){gotoMainRow(parseInt(this.value));}">
-      <span style="position:relative;display:inline-flex;align-items:center"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa2bd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="fKeyword" type="text" placeholder="搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:0 7px 0 28px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);width:150px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()"></span>
+      <span style="position:relative;display:inline-flex;align-items:center"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa2bd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="fKeyword" class="view-allow" type="text" placeholder="搜尋缺失內容..." value="${esc(window._fKeyword||'')}" style="font-size:12px;padding:0 7px 0 28px;height:32px;box-sizing:border-box;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);width:150px" oninput="if(!window._imeComposing){window._fKeyword=this.value;mainPage=0;filterMainKeyword()}" oncompositionstart="window._imeComposing=true" oncompositionend="window._imeComposing=false;window._fKeyword=this.value;mainPage=0;filterMainKeyword()"></span>
       <button class="btn btn-p no-print" onclick="showInlineAdd()" style="height:32px;box-sizing:border-box;padding:0 12px;white-space:nowrap">＋ 新增</button>
       <button class="btn no-print" onclick="_irRegModal()" title="登記該戶該驗次的缺失數量（照驗收單填、0＝零缺失）。新增缺失時系統會自動把登記筆數跟上，這裡是要照紙本核對時用" style="height:32px;box-sizing:border-box;padding:0 12px;white-space:nowrap;background:#185FA5;border-color:#185FA5;color:#fff;font-weight:800">✎ 登記驗收筆數</button>
       <span class="hcdd"><button class="hcdd-t" onclick="_hcddTog(this)"><svg class="g95ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5 5-5M21 21H3"/></svg>匯出 <span class="hcdd-cv">▾</span></button><div class="hcdd-m hcdd-r"><button class="btn no-print" onclick="exportCSV()">↓ CSV</button><button class="btn btn-pdf no-print" id="mainPdf"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="15" width="10" height="6"/></svg>PDF</button></div></span><div class="import-drop no-print" id="iDrop" title="支援欄位：管理人 區域 戶別 樓層 廠商 缺失內容 備註 預計進場 限辦日期 實際進場 實際完成（廠商/管理人若不存在將自動新增）"><svg class="g95ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>匯入 Excel（可拖曳／點選）</div>
@@ -6737,7 +6737,7 @@ function renderWarn(){
       </div>${vGroup(items)}</div>`;
   }
   document.getElementById('pane-warn').innerHTML=
-    _dchkHTML(false)+
+    _dchkHTML(false)+_sgHTML(false)+
     sec('🔴 已逾期','#FFE8E8','#6B0000',ov,'overdue')+
     sec('🟠 3天內到期','#FFF4E0','#7A4200',w3,'w3')+
     sec('🔵 4–7天到期','#EBF4FF','#0A3D6E',w7,'w7');
@@ -10669,9 +10669,9 @@ function _rptBaseBar(D,mob){
     +sb('d7','近 7 天')+sb('wk','上週一')+sb('custom','自訂');
   if(m==='custom'){
     h+='<span style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:12.5px">'
-      +'<input type="date" value="'+esc(r.from)+'" onchange="_wvwSetRange(\'from\',this.value)" style="'+dst+'">'
+      +'<input class="view-allow" type="date" value="'+esc(r.from)+'" onchange="_wvwSetRange(\'from\',this.value)" style="'+dst+'">'
       +'<span style="color:#888">～</span>'
-      +'<input type="date" value="'+esc(r.to)+'" onchange="_wvwSetRange(\'to\',this.value)" style="'+dst+'"></span>';
+      +'<input class="view-allow" type="date" value="'+esc(r.to)+'" onchange="_wvwSetRange(\'to\',this.value)" style="'+dst+'"></span>';
   }
   h+='<span style="flex:1"></span>'
     +'<span style="font-size:12px;color:#777">'+esc(_wvwBaseText())+'　｜　同時套用到「驗收/修繕進度」的比較　｜　設定只存在這台</span>';
@@ -10690,6 +10690,94 @@ var _DCHK=[
   {k:'noZone',     t:'完全沒有填分區',     lv:'warn', why:'同上，分區小計會少算'},
   {k:'compNoDate', t:'已銷案但沒填完成日', lv:'bad',  why:'完成率會算錯（算得到分子、對不到日期）'}
 ];
+// ══════════ V0819-07 複驗時段缺口（使用者 2026-08-20：預警看板＋行事曆記號都要）══════════
+// 🔴 判斷基準跟 _reBookedRaw／renderHCal 的 _reIdx 完全同一把尺：有複驗日、但時段不在 HCAL_SLOTS 內＝還沒跟屋主敲定。
+//    這種戶「行事曆看不到、接待人力也算不到」——0820 真資料 124 戶裡有 91 戶（73%）是這種。
+// 🔴 效能：沿用 _riRecheckOf/_riSlotOf（內含 _riUsKey 快取），整份只掃一次 handoverUnits，並用指紋快取避免重畫時重算
+//    （V0813-12 教訓：433 戶每戶各掃一次缺失表＝817ms）。
+var _sgC=null,_sgFp='';
+function _sgClear(){_sgC=null;_sgFp='';}
+function _sgFingerprint(){
+  try{
+    var hu=(typeof S!=='undefined'&&S.handoverUnits)||{},d=0;
+    for(var k in hu){ if(hu[k]&&hu[k].delivered)d++; }
+    return JSON.stringify(S.reCheckUF||{})+'|'+JSON.stringify(S.reCheckSlot||{})+'|'+d+'|'+Object.keys(hu).length;
+  }catch(e){ return ''; }
+}
+function _slotGapData(){
+  var fp=_sgFingerprint();
+  if(_sgC&&fp&&fp===_sgFp)return _sgC;
+  var byD={}, tot=0, all=0;
+  try{
+    var hus=(typeof S!=='undefined'&&S.handoverUnits)||{};
+    Object.keys(hus).forEach(function(k){
+      var h=hus[k]||{}; if(h.delivered)return;
+      var d=''; try{ d=(typeof _riRecheckOf==='function')?(_riRecheckOf(k)||''):''; }catch(e){}
+      if(!d)return;
+      all++;
+      var sl=''; try{ sl=(typeof _riSlotOf==='function')?(_riSlotOf(k)||''):''; }catch(e){}
+      if(HCAL_SLOTS.indexOf(sl)>=0)return;                 // 已敲定＝不是缺口
+      if(!byD[d])byD[d]={d:d,keys:[],n:0,tot:0};
+      byD[d].keys.push(k); byD[d].n++; tot++;
+    });
+    Object.keys(hus).forEach(function(k){                  // 每天的分母＝那天全部複驗戶（含已敲定）
+      var h=hus[k]||{}; if(h.delivered)return;
+      var d=''; try{ d=(typeof _riRecheckOf==='function')?(_riRecheckOf(k)||''):''; }catch(e){}
+      if(d&&byD[d])byD[d].tot++;
+    });
+    Object.keys(byD).forEach(function(d){
+      byD[d].keys.sort(function(a,b){ return String(unitDisplayName(a)).localeCompare(String(unitDisplayName(b)),'zh-Hant',{numeric:true}); });
+    });
+  }catch(e){}
+  var days=Object.keys(byD).sort().map(function(d){return byD[d];});
+  var o={days:days, gap:tot, all:all, byDate:byD};
+  _sgC=o; _sgFp=fp; return o;
+}
+function _sgCount(dateStr){ try{ var b=_slotGapData().byDate[dateStr]; return b?b.n:0; }catch(e){ return 0; } }
+function _sgHTML(mob){
+  var D=_slotGapData();
+  if(!D.gap) return '';
+  var BD='border:1px solid var(--pborder)';
+  var TH=BD+';background:#F3F1EC;padding:6px 8px;font-size:12.5px;font-weight:600;text-align:left';
+  var TD=BD+';padding:5px 8px;font-size:12.5px;background:#fff;vertical-align:top';
+  var pct=D.all?Math.round(D.gap/D.all*100):0;
+  var h='<div style="background:#FDF9EE;'+BD+';border-bottom:0;padding:6px 10px;font-weight:700;font-size:14px;color:#8A5A10">'
+    +'⚠ 複驗時段還沒排　'+D.gap+' 戶'
+    +'<span style="font-weight:400;font-size:12px;color:#5F5E5A;margin-left:8px">共 '+D.all+' 戶排了複驗日 · 佔 '+pct+'%　·　沒排時段＝行事曆看不到、接待人力也算不到</span></div>';
+  var line=function(z){
+    var names=z.keys.slice(0,mob?4:8).map(function(k){
+      return '<span onclick="_sgGo(\''+String(k).replace(/'/g,"\\'")+'\')" style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+esc(unitDisplayName(k))+'</span>';
+    }).join('　·　');
+    var more=z.keys.length>(mob?4:8)?('　<span style="color:#9A9896">…另有 '+(z.keys.length-(mob?4:8))+' 戶</span>'):'';
+    var whole=(z.n>=z.tot);
+    return {names:names+more, whole:whole};
+  };
+  if(mob){
+    h+='<div style="'+BD+';background:#fff;margin-bottom:10px">';
+    D.days.forEach(function(z){ var o=line(z);
+      h+='<div style="border-top:1px solid var(--pborder);padding:8px 10px;font-size:12.5px;line-height:1.75">'
+        +'<div style="font-weight:700'+(o.whole?';color:#B3261E':'')+'">'+_rptRocDay(z.d)+'　'+z.n+'/'+z.tot+' 戶沒排</div>'
+        +'<div>'+o.names+'</div></div>';
+    });
+    return h+'</div>';
+  }
+  h+='<table style="border-collapse:collapse;table-layout:fixed;width:100%;margin-bottom:10px">'
+    +'<colgroup><col style="width:190px"><col style="width:110px"><col><col style="width:150px"></colgroup>'
+    +'<tr><th style="'+TH+'">預定複驗日期</th><th style="'+TH+';text-align:right">沒排／全部</th><th style="'+TH+'">是哪幾戶（點戶別跳過去）</th><th style="'+TH+'">狀況</th></tr>';
+  D.days.forEach(function(z){ var o=line(z);
+    h+='<tr><td style="'+TD+';font-weight:700'+(o.whole?';color:#B3261E':'')+'">'+_rptRocDay(z.d)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-weight:700'+(o.whole?';color:#B3261E':';color:#8A5A10')+'">'+z.n+' / '+z.tot+'</td>'
+      +'<td style="'+TD+'">'+o.names+'</td>'
+      +'<td style="'+TD+'">'+(o.whole?'<span style="color:#B3261E;font-weight:700">整天都沒排</span>':'<span style="color:#8A5A10">排了一部分</span>')+'</td></tr>';
+  });
+  return h+'</table>';
+}
+function _sgGo(key){
+  try{ window._hcalExpanded=key; }catch(e){}
+  try{ switchTab('hcal'); }catch(e){}
+  try{ var d=_riRecheckOf(key); if(d&&typeof _hcalGoToDate==='function')_hcalGoToDate(d); }catch(e){}
+}
+
 function _dchkData(){
   var t=todayISO(), o={futureDone:[],futureIn:[],doneBeforeIn:[],orphanZone:[],noZone:[],compNoDate:[]};
   try{
@@ -11491,8 +11579,8 @@ function _wvwBaseBtns(w){
   var h=b('d7','近7天',true)+b('wk','上週一',false)+b('custom','自訂',false);
   if(m==='custom'){
     var r=_wvwRange(), ds='font-size:11px;min-height:24px;padding:0 5px;border:1px solid #AEB6BF;margin-left:6px;font-family:var(--font)';
-    h+='<input type="date" value="'+esc(r.from)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();_wvwSetRange(\'from\',this.value)" style="'+ds+'">'
-      +'<input type="date" value="'+esc(r.to)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();_wvwSetRange(\'to\',this.value)" style="'+ds+'">';
+    h+='<input class="view-allow" type="date" value="'+esc(r.from)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();_wvwSetRange(\'from\',this.value)" style="'+ds+'">'
+      +'<input class="view-allow" type="date" value="'+esc(r.to)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();_wvwSetRange(\'to\',this.value)" style="'+ds+'">';
   }
   return h;
 }
@@ -16104,7 +16192,13 @@ function renderHCal(){
             if(_mNoReg) _irMissTag+=`<span style="margin-left:5px;background:#FDF3E3;color:#8A5A10;border:1px solid #E0C08A;border-radius:0;padding:0 5px;font-weight:800">${_mNoReg} 未登記</span>`;
           }
         }catch(e){}
-        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length+reU.length}戶${_comTag}${_ghTag}${_irMissTag}</div>${_cellBody}</div></td>`;
+        // V0819-07：這天有幾戶「排了複驗日但還沒排時段」＝不會出現在下面任何一格（判斷基準同 _reBookedRaw）
+        let _sgTag='';
+        try{
+          const _sgN=(typeof _sgCount==='function')?_sgCount(dateStr):0;
+          if(_sgN) _sgTag=`<span onclick="event.stopPropagation();switchTab('warn')" title="這天有 ${_sgN} 戶排了複驗日、但還沒跟屋主敲時段 ⇒ 不會出現在下面的格子裡，接待人力也算不到。點一下看預警看板" style="margin-left:5px;background:#FDF9EE;color:#8A5A10;border:1px solid #E0C766;border-radius:0;padding:0 5px;font-weight:800;cursor:pointer">${_sgN} 未排時段</span>`;
+        }catch(e){}
+        return`<td style="border:1px solid var(--border);${_isTodayCol?'border-left:3px dashed var(--purple);':''}padding:4px;vertical-align:top;background:${_isPast?'#E9E6E1':'#FAFAFA'}"><div><div style="font-size:10px;font-weight:600;color:var(--text2);margin-bottom:3px">${units.length+reU.length}戶${_comTag}${_ghTag}${_irMissTag}${_sgTag}</div>${_cellBody}</div></td>`;
       }).join('');
       // 檢查此時段是否有展開的戶別
       let expandRow='';
@@ -16716,7 +16810,7 @@ function renderClients(){
     ${futBanner}
     ${statsBar}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-      <input id="cl-search" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:200px">
+      <input id="cl-search" class="view-allow" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:200px">
       <button class="btn btn-sm" onclick="renderClients()">確認</button>
       <select id="cl-type" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="">全部類型</option><option value="地主戶">地主戶</option><option value="業主戶">業主戶</option><option value="自購戶">自購戶</option>
@@ -23401,29 +23495,36 @@ function _loginOnAuth(user){
     #modalBg,
     #tab-edit-btn { display:none!important; }
 
-    /* 讓 input/select/textarea 看起來是純文字 */
+    /* V0819-07：被鎖住的欄位要「看起來就不能改」——原本只有 opacity:.85＋透明邊框，跟一般欄位幾乎看不出差別，
+       使用者會以為改得動（改了才發現存不了）。白名單 .view-allow＝純檢視控制項（搜尋／篩選／比較起點日期），唯讀也照常能用。 */
     input:not([type="checkbox"]):not(.view-allow),
     select:not(.view-allow),
     textarea:not(.view-allow) {
       pointer-events:none!important;
-      opacity:0.85;
-      background:transparent!important;
-      border-color:transparent!important;
+      opacity:0.6;
+      color:#8A8783!important;
+      background:#F0EFEC!important;
+      border:1px dashed #C9C6BE!important;
+      cursor:not-allowed!important;
     }
+    input[type="checkbox"]:not(.view-allow){ pointer-events:none!important; opacity:0.45; cursor:not-allowed!important; }
+    /* 白名單維持正常外觀，免得被上面那組的 !important 波及 */
+    .view-allow{ opacity:1!important; color:inherit!important; background:#fff!important;
+      border:1px solid var(--pborder)!important; cursor:auto!important; pointer-events:auto!important; }
   `;
   document.head.appendChild(style);
 
   // 3) 等 DOM ready 後處理
   function applyReadonly(){
     // 設定所有 input/textarea 為 readonly
-    document.querySelectorAll('input,textarea').forEach(el=>{
+    document.querySelectorAll('input:not(.view-allow),textarea:not(.view-allow)').forEach(el=>{   // V0819-07：白名單（搜尋／篩選／比較起點）不設 readonly
       el.setAttribute('readonly','');
       el.removeAttribute('contenteditable');
     });
     // 停用所有 select
-    document.querySelectorAll('select').forEach(el=>el.setAttribute('disabled',''));
+    document.querySelectorAll('select:not(.view-allow)').forEach(el=>el.setAttribute('disabled',''));
     // 停用所有 checkbox
-    document.querySelectorAll('input[type="checkbox"]').forEach(el=>{
+    document.querySelectorAll('input[type="checkbox"]:not(.view-allow)').forEach(el=>{
       el.setAttribute('disabled','');
       el.style.pointerEvents='none';
     });
@@ -23703,4 +23804,4 @@ try{
 </body>
 </html>
 
-<!-- v0819-06 index · build 2026-08-20 08:14 +08 -->
+<!-- v0819-07 index · build 2026-08-20 11:25 +08 -->
