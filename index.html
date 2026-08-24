@@ -394,6 +394,13 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 #pane-hcal .ap-drow:last-child{border-bottom:none}
 #pane-hcal .ap-units{display:grid;grid-template-columns:repeat(auto-fill,86px);gap:4px 6px}
 @media (max-width:700px){#pane-hcal .ap-drow{grid-template-columns:1fr;gap:4px 0}#pane-hcal .ap-units{grid-template-columns:repeat(auto-fill,80px)}}
+
+/* ══ V0824-03 ③ 日報底色淡染：只上顯示層；用行內 inline-block（絕不用 block div）＝innerText 與純文字完全相等，複製/儲存不受影響 ══ */
+.rptSegI,.rptSegR,.rptSegD{display:inline-block;width:calc(100% + 16px);margin:0 -8px;padding:2px 8px;vertical-align:top;box-sizing:border-box}
+.rptSegI{background:#EAF4FC}
+.rptSegR{background:#FDF3D8}
+.rptSegD{background:#EAF6EC}
+@media (max-width:700px){.rptSegI,.rptSegR,.rptSegD{width:100%;margin:0}}
 </style>
 
 <!-- Firebase SDK -->
@@ -401,7 +408,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-24 11:57 +08';
+window._BUILD_STAMP = '2026-08-24 14:24 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -428,7 +435,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 365;  // V0824-02 驗屋日報「複驗-預計」修正（使用者紅圈：08/24 有複驗 5 戶、預計卻 0）：_rptTodayDetail／_rptPlanRange 原本只看 planDate（初驗日）＋_rptCalStage 分桶 ⇒ 複驗排定日存在複驗抽屜（reCheckUF·_riUsKey 鍵）從沒被讀到＝今日/明日/本週/下週複驗-預計永遠 0。改法＝初/交沿用 planDate；複驗改走 _reBooked（行事曆同一把尺：日期＋時段才算敲定、已交屋不算）；取消/未到看 cancelledRe/noShowRe；stage='複' 的戶不再從 planDate 誤入複桶。線上真資料：今日 0→5（=實際 5 戶逐戶對上）、明日 0→2、本週 0→5，初/交逐欄不變。煙測 smoke_g95_replan（總跑器第 35 支）。｜ V0824-01 LOGIN_ALLOW 名單 10→7（移除 54jasonju／cchaling／jasonchao209·使用者 2026-08-24 指示·Firestore 規則同步 10→7·dispatch D0824-01 同步）：查證＝三帳號在 defects 全史 by 0 筆＋近 200 筆變更紀錄 0 筆；54jasonju 從未登入、jasonchao209 只在 7/14 加入當天登入過、cchaling 最後登入 7/21。dispatch 雲端 company.editors 欄位不存在＝寫死名單即全部。純名單版、無 UI／邏輯改動。｜ V0821-01 資料健檢「兩個戶共用同一個複驗抽屜」加一鍵更正（使用者原話「不應該讓我自己貼，修改」）：🩸 起因＝V0820-04 只把撞鍵報出來、修法留給使用者，我便給了三行 console 指令請他自己貼——第三行是還原用的，他三行一起貼下去 ⇒ 刪掉又原封長回來（線上實況：handoverUnits@rv39 刪、rv40 又寫回）。🔴🔴 通則：需要使用者動手的修正，一律做成畫面上的按鈕，不要給 console 指令；貼上型指令沒有前後文、沒有防呆、順序錯了就反效果。①`_dchkDupShell(k)` 判「空殼戶」四條全中才算：不在 `_riAllKeys()` 正式戶別清單／無 `hosts` 且無 `clientData`／沒有任何填了日期的驗次紀錄／未交屋；`_riAllKeys()` 拿不到就回空＝不敢刪。②`_dchkDupFixList()` 再加一條：同一把鍵底下必須還留著至少一個真戶才刪，兩邊都是空殼就不動。③`_dchkDupBtn`／`_dchkDupFix` 沿用 `_dchkFixIn` 既有規格＝唯讀模式擋、confirm 列出「刪誰／留誰」、先下載改動前備份 JSON、寫 changelog、`save()`；按下去的當下每一筆再驗一次 `_dchkDupShell`（畫面到點擊之間資料可能被別台改過）。④`_DCHK` 加 `btn` 欄位＝自訂處理鈕（同 V0820-04 的 `one` 手法），桌機／手機兩處派送都改成 `d.btn?…:(d.fix==='in'?…)`，既有六項零影響。🔴 複驗日／時段掛在 `_riUsKey()` 算出來的鍵上、不在戶上 ⇒ 刪空殼戶不會弄丟複驗日，它自動歸給保留的那一戶（線上實況：`A1-8F` 的 8/26 留給真正的 8 樓戶 `A1-8`）。⚠️ 本版只動資料健檢那一區，缺失記錄一筆不碰。煙測 `smoke_g95_reseg` 加 4 項。｜ （更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
+const CODE_VERSION = 366;  // V0824-03 驗屋日報三改（示意圖 v1 ①〜⑥ 使用者「動作」定案·⑤A案）：①②日報加「初驗未完成 N 戶（已排・過期・取消未到・未排）」＋未排戶別一行（只在報告日期＝今天時顯示·單一出處 _ipData·恆等式 done＋四類＝總戶數）③日報底色淡染 _rptColorHTML（初驗淡藍/複驗淡黃/交屋淡綠·行內 inline-block 保證 innerText 與純文字逐字相等＝複製/儲存不受影響）④⑤使照目標已取得＝usoRptCardHTML 自動收成一行＋展開歷程鈕（A案原位變矮·狀態存本機 g95_usoRptOpen·桌機兩卡＋手機共用同一支）⑥預警看板新區 _ipHTML 四分類表·過期未驗標紅·點戶別 _ipGo 跳戶況總表定位（warn 在 _MOB_HIDE＝免手機分流）。｜ V0824-02 驗屋日報「複驗-預計」修正（使用者紅圈：08/24 有複驗 5 戶、預計卻 0）：_rptTodayDetail／_rptPlanRange 原本只看 planDate（初驗日）＋_rptCalStage 分桶 ⇒ 複驗排定日存在複驗抽屜（reCheckUF·_riUsKey 鍵）從沒被讀到＝今日/明日/本週/下週複驗-預計永遠 0。改法＝初/交沿用 planDate；複驗改走 _reBooked（行事曆同一把尺：日期＋時段才算敲定、已交屋不算）；取消/未到看 cancelledRe/noShowRe；stage='複' 的戶不再從 planDate 誤入複桶。線上真資料：今日 0→5（=實際 5 戶逐戶對上）、明日 0→2、本週 0→5，初/交逐欄不變。煙測 smoke_g95_replan（總跑器第 35 支）。｜ V0824-01 LOGIN_ALLOW 名單 10→7（移除 54jasonju／cchaling／jasonchao209·使用者 2026-08-24 指示·Firestore 規則同步 10→7·dispatch D0824-01 同步）：查證＝三帳號在 defects 全史 by 0 筆＋近 200 筆變更紀錄 0 筆；54jasonju 從未登入、jasonchao209 只在 7/14 加入當天登入過、cchaling 最後登入 7/21。dispatch 雲端 company.editors 欄位不存在＝寫死名單即全部。純名單版、無 UI／邏輯改動。｜ （更早的版本註解已搬到 refs/CODE_VERSION註解史.md·2026-08-19 瘦身）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1330,7 +1337,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0824-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0824-03</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -6737,7 +6744,7 @@ function renderWarn(){
       </div>${vGroup(items)}</div>`;
   }
   document.getElementById('pane-warn').innerHTML=
-    _dchkHTML(false)+_sgHTML(false)+
+    _dchkHTML(false)+_ipHTML()+_sgHTML(false)+
     sec('🔴 已逾期','#FFE8E8','#6B0000',ov,'overdue')+
     sec('🟠 3天內到期','#FFF4E0','#7A4200',w3,'w3')+
     sec('🔵 4–7天到期','#EBF4FF','#0A3D6E',w7,'w7');
@@ -22047,6 +22054,65 @@ function _rptFcHTML(refISO,total,c){var opt=_rptFcOpt();var restTxt=[opt.noSun?'
     +seg('初','初驗',c.init,_rptInitStartISO(),'#EAF1FB','#123A63')
     +seg('複','複驗',c.re,_rptReStartISO(),'#FBF3E2','#5B3A08')
     +'</div>';}
+// ══════════ V0824-03 ①②⑥：初驗未完成 四分類（單一出處＝日報行＋預警看板；恆等式 done＋四類＝總戶數，煙測 rpt3 守）══════════
+function _ipData(){
+  var t=todayISO(),hu=S.handoverUnits||{},o={sched:[],late:[],cxn:[],none:[],done:0,total:0};
+  Object.keys(hu).forEach(function(u){var h=hu[u];if(!h)return;o.total++;
+    if(_inspInitDone(u)){o.done++;return;}
+    if(h.cancelled||h.noShow)o.cxn.push({u:u,d:h.planDate||'',why:h.cancelled?'取消':'未到'});
+    else if(h.planDate&&h.planDate>=t)o.sched.push({u:u,d:h.planDate});
+    else if(h.planDate)o.late.push({u:u,d:h.planDate});
+    else o.none.push({u:u});
+  });
+  o.sched.sort(function(a,b){return a.d<b.d?-1:1;});o.late.sort(function(a,b){return a.d<b.d?-1:1;});
+  o.pend=o.sched.length+o.late.length+o.cxn.length+o.none.length;
+  return o;
+}
+function _ipGo(u){ // 點戶別→戶況總表定位（預警看板在 _MOB_HIDE＝桌機專用，不做手機分流）
+  try{switchTab('units');}catch(e){return;}
+  setTimeout(function(){try{
+    var base=String(u).replace(/^(地|業)/,'');
+    var el=Array.prototype.slice.call(document.querySelectorAll('#pane-units input')).find(function(i){return i.value===u||i.value===base;});
+    if(el){el.scrollIntoView({block:'center'});el.style.outline='2px solid #B3261E';setTimeout(function(){el.style.outline='';},2500);}
+  }catch(e){}},350);
+}
+function _ipHTML(){
+  var D=_ipData();if(!D.pend)return '';
+  function us(arr,fmt){return arr.map(function(o){return '<span style="white-space:nowrap;cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="_ipGo(\''+esc(o.u)+'\')">'+esc(unitDisplayName(o.u))+(fmt?esc(fmt(o)):'')+'</span>';}).join('、');}
+  function row(label,arr,red,fmt){if(!arr.length)return '';var rc=red?';color:#B3261E':'';
+    return '<tr><td style="padding:6px 8px;border:1px solid var(--border2)'+rc+'">'+label+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid var(--border2);text-align:right;font-weight:700'+rc+'">'+arr.length+'</td>'
+      +'<td style="padding:6px 8px;border:1px solid var(--border2)'+rc+'">'+us(arr,fmt)+'</td></tr>';}
+  return '<div style="margin:6px 8px;border:1px solid var(--border2);background:var(--card)">'
+    +'<div style="background:#EBF4FF;color:#0A3D6E;padding:6px 10px;font-size:13px;font-weight:700">初驗未完成 '+D.pend+' 戶'
+    +'<span style="font-weight:400;color:var(--text2);margin-left:8px;font-size:11.5px">已完成 '+D.done+'＋已排 '+D.sched.length+'＋過期 '+D.late.length+'＋取消未到 '+D.cxn.length+'＋未排 '+D.none.length+'＝'+D.total+' 戶（點戶別跳戶況總表）</span></div>'
+    +'<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px"><colgroup><col style="width:120px"><col style="width:56px"><col></colgroup>'
+    +'<tr>'+['分類','戶數','戶別'].map(function(h,i){return '<th style="background:#F3F1EC;text-align:'+(i===1?'right':'left')+';font-size:12px;padding:5px 8px;border:1px solid var(--border2)">'+h+'</th>';}).join('')+'</tr>'
+    +row('已排（未來日期）',D.sched,false,function(o){return '('+_rptMMDD(o.d)+')';})
+    +row('過期未驗',D.late,true,function(o){return '(排 '+_rptMMDD(o.d)+' 已過)';})
+    +row('取消／未到',D.cxn,false,function(o){return '('+o.why+')';})
+    +row('完全未排',D.none,false,null)
+    +'</table></div>';
+}
+// ══════════ V0824-03 ③：日報底色淡染——只動顯示層。行內 inline-block、邊界換行永遠留在純文字層 ⇒ innerText 與原文逐字相等（煙測 rpt3 有等式斷言）══════════
+function _rptColorHTML(txt){
+  function cls(l){
+    if(/^(今日驗屋|初驗-預計|累計完成|初驗未完成)/.test(l)||/^　└ 未排/.test(l))return 'I';
+    if(/^複驗-預計/.test(l))return 'R';
+    if(/^交屋-預計/.test(l))return 'D';
+    return '';
+  }
+  var lines=txt.split('\n'),out='',i=0;
+  while(i<lines.length){
+    var c=cls(lines[i]);var j=i;
+    while(j<lines.length&&cls(lines[j])===c)j++;
+    var chunk=lines.slice(i,j).map(esc).join('\n');
+    out+=c?('<span class="rptSeg'+c+'">'+chunk+'</span>'):chunk;
+    if(j<lines.length)out+='\n';
+    i=j;
+  }
+  return out;
+}
 function buildDailyReportText(){
   const date=_rptDate||todayISO();
   const total=_hrptTotal();
@@ -22083,6 +22149,14 @@ function buildDailyReportText(){
   if(td['初'].noshow>0)l1+='｜未到 '+td['初'].noshow+' 戶';
   L.push(l1);
   L.push('累計完成 '+c.init+' 戶'+((oc&&oc.init>0)?'（地主 '+oc.init+'）':''));
+  if(date===todayISO()){ // V0824-03 ①②：初驗未完成四分類（只在「報告日期＝今天」顯示，過去日期的日報不硬塞現在的狀態）
+    var _ip=_ipData();
+    if(_ip.pend>0){
+      L.push('初驗未完成 '+_ip.pend+' 戶（已排 '+_ip.sched.length+'・過期 '+_ip.late.length+'・取消未到 '+_ip.cxn.length+'・未排 '+_ip.none.length+'）');
+      if(_ip.none.length){var _ipn=_ip.none.slice(0,8).map(function(o){return unitDisplayName(o.u);});
+        L.push('　└ 未排 '+_ip.none.length+' 戶：'+_ipn.join('、')+(_ip.none.length>8?' …（完整清單見預警看板）':''));}
+    }
+  }
   if(td['複'].plan>0||c.reT>0||c.re>0){
     let l2='複驗-預計 '+td['複'].plan+' 戶｜實際 '+c.reT+' 戶｜累計 '+c.re+' 戶'+((oc&&(oc.reT>0||oc.re>0))?'（地主 今日'+oc.reT+'・累計'+oc.re+'）':'');
     if(td['複'].cancel>0)l2+='｜取消 '+td['複'].cancel+' 戶';
@@ -22180,7 +22254,7 @@ function _rptMobRender(el){
   var txt=buildDailyReportText();
   var _sv=(S.rptSaved&&S.rptSaved[_rptDate]!=null)?S.rptSaved[_rptDate]:null;
   var fs=_rptFontV(),lh=_rptLineHV();
-  var rptInner='<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+fs+'px;line-height:'+lh+';color:#1E1D1B;background:#fff;padding:2px;outline:none">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>';
+  var rptInner='<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+fs+'px;line-height:'+lh+';color:#1E1D1B;background:#fff;padding:2px;outline:none">'+(_sv!=null?_sv:(_rptColorHTML(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>';
   var setInner='<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span style="font-size:12px;color:var(--text2);min-width:44px">字體</span><button class="btn btn-sm" onclick="rptFont(-1)" style="font-size:13px">A−</button><span style="font-size:12px;color:var(--text2);min-width:38px;text-align:center">'+fs+'px</span><button class="btn btn-sm" onclick="rptFont(1)" style="font-size:13px">A＋</button></div>'
     +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2);min-width:44px">行距</span><button class="btn btn-sm" onclick="rptLineH(-1)" style="font-size:13px">−</button><span style="font-size:12px;color:var(--text2);min-width:38px;text-align:center">'+lh.toFixed(1)+'</span><button class="btn btn-sm" onclick="rptLineH(1)" style="font-size:13px">＋</button></div>';
   var estInner='<div style="display:flex;flex-direction:column;gap:9px;font-size:13px">'
@@ -22253,7 +22327,7 @@ function renderDailyReport(){
     +'</div>'
     +'<div style="border-left:2px solid var(--pborder);padding-left:22px"><div style="font-weight:600;font-size:16px;margin-bottom:10px;color:#26215C"><svg class="g95ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg> 使照進度 文字日報</div><div id="uso-rpt-card2-ctrls"></div></div>'
     +'<div>'
-    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_rptFontV()+'px;line-height:'+_rptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:0;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(esc(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
+    +'<div id="rpt-card" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_rptFontV()+'px;line-height:'+_rptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:0;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+(_sv!=null?_sv:(_rptColorHTML(txt)+((!S.rptFc||S.rptFc.inReport!==false)?_rptFcHTML(_rptDate,_hrptTotal(),hrptCounts(_rptDate)):'')))+'</div>'
   +'</div>'
   +'<div id="uso-rpt-card2-cardc" style="border-left:2px solid var(--pborder);padding-left:22px"></div>'
   +'</div>'
@@ -23579,8 +23653,29 @@ function usoRptControlsHTML(cid){
  return h;
 }
 function usoRptCardHTML(cid){
- return '<div id="'+cid+'" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_usoRptFontV()+'px;line-height:'+_usoRptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:0;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+usoRptEffHTML()+'</div>';
+ // V0824-03 ④⑤：使照目標「已取得」＝自動收成一行（A案·卡片原位變矮）；展開/收合狀態存本機（每台自己記·不進 S 同步）
+ var g=null;try{g=usoGoalNode();}catch(e){}
+ if(g&&g.actual&&!_usoRptOpenV()){
+  var U=_USO();var sn=(U.startNode?usoById(U.startNode):null);var snd=sn?usoDateOf(sn):'';
+  var days=(snd&&g.actual&&g.actual>=snd)?usoDaysN(snd,g.actual):null;
+  var sub=(sn&&snd)?(esc(sn.name)+' '+esc(usoMDW(snd))+' → '+esc(g.name)+' '+esc(usoMDW(g.actual))+(days!=null?('・共 '+days+' 日曆天'):'')):(esc(g.name)+' '+esc(usoMDW(g.actual)));
+  return '<div id="'+cid+'" style="white-space:normal;font-family:var(--font);background:#EAF6EC;border:1px solid var(--pborder);padding:12px 14px;display:flex;align-items:center;gap:10px">'
+   +'<svg class="g95ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1E6B34" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>'
+   +'<div style="min-width:0;line-height:1.55"><b>使照已於 '+esc(usoMDW(g.actual))+' 取得</b><br><span style="font-size:12.5px;color:var(--text2)">'+sub+'</span></div>'
+   +'</div>'
+   +'<div class="no-print" style="margin-top:6px;text-align:right"><button class="btn btn-sm" onclick="_usoRptToggle()" style="font-size:12px">展開歷程 ▾</button></div>';
+ }
+ var col=(g&&g.actual)?'<div class="no-print" style="margin-bottom:6px;text-align:right"><button class="btn btn-sm" onclick="_usoRptToggle()" style="font-size:12px">收合成一行 ▴</button></div>':'';
+ return col+'<div id="'+cid+'" contenteditable="true" spellcheck="false" style="white-space:pre-wrap;font-family:var(--font);font-size:'+_usoRptFontV()+'px;line-height:'+_usoRptLineHV()+';color:#1E1D1B;background:#fff;border:1px solid var(--pborder);border-radius:0;padding:16px 18px;outline:none;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+usoRptEffHTML()+'</div>';
 }
+function _usoRptOpenV(){try{return localStorage.getItem('g95_usoRptOpen')==='1';}catch(e){return false;}}
+function _usoRptToggle(){
+ try{localStorage.setItem('g95_usoRptOpen',_usoRptOpenV()?'0':'1');}catch(e){}
+ var ov=document.getElementById('uso-rpt-ov');if(ov&&ov.style.display!=='none')usoRptReflow('uso-rpt-card');
+ if(document.getElementById('pane-rpt')&&typeof activeTab!=='undefined'&&activeTab==='rpt')renderDailyReport();
+ else if(document.getElementById('uso-rpt-card2-cardc'))usoRptReflow('uso-rpt-card2');
+}
+
 function usoRptReflow(cid){var c=document.getElementById(cid+'-ctrls');if(c)c.innerHTML=usoRptControlsHTML(cid);var d=document.getElementById(cid+'-cardc');if(d)d.innerHTML=usoRptCardHTML(cid);}
 function usoRptOpen(){
  var ov=document.getElementById('uso-rpt-ov');
@@ -24213,4 +24308,4 @@ try{
 </body>
 </html>
 
-<!-- v0824-02 index · build 2026-08-24 11:57 +08 -->
+<!-- v0824-03 index · build 2026-08-24 14:24 +08 -->
