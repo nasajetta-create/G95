@@ -423,7 +423,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-25 17:12 +08';
+window._BUILD_STAMP = '2026-08-25 17:30 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -450,7 +450,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 377;  // V0825-07 催工進度統一收合（版面整理交辦包·MONGAGOOD 催工進度看板·示意圖 v2＋v2b 定案）：整頁收成 3 條群組標題列＋9 條收合列（38px／24px 控件／右欄固定 92-64-116／編號連續／預設全收）。①要催的廠商：三顆狀態燈改 .ufc 進右欄（class pw-state／data-lamp／_pwSetLamp 沒動）、先 5 家＋展開全部（_PW_CAP 10→5）、「複製催工訊息」釘死 116px＝與右欄第三格同寬（實測兩者都是 72.02px 文字·V0825-02 徽章寬鐵律）；②存圖與複製＝不收合的動作列（#pw-out 保留）；③④⑤修繕進度：整體%進群組標題列（#vp-bar／#vp-sum／#vp-head 保留）、分母與排序改循環鈕（_vpSet 沒動＝煙測照舊）、_vpCfg().open 預設改收合、口徑說明從常駐改收合列；⑥條件設定＝_riRushCondHTML 加 force 參數（reinsp 那個呼叫點沒動）；⑦進度尺深藍大卡→表格 _pwPaceTblHTML（整頁唯一的第三種方塊·欄位數字算法零改動·原函式保留）；⑧施壓榜加 bare 參數（標題與口徑外移）；⑨口徑說明抽單一出處 _riRushVNote。手機不套固定三欄（390px 會溢出）＝控件走 _pwCtlRow 獨立一條。🔴純版面：判準／算法／寫入路徑一個字沒動；_pwDetTog／_pwListTog 保留成相容包裝。｜ V0825-06 統一收合大改版（示意圖 v4+v5 定案·使用者「記住這個原則，其他版面之後也要整理」）：大小一致原則＝整頁只有「群組標題列 .ufhd」「收合列 .uff」兩種列（38px）＋24px 控件；收合列右側固定三欄 92/64/116（同一欄同寬＝截圖/主任確認/排入複驗排程上下對齊）；方框編號 1~10 連續。①首屏改三條收合列 _riTopFoldHTML／_uftBlock（1本週可以約·2只差主任確認·3逾期未修＝示意圖沒畫到但功能不能少，照同款補）——資料仍走 _riTopSplit/_riTopTableHTML 同一把尺，截圖/排入複驗排程/主任確認/另有N戶提示全保留；舊兩欄 _riTopDeskLeft/Right 保留備用不再呼叫。②交屋排程（4~6）搬到 2 下面、複驗排程（7~9）在後、本週vs上週改同款收合列編 10（桌機才有編號·手機頭列原樣）。③三段預設全收（g95_reSeg/g95_hoSeg 預設 {s1:0,s2:0,s3:0}）＋點開先 5 戶＋「展開全部 N 戶」（f1~f3 旗標·_reSegFull/_hoSegFull）；0 戶＝一行空狀態；不滿 5 戶不出鈕。④手機：首屏兩塊照 V0813-08 使用者定案不動；三段收合/上限與交屋在前跟桌機一致（同一支函式）。判定/寫入路徑零改動＝純版面。｜ // V0825-05 殘影與取消/未到紀錄三輪補全（待辦①·使用者「都開始推」）：查證推翻了待辦的描述——複驗殘影 V0818-01 早就進格子（線上複驗取消 0 筆所以從沒顯示過），真正缺的只有交屋輪。①_hcalGhosts 補第三組 ['ho', _hoBooked, noShowHistoryHO/cancelHistoryHO]（gtype 尾碼 'HO'·_cxnArrOf/_cxnIsHo V0824-06 就支援）⇒ 格子頭「未到/取消 N」與殘影卡自動含交屋；②_cxnCollect 補交屋兩份（V0824-06 建了欄位沒接顯示＝紀錄看板查不到交屋取消）；③修沉睡真 bug：_cxnDelEntry 對 Re/HO 型別會「讀對陣列、砍錯陣列」（entry 從 _cxnArrOf 拿、splice 卻永遠砍 cancelHistory/noShowHistory）＝從紀錄看板刪複驗/交屋紀錄會誤刪初驗那筆，改全走 _cxnArrOf；④_cxnStatusOf(key,type) 輪次感知——複驗/交屋紀錄以前讀初驗旗標（hu.cancelled/planDate）＝「目前狀態」必錯，改 _huFlag/_huDate 該輪各看各的；⑤輪次字 _cxnRdWord 單一出處：殘影卡標籤/小視窗標題/紀錄看板徽章/搜尋字 顯示「複驗取消」「交屋未到」，初驗回空字串＝畫面維持舊樣零迴歸。線上 Re/HO 紀錄皆 0 筆＝純預先補、無存量要更正。煙測 smoke_g95_ghost3。
+const CODE_VERSION = 377;  // V0825-07 催工進度統一收合（版面整理交辦包·MONGAGOOD 催工進度看板·示意圖 v2＋v2b 定案）：整頁收成 3 條群組標題列＋9 條收合列（38px／24px 控件／右欄固定 92-64-116／編號連續／預設全收）。①要催的廠商：三顆狀態燈改 .ufc 進右欄（class pw-state／data-lamp／_pwSetLamp 沒動）、先 5 家＋展開全部（_PW_CAP 10→5）、「複製催工訊息」釘死 116px＝與右欄第三格同寬（實測兩者都是 72.02px 文字·V0825-02 徽章寬鐵律）；②存圖與複製＝不收合的動作列（#pw-out 保留）；③④⑤修繕進度：整體%進群組標題列（#vp-bar／#vp-sum／#vp-head 保留）、分母與排序改循環鈕（_vpSet 沒動＝煙測照舊）、_vpCfg().open 預設改收合、口徑說明從常駐改收合列；⑥條件設定＝_riRushCondHTML 加 force 參數（reinsp 那個呼叫點沒動）；⑦進度尺深藍大卡→表格 _pwPaceTblHTML（整頁唯一的第三種方塊·欄位數字算法零改動·原函式保留）；⑧施壓榜加 bare 參數（標題與口徑外移）；⑨口徑說明抽單一出處 _riRushVNote。手機不套固定三欄（390px 會溢出）＝控件走 _pwCtlRow 獨立一條。🔴 preview 真資料驗收（36 家/915 筆/11,032 筆缺失）抓到兩件並修掉：(a)「各廠商完成率」列上寫 41 家、點開只有 32 家＝同一件事兩個數字 ⇒ 列上改成「點開會看到的家數」，總數移到副文字；(b)「複製催工訊息」「已催」「施壓榜表頭」「還有 N 家」四處還是藍系 ⇒ 一律改中性（.ufc／.ufmore）。純版面：判準／算法／寫入路徑一個字沒動；_pwDetTog／_pwListTog 保留成相容包裝。｜ V0825-06 統一收合大改版（示意圖 v4+v5 定案·使用者「記住這個原則，其他版面之後也要整理」）：大小一致原則＝整頁只有「群組標題列 .ufhd」「收合列 .uff」兩種列（38px）＋24px 控件；收合列右側固定三欄 92/64/116（同一欄同寬＝截圖/主任確認/排入複驗排程上下對齊）；方框編號 1~10 連續。①首屏改三條收合列 _riTopFoldHTML／_uftBlock（1本週可以約·2只差主任確認·3逾期未修＝示意圖沒畫到但功能不能少，照同款補）——資料仍走 _riTopSplit/_riTopTableHTML 同一把尺，截圖/排入複驗排程/主任確認/另有N戶提示全保留；舊兩欄 _riTopDeskLeft/Right 保留備用不再呼叫。②交屋排程（4~6）搬到 2 下面、複驗排程（7~9）在後、本週vs上週改同款收合列編 10（桌機才有編號·手機頭列原樣）。③三段預設全收（g95_reSeg/g95_hoSeg 預設 {s1:0,s2:0,s3:0}）＋點開先 5 戶＋「展開全部 N 戶」（f1~f3 旗標·_reSegFull/_hoSegFull）；0 戶＝一行空狀態；不滿 5 戶不出鈕。④手機：首屏兩塊照 V0813-08 使用者定案不動；三段收合/上限與交屋在前跟桌機一致（同一支函式）。判定/寫入路徑零改動＝純版面。｜ // V0825-05 殘影與取消/未到紀錄三輪補全（待辦①·使用者「都開始推」）：查證推翻了待辦的描述——複驗殘影 V0818-01 早就進格子（線上複驗取消 0 筆所以從沒顯示過），真正缺的只有交屋輪。①_hcalGhosts 補第三組 ['ho', _hoBooked, noShowHistoryHO/cancelHistoryHO]（gtype 尾碼 'HO'·_cxnArrOf/_cxnIsHo V0824-06 就支援）⇒ 格子頭「未到/取消 N」與殘影卡自動含交屋；②_cxnCollect 補交屋兩份（V0824-06 建了欄位沒接顯示＝紀錄看板查不到交屋取消）；③修沉睡真 bug：_cxnDelEntry 對 Re/HO 型別會「讀對陣列、砍錯陣列」（entry 從 _cxnArrOf 拿、splice 卻永遠砍 cancelHistory/noShowHistory）＝從紀錄看板刪複驗/交屋紀錄會誤刪初驗那筆，改全走 _cxnArrOf；④_cxnStatusOf(key,type) 輪次感知——複驗/交屋紀錄以前讀初驗旗標（hu.cancelled/planDate）＝「目前狀態」必錯，改 _huFlag/_huDate 該輪各看各的；⑤輪次字 _cxnRdWord 單一出處：殘影卡標籤/小視窗標題/紀錄看板徽章/搜尋字 顯示「複驗取消」「交屋未到」，初驗回空字串＝畫面維持舊樣零迴歸。線上 Re/HO 紀錄皆 0 筆＝純預先補、無存量要更正。煙測 smoke_g95_ghost3。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -9724,7 +9724,7 @@ function _riRushTier(id,title,list,tier,mob,extraRight,ckey){
 // V0804-02 ⑩：明細改表格
 function _riRushDetHTML(x,mob){
   var td='padding:6px 9px;border-bottom:1px solid rgba(0,0,0,.06);font-size:12.5px';
-  var th='padding:6px 9px;background:#F1F5FA;color:#556;font-size:11px;font-weight:700;text-align:left;border-bottom:1px solid rgba(0,0,0,.1)';
+  var th='padding:6px 9px;background:#F1F1EE;color:#5F5E5A;font-size:11px;font-weight:700;text-align:left;border-bottom:1px solid #D9D8D3';   // V0825-07 中性色
   var body=x.det.map(function(d){
     return '<tr class="rush-det-r"><td style="'+td+';font-weight:800;color:#185FA5;cursor:pointer" onclick="_riDefectModal(\''+_riEscJs(d.key)+'\')">'+esc(d.disp)+(d.out?'<span style="color:#B08900">★</span>':'')+'</td>'
       +'<td style="'+td+'">'+_riRushBlkTag(d.block)+'</td>'
@@ -9830,14 +9830,14 @@ function _riRushVendorHTML(D,mob,bare){   // V0825-07 bare＝不畫標題列與�
   var zero=D.vendors.filter(function(x){return !_rushKeep(x);});
   var maxFix=0; hasFix.forEach(function(x){if(x.fix>maxFix)maxFix=x.fix;});
   var zeroOpen=!!window._riRushZeroOpen;
-  var zeroBar=zero.length?('<div id="ri-rush-zero" onclick="_riRushTogZero()" style="padding:10px;text-align:center;font-size:12.5px;font-weight:700;color:#185FA5;background:#F7FBFF;border-top:1px solid #E7EFF8;cursor:pointer">'
-      +(zeroOpen?'▴ 收起':'▾')+' 還有 <b>'+zero.length+' 家</b>（做完就能約 0 戶、而且有在動）'+(zeroOpen?'':'　點開看')+'</div>'):'';
+  var zeroBar=zero.length?('<div id="ri-rush-zero" class="ufmore" onclick="_riRushTogZero()">'
+      +(zeroOpen?'▴ 收起':'')+' 還有 '+zero.length+' 家（做完就能約 0 戶、而且有在動）'+(zeroOpen?'':' ▾')+'</div>'):'';
   if(mob){
     var cards=hasFix.map(function(x){return _riRushVendorCardHTML(x,maxFix);}).join('')
       +(zero.length?(zeroBar+(zeroOpen?zero.map(function(x){return _riRushVendorCardHTML(x,maxFix);}).join(''):'')):'');
     return '<div id="ri-rush-vend" style="border:1px solid #C9DCEE;background:#fff;margin-bottom:8px">'+head+'<div style="padding:8px 9px">'+cards+'</div>'+note+'</div>';
   }
-  var th='background:#F1F5FA;color:#556;font-size:11.5px;font-weight:700;text-align:left;padding:7px 9px;border-bottom:1px solid rgba(0,0,0,.1)';
+  var th='background:#F1F1EE;color:#5F5E5A;font-size:11.5px;font-weight:700;text-align:left;padding:7px 9px;border-bottom:1px solid #D9D8D3';   // V0825-07 中性色
   var thn=th+';text-align:right';
   var vs=vsNow;
   // V0804-04 ③：欄名可點＝換排序（追不同的事看不同的排法）
@@ -10081,13 +10081,13 @@ function _pwNudgeBtn(x,mob){
   var ro=!!(window._VIEW_ONLY||window._readonly);
   var tip=ro?(nd?('已催（'+(nd.by||'')+(nd.at?(' '+nd.at):'')+'）'):'唯讀模式不能標記'):(nd?('已催（'+(nd.by||'')+(nd.at?(' '+nd.at):'')+'）點一下取消'):'今天催過了就打勾（全公司同步）');
   return '<span class="pw-nudge" data-v="'+esc(x.v)+'" data-ro="'+(ro?'1':'0')+'"'+(ro?'':(' onclick="_pwNudgeTog(\''+_riEscJs(x.v)+'\')"'))+' title="'+esc(tip)+'" '
-    +'style="display:inline-flex;align-items:center;justify-content:center;width:'+(mob?'34px':'24px')+';height:'+(mob?'34px':'24px')+';border:1.5px solid '+(ro?'#D5D3CC':(nd?'#3B6D11':'#9DB3C8'))+';background:'+(ro?'#F1F1EE':(nd?'#EAF3DE':'#fff'))+';color:'+(ro?'#9A9896':'#1E6B34')+';font-size:15px;font-weight:800;cursor:'+(ro?'not-allowed':'pointer')+';flex:none">'+(nd?'✓':'')+'</span>';
+    +'style="display:inline-flex;align-items:center;justify-content:center;width:'+(mob?'34px':'24px')+';height:'+(mob?'34px':'24px')+';border:1.5px solid '+(ro?'#D5D3CC':(nd?'#3B6D11':'#C9C7C2'))+';background:'+(ro?'#F1F1EE':(nd?'#EAF3DE':'#fff'))+';color:'+(ro?'#9A9896':'#1E6B34')+';font-size:15px;font-weight:800;cursor:'+(ro?'not-allowed':'pointer')+';flex:none">'+(nd?'✓':'')+'</span>';
 }
 function _pwCopyBtn(x,mob){
   var nd=_pwNudgeInfo(x.v);
   return '<span class="pw-copy" onclick="_pwCopyVendor(\''+_riEscJs(x.v)+'\')" '
     +'style="display:inline-flex;align-items:center;justify-content:center;gap:4px;height:'+(mob?'34px':'24px')+';'+(mob?'padding:0 10px;flex:1;':'width:116px;box-sizing:border-box;')+'font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;'
-    +(nd?'background:#fff;border:1px solid #9DC3E6;color:#2C5F8A':'background:#185FA5;border:1px solid #185FA5;color:#fff')+'">'
+    +(nd?'background:#fff;border:1px solid #C9C7C2;color:#7A7770':'background:#fff;border:1px solid #26313D;color:#26313D')+'">'
     +_icoSVG('copy',12)+(nd?'再複製':'複製催工訊息')+'</span>';
 }
 function _pwRowHTML(x,i,mob){
@@ -10286,9 +10286,11 @@ function _vpHTML(mob,D0){
   var cells=[_pwCtl(_vpBaseLbl(c),'_vpCycle(\'base\')',false,'點一下換分母：全案累計／本批在辦','vp-seg'),
              _pwCtl(_vpSortLbl(c),'_vpCycle(\'sort\')',false,'點一下換排序：退步優先／最該催／完成率低→高','vp-seg'),
              _pwCtl('存圖','_vpExportImg()',false,'每 12 家一張·廠商全名不截斷','vp-seg')];
-  var row3=_pwUfRow({no:_pwNoNext(),title:'各廠商完成率',n:V.rows.length,tog:'_vpTog(\'open\')',open:openB,cells:cells,rid:(mob?'':'vp-tools'),mob:mob});
+  var show=_vpShown(V);   // 🔴 先算＝收合列上的家數與點開看到的家數同一個數（真資料抓到：寫 41 點開只有 32）
+  var row3=_pwUfRow({no:_pwNoNext(),title:'各廠商完成率',n:show.length,
+                     sub:(V.rows.length>show.length?('全部 '+V.rows.length+' 家'+(V.small.length?('·其中 '+V.small.length+' 家不到 '+_VP_MIN+' 筆'):'')):''),
+                     tog:'_vpTog(\'open\')',open:openB,cells:cells,rid:(mob?'':'vp-tools'),mob:mob});
   if(!openB)return '<div id="vp-wrap">'+bar+row3+'</div>';   // 收合時整段不建（首屏更快·V0805-02 ④ 通則）
-  var show=_vpShown(V);
   var full=!!_pwUfFull('vp');
   var shown=full?show:show.slice(0,5);
   var th='background:#F1F1EE;color:#5F5E5A;font-size:11px;font-weight:700;text-align:left;padding:6px 8px;border-bottom:1px solid #D9D8D3';
@@ -24930,4 +24932,4 @@ try{
 </body>
 </html>
 
-<!-- v0825-07 preview · build 2026-08-25 17:12 +08 -->
+<!-- v0825-07 preview · build 2026-08-25 17:30 +08 -->
