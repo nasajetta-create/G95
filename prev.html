@@ -436,7 +436,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 373;  // V0825-03 行事曆格子頭兩個數字（使用者 2026-08-25：「我看到的問題是，委外計算，只有算初驗，複驗1或是2都沒有計算，這不對」「後續如果有交屋，不會計算」）：①★委外**只算驗收戶、而且只讀初驗那一輪的旗標** ⇒ 複驗／交屋掛委外的戶一律漏掉。🩸線上實測：9 個有章的格子**有 5 格數字是錯的**，最嚴重一格頭寫「★委外 1」、畫面上實際 **5 個章掛星**（初驗 1＋複驗 4）；另外 3 格頭上**連徽章都沒出現**、格子裡卻有 1~2 個掛星的章。🔴 手機日格 `_hmDayHTML` 在 V0824-05 就已經三輪都算了，桌機格子頭沒跟上＝**「桌機改完手機是另一支」的反向版**。⇒ 抽單一出處 `_comOkR(key,round)`（放 `_huFlag` 旁邊·classic 頂層），桌機格子頭與手機日格共用；桌機從 `_liveU.reduce` 改成 init／re／ho 三段各自 filter。🔴 **行事曆上面那條「統計列」刻意不共用**：它算的是「當天本來排了幾個人」（含取消／未到，人力本來就排了），而且靠「★委外 N ＋ 自驗 M ＝ 總 N 戶」這個恆等式——改用 `_comOkR` 會讓取消／未到的戶被默默算進「自驗」。已在該處留註解，避免下次有人「順手統一」把恆等式弄壞。②格子頭戶數 `units.length+reU.length` 補 `+hoU.length`——交屋戶有畫章卻沒算進戶數（V0824-06 加交屋章時漏的）。使用者裁決「單時段的戶數統計是對的」＝**線上目前確實沒錯**（還沒有任何一戶排交屋日），這是預先補、不是現在壞。③未動：`N 未輸入／N 未登記`（交屋沒有缺失登記，本來就不該算）、`N 未排時段`（V0824-06 已含交屋）、`未到/取消 N` 殘影（只算驗收戶；要改得動殘影那條路徑＝複驗／交屋的殘影目前根本沒進格子，改動最大，使用者裁決這一版不碰）。煙測新增 smoke_g95_comcnt（已驗證 V0825-02 會紅）。｜ // V0825-02 行事曆章徽章對齊總修（使用者手繪紅字：「上下左右一樣大（同對齊）／高度一致，寬度單獨一致／星號不可擠壓」，以及「棟別徽章沒有跟接待人徽章一樣大小、棟別徽章的字也未置中、未清潔徽章也沒有一樣大小」「所有徽章的字都應該上下左右置中」「包含戶別的字體也是一樣」）：①🩸真因是一條**壞掉的 CSS**：`align-items:column-gap:1px`——`align-items` 吃到非法值 ⇒ 整條被丟掉、退回預設 `stretch`，所以棟別方塊被拉成整列高（線上實測 15.76／16.74 兩種），字卻還留在第一行（上緣 0.00／下緣 4.24~5.23＝字往上偏 2.1~2.6px）。這條錯在 V0824-05 之前就在了，不是交屋輪改壞的。改成 `align-items:center;`。②輪次徽章原本 `min-width:14px;padding:0 3px` ＝**寬度隨字數變**（線上實測 初 16.2px／複1 20.3~21.5px），外層又置中 ⇒ 同一格內徽章左緣兩種值（107／109.7）＝使用者說的「上下沒有對齊」。🔴 根源是 V0824-07 把徽章從 1 個字（初／複）改成 2 個字（複1／複2）——改版前每顆都 1 個字、寬度剛好都一樣，所以看起來是齊的；**每多一種輪次就多一種字寬**，這就是「越改越差」的機制。釘死 `width:22px`。③棟別徽章 10px→**14×14**（跟接待人徽章一樣大）、字置中；④未清潔徽章原本 `padding:1px 2px`＋14px 圖示＝18×11 ⇒ 改 **14×14**、圖示縮 12px 置中；⑤★委外欄 7px 放不下 10px 的星（線上 36 個章裡有星的**全部溢出**、壓在徽章上）⇒ 11×14；⑥接待人徽章加第三參數 `boxed`（**只有行事曆章傳 true**，派工單 `_pwoHostCell` 維持原樣＝零迴歸）：代碼模式釘 14×14、名字模式釘 44×14，兩者都改用跟其他徽章相同的置中配方（`inline-flex`＋`align-items:center`＋`line-height:1`）——原本代碼模式少了 `line-height` ⇒ 跟輪次徽章不同組、兩顆字高低差 2px；而且 `min-width`＋`padding` 的寫法遇到 `suf`「(非支援期)」（真資料 20 筆）會被撐開。⑦戶名欄從行內排版改 flex 一列：戶名自己一格（`text-overflow:ellipsis` 保留）、清潔燈號＋未清潔圖示另一格 `flex:0 0 auto`，兩格 `align-items:center` ⇒ 戶名的字跟徽章同一條中線、圖示也不再牽動字的高低。實測改後五個框全部 `top3.00 h14.00`、輪次徽章左緣一律 106.3。🔴 代價：棟別 +4px、★欄 +4px ⇒ 戶名欄線上 65.2→57.2px；線上 36 個戶名自然寬 34 個是 54.6px（放得下），2 個 68.3px（**改前就已經在切**，改後一樣切）。🩸 使用者要求「字要絕對正中」那一段我**沒有**去加靠字型微調的 padding：我這邊容器沒有 Noto Sans TC、量到的墨跡偏移不能代表他的機器；改用 canvas 量他線上真字型（Noto Sans TC）的 `actualBoundingBox`，9px 的 初／賀／A／店 墨跡中心都正好落在 7.0＝方塊正中，硬調反而會歪。煙測新增 smoke_g95_chipbox（已驗證 V0825-01 會紅）。｜ // V0825-01 手機版三修（使用者「檢查手機板有沒有問題／要確認排版有沒有問題」，390px 實跑抓到的）：①`_hmStageLabel(hu,key,round)` 加輪次——舊版一律回 `_stageOf(key).full`＝戶層級 ⇒ **交屋列寫成「複驗1」**（線上真資料 B6-7 就是這樣），交屋輪改回「交屋」／「已交屋」，顏色給綠（`stc` 加 `indexOf('交')`）；②`_hmDetail` 的輪次徽章顏色 `_rcol` 原本只有二元（V0824-05 寫的），**交屋會落到初驗的藍**，補成三元；③雙週總覽的日格數字只算 `_hmVUnits`，**複驗（V0818-01 起）與交屋（V0824-06）都漏算** ⇒ 同一畫面上面日期條寫 8 戶、下面格子寫「驗4」自相矛盾；改成三者合計，說明文字同步改「當天排程戶數（驗收＋複驗＋交屋）」。🔴 三條都是「桌機改完手機是另一支」的老病：V0824-07 桌機章已經改成「這一格是哪一輪」，手機這三處沒跟上。煙測 smoke_g95_hocal 擴到 56 項（新增抽屜徽章顏色／清單列文字／雙週總覽合計；已驗證 V0824-07 會紅 4 項）。🩸測試自己踩兩個：`switchTab` 之後有延遲重繪會把手機版蓋回桌機版（要等它做完再 `_hmRender` 並立即讀）；`/驗3/` 會被桌機統計列的「自驗3」黏字騙過（改成整行比對）。
+const CODE_VERSION = 374;  // V0825-04 可交屋統計補齊（示意圖 v1 定案·使用者 2026-08-25「B」→「都作業，開始」）：起因＝使用者「可交屋戶我現在看不到統計資料」，實查發現兩件事：(a)「可交屋」同名兩義——交屋分頁右上的「可交屋 N 戶」＝hoUnitPct===100（修繕100%·含已交屋·不要求已複驗），跟 reinsp 六態卡的可交屋（_riStat stage='deliverable'＝已複驗＋缺失清零＋未交屋）不是同一把尺，數字必然對不上；(b)可交屋的戶沒有排程統計——複驗有三段（V0820-03），交屋只有 _hoGapData 的②③（有 hoDate 才進），「可交屋但還沒排交屋日」的戶哪裡都看不到名單。改法：①交屋分頁改名「修繕完成100%」＋title 說明（兩個數字回答的不是同一個問題 ⇒ 改名不硬統一·V0825-03 鐵律）②新增 _hoSeg*「交屋排程」三段（放複驗排程正下方同款式）：第1段＝stage deliverable 且無 hoDate（排交屋鈕走既有 _riBook(key,'deliver')·先搜近親不另寫跳轉）、第2/3段直接吃 _hoGapData() 同一趟 ⇒ 恆等式 gap+book===all 天然成立；統計列同時寫出待排數；補時段 _hoSegSetSlot 照 _hmSetSlot round='ho' 同款（只寫 hu.hoSlot＋_mt·絕不動 planDate／reCheckUF／reCheckSlot）；手機＝_hoSegHTML(stats,true) 另掛 _riMobRender；收合記憶 g95_hoSeg 獨立一份（s1:1,s2:1,s3:0）。③順手修真 bug：_hoGapData 漏了 delivered 排除（複驗版 _slotGapData 一直有）⇒ 已交屋掛著舊 hoDate 會永遠留在交屋缺口預警；補上（0824 查證線上已交屋 0 戶＝零存量影響）。煙測 smoke_g95_hoseg。｜ // V0825-03 行事曆格子頭兩個數字（使用者 2026-08-25：「我看到的問題是，委外計算，只有算初驗，複驗1或是2都沒有計算，這不對」「後續如果有交屋，不會計算」）：①★委外**只算驗收戶、而且只讀初驗那一輪的旗標** ⇒ 複驗／交屋掛委外的戶一律漏掉。🩸線上實測：9 個有章的格子**有 5 格數字是錯的**，最嚴重一格頭寫「★委外 1」、畫面上實際 **5 個章掛星**（初驗 1＋複驗 4）；另外 3 格頭上**連徽章都沒出現**、格子裡卻有 1~2 個掛星的章。🔴 手機日格 `_hmDayHTML` 在 V0824-05 就已經三輪都算了，桌機格子頭沒跟上＝**「桌機改完手機是另一支」的反向版**。⇒ 抽單一出處 `_comOkR(key,round)`（放 `_huFlag` 旁邊·classic 頂層），桌機格子頭與手機日格共用；桌機從 `_liveU.reduce` 改成 init／re／ho 三段各自 filter。🔴 **行事曆上面那條「統計列」刻意不共用**：它算的是「當天本來排了幾個人」（含取消／未到，人力本來就排了），而且靠「★委外 N ＋ 自驗 M ＝ 總 N 戶」這個恆等式——改用 `_comOkR` 會讓取消／未到的戶被默默算進「自驗」。已在該處留註解，避免下次有人「順手統一」把恆等式弄壞。②格子頭戶數 `units.length+reU.length` 補 `+hoU.length`——交屋戶有畫章卻沒算進戶數（V0824-06 加交屋章時漏的）。使用者裁決「單時段的戶數統計是對的」＝**線上目前確實沒錯**（還沒有任何一戶排交屋日），這是預先補、不是現在壞。③未動：`N 未輸入／N 未登記`（交屋沒有缺失登記，本來就不該算）、`N 未排時段`（V0824-06 已含交屋）、`未到/取消 N` 殘影（只算驗收戶；要改得動殘影那條路徑＝複驗／交屋的殘影目前根本沒進格子，改動最大，使用者裁決這一版不碰）。煙測新增 smoke_g95_comcnt（已驗證 V0825-02 會紅）。｜ // V0825-02 行事曆章徽章對齊總修（使用者手繪紅字：「上下左右一樣大（同對齊）／高度一致，寬度單獨一致／星號不可擠壓」，以及「棟別徽章沒有跟接待人徽章一樣大小、棟別徽章的字也未置中、未清潔徽章也沒有一樣大小」「所有徽章的字都應該上下左右置中」「包含戶別的字體也是一樣」）：①🩸真因是一條**壞掉的 CSS**：`align-items:column-gap:1px`——`align-items` 吃到非法值 ⇒ 整條被丟掉、退回預設 `stretch`，所以棟別方塊被拉成整列高（線上實測 15.76／16.74 兩種），字卻還留在第一行（上緣 0.00／下緣 4.24~5.23＝字往上偏 2.1~2.6px）。這條錯在 V0824-05 之前就在了，不是交屋輪改壞的。改成 `align-items:center;`。②輪次徽章原本 `min-width:14px;padding:0 3px` ＝**寬度隨字數變**（線上實測 初 16.2px／複1 20.3~21.5px），外層又置中 ⇒ 同一格內徽章左緣兩種值（107／109.7）＝使用者說的「上下沒有對齊」。🔴 根源是 V0824-07 把徽章從 1 個字（初／複）改成 2 個字（複1／複2）——改版前每顆都 1 個字、寬度剛好都一樣，所以看起來是齊的；**每多一種輪次就多一種字寬**，這就是「越改越差」的機制。釘死 `width:22px`。③棟別徽章 10px→**14×14**（跟接待人徽章一樣大）、字置中；④未清潔徽章原本 `padding:1px 2px`＋14px 圖示＝18×11 ⇒ 改 **14×14**、圖示縮 12px 置中；⑤★委外欄 7px 放不下 10px 的星（線上 36 個章裡有星的**全部溢出**、壓在徽章上）⇒ 11×14；⑥接待人徽章加第三參數 `boxed`（**只有行事曆章傳 true**，派工單 `_pwoHostCell` 維持原樣＝零迴歸）：代碼模式釘 14×14、名字模式釘 44×14，兩者都改用跟其他徽章相同的置中配方（`inline-flex`＋`align-items:center`＋`line-height:1`）——原本代碼模式少了 `line-height` ⇒ 跟輪次徽章不同組、兩顆字高低差 2px；而且 `min-width`＋`padding` 的寫法遇到 `suf`「(非支援期)」（真資料 20 筆）會被撐開。⑦戶名欄從行內排版改 flex 一列：戶名自己一格（`text-overflow:ellipsis` 保留）、清潔燈號＋未清潔圖示另一格 `flex:0 0 auto`，兩格 `align-items:center` ⇒ 戶名的字跟徽章同一條中線、圖示也不再牽動字的高低。實測改後五個框全部 `top3.00 h14.00`、輪次徽章左緣一律 106.3。🔴 代價：棟別 +4px、★欄 +4px ⇒ 戶名欄線上 65.2→57.2px；線上 36 個戶名自然寬 34 個是 54.6px（放得下），2 個 68.3px（**改前就已經在切**，改後一樣切）。🩸 使用者要求「字要絕對正中」那一段我**沒有**去加靠字型微調的 padding：我這邊容器沒有 Noto Sans TC、量到的墨跡偏移不能代表他的機器；改用 canvas 量他線上真字型（Noto Sans TC）的 `actualBoundingBox`，9px 的 初／賀／A／店 墨跡中心都正好落在 7.0＝方塊正中，硬調反而會歪。煙測新增 smoke_g95_chipbox（已驗證 V0825-01 會紅）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1338,7 +1338,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0825-03</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0825-04</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -8019,7 +8019,7 @@ function renderHandover(){
       <div style="display:flex;align-items:center;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V9M17 16v-6"/></svg>缺失進度修繕分析表</span>
         <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
-          <span style="font-size:11px;color:var(--text2)">可交屋 <b style="color:var(--green)">${cnt100}</b> 戶</span>
+          <span style="font-size:11px;color:var(--text2)" title="修繕進度100%的戶數（含已交屋、不要求已複驗）。交屋流程的「可交屋」請看驗收/修繕進度看板">修繕完成100% <b style="color:var(--green)">${cnt100}</b> 戶</span>
           <span style="font-size:11px;color:var(--text2)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>已交屋 <b style="color:var(--green)">${cntDelivered}</b> / ${totalUnits}（${delivPct}%）</span>
           <button class="btn btn-pdf no-print" onclick="printHandoverPdf()" style="font-size:11px"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="15" width="10" height="6"/></svg>PDF</button>
         </div>
@@ -10873,7 +10873,8 @@ function _hoGapData(){
   try{
     var hus=(typeof S!=='undefined'&&S.handoverUnits)||{};
     Object.keys(hus).forEach(function(k){
-      var h=hus[k]||{}; var d=h.hoDate||''; if(!d)return;
+      var h=hus[k]||{}; if(h.delivered)return;   /* V0825-04：已交屋不是缺口（複驗版 _slotGapData 一直有這條，這裡漏了） */
+      var d=h.hoDate||''; if(!d)return;
       all++;
       var sl=h.hoSlot||'';
       if(HCAL_SLOTS.indexOf(sl)>=0){                       // 已敲定＝不是缺口
@@ -10885,7 +10886,8 @@ function _hoGapData(){
       byD[d].keys.push(k); byD[d].n++; tot++;
     });
     Object.keys(hus).forEach(function(k){                  // 每天的分母＝那天全部交屋戶（含已敲定）
-      var d=(hus[k]||{}).hoDate||''; if(d&&byD[d])byD[d].tot++;
+      var h=hus[k]||{}; if(h.delivered)return;   /* V0825-04 同上 */
+      var d=h.hoDate||''; if(d&&byD[d])byD[d].tot++;
     });
     [byD,bkD].forEach(function(m){
       Object.keys(m).forEach(function(d){
@@ -11066,6 +11068,158 @@ function _reSegHTML(stats,mob){
                 +'<div style="font-weight:400;font-size:11px;color:#8A8783">'+z.n+' 戶</div></td>'):'')
             +'<td style="'+TD+'">'+_reSegSlotSel(k,sl,mob)+'</td>'
             +'<td style="'+TD+'"><span onclick="_sgGo(\''+String(k).replace(/'/g,"\\'")+'\')" '
+            +'style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+esc(unitDisplayName(k))+'</span></td></tr>';
+        });
+      });
+      h+='</table>';
+    }
+  }
+  return h+'</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V0825-04 交屋排程三段（示意圖 v1 定案·2026-08-25）
+   ─────────────────────────────────────────────────────────────────────────
+   照抄複驗三段（V0820-03）的做法：第 2/3 段直接吃 _hoGapData()（V0824-06 ⑦
+   交屋缺口·同一趟切出來）⇒ 恆等式 gap + book === all 天然成立（煙測守）。
+   第 1 段＝可交屋（_riStat stage==='deliverable'＝已複驗＋缺失清零＋未交屋）
+   但還沒給交屋日——這批戶以前只剩六態卡一個總數、哪裡都沒有名單。
+   🔴 判斷基準一律沿用既有那把尺（stage／_hoGapData），不另寫一份。
+   🔴 純顯示＋一個既有欄位的寫入口（hoSlot·照 _hmSetSlot round='ho' 同款）；
+      不新增任何資料欄位、絕不動 planDate（初驗）與 reCheckUF/reCheckSlot（複驗）。
+   ══════════════════════════════════════════════════════════════════════════ */
+function _hoSegOpen(seg){ try{ var v=localStorage.getItem('g95_hoSeg'); var o=v?JSON.parse(v):null; if(!o)o={s1:1,s2:1,s3:0}; return !!o['s'+seg]; }catch(e){ return seg!==3; } }
+function _hoSegTog(seg){
+  try{ var v=localStorage.getItem('g95_hoSeg'); var o=v?JSON.parse(v):{s1:1,s2:1,s3:0};
+       o['s'+seg]=o['s'+seg]?0:1; localStorage.setItem('g95_hoSeg',JSON.stringify(o)); }catch(e){}
+  renderReinsp();
+}
+// 第 1 段：可交屋但還沒給交屋日 —— 母體是 stats（已初驗的戶），與第 2/3 段不同，畫面上有寫清楚
+function _hoSeg1(stats){
+  var out=[];
+  (stats||[]).forEach(function(s){
+    if(s.stage!=='deliverable')return;                     // stage 已含「未交屋」（已交屋走 stage='delivered'）
+    var d=''; try{ d=((S.handoverUnits||{})[s.key]||{}).hoDate||''; }catch(e){}
+    if(d)return;                                           // 已給交屋日＝屬於第 2/3 段
+    out.push(s);
+  });
+  out.sort(function(a,b){ return String(a.disp).localeCompare(String(b.disp),'zh-Hant',{numeric:true}); });
+  return out;
+}
+// 該戶最近一次複驗完成日（date≤今天＝與 _riStat 的 hasReDone 同一把尺）
+function _hoSegReDate(s){
+  var best=''; try{ (((s||{}).hu||{}).inspections||[]).forEach(function(i){ if(/^複驗/.test(inspTypeOf(i))&&i.date&&i.date<=todayISO()&&i.date>best)best=i.date; }); }catch(e){}
+  return best;
+}
+// 補時段＝寫 hu.hoSlot（照 _hmSetSlot round='ho' 同款）；一戶一列、絕不批次填（跟複驗 ⑨A 同理由）
+function _hoSegSetSlot(key,slot){
+  if(window._VIEW_ONLY){ try{ _voWarn&&_voWarn(); }catch(e){} return; }
+  try{
+    if(!S.handoverUnits)S.handoverUnits={}; if(!S.handoverUnits[key])S.handoverUnits[key]={};
+    S.handoverUnits[key].hoSlot=slot||''; S.handoverUnits[key]._mt=Date.now();
+    try{ logChange('📆 交屋/行事曆',(slot?'排交屋時段 ':'清除交屋時段 ')+unitDisplayName(key)+(slot?(' '+slot):'')); }catch(e){}
+    try{ _hgClear&&_hgClear(); }catch(e){}
+    save();
+    try{ toast(slot?('已敲定 '+unitDisplayName(key)+' '+slot):'已清除時段','📆'); }catch(e){}
+    renderReinsp();
+  }catch(e){ console.warn('[交屋三段] 補時段', e); }
+}
+function _hoSegSlotSel(key,cur,mob){
+  var o='<option value="">未排</option>';
+  HCAL_SLOTS.forEach(function(s){ o+='<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+'</option>'; });
+  return '<select onchange="_hoSegSetSlot(\''+String(key).replace(/'/g,"\\'")+'\',this.value)" '
+    +'style="height:'+(mob?28:26)+'px;border:1px solid #5B9BD5;background:#fff;color:#185FA5;'
+    +'font-weight:700;font-size:'+(mob?12:12.5)+'px;font-family:var(--font);padding:0 4px">'+o+'</select>';
+}
+function _hoSegHTML(stats,mob){
+  var D; try{ D=_hoGapData(); }catch(e){ return ''; }
+  var s1=_hoSeg1(stats);
+  var BD='border:1px solid var(--pborder)';
+  var TH=BD+';background:#F3F1EC;padding:5px 8px;font-size:12.5px;font-weight:700;text-align:left';
+  var TD=BD+';padding:5px 8px;font-size:12.5px;background:#fff;vertical-align:middle';
+  var ICO=function(p){ return '<svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '
+    +'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px">'+p+'</svg>'; };
+  var HOM=ICO('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>');
+  var head=function(seg,title,n,note,tone){
+    var open=_hoSegOpen(seg);
+    return '<div onclick="_hoSegTog('+seg+')" style="cursor:pointer;'+BD+';background:'+(tone||'#EAF1FB')+';padding:6px 10px;'
+      +'display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;margin-top:-1px">'
+      +'<span style="font-size:11px;color:#5B6B85">'+(open?'▾':'▸')+'</span>'
+      +'<span>'+title+'</span><span style="font-weight:800">'+n+' 戶</span>'
+      +(note?'<span style="font-weight:400;font-size:11.5px;color:#5F5E5A;margin-left:auto">'+note+'</span>':'')
+      +'</div>';
+  };
+  var h='<div id="ho-seg" style="margin:10px 0 12px">'
+    +'<div style="'+BD+';background:#fff;padding:6px 10px;font-size:12.5px;color:#5F5E5A;border-bottom:0">'
+    +HOM+'<b style="color:#26313D;font-size:13.5px">交屋排程</b>'
+    +'　待排 <b>'+s1.length+'</b>　｜　已排未敲定 <b style="color:#B3261E">'+D.gap+'</b>　｜　已敲定 <b style="color:#0A6640">'+D.book+'</b>'
+    +'<span style="margin-left:8px">（已排未敲定＋已敲定＝有交屋日 <b>'+D.all+'</b> 戶'
+    +((D.gap+D.book===D.all)?' ✓':' <b style="color:#B3261E">⚠ 恆等式不成立，請回報維護者</b>')+'）</span></div>';
+
+  /* ── 第 1 段：待排交屋 ───────────────────────────────────────────── */
+  h+=head(1,'① 待排交屋',s1.length,'缺失已清·已複驗·還沒給交屋日');
+  if(_hoSegOpen(1)){
+    if(!s1.length){ h+='<div style="'+BD+';border-top:0;background:#fff;padding:9px 12px;color:#B9B7B0;font-size:12.5px">目前沒有待排交屋的戶</div>'; }
+    else{
+      h+='<table style="width:100%;border-collapse:collapse;table-layout:fixed;'+BD+';border-top:0">'
+        +'<colgroup><col style="width:'+(mob?'34%':'150px')+'"><col style="width:'+(mob?'26%':'110px')+'">'
+        +'<col style="width:'+(mob?'20%':'110px')+'"><col'+(mob?' style="width:20%"':'')+'></colgroup>'
+        +'<tr><th style="'+TH+'">戶別</th><th style="'+TH+'">屋主</th><th style="'+TH+'">複驗完成日</th><th style="'+TH+'">排交屋</th></tr>';
+      s1.slice(0,mob?30:60).forEach(function(s){
+        var rd=_hoSegReDate(s);
+        h+='<tr><td style="'+TD+';font-weight:700">'+esc(s.disp)+'</td>'
+          +'<td style="'+TD+';color:#5F5E5A">'+esc(s.owner||'')+'</td>'
+          +'<td style="'+TD+';white-space:nowrap">'+esc(rd?_rptMMDD(rd):'—')+'</td>'
+          +'<td style="'+TD+'"><button class="btn btn-sm" onclick="_riBook(\''+_riEscJs(s.key)+'\',\'deliver\')" '
+          +'style="height:26px;background:#EFF6E9;border-color:#3B6D11;color:#3B6D11;font-weight:800;font-size:12px">排交屋</button></td></tr>';
+      });
+      if(s1.length>(mob?30:60)) h+='<tr><td colspan="4" style="'+TD+';color:#9A9896">…另有 '+(s1.length-(mob?30:60))+' 戶</td></tr>';
+      h+='</table>';
+    }
+  }
+
+  /* ── 第 2 段：已排·還沒跟屋主敲定 ───────────────────────────────── */
+  h+=head(2,'② 已排 · 還沒跟屋主敲定',D.gap,'沒填時段 → 行事曆看不到、接待人力也算不到','#FDF9EE');
+  if(_hoSegOpen(2)){
+    if(!D.gap){ h+='<div style="'+BD+';border-top:0;background:#fff;padding:9px 12px;color:#B9B7B0;font-size:12.5px">全部都敲定了</div>'; }
+    else{
+      h+='<table style="width:100%;border-collapse:collapse;table-layout:fixed;'+BD+';border-top:0">'
+        +'<colgroup><col style="width:'+(mob?'40%':'190px')+'"><col style="width:'+(mob?'34%':'150px')+'"><col></colgroup>'
+        +'<tr><th style="'+TH+'">交屋日</th><th style="'+TH+'">補時段</th><th style="'+TH+'">戶別</th></tr>';
+      D.days.forEach(function(z){
+        z.keys.forEach(function(k,i){
+          h+='<tr>'
+            +(i===0?('<td style="'+TD+';white-space:nowrap;font-weight:700" rowspan="'+z.keys.length+'">'
+                +esc(_rptMMDD(z.d))+(typeof _rptDow==='function'?('&nbsp;'+esc(_rptDow(z.d))):'')
+                +'<div style="font-weight:400;font-size:11px;color:#8A8783">'+z.n+' 戶未敲定</div></td>'):'')
+            +'<td style="'+TD+'">'+_hoSegSlotSel(k,'',mob)+'</td>'
+            +'<td style="'+TD+'"><span onclick="_hgGo(\''+String(k).replace(/'/g,"\\'")+'\')" '
+            +'style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+esc(unitDisplayName(k))+'</span></td></tr>';
+        });
+      });
+      h+='</table>'
+        +'<div style="'+BD+';border-top:0;background:#FDF9EE;padding:6px 10px;font-size:11.5px;color:#8A5A10">'
+        +'選了時段就代表<b>已經跟屋主敲定交屋</b>，那戶會立刻出現在交屋行事曆上。<b>沒約好就先別填。</b></div>';
+    }
+  }
+
+  /* ── 第 3 段：已敲定 ─────────────────────────────────────────────── */
+  h+=head(3,'③ 已敲定（行事曆看得到）',D.book,'日期＋時段齊全','#EFF6E9');
+  if(_hoSegOpen(3)){
+    if(!D.book){ h+='<div style="'+BD+';border-top:0;background:#fff;padding:9px 12px;color:#B9B7B0;font-size:12.5px">還沒有敲定的戶</div>'; }
+    else{
+      h+='<table style="width:100%;border-collapse:collapse;table-layout:fixed;'+BD+';border-top:0">'
+        +'<colgroup><col style="width:'+(mob?'40%':'190px')+'"><col style="width:'+(mob?'34%':'150px')+'"><col></colgroup>'
+        +'<tr><th style="'+TH+'">交屋日</th><th style="'+TH+'">時段</th><th style="'+TH+'">戶別</th></tr>';
+      D.bookDays.forEach(function(z){
+        z.keys.forEach(function(k,i){
+          var sl=''; try{ sl=((S.handoverUnits||{})[k]||{}).hoSlot||''; }catch(e){}
+          h+='<tr>'
+            +(i===0?('<td style="'+TD+';white-space:nowrap;font-weight:700" rowspan="'+z.keys.length+'">'
+                +esc(_rptMMDD(z.d))+(typeof _rptDow==='function'?('&nbsp;'+esc(_rptDow(z.d))):'')
+                +'<div style="font-weight:400;font-size:11px;color:#8A8783">'+z.n+' 戶</div></td>'):'')
+            +'<td style="'+TD+'">'+_hoSegSlotSel(k,sl,mob)+'</td>'
+            +'<td style="'+TD+'"><span onclick="_hgGo(\''+String(k).replace(/'/g,"\\'")+'\')" '
             +'style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+esc(unitDisplayName(k))+'</span></td></tr>';
         });
       });
@@ -12421,7 +12575,8 @@ function renderReinsp(){
   // V0805-01 ⑩⑪：首屏＝頂部兩塊＋催工入口；六態卡/衝複驗目標/工具列/逐戶清單收進「詳細資料 ▾」（一項不刪）
   var _detBar=_riDetBarHTML(_detOpen,'六態卡 · 衝複驗目標 · 逐戶清單與篩選（已初驗 '+cInsp1.t+' 戶）');
   var segHTML=''; try{ segHTML=_reSegHTML(stats,false); }catch(e){ console.warn('[複驗三段] 桌機', e); }   // V0820-03
-  pane.innerHTML=head+topHTML+wvwHTML+segHTML+_riPwEntryHTML(false)+_detBar
+  var hoSegHTML=''; try{ hoSegHTML=_hoSegHTML(stats,false); }catch(e){ console.warn('[交屋三段] 桌機', e); }   // V0825-04
+  pane.innerHTML=head+topHTML+wvwHTML+segHTML+hoSegHTML+_riPwEntryHTML(false)+_detBar
     +(_detOpen?('<div id="ri-det-body">'+cardsWrap+_riRushHTML(false)+toolbar+'<div id="ri-list">'+listHTML+'</div></div>'):'');
 }
 function _riMobRender(pane){
@@ -12541,7 +12696,8 @@ function _riMobRender(pane){
   // V0805-02 ⑦：手機收合列補戶數摘要（與桌機一致）
   var _detBarM=_riDetBarHTML(_detOpenM,'六態卡 · 衝複驗目標 · 逐戶清單與篩選（已初驗 '+c3(function(s){return s.inspected;}).t+' 戶）');
   var segM=''; try{ segM=_reSegHTML(stats,true); }catch(e){ console.warn('[複驗三段] 手機', e); }   // V0820-03：手機是另一支，一定要另外掛
-  pane.innerHTML=head+topM+wvwM+segM+_riPwEntryHTML(true)+probCard+_detBarM
+  var hoSegM=''; try{ hoSegM=_hoSegHTML(stats,true); }catch(e){ console.warn('[交屋三段] 手機', e); }   // V0825-04：手機同款另掛
+  pane.innerHTML=head+topM+wvwM+segM+hoSegM+_riPwEntryHTML(true)+probCard+_detBarM
     +(_detOpenM?('<div id="ri-det-body">'+cardsHTML+_riRushHTML(true)+ctrl+notifyBtn+'<div id="ri-list">'+listHTML+'</div></div>'):'');
 }
 function addPaItem(zone){
@@ -24604,4 +24760,4 @@ try{
 </body>
 </html>
 
-<!-- v0825-03 index · build 2026-08-25 10:49 +08 -->
+<!-- v0825-04 index · build 2026-08-25 12:00 +08 -->
