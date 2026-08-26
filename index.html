@@ -495,7 +495,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 379;  // V0826-02 交屋排程獨立分頁 hosch（示意圖 v2 ①~⑦ 定案·使用者「想做一個交屋排程表，不要跟初驗複驗一起」）：🔴 **既有欄位的唯讀視圖＝零新資料欄位、零新寫入路徑**（判定沿用 _hoSeg1／_hoGapData，改排程一律走既有 _riBook(key,'deliver')／_hoSegSetSlot／交屋行事曆批次面板）。①新分頁六步齊：TAB_DEFS.hosch／#pane-hosch／migrate 只 push 最後（位置使用者自己排）＋grpOf 預設「交屋與排程」＋mobShow=1／renderPane 分派／_TABIC.hosch='homecal'；②視圖一＝三段清單，直接呼叫既有 _hoSegHTML（**不複製判定**），第 1 段桌機升級成七欄固定格線（戶別/屋主/複驗完成日/交屋日/時段/接待人/動作·手機維持四欄）；③右上四格統計（待排／已排未敲定／已敲定／已交屋）＋「三段清單／行事曆」切換（記憶 g95_hoschView）；④視圖二＝行事曆格狀 _hoschCalHTML：HCAL_SLOTS×7 天×雙週、今天標記、格頭戶數＋★委外、日期標頭「N 未排時段」紅字（同 _hgCount）、上方黃底缺口列（同 _hoGapData().gap），**只落交屋輪**＝判準同 _hoBooked（hoDate＋hoSlot 都要·與 renderHCal 的 _hoIdx 同一把尺）；棟別色塊抽出頂層 _calChipStyle（renderHCal 內的 chipStyle 改成呼叫它＝單一出處·升級不並列），輪次徽章沿用 inspStageBadgeCal(key,'ho')；點戶展開 _hoschExpHTML＝改交屋日／補時段／去交屋行事曆，唯讀模式會寫的鈕灰化。⑤原位 renderReinsp 三段搬走只留連結列 _hoschEntryHTML（數字同一支 _hoGapData），複驗三段編號 7~9→4~6、本週vs上週 10→7＝整頁編號連續。⑥手機 _hoschMobRender（行事曆格狀 390px 放不下 ⇒ 手機給同一份三段）＋首頁十宮格「待排交屋 N」（_HOMECAT/_HOMEIC/_g95HomeStats/_homeBig）＋_mnBar 底部列。🩸🔴 **順手修 V0826-01 漏出去的線上缺陷**：那一輪剪 V0825-05 註解時把行尾吃掉，`window._CODE_VERSION = CODE_VERSION;` 被併進上一行的 `//` 註解裡＝整個 classic 段 window._CODE_VERSION 變 undefined ⇒ 寫入 Firestore 的 ver 全記 0、V0714-04「舊版覆蓋救回」的 _staleWriter 判斷永遠 false（保護降級·非資料破壞）。本版換行補回，煙測加一條 window._CODE_VERSION===CODE_VERSION 永久守。煙測 smoke_g95_hosch。｜ V0826-01 側欄「編輯排序」好用化（A＋C 案·帶編號示意圖①~⑤定案）：①側欄底部 .sn-foot 加「排序看板」入口（#sn-sort-entry·走同一支 toggleTabEditMode＋同一道認證，頂列鈕原封不動）＝入口離操作區 1200px 遠的問題根治；②每列右側 24×24 ▲▼（snMoveUp/snMoveDown·組內移一格、到組頭/組尾再按＝跨到上/下一組·_snPlaceIn 單一出處），不必拖也不必邊拖邊捲；③「移到組別」下拉 snSetGrpSel（選項取 _snGrps()＝現行分組定義，不寫死組名）；④拖曳全部保留並修體質：snDragOver 依游標在目標列上/下半決定 before/after（原本只能插在前面＝往下移一格像沒反應）、2px #5B9BD5 水平插入線（.sn-ins-b/.sn-ins-a·inset box-shadow·不是左側色條）、拖曳中該列淡化 .sn-drag、從 button/select 起手不觸發拖曳；⑤完成排序/取消工具列改 .sn-etool position:sticky。列＝.sn-erow 38px grid 16/1fr/64/116（大小一致原則·右欄上下對齊）、rename ✏️ 改線條 SVG _icoSVG('edit')。🔴 寫回照舊走「完成排序」原路（_sideEdit.order splice → 只去尾端 null）＝空格槽規則零改動；判定/資料層/同步層一個字沒動＝純版面互動。煙測 smoke_g95_sidesort。｜ V0825-07 催工進度統一收合（版面整理交辦包·MONGAGOOD 催工進度看板·示意圖 v2＋v2b 定案）：整頁收成 3 條群組標題列＋9 條收合列（38px／24px 控件／右欄固定 92-64-116／編號連續／預設全收）。①要催的廠商：三顆狀態燈改 .ufc 進右欄（class pw-state／data-lamp／_pwSetLamp 沒動）、先 5 家＋展開全部（_PW_CAP 10→5）、「複製催工訊息」釘死 116px＝與右欄第三格同寬（實測兩者都是 72.02px 文字·V0825-02 徽章寬鐵律）；②存圖與複製＝不收合的動作列（#pw-out 保留）；③④⑤修繕進度：整體%進群組標題列（#vp-bar／#vp-sum／#vp-head 保留）、分母與排序改循環鈕（_vpSet 沒動＝煙測照舊）、_vpCfg().open 預設改收合、口徑說明從常駐改收合列；⑥條件設定＝_riRushCondHTML 加 force 參數（reinsp 那個呼叫點沒動）；⑦進度尺深藍大卡→表格 _pwPaceTblHTML（整頁唯一的第三種方塊·欄位數字算法零改動·原函式保留）；⑧施壓榜加 bare 參數（標題與口徑外移）；⑨口徑說明抽單一出處 _riRushVNote。手機不套固定三欄（390px 會溢出）＝控件走 _pwCtlRow 獨立一條。🔴 preview 真資料驗收（36 家/915 筆/11,032 筆缺失）抓到兩件並修掉：(a)「各廠商完成率」列上寫 41 家、點開只有 32 家＝同一件事兩個數字 ⇒ 列上改成「點開會看到的家數」，總數移到副文字；(b)「複製催工訊息」「已催」「施壓榜表頭」「還有 N 家」四處還是藍系 ⇒ 一律改中性（.ufc／.ufmore）。純版面：判準／算法／寫入路徑一個字沒動；_pwDetTog／_pwListTog 保留成相容包裝。
+const CODE_VERSION = 380;  // V0826-03 修 V0826-02 上線缺陷：交屋排程三段收合列點了沒反應。真因＝三段 V0826-02 從 reinsp 搬到 hosch，但 _hoSegTog／_hoSegFullTog／_hoSegSetSlot 還固定呼叫 renderReinsp() ⇒ 重畫的是已經看不到的 #pane-reinsp，localStorage g95_hoSeg 旗標有翻、#pane-hosch 完全沒重畫（純顯示層，沒有資料或判定問題）。修法＝新增單一出處 _hoSegRe()：activeTab==='hosch' 就 renderHosch()（手機分派由 renderHosch 內部照舊處理），否則照原路 renderReinsp()＝reinsp 那邊行為一個字沒變；三個呼叫點共用。🩸煙測補永久迴歸 smoke_g95_hosch.segTogRepaints：在 hosch pane 點三段收合列，#ho-seg 表格列數要真的變多、再點要收回（這條 V0826-02 就該有·驗證舊版紅／本版綠）。｜ V0826-02 交屋排程獨立分頁 hosch（示意圖 v2 ①~⑦ 定案·使用者「想做一個交屋排程表，不要跟初驗複驗一起」）：🔴 **既有欄位的唯讀視圖＝零新資料欄位、零新寫入路徑**（判定沿用 _hoSeg1／_hoGapData，改排程一律走既有 _riBook(key,'deliver')／_hoSegSetSlot／交屋行事曆批次面板）。①新分頁六步齊：TAB_DEFS.hosch／#pane-hosch／migrate 只 push 最後（位置使用者自己排）＋grpOf 預設「交屋與排程」＋mobShow=1／renderPane 分派／_TABIC.hosch='homecal'；②視圖一＝三段清單，直接呼叫既有 _hoSegHTML（**不複製判定**），第 1 段桌機升級成七欄固定格線（戶別/屋主/複驗完成日/交屋日/時段/接待人/動作·手機維持四欄）；③右上四格統計（待排／已排未敲定／已敲定／已交屋）＋「三段清單／行事曆」切換（記憶 g95_hoschView）；④視圖二＝行事曆格狀 _hoschCalHTML：HCAL_SLOTS×7 天×雙週、今天標記、格頭戶數＋★委外、日期標頭「N 未排時段」紅字（同 _hgCount）、上方黃底缺口列（同 _hoGapData().gap），**只落交屋輪**＝判準同 _hoBooked（hoDate＋hoSlot 都要·與 renderHCal 的 _hoIdx 同一把尺）；棟別色塊抽出頂層 _calChipStyle（renderHCal 內的 chipStyle 改成呼叫它＝單一出處·升級不並列），輪次徽章沿用 inspStageBadgeCal(key,'ho')；點戶展開 _hoschExpHTML＝改交屋日／補時段／去交屋行事曆，唯讀模式會寫的鈕灰化。⑤原位 renderReinsp 三段搬走只留連結列 _hoschEntryHTML（數字同一支 _hoGapData），複驗三段編號 7~9→4~6、本週vs上週 10→7＝整頁編號連續。⑥手機 _hoschMobRender（行事曆格狀 390px 放不下 ⇒ 手機給同一份三段）＋首頁十宮格「待排交屋 N」（_HOMECAT/_HOMEIC/_g95HomeStats/_homeBig）＋_mnBar 底部列。🩸🔴 **順手修 V0826-01 漏出去的線上缺陷**：那一輪剪 V0825-05 註解時把行尾吃掉，`window._CODE_VERSION = CODE_VERSION;` 被併進上一行的 `//` 註解裡＝整個 classic 段 window._CODE_VERSION 變 undefined ⇒ 寫入 Firestore 的 ver 全記 0、V0714-04「舊版覆蓋救回」的 _staleWriter 判斷永遠 false（保護降級·非資料破壞）。本版換行補回，煙測加一條 window._CODE_VERSION===CODE_VERSION 永久守。煙測 smoke_g95_hosch。｜ V0826-01 側欄「編輯排序」好用化（A＋C 案·帶編號示意圖①~⑤定案）：①側欄底部 .sn-foot 加「排序看板」入口（#sn-sort-entry·走同一支 toggleTabEditMode＋同一道認證，頂列鈕原封不動）＝入口離操作區 1200px 遠的問題根治；②每列右側 24×24 ▲▼（snMoveUp/snMoveDown·組內移一格、到組頭/組尾再按＝跨到上/下一組·_snPlaceIn 單一出處），不必拖也不必邊拖邊捲；③「移到組別」下拉 snSetGrpSel（選項取 _snGrps()＝現行分組定義，不寫死組名）；④拖曳全部保留並修體質：snDragOver 依游標在目標列上/下半決定 before/after（原本只能插在前面＝往下移一格像沒反應）、2px #5B9BD5 水平插入線（.sn-ins-b/.sn-ins-a·inset box-shadow·不是左側色條）、拖曳中該列淡化 .sn-drag、從 button/select 起手不觸發拖曳；⑤完成排序/取消工具列改 .sn-etool position:sticky。列＝.sn-erow 38px grid 16/1fr/64/116（大小一致原則·右欄上下對齊）、rename ✏️ 改線條 SVG _icoSVG('edit')。🔴 寫回照舊走「完成排序」原路（_sideEdit.order splice → 只去尾端 null）＝空格槽規則零改動；判定/資料層/同步層一個字沒動＝純版面互動。煙測 smoke_g95_sidesort。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -11302,13 +11302,20 @@ function _reSegHTML(stats,mob,base){
       不新增任何資料欄位、絕不動 planDate（初驗）與 reCheckUF/reCheckSlot（複驗）。
    ══════════════════════════════════════════════════════════════════════════ */
 function _hoSegOpen(seg){ try{ var v=localStorage.getItem('g95_hoSeg'); var o=v?JSON.parse(v):null; if(!o)o={s1:0,s2:0,s3:0}; return !!o['s'+seg]; }catch(e){ return false; } }   // V0825-06 預設全收
+// V0826-03 三段（V0826-02）搬到 hosch 之後，重畫要打在「現在在看的那個 pane」。
+// 固定呼叫 renderReinsp() ＝只重畫已經看不到的 #pane-reinsp ⇒ 在交屋排程點收合列：localStorage 旗標有翻、畫面不動（使用者回報「點了沒反應」）。
+// 單一出處，_hoSegTog／_hoSegFullTog／_hoSegSetSlot 三個呼叫點共用；不在 hosch 時行為與原本完全一樣。
+function _hoSegRe(){
+  try{ if(typeof activeTab!=='undefined' && activeTab==='hosch' && typeof renderHosch==='function'){ renderHosch(); return; } }catch(e){}
+  renderReinsp();
+}
 function _hoSegTog(seg){
   try{ var v=localStorage.getItem('g95_hoSeg'); var o=v?JSON.parse(v):{s1:0,s2:0,s3:0};
        o['s'+seg]=o['s'+seg]?0:1; localStorage.setItem('g95_hoSeg',JSON.stringify(o)); }catch(e){}
-  renderReinsp();
+  _hoSegRe();
 }
 function _hoSegFull(seg){ try{ var o=JSON.parse(localStorage.getItem('g95_hoSeg')||'{}'); return !!o['f'+seg]; }catch(e){ return false; } }
-function _hoSegFullTog(seg){ try{ var o=JSON.parse(localStorage.getItem('g95_hoSeg')||'{}'); o['f'+seg]=o['f'+seg]?0:1; localStorage.setItem('g95_hoSeg',JSON.stringify(o)); }catch(e){} renderReinsp(); }
+function _hoSegFullTog(seg){ try{ var o=JSON.parse(localStorage.getItem('g95_hoSeg')||'{}'); o['f'+seg]=o['f'+seg]?0:1; localStorage.setItem('g95_hoSeg',JSON.stringify(o)); }catch(e){} _hoSegRe(); }
 // 第 1 段：可交屋但還沒給交屋日 —— 母體是 stats（已初驗的戶），與第 2/3 段不同，畫面上有寫清楚
 function _hoSeg1(stats){
   var out=[];
@@ -11337,7 +11344,7 @@ function _hoSegSetSlot(key,slot){
     try{ _hgClear&&_hgClear(); }catch(e){}
     save();
     try{ toast(slot?('已敲定 '+unitDisplayName(key)+' '+slot):'已清除時段','📆'); }catch(e){}
-    renderReinsp();
+    _hoSegRe();   // V0826-03 同上：補完時段要重畫現在在看的 pane（在 hosch 上原本也不會更新）
   }catch(e){ console.warn('[交屋三段] 補時段', e); }
 }
 function _hoSegSlotSel(key,cur,mob){
@@ -25240,4 +25247,4 @@ try{
 </body>
 </html>
 
-<!-- v0826-02 index · build 2026-08-26 11:37 +08 -->
+<!-- v0826-03 index · build 2026-08-26 15:22 +08 -->
