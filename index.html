@@ -95,6 +95,20 @@ body.g95-side.g95-side-min #side-nav .sn-body{display:none}
 .sn-item.active{background:rgba(91,155,213,.16);border-left-color:var(--purple);color:var(--purple);font-weight:700}.g95ic{vertical-align:-2px}.sn-item .g95ic{flex:none;vertical-align:middle}.tab>.g95ic{margin-right:5px;vertical-align:-3px}.mn-row .g95ic{margin-right:7px;vertical-align:-3px}.rpt-settog{background:#E7EFF8;border:1px solid var(--purple);color:#26476b;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:var(--rs);cursor:pointer;display:inline-flex;align-items:center;gap:6px}.rpt-settog .rpt-chev{transition:transform .15s}.rpt-settog.rptopen .rpt-chev{transform:rotate(90deg)}.rpt-bar>button{flex:1 1 0;min-width:60px;max-width:150px;height:38px;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:5px;background:#E7EFF8!important;border:1px solid var(--sky)!important;color:#26476b!important;font-size:12.5px!important;font-weight:700!important;border-radius:0!important;padding:0!important;box-shadow:none!important}.rpt-bar>button:hover{background:#D6E8F8!important}.rpt-bar .rpt-setwrap,.rpt-bar .rpt-estwrap{order:99;flex-basis:100%;width:100%}.hcwk{display:inline-flex;align-items:center;border:1px solid var(--sky);background:var(--sel);color:#26476b;height:32px}.hcwk .hcwk-a{padding:0 10px;height:100%;display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:12.5px;font-weight:700}.hcwk .hcwk-a+.hcwk-a{border-left:1px solid var(--sky)}.hcwk .hcwk-mid{padding:0 10px;font-weight:800;font-size:12.5px;border-left:1px solid var(--sky);border-right:1px solid var(--sky)}.hcdd{position:relative;display:inline-block}.hcdd-t{height:32px;display:inline-flex;align-items:center;gap:5px;padding:0 12px;border:1px solid var(--sky);background:var(--sel);color:#26476b;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font);border-radius:0}.hcdd-m{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#fff;border:1px solid var(--sky);box-shadow:0 6px 18px rgba(0,0,0,.16);padding:10px;min-width:210px;flex-direction:column;gap:8px;align-items:stretch}.hcdd-m.hcdd-r{left:auto;right:0}.hcdd.open .hcdd-m{display:flex}.hcdd-m .btn{width:100%;justify-content:flex-start}.hcdd-m select{width:100%}.hcdd-cv{font-size:11px;transition:transform .15s;display:inline-block}.hcdd.open .hcdd-cv{transform:rotate(180deg)}.mgr-cell{position:relative;display:inline-flex;width:26px;height:24px;vertical-align:middle}.mgr-badge2{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;-webkit-text-stroke:.7px #111;paint-order:stroke fill;pointer-events:none}.mgr-badge2.mgr-none{background:#EEEDE9;color:#9a9a9a;border:1px dashed #bbb;-webkit-text-stroke:0;padding:0}.mgr-ov{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;margin:0}.mainfilt{display:none;flex-basis:100%;width:100%;flex-wrap:wrap;gap:6px;order:99;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}.mainfilt.show{display:flex}.mfbtn .hcdd-cv{transition:transform .15s}.mfbtn.mfopen .hcdd-cv{transform:rotate(180deg)}.annseg{display:inline-flex}.annseg .btn{border-radius:0!important;margin:0}.annseg .btn+.btn{border-left:0}.hcdd-m .hcdd-row{display:flex;align-items:center;gap:6px}.hcdd-m .hcdd-row .btn{width:auto}@media(max-width:700px){.ar-row{grid-template-columns:1fr!important;gap:5px!important;border:1px solid var(--border);border-radius:var(--rs);padding:8px;margin-bottom:8px!important}.ar-row>span:nth-child(2){display:none}.ar-row>span:last-child{justify-content:flex-end}.m-hide{display:none!important}html{overflow-x:hidden}body{overflow-x:hidden;max-width:100vw}.page-hdr{font-size:14px;padding:8px 10px;gap:6px}.page-hdr .hdr-seg>#sync-indicator{order:-1}.page-hdr .hdr-seg{border-width:1px}}/* V0717-04：選中＝平角底色＋左紫條（使用者：一條色線不明顯） */
 .sn-foot{margin-top:16px;border-top:1px solid var(--border);padding-top:8px}
 .sn-foot .sn-item{font-size:12px;color:var(--text3)}
+/* ══ V0826-01 側欄排序模式：▲▼上下移＋移到組別下拉＋插入指示線＋sticky 工具列（大小一致原則：38px 列＋24px 控件＋右欄固定 64/116）══ */
+body.g95-side.g95-side-edit #mainCard{grid-template-columns:400px minmax(0,1fr)}/* V0826-01：排序模式側欄加寬（264px 放不下 名稱＋64＋116 兩欄控件＝看板名會被擠成 0），離開排序模式自動變回 264 */
+.sn-etool{position:sticky;top:0;z-index:7;background:var(--bg);display:flex;gap:6px;padding:6px 0 8px;margin-bottom:6px;border-bottom:1px solid var(--sky)}
+.sn-erow{display:grid;grid-template-columns:16px 1fr 64px 116px;align-items:center;column-gap:8px;height:38px;padding:0 6px;font-size:16px;color:var(--text);border-bottom:1px solid var(--line);border-radius:0;cursor:grab}
+.sn-erow .sn-grip{color:#A9B5C0;font-size:14px;text-align:center;opacity:.6;user-select:none}
+.sn-erow .sn-enm{display:flex;align-items:center;gap:6px;overflow:hidden}
+.sn-erow .sn-enm .sn-etx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-emv{display:flex;gap:4px;justify-content:center}
+.sn-emv button{width:24px;height:24px;min-height:24px;padding:0;margin:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #B7CBE0;background:var(--card);color:#26476b;border-radius:0;cursor:pointer;font-family:var(--font)}
+.sn-emv button:hover{background:var(--sel)}
+.sn-egsel{width:116px;height:24px;min-height:24px;font-size:11.5px;padding:0 4px;border:1px solid #B7CBE0;background:var(--card);color:var(--text2);border-radius:0;font-family:var(--font);cursor:pointer}
+.sn-erow.sn-drag{opacity:.45;background:var(--surface)}
+.sn-erow.sn-ins-b{box-shadow:inset 0 2px 0 0 var(--sky)}
+.sn-erow.sn-ins-a{box-shadow:inset 0 -2px 0 0 var(--sky)}
 @media(max-width:999px){body.g95-side #mainCard{display:block}body.g95-side #tab-bar-wrap{display:block}body.g95-side #side-nav{display:none}}
 /* ══ V0717-07 手機殼：底部五格導覽（公告/總表/行事曆/報告/更多）＝寬≤700px 才出現；每台裝置 g95_mnav 可關 ══ */
 #mnav{display:none}
@@ -450,8 +464,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 377;  // V0825-07 催工進度統一收合（版面整理交辦包·MONGAGOOD 催工進度看板·示意圖 v2＋v2b 定案）：整頁收成 3 條群組標題列＋9 條收合列（38px／24px 控件／右欄固定 92-64-116／編號連續／預設全收）。①要催的廠商：三顆狀態燈改 .ufc 進右欄（class pw-state／data-lamp／_pwSetLamp 沒動）、先 5 家＋展開全部（_PW_CAP 10→5）、「複製催工訊息」釘死 116px＝與右欄第三格同寬（實測兩者都是 72.02px 文字·V0825-02 徽章寬鐵律）；②存圖與複製＝不收合的動作列（#pw-out 保留）；③④⑤修繕進度：整體%進群組標題列（#vp-bar／#vp-sum／#vp-head 保留）、分母與排序改循環鈕（_vpSet 沒動＝煙測照舊）、_vpCfg().open 預設改收合、口徑說明從常駐改收合列；⑥條件設定＝_riRushCondHTML 加 force 參數（reinsp 那個呼叫點沒動）；⑦進度尺深藍大卡→表格 _pwPaceTblHTML（整頁唯一的第三種方塊·欄位數字算法零改動·原函式保留）；⑧施壓榜加 bare 參數（標題與口徑外移）；⑨口徑說明抽單一出處 _riRushVNote。手機不套固定三欄（390px 會溢出）＝控件走 _pwCtlRow 獨立一條。🔴 preview 真資料驗收（36 家/915 筆/11,032 筆缺失）抓到兩件並修掉：(a)「各廠商完成率」列上寫 41 家、點開只有 32 家＝同一件事兩個數字 ⇒ 列上改成「點開會看到的家數」，總數移到副文字；(b)「複製催工訊息」「已催」「施壓榜表頭」「還有 N 家」四處還是藍系 ⇒ 一律改中性（.ufc／.ufmore）。純版面：判準／算法／寫入路徑一個字沒動；_pwDetTog／_pwListTog 保留成相容包裝。｜ V0825-06 統一收合大改版（示意圖 v4+v5 定案·使用者「記住這個原則，其他版面之後也要整理」）：大小一致原則＝整頁只有「群組標題列 .ufhd」「收合列 .uff」兩種列（38px）＋24px 控件；收合列右側固定三欄 92/64/116（同一欄同寬＝截圖/主任確認/排入複驗排程上下對齊）；方框編號 1~10 連續。①首屏改三條收合列 _riTopFoldHTML／_uftBlock（1本週可以約·2只差主任確認·3逾期未修＝示意圖沒畫到但功能不能少，照同款補）——資料仍走 _riTopSplit/_riTopTableHTML 同一把尺，截圖/排入複驗排程/主任確認/另有N戶提示全保留；舊兩欄 _riTopDeskLeft/Right 保留備用不再呼叫。②交屋排程（4~6）搬到 2 下面、複驗排程（7~9）在後、本週vs上週改同款收合列編 10（桌機才有編號·手機頭列原樣）。③三段預設全收（g95_reSeg/g95_hoSeg 預設 {s1:0,s2:0,s3:0}）＋點開先 5 戶＋「展開全部 N 戶」（f1~f3 旗標·_reSegFull/_hoSegFull）；0 戶＝一行空狀態；不滿 5 戶不出鈕。④手機：首屏兩塊照 V0813-08 使用者定案不動；三段收合/上限與交屋在前跟桌機一致（同一支函式）。判定/寫入路徑零改動＝純版面。｜ // V0825-05 殘影與取消/未到紀錄三輪補全（待辦①·使用者「都開始推」）：查證推翻了待辦的描述——複驗殘影 V0818-01 早就進格子（線上複驗取消 0 筆所以從沒顯示過），真正缺的只有交屋輪。①_hcalGhosts 補第三組 ['ho', _hoBooked, noShowHistoryHO/cancelHistoryHO]（gtype 尾碼 'HO'·_cxnArrOf/_cxnIsHo V0824-06 就支援）⇒ 格子頭「未到/取消 N」與殘影卡自動含交屋；②_cxnCollect 補交屋兩份（V0824-06 建了欄位沒接顯示＝紀錄看板查不到交屋取消）；③修沉睡真 bug：_cxnDelEntry 對 Re/HO 型別會「讀對陣列、砍錯陣列」（entry 從 _cxnArrOf 拿、splice 卻永遠砍 cancelHistory/noShowHistory）＝從紀錄看板刪複驗/交屋紀錄會誤刪初驗那筆，改全走 _cxnArrOf；④_cxnStatusOf(key,type) 輪次感知——複驗/交屋紀錄以前讀初驗旗標（hu.cancelled/planDate）＝「目前狀態」必錯，改 _huFlag/_huDate 該輪各看各的；⑤輪次字 _cxnRdWord 單一出處：殘影卡標籤/小視窗標題/紀錄看板徽章/搜尋字 顯示「複驗取消」「交屋未到」，初驗回空字串＝畫面維持舊樣零迴歸。線上 Re/HO 紀錄皆 0 筆＝純預先補、無存量要更正。煙測 smoke_g95_ghost3。
-window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
+const CODE_VERSION = 378;  // V0826-01 側欄「編輯排序」好用化（A＋C 案·帶編號示意圖①~⑤定案）：①側欄底部 .sn-foot 加「排序看板」入口（#sn-sort-entry·走同一支 toggleTabEditMode＋同一道認證，頂列鈕原封不動）＝入口離操作區 1200px 遠的問題根治；②每列右側 24×24 ▲▼（snMoveUp/snMoveDown·組內移一格、到組頭/組尾再按＝跨到上/下一組·_snPlaceIn 單一出處），不必拖也不必邊拖邊捲；③「移到組別」下拉 snSetGrpSel（選項取 _snGrps()＝現行分組定義，不寫死組名）；④拖曳全部保留並修體質：snDragOver 依游標在目標列上/下半決定 before/after（原本只能插在前面＝往下移一格像沒反應）、2px #5B9BD5 水平插入線（.sn-ins-b/.sn-ins-a·inset box-shadow·不是左側色條）、拖曳中該列淡化 .sn-drag、從 button/select 起手不觸發拖曳；⑤完成排序/取消工具列改 .sn-etool position:sticky。列＝.sn-erow 38px grid 16/1fr/64/116（大小一致原則·右欄上下對齊）、rename ✏️ 改線條 SVG _icoSVG('edit')。🔴 寫回照舊走「完成排序」原路（_sideEdit.order splice → 只去尾端 null）＝空格槽規則零改動；判定/資料層/同步層一個字沒動＝純版面互動。煙測 smoke_g95_sidesort。｜ V0825-07 催工進度統一收合（版面整理交辦包·MONGAGOOD 催工進度看板·示意圖 v2＋v2b 定案）：整頁收成 3 條群組標題列＋9 條收合列（38px／24px 控件／右欄固定 92-64-116／編號連續／預設全收）。①要催的廠商：三顆狀態燈改 .ufc 進右欄（class pw-state／data-lamp／_pwSetLamp 沒動）、先 5 家＋展開全部（_PW_CAP 10→5）、「複製催工訊息」釘死 116px＝與右欄第三格同寬（實測兩者都是 72.02px 文字·V0825-02 徽章寬鐵律）；②存圖與複製＝不收合的動作列（#pw-out 保留）；③④⑤修繕進度：整體%進群組標題列（#vp-bar／#vp-sum／#vp-head 保留）、分母與排序改循環鈕（_vpSet 沒動＝煙測照舊）、_vpCfg().open 預設改收合、口徑說明從常駐改收合列；⑥條件設定＝_riRushCondHTML 加 force 參數（reinsp 那個呼叫點沒動）；⑦進度尺深藍大卡→表格 _pwPaceTblHTML（整頁唯一的第三種方塊·欄位數字算法零改動·原函式保留）；⑧施壓榜加 bare 參數（標題與口徑外移）；⑨口徑說明抽單一出處 _riRushVNote。手機不套固定三欄（390px 會溢出）＝控件走 _pwCtlRow 獨立一條。🔴 preview 真資料驗收（36 家/915 筆/11,032 筆缺失）抓到兩件並修掉：(a)「各廠商完成率」列上寫 41 家、點開只有 32 家＝同一件事兩個數字 ⇒ 列上改成「點開會看到的家數」，總數移到副文字；(b)「複製催工訊息」「已催」「施壓榜表頭」「還有 N 家」四處還是藍系 ⇒ 一律改中性（.ufc／.ufmore）。純版面：判準／算法／寫入路徑一個字沒動；_pwDetTog／_pwListTog 保留成相容包裝。｜ V0825-06 統一收合大改版（示意圖 v4+v5 定案·使用者「記住這個原則，其他版面之後也要整理」）：大小一致原則＝整頁只有「群組標題列 .ufhd」「收合列 .uff」兩種列（38px）＋24px 控件；收合列右側固定三欄 92/64/116（同一欄同寬＝截圖/主任確認/排入複驗排程上下對齊）；方框編號 1~10 連續。①首屏改三條收合列 _riTopFoldHTML／_uftBlock（1本週可以約·2只差主任確認·3逾期未修＝示意圖沒畫到但功能不能少，照同款補）——資料仍走 _riTopSplit/_riTopTableHTML 同一把尺，截圖/排入複驗排程/主任確認/另有N戶提示全保留；舊兩欄 _riTopDeskLeft/Right 保留備用不再呼叫。②交屋排程（4~6）搬到 2 下面、複驗排程（7~9）在後、本週vs上週改同款收合列編 10（桌機才有編號·手機頭列原樣）。③三段預設全收（g95_reSeg/g95_hoSeg 預設 {s1:0,s2:0,s3:0}）＋點開先 5 戶＋「展開全部 N 戶」（f1~f3 旗標·_reSegFull/_hoSegFull）；0 戶＝一行空狀態；不滿 5 戶不出鈕。④手機：首屏兩塊照 V0813-08 使用者定案不動；三段收合/上限與交屋在前跟桌機一致（同一支函式）。判定/寫入路徑零改動＝純版面。window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -1352,7 +1365,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0825-07</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0826-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -18787,6 +18800,7 @@ function _sideRender(){
   h+='<div class="sn-foot">'
     +'<div class="sn-item" onclick="tabDisplayMenu()">⋯ 看板顯示設定</div>'
     +'<div class="sn-item" onclick="_annAuthAsk(\'版面設定\',layoutCfgMenu)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg>版面設定</div>'
+    +'<div class="sn-item" id="sn-sort-entry" onclick="toggleTabEditMode()" title="排序看板（跟頂列「編輯排序」同一個功能，就近入口）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 6h9M4 12h9M4 18h9"/><path d="M17 4v16"/><path d="M14 8l3-4 3 4"/><path d="M14 16l3 4 3-4"/></svg>排序看板</div>'   // V0826-01 ①：側欄底部就近入口，走同一支 toggleTabEditMode（頂列鈕原封不動）
     +'<div class="sn-item" onclick="toggleSideLayout()">↩ 切回舊版面</div>'
     +'</div></div>';
   el.innerHTML=h;
@@ -18804,36 +18818,76 @@ function _sideSync(){
     window._sideAutoMin=false;window._sideAutoDone=false;
   }
   document.body.classList.toggle('g95-side-min',on&&!_tabEditMode&&(_sideMinOn()||!!window._sideAutoMin));
+  document.body.classList.toggle('g95-side-edit',on&&!!_tabEditMode&&!!_sideEdit);   // V0826-01：排序模式側欄加寬給 ▲▼＋組別下拉用
   if(on)_sideRender();
 }
 // ── V0717-05 側欄內編輯排序：拖曳調組內順序、拖到組標題＝換組（含釘選）；完成才寫回 S.tabOrder＋S.layoutCfg ──
-var _sideEdit=null,_snDragId=null;
+var _sideEdit=null,_snDragId=null,_snDropAfter=false;   // V0826-01 _snDropAfter＝拖曳落點在目標列的上半(false)還是下半(true)
 function _snGroupOf(id){if(_sideEdit.pins.indexOf(id)>=0)return '釘選';var g=_sideEdit.grpOf[id];return (g&&_lcfg().grpOrder.indexOf(g)>=0)?g:'其他';}
 function _snSetGroup(id,g){var p=_sideEdit.pins.indexOf(id);if(p>=0)_sideEdit.pins.splice(p,1);delete _sideEdit.grpOf[id];if(g==='釘選')_sideEdit.pins.push(id);else if(g!=='其他')_sideEdit.grpOf[id]=g;}
-function snDragStart(ev,id){_snDragId=id;try{ev.dataTransfer.setData('text/plain',id);}catch(e){}}
-function snDragOver(ev){ev.preventDefault();}
-function snDropItem(ev,tid){ev.preventDefault();ev.stopPropagation();if(!_sideEdit||!_snDragId||_snDragId===tid){_snDragId=null;return;}
+function snDragStart(ev,id){
+  try{if(ev.target&&ev.target.closest&&ev.target.closest('button,select')){ev.preventDefault();return false;}}catch(e){}   // V0826-01 ④：從 ▲▼／下拉上按下不算拖曳（draggable 容器內的控件要擋掉）
+  _snDragId=id;_snDropAfter=false;try{ev.dataTransfer.setData('text/plain',id);}catch(e){}
+  try{ev.currentTarget.classList.add('sn-drag');}catch(e){}}
+function _snInsClear(){try{var el=document.getElementById('side-nav');if(!el)return;el.querySelectorAll('.sn-ins-b,.sn-ins-a').forEach(function(x){x.classList.remove('sn-ins-b');x.classList.remove('sn-ins-a');});}catch(e){}}   // V0826-01 清插入指示線
+function snDragEnd(ev){_snInsClear();_snDragId=null;_snDropAfter=false;try{var el=document.getElementById('side-nav');if(el)el.querySelectorAll('.sn-drag').forEach(function(x){x.classList.remove('sn-drag');});}catch(e){}}
+function snDragOver(ev,tid){ev.preventDefault();   // V0826-01 ④：依游標在目標列上/下半決定插在前面還是後面，並畫 2px 細線（水平線·不是左側色條）
+  if(!tid||!_snDragId||tid===_snDragId){return;}
+  var el=ev.currentTarget;if(!el||!el.getBoundingClientRect)return;
+  var r=el.getBoundingClientRect();if(!r.height)return;
+  var after=(ev.clientY-r.top)>r.height/2;_snDropAfter=after;
+  _snInsClear();el.classList.add(after?'sn-ins-a':'sn-ins-b');}
+function snDropItem(ev,tid){ev.preventDefault();ev.stopPropagation();_snInsClear();if(!_sideEdit||!_snDragId||_snDragId===tid){_snDragId=null;_snDropAfter=false;return;}
   var o=_sideEdit.order,fi=o.indexOf(_snDragId);if(fi<0){_snDragId=null;return;}
-  o.splice(fi,1);var ti=o.indexOf(tid);if(ti<0)o.push(_snDragId);else o.splice(ti,0,_snDragId);
-  _snSetGroup(_snDragId,_snGroupOf(tid));_snDragId=null;_sideRender();}
+  o.splice(fi,1);var ti=o.indexOf(tid);var _af=!!_snDropAfter;if(ti<0)o.push(_snDragId);else o.splice(_af?ti+1:ti,0,_snDragId);   // V0826-01 ④：支援「放在目標列後面」（原本只能插在前面＝往下移一格會像沒反應）
+  _snSetGroup(_snDragId,_snGroupOf(tid));_snDragId=null;_snDropAfter=false;_sideRender();}
 function snDropGrp(ev,g){ev.preventDefault();if(!_sideEdit||!_snDragId)return;
   var o=_sideEdit.order,fi=o.indexOf(_snDragId);if(fi<0){_snDragId=null;return;}
   o.splice(fi,1);_snSetGroup(_snDragId,g);
   var lastIdx=-1;o.forEach(function(x,i){if(x&&TAB_DEFS[x]&&_snGroupOf(x)===g)lastIdx=i;});
   if(lastIdx<0)o.push(_snDragId);else o.splice(lastIdx+1,0,_snDragId);
   _snDragId=null;_sideRender();}
+// ── V0826-01 ②③：▲▼ 上下移一格（到組頭/組尾再按＝跨到上/下一組）＋「移到組別」下拉；一律只動 _sideEdit 工作副本，寫回照舊走「完成排序」那條路（空格槽規則不變） ──
+function _snGrps(){return ['釘選'].concat(_lcfg().grpOrder).concat(['其他']);}   // 組別選項＝現行分組定義，不寫死
+function _snIdsIn(g){return _sideEdit.order.filter(function(x){return x&&TAB_DEFS[x]&&_snGroupOf(x)===g;});}
+function _snPlaceIn(id,g,atEnd){   // 移到 g 組的最前/最後（空組＝丟到陣列尾；空格槽 null 原封留在 order 裡）
+  var o=_sideEdit.order,fi=o.indexOf(id);if(fi>=0)o.splice(fi,1);
+  var idx=-1;o.forEach(function(x,i){if(x&&TAB_DEFS[x]&&_snGroupOf(x)===g){if(atEnd)idx=i;else if(idx<0)idx=i;}});
+  _snSetGroup(id,g);
+  if(idx<0)o.push(id);else o.splice(atEnd?idx+1:idx,0,id);
+}
+function snMoveUp(id){
+  if(!_sideEdit)return;
+  var g=_snGroupOf(id),lst=_snIdsIn(g),j=lst.indexOf(id),o=_sideEdit.order;
+  if(j>0){var prev=lst[j-1],fi=o.indexOf(id);if(fi<0)return;o.splice(fi,1);var ti=o.indexOf(prev);if(ti<0)o.push(id);else o.splice(ti,0,id);}
+  else{var gs=_snGrps(),gi=gs.indexOf(g);if(gi<=0)return;_snPlaceIn(id,gs[gi-1],true);}   // 組頭再按＝上一組的最後
+  _sideRender();}
+function snMoveDown(id){
+  if(!_sideEdit)return;
+  var g=_snGroupOf(id),lst=_snIdsIn(g),j=lst.indexOf(id),o=_sideEdit.order;
+  if(j>=0&&j<lst.length-1){var nx=lst[j+1],fi=o.indexOf(id);if(fi<0)return;o.splice(fi,1);var ti=o.indexOf(nx);if(ti<0)o.push(id);else o.splice(ti+1,0,id);}
+  else{var gs=_snGrps(),gi=gs.indexOf(g);if(gi<0||gi>=gs.length-1)return;_snPlaceIn(id,gs[gi+1],false);}   // 組尾再按＝下一組的最前
+  _sideRender();}
+function snSetGrpSel(id,g){if(!_sideEdit)return;if(_snGrps().indexOf(g)<0)return;_snPlaceIn(id,g,true);_sideRender();}
 function _sideRenderEdit(el){
-  var grps=['釘選'].concat(_lcfg().grpOrder).concat(['其他']);
+  var grps=_snGrps();   // V0826-01：組別清單抽成 _snGrps() 單一出處（▲▼跨組與下拉選項共用）
   var ids=_sideEdit.order.filter(function(x){return x&&TAB_DEFS[x];});
-  var h='<div style="font-size:12px;color:var(--text2);background:var(--surface);padding:8px 10px;margin-bottom:8px"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>排序模式：拖項目＝調順序；拖到組名上＝換組（含釘選）。✏️＝改名。完成才存檔。</div>'
-    +'<div style="display:flex;gap:6px;margin-bottom:10px"><button class="btn btn-sm btn-p" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>完成排序</button><button class="btn btn-sm" onclick="cancelTabEditMode()">✕ 取消</button></div><div class="sn-body">';
+  var _cvU='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
+  var _cvD='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  var h='<div class="sn-etool"><button class="btn btn-sm btn-p" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>完成排序</button><button class="btn btn-sm" onclick="cancelTabEditMode()">✕ 取消</button></div>'   // V0826-01 ⑤：工具列改 sticky 置頂（往下捲也一直看得到）＋移到說明列上面
+    +'<div style="font-size:12px;color:var(--text2);background:var(--surface);padding:8px 10px;margin-bottom:8px"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>排序模式：▲▼＝上下移一格（到組頭/組尾再按＝跨到上/下一組）；右邊下拉＝直接移到某一組；⠿ 仍可拖曳（拖到組名上＝換組）。鉛筆＝改名。完成才存檔。</div><div class="sn-body">';
   grps.forEach(function(g){
     var gi=ids.filter(function(id){return _snGroupOf(id)===g;});
     h+='<div class="sn-sec" style="border:1px dashed var(--border);padding:5px 8px" ondragover="snDragOver(event)" ondrop="snDropGrp(event,\''+esc(g)+'\')">'+esc(g)+'（拖到這裡＝移入）</div>';
     h+=gi.map(function(id){
-      return '<div class="sn-item" draggable="true" style="cursor:grab" ondragstart="snDragStart(event,\''+id+'\')" ondragover="snDragOver(event)" ondrop="snDropItem(event,\''+id+'\')">'
-        +'<span style="opacity:.5">⠿</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(tabLabel(id))+(_isTabHidden(id)?'<span style="font-size:11px;color:var(--text3)">（隱藏中）</span>':'')+'</span>'
-        +'<span onclick="event.stopPropagation();renameTab(\''+id+'\')" title="改看板名稱" style="cursor:pointer;opacity:.6;font-size:12px">✏️</span></div>';
+      var _og=grps.map(function(x){return '<option value="'+esc(x)+'"'+(x===g?' selected':'')+'>'+esc(x)+'</option>';}).join('');   // V0826-01 ③：選項＝現行分組定義（_snGrps），不寫死
+      return '<div class="sn-erow" data-sid="'+id+'" draggable="true" ondragstart="snDragStart(event,\''+id+'\')" ondragover="snDragOver(event,\''+id+'\')" ondrop="snDropItem(event,\''+id+'\')" ondragend="snDragEnd(event)">'
+        +'<span class="sn-grip" title="按住這裡也可以拖曳">⠿</span>'
+        +'<span class="sn-enm" title="'+esc(tabLabel(id))+'">'+_tabIco(id)+'<span class="sn-etx">'+esc(_tabTxt(tabLabel(id)))+(_isTabHidden(id)?'<span style="font-size:11px;color:var(--text3)">（隱藏中）</span>':'')+'</span>'   // V0826-01：圖示改線條 SVG＋文字去 emoji＝跟平常狀態的側欄一致（圖示鐵律）
+        +'<span onclick="event.stopPropagation();renameTab(\''+id+'\')" title="改看板名稱" style="cursor:pointer;opacity:.55;flex:none;display:inline-flex">'+_icoSVG('edit',13)+'</span></span>'
+        +'<span class="sn-emv"><button type="button" class="sn-eup" title="上移一格（到組頭再按＝移到上一組）" onclick="event.stopPropagation();snMoveUp(\''+id+'\')">'+_cvU+'</button>'
+        +'<button type="button" class="sn-edn" title="下移一格（到組尾再按＝移到下一組）" onclick="event.stopPropagation();snMoveDown(\''+id+'\')">'+_cvD+'</button></span>'
+        +'<select class="sn-egsel" title="移到組別" onchange="snSetGrpSel(\''+id+'\',this.value)" onclick="event.stopPropagation()">'+_og+'</select></div>';
     }).join('');
   });
   h+='</div>';
@@ -24932,4 +24986,4 @@ try{
 </body>
 </html>
 
-<!-- v0825-07 index · build 2026-08-25 17:30 +08 -->
+<!-- v0826-01 index · build 2026-08-26 10:13 +08 -->
