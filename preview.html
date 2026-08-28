@@ -489,6 +489,13 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0828-06 ⑧：卡片右上角小相機 */
 #pane-board .bdc{position:relative}
 #pane-board .bdcam{position:absolute;top:8px;right:8px;width:26px;height:26px;border:1px solid #C9C7C2;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box}
+/* V0828-07 ⑪13A：戶別欄依棟淡染（只染那一格·平角·非左側色條）＋樓層合併格 */
+#pane-board .bdtb td.bduA{background:#EAF4FC}
+#pane-board .bdtb td.bduB{background:#FBF3DC}
+#pane-board .bdtb td.bduS{background:#E9F5EF}
+#pane-board .bdtb td.bdfl{background:#F4F7FB;font-weight:800;color:#26435F}
+#pane-board .ufrow .uff{white-space:nowrap}   /* V0828-07 ⑮：段名變長別在桌機折行；手機另有 ellipsis 規則 */
+#pane-board .ufbrk.bdna{grid-template-columns:auto;width:auto;min-width:0}
 #pane-board .bdc .o{font-size:14px;color:#5F5E5A;padding-top:4px}
 #pane-board .bdwrap{overflow-x:auto}
 #pane-board .bdtb{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;min-width:620px}
@@ -521,7 +528,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-28 11:45 +08';
+window._BUILD_STAMP = '2026-08-28 14:35 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -548,7 +555,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 390;  // V0828-06 報告看板⑦⑧⑨（示意圖三輪定案·9A）：⑦段內篩選列（棟別 全部/A棟/B棟/店鋪 帶戶數＋排序二選一：棟別·樓層＝新預設 A→B→店·棟座自然序·同棟座樓層高→低／等待天數＝原本；已交屋段＝交屋日新→舊預設）——🔴清單、展開數、出圖、名單出圖全走同一份 _bdKeysView（排序與顯示同一把尺·V0804-04 通則）；收合再展開回預設；篩選狀態純本機不進雲端。⑧六卡右上角小相機（26px 線條 SVG·stopPropagation 不觸發展開·id=bd-card-<id>·_bdShotCard）＝只拍那張卡；載入中跟著守門停用。⑨名單出圖 _bdRosterHTML/_bdRosterShot＝緊湊表格 PNG（戶別＋複驗日；已交屋段=交屋日、gap段=還差幾筆；≤15戶1組/≤30戶2組/更多3組並排·離屏 div → _capEl → 4s 後移除）——使用者要「表格」貼 LINE，LINE 純文字排不出表格（字型非等寬）⇒ 9A 圖片版定案，9B/9C 淘汰。｜V0828-05 報告看板微調六項（使用者紅字截圖三輪定案①~⑥）：🔴④**「位置」與「身分」兩個維度混用的既有錯誤修正**＝V0827-02 把「店鋪」欄寫成 isBizUnit（身分＝業主戶·全社區僅 6 戶），真正的店鋪清單是客戶清單 _CLM_SHOP 28 戶且多數身分是地主戶（A1-1/A6-1/A7-1…對照表都是「地」）⇒ _bdBlk 改查 _CLM_SHOP（位置），身分只拿來算「地主戶 N」；店鋪欄 6→28、A/B 欄跟著變＝修正不是改壞，preview 真資料驗過。使用者原話「店鋪不一定是地主戶」「店鋪不一定都是業主戶」。①刪「其中」＝「地主戶 N」。②地主戶拆棟別「地主戶 N（A棟 x · B棟 y · 店鋪 z）」（_bdBrk 補 ownA/ownB/ownS；0 時不加括號；八段用短標 A/B/店·欄寬 118→172、手機 100→158 前三欄 56→52；卡片括號段包 nowrap 整塊換行）。③摘要第三行刪「未約初驗 N 戶含店鋪 M 戶」只留資料來源。⑤標題刪「八段」。⑥底部說明刪開頭句與「店鋪＝業主戶」，改「A棟＋B棟＋店鋪＝位置合計；地主戶＝身分」。🔴另：使用者 10:49 截圖又見 138/253＝該台資料沒載全（同時線上載完全算＝57/21/24/5/10/1），已請按「重抓」——若重抓後仍錯＝旗標沒抓到的洞，要追。｜V0828-04 報告看板改版（交辦包 03_規格與討論/報告看板改版_V0828-04_交辦包_20260828.md·八項拍板①~⑦做⑧不做）：①🔴資料就緒守門＝全系統只有報告看板沒擋 _dfPartial/_dfStale（grep 0 次·其他看板全有），未載完時 pend 不全＝階段判定樂觀地錯（修繕中被誤判成等複驗）⇒ 載入中跳琥珀橫幅＋六格/八段整塊 grayscale+opacity .55（數字看得到但明顯不可信）＋出總覽圖/複製文字/每段出圖三種鈕全停用（disabled＋_bdLdBlock 第二道保險）；恢復＝掛在 _dfPartial 轉正處補 throttledRenderAll（沿用既有旗標時機·不用 setTimeout 猜）。②六格編號改 .ufno 方框（同八段 20×20·border-color:currentColor 跟卡片色）。③⑦棟別寫法單一出處＝_bdBrkParts/_bdBrkOwn/_bdBrkTxt/_bdBrkCells 四支，六格/八段/摘要全共用：A棟/B棟/店鋪、地主改「其中地主戶 N」（＝表達它是 A+B+店 的子集合）。④摘要行每個「詞＋數字」片段各包 nowrap（中文從詞中間斷行·V0819 血淚）。⑤沒貼名單＝「還沒貼業主交屋需求名單」整行不畫（不留空行）；貼了名單後那行與第三行小字保留（使用者截圖劃兩行、口頭只刪一行＝以口頭為準）。⑥八段中間欄改固定欄寬 grid（64×3+118·手機 56×3+100 換第二行）＝直行對齊；🔴只掛一個 auto margin（ufbrk 靠右推·board 內 .ufr margin-left:0）——兩個 auto 會把剩餘空間對半分＝段名長短不同就對不齊；req/gap 兩段＝同寬占位「（這兩段不分棟別）」。⑧排序規則寫表頭＝使用者明確不做。🔴判定一個字沒動（_riStat/_bdData/8297~8300 原封）。
+const CODE_VERSION = 391;  // V0828-07 報告看板⑩~⑯＋13A＋加入鈕（三輪示意圖定案·78+8 戶提前交屋名單接入）：⑩排序「棟別·樓層」改樓層優先＝棟 A→B→店→樓層高→低→戶別（棟座）1→8（_bdBlSortCmp 單一出處·使用者三講定案已進 CLAUDE.md 鐵律）。⑪戶別欄依棟淡染 A淡藍/B淡黃/店淡綠（.bduA/B/S·只染那格非色條·名單出圖同步）。⑫排序加「複驗日」（早→晚·未約最後·同日再棟別樓層）。⑭複驗日排序＝同日合併格「08/19（N 戶）」（N＝全篩選範圍不只前5）·未約收最後一組。13A 樓層自成一欄（bl 排序連續同樓層 rowspan 合併·其他排序逐列寫·店鋪＝「店面」）·戶別欄剩 A1-31 全代碼（對外溝通要全碼·名單出圖不變）。⑮七段改「提前交屋_借屋裝修(可以交屋)」tone ok／八段改「(尚有缺失)」＝同一份名單 _bdData 自動分流（m.lst 全體·req＝deliverable+delivered·gap＝其餘）；摘要改「提前交屋名單 N 戶，其中 X 戶未達可交屋」。⑯_bdNormTok 解析器吃 PDF 格式（★／加購-／店字頭／尾碼F／樓層前置零 A7-06F→A7-6）＝86 戶（78 地主+8 借屋）線上驗證全對到（可交屋7/尚有缺失79 當時值）。＋「加入」鈕＝_bdApply(true) 增量併入名單（防 .map 塞 index 只認 ===true/1）·confirm 列新增/已在名單數。🔴名單寫入一律使用者本人按套用/加入。｜V0828-06 報告看板⑦⑧⑨（示意圖三輪定案·9A）：⑦段內篩選列（棟別 全部/A棟/B棟/店鋪 帶戶數＋排序二選一：棟別·樓層＝新預設 A→B→店·棟座自然序·同棟座樓層高→低／等待天數＝原本；已交屋段＝交屋日新→舊預設）——🔴清單、展開數、出圖、名單出圖全走同一份 _bdKeysView（排序與顯示同一把尺·V0804-04 通則）；收合再展開回預設；篩選狀態純本機不進雲端。⑧六卡右上角小相機（26px 線條 SVG·stopPropagation 不觸發展開·id=bd-card-<id>·_bdShotCard）＝只拍那張卡；載入中跟著守門停用。⑨名單出圖 _bdRosterHTML/_bdRosterShot＝緊湊表格 PNG（戶別＋複驗日；已交屋段=交屋日、gap段=還差幾筆；≤15戶1組/≤30戶2組/更多3組並排·離屏 div → _capEl → 4s 後移除）——使用者要「表格」貼 LINE，LINE 純文字排不出表格（字型非等寬）⇒ 9A 圖片版定案，9B/9C 淘汰。｜V0828-05 報告看板微調六項（使用者紅字截圖三輪定案①~⑥）：🔴④**「位置」與「身分」兩個維度混用的既有錯誤修正**＝V0827-02 把「店鋪」欄寫成 isBizUnit（身分＝業主戶·全社區僅 6 戶），真正的店鋪清單是客戶清單 _CLM_SHOP 28 戶且多數身分是地主戶（A1-1/A6-1/A7-1…對照表都是「地」）⇒ _bdBlk 改查 _CLM_SHOP（位置），身分只拿來算「地主戶 N」；店鋪欄 6→28、A/B 欄跟著變＝修正不是改壞，preview 真資料驗過。使用者原話「店鋪不一定是地主戶」「店鋪不一定都是業主戶」。①刪「其中」＝「地主戶 N」。②地主戶拆棟別「地主戶 N（A棟 x · B棟 y · 店鋪 z）」（_bdBrk 補 ownA/ownB/ownS；0 時不加括號；八段用短標 A/B/店·欄寬 118→172、手機 100→158 前三欄 56→52；卡片括號段包 nowrap 整塊換行）。③摘要第三行刪「未約初驗 N 戶含店鋪 M 戶」只留資料來源。⑤標題刪「八段」。⑥底部說明刪開頭句與「店鋪＝業主戶」，改「A棟＋B棟＋店鋪＝位置合計；地主戶＝身分」。🔴另：使用者 10:49 截圖又見 138/253＝該台資料沒載全（同時線上載完全算＝57/21/24/5/10/1），已請按「重抓」——若重抓後仍錯＝旗標沒抓到的洞，要追。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1450,7 +1457,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0828-06</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0828-07</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -11503,8 +11510,8 @@ var _BDSEG=[
   {id:'del', no:4, name:'待交屋',             card:1, tone:''},
   {id:'re2', no:5, name:'待複驗2',            card:1, tone:''},
   {id:'done',no:6, name:'已交屋',             card:1, tone:'ok'},
-  {id:'req', no:7, name:'業主交屋需求',       card:0, tone:''},
-  {id:'gap', no:8, name:'業主要、我們還沒好', card:0, tone:'hot'}
+  {id:'req', no:7, name:'提前交屋_借屋裝修(可以交屋)', card:0, tone:'ok'},    /* V0828-07 ⑮ 名單自動分流：可交屋+已交屋 */
+  {id:'gap', no:8, name:'提前交屋_借屋裝修(尚有缺失)', card:0, tone:'hot'}    /* V0828-07 ⑮ 名單其餘＝未達可交屋 */
 ];
 function _bdSegBy(id){for(var i=0;i<_BDSEG.length;i++)if(_BDSEG[i].id===id)return _BDSEG[i];return null;}
 // ── 分類：🔴 V0828-05 ④「位置」與「身分」是兩個維度，不可混用（0828 使用者抓到：店鋪不一定是業主戶）──
@@ -11526,7 +11533,7 @@ function _bdBrkTxt(o){return _bdBrkParts(o).map(function(p){return p[0]+' '+p[1]
 function _bdBrkOwnHTML(o){var t=_bdBrkOwn(o),i=t.indexOf('（');if(i<0)return esc(t);return esc(t.slice(0,i))+'<span style="white-space:nowrap">'+esc(t.slice(i))+'</span>';}   // 手機卡片窄：括號那段整塊換行，不從詞中間斷
 // ⑥ 八段中間欄＝固定欄寬 grid（直行對齊）；req/gap 不分棟別＝同寬占位字
 function _bdBrkCells(o){
-  if(!o)return '<span class="ufbrk"><span class="na" style="grid-column:1/-1">（這兩段不分棟別）</span></span>';
+  if(!o)return '<span class="ufbrk bdna"><span class="na" style="grid-column:1/-1">（這兩段不分棟別）</span></span>';   /* V0828-07：占位不吃固定欄寬（長段名會擠爆列寬） */
   var h='<span class="ufbrk">';
   _bdBrkParts(o).forEach(function(p){h+='<span>'+p[0]+' '+p[1]+'</span>';});
   return h+'<span>'+esc(_bdBrkOwn(o,true))+'</span></span>';
@@ -11534,10 +11541,16 @@ function _bdBrkCells(o){
 // ── 業主交屋需求名單（唯一新資料·雲端全員共用）──
 function _bdReq(){var r=S.hoReq;if(!r||typeof r!=='object')r={units:[],at:'',by:''};if(!Array.isArray(r.units))r.units=[];return r;}
 function _bdNameMap(){var m={};try{_riAllKeys().forEach(function(k){m[String(unitDisplayName(k)||'').toUpperCase().replace(/\s+/g,'')]=k;});}catch(e){}return m;}
+// V0828-07 ⑯：吃得下提前交屋 PDF 的戶別格式＝★前綴／「加購-」／「店」字頭／尾碼 F／樓層前置零（A7-06F→A7-6）
+function _bdNormTok(t){
+  t=String(t||'').trim().toUpperCase().replace(/\s+/g,'').replace(/^★+/,'').replace(/^加購-?/,'').replace(/^店/,'').replace(/F$/,'');
+  var m=t.match(/^([A-C]\d+)-0*(\d+)$/);
+  return m?(m[1]+'-'+String(+m[2])):t;
+}
 function _bdParse(txt){                                    // 貼上的字串 → {keys,bad}
   var m=_bdNameMap(),seen={},keys=[],bad=[];
   String(txt||'').split(/[\r\n,，、;；\t]+/).forEach(function(s){
-    var t=String(s||'').trim().toUpperCase().replace(/\s+/g,'');if(!t)return;
+    var t=_bdNormTok(s);if(!t)return;
     if(m[t]){if(!seen[m[t]]){seen[m[t]]=1;keys.push(m[t]);}}else if(bad.indexOf(t)<0)bad.push(t);
   });
   return {keys:keys,bad:bad};
@@ -11563,9 +11576,10 @@ function _bdData(){
     else if(s.stage==='delivered')m.done.push(k);
   });
   var req=_bdReq(),live={};keys.forEach(function(k){live[k]=1;});
-  m.req=(req.units||[]).filter(function(k){return live[k];});
-  // 比對＝業主要交屋、但還沒到「可交屋」（已交屋的算完成、不列）
-  m.gap=m.req.filter(function(k){var s=st[k];return s&&s.stage!=='deliverable'&&s.stage!=='delivered';});
+  // V0828-07 ⑮：名單一份、去 7 還是 8 系統自動判（可交屋/已交屋→req、其餘→gap）；m.lst＝名單活戶全體（摘要用）
+  m.lst=(req.units||[]).filter(function(k){return live[k];});
+  m.req=m.lst.filter(function(k){var s=st[k];return s&&(s.stage==='deliverable'||s.stage==='delivered');});
+  m.gap=m.lst.filter(function(k){var s=st[k];return !(s&&(s.stage==='deliverable'||s.stage==='delivered'));});
   var brk={};Object.keys(m).forEach(function(id){brk[id]=_bdBrk(m[id]);});
   _bdC={m:m,brk:brk,st:st,keys:keys,req:req};_bdFp=fp;return _bdC;
 }
@@ -11604,14 +11618,20 @@ function _bdKeysView(id,D){                                    // 篩選＋排�
       var wa=(ra.wait==null?-1:ra.wait),wb=(rb.wait==null?-1:rb.wait);
       if(wa!==wb)return wb-wa;
       return String(ra.unit).localeCompare(String(rb.unit),'zh-Hant');});
-  }else{                                                       // 'bl' 棟別·樓層（新預設）＝A→B→店、棟座自然序、同棟座樓層高→低
-    keys.sort(function(a,b){
-      var ba=BO[_bdBlk(a)],bb=BO[_bdBlk(b)];if(ba!==bb)return ba-bb;
-      var ca=_bdColName(a),cb=_bdColName(b);
-      if(ca!==cb)return ca.localeCompare(cb,'zh-Hant',{numeric:true});
-      return _bdFlrNum(b)-_bdFlrNum(a);});
+  }else if(f.sort==='re'){                                     // V0828-07 ⑫ 複驗日早→晚（沒約的排最後）；同日再照棟別·樓層
+    keys.sort(function(a,b){var ra=_bdRow(a,D).re||'',rb=_bdRow(b,D).re||'';
+      if(ra!==rb){if(!ra)return 1;if(!rb)return -1;return ra<rb?-1:1;}
+      return _bdBlSortCmp(a,b);});
+  }else{                                                       // 'bl' 棟別·樓層
+    keys.sort(_bdBlSortCmp);
   }
   return keys;
+}
+// V0828-07 ⑩（使用者三講定案·收尾同步進 CLAUDE.md 鐵律）：棟 A→B→店 → 樓層高→低 → 戶別（棟座）1→8＝同樓層的戶排在一起
+function _bdBlSortCmp(a,b){
+  var BO={A:0,B:1,S:2},ba=BO[_bdBlk(a)],bb=BO[_bdBlk(b)];if(ba!==bb)return ba-bb;
+  var fa=_bdFlrNum(a),fb=_bdFlrNum(b);if(fa!==fb)return fb-fa;
+  return _bdColName(a).localeCompare(_bdColName(b),'zh-Hant',{numeric:true});
 }
 function _bdFltBarHTML(id,D){
   var f=_bdFltGet(id),all=(D.m[id]||[]),c={A:0,B:0,S:0};
@@ -11622,31 +11642,51 @@ function _bdFltBarHTML(id,D){
     +btn('blk','all','全部 '+all.length)+btn('blk','A','A棟 '+c.A)+btn('blk','B','B棟 '+c.B)+btn('blk','S','店鋪 '+c.S)
     +'<span class="bdfsep"></span><span class="bdflb">排序</span>'
     +btn('sort','bl','棟別·樓層')
-    +(id==='done'?btn('sort','dd','交屋日'):btn('sort','wait','等待天數'))
+    +(id==='done'?btn('sort','dd','交屋日'):(btn('sort','re','複驗日')+btn('sort','wait','等待天數')))
     +'<span class="bdfsep"></span>'
     +(ld?'<span class="bdfbtn" style="color:#B9B7B0;border-color:#DDDBD6;cursor:default">名單出圖</span>'
         :'<span class="bdfbtn" onclick="_bdRosterShot(\''+id+'\')">名單出圖</span>')
     +'</div>';
   return h;
 }
+// V0828-07 13A：樓層自成一欄（店鋪＝「店面」）；⑪戶別欄依棟淡染；⑭「棟別·樓層」排序＝同樓層合併格、「複驗日」排序＝同日合併格＋（N 戶）
+function _bdFlrLbl(k){return _bdBlk(k)==='S'?'店面':(_bdFlrNum(k)+'F');}
+function _bdUnitTd(k){var b=_bdBlk(k);return '<td class="bdu'+b+'" style="font-weight:700">'+esc(unitDisplayName(k))+'</td>';}
 function _bdListHTML(id,D){
   var keys=_bdKeysView(id,D);
   var bar=_bdFltBarHTML(id,D);
   if(!keys.length)return bar+'<div class="ufempty">目前沒有符合的戶別</div>';
-  var full=!!_bdFull[id],show=full?keys:keys.slice(0,5),ro=_hoSegRo();
+  var full=!!_bdFull[id],show=full?keys:keys.slice(0,5),ro=_hoSegRo(),f=_bdFltGet(id);
   var act=(id==='re0')?'排複驗日':(id==='ins0'?'排初驗日':'');
-  var h=bar+'<div class="bdwrap"><table class="bdtb"><thead><tr><th>戶別</th><th class="l">屋主</th><th>身分</th><th>目前階段</th>'
-       +(id==='gap'?'<th>還差幾筆</th>':'')+(id==='done'?'<th>交屋日</th>':'')+'<th>初驗完成</th>'+(id==='done'?'':'<th>等待天數</th><th>複驗日</th>')+(act?'<th>動作</th>':'')+'</tr></thead><tbody>';   // V0828-02 A：已交屋那段不出「等待天數／複驗日」（都交屋了，那兩欄只是雜訊）
-  show.forEach(function(k){
+  // 合併格規劃：'bl'＝樓層欄同值連續合併；'re'＝複驗日欄同日合併＋全篩選範圍的（N 戶）
+  var mergeFlr=(f.sort==='bl'),mergeRe=(f.sort==='re'&&id!=='done');
+  var reDayN={};if(mergeRe)keys.forEach(function(k){var d0=_bdRow(k,D).re||'';reDayN[d0]=(reDayN[d0]||0)+1;});
+  function spanOf(i,getv){var v=getv(show[i]),n=1;for(var j=i+1;j<show.length;j++){if(getv(show[j])!==v)break;n++;}return n;}
+  var h=bar+'<div class="bdwrap"><table class="bdtb"><thead><tr><th>樓層</th><th>戶別</th><th class="l">屋主</th><th>身分</th><th>目前階段</th>'
+       +(id==='gap'?'<th>還差幾筆</th>':'')+(id==='done'?'<th>交屋日</th>':'')+'<th>初驗完成</th>'+(id==='done'?'':'<th>等待天數</th><th>複驗日</th>')+(act?'<th>動作</th>':'')+'</tr></thead><tbody>';   // V0828-02 A：已交屋那段不出「等待天數／複驗日」
+  var flrLeft=0,reLeft=0;
+  show.forEach(function(k,i){
     var r=_bdRow(k,D);
-    h+='<tr><td style="font-weight:600">'+esc(r.unit)+'</td><td class="l">'+esc(r.name||'—')+'</td><td>'+esc(r.kind)+'</td>'
+    h+='<tr>';
+    // 樓層欄（13A）：bl 排序＝連續同樓層 rowspan；其他排序逐列各寫
+    if(mergeFlr){ if(flrLeft===0){var n1=spanOf(i,_bdFlrLbl);flrLeft=n1;h+='<td class="bdfl" rowspan="'+n1+'">'+esc(_bdFlrLbl(k))+'</td>';} flrLeft--; }
+    else h+='<td class="bdfl">'+esc(_bdFlrLbl(k))+'</td>';
+    h+=_bdUnitTd(k)+'<td class="l">'+esc(r.name||'—')+'</td><td>'+esc(r.kind)+'</td>'
       +'<td>'+_bdStageTag(r.stage,r.re)+'</td>'
       +(id==='gap'?('<td'+(r.pend>0?' style="font-weight:800;color:#B3261E"':'')+'>'+(r.pend>0?('<span onclick="_bdGoPWO(\''+_jsq(k)+'\')" style="cursor:pointer;text-decoration:underline">'+r.pend+'</span>'):'0')+'</td>'):'')
       +(id==='done'?('<td style="font-weight:700;color:#2F7D2A">'+(r.dd?_bdMD(r.dd):'<span style="color:#B3261E;font-weight:400">未填</span>')+'</td>'):'')
       +'<td style="color:#185FA5">'+_bdMD(r.insp1)+'</td>'
-      +(id==='done'?'':('<td'+((r.wait!=null&&r.wait>=30)?' style="font-weight:800;color:#B3261E"':'')+'>'+(r.wait==null?'—':r.wait)+'</td>'
-      +'<td>'+(r.re?('<span style="font-weight:700;color:#3B6D11">'+_bdMD(r.re)+'</span>'):'<span style="color:#B3261E">未約</span>')+'</td>'))
-      +(act?('<td><button class="ufc" style="width:auto;padding:0 10px"'+ro+' onclick="_bdBook(\''+_jsq(k)+'\',\''+id+'\')">'+act+'</button></td>'):'')
+      +(id==='done'?'':('<td'+((r.wait!=null&&r.wait>=30)?' style="font-weight:800;color:#B3261E"':'')+'>'+(r.wait==null?'—':r.wait)+'</td>'));
+    if(id!=='done'){
+      // 複驗日欄（⑭）：re 排序＝同日合併格＋（N 戶·全篩選範圍不只前 5）；其他排序逐列各寫
+      if(mergeRe){
+        if(reLeft===0){var getv=function(kk){return _bdRow(kk,D).re||'';},n2=spanOf(i,getv),d0=getv(k);
+          reLeft=n2;
+          h+='<td class="bdfl" rowspan="'+n2+'" style="background:#F0F7F0">'+(d0?('<span style="font-weight:800;color:#2F7D2A">'+_bdMD(d0)+'（'+reDayN[d0]+' 戶）</span>'):('<span style="color:#B3261E;font-weight:700">未約（'+reDayN['']+' 戶）</span>'))+'</td>';}
+        reLeft--;
+      }else h+='<td>'+(r.re?('<span style="font-weight:700;color:#3B6D11">'+_bdMD(r.re)+'</span>'):'<span style="color:#B3261E">未約</span>')+'</td>';
+    }
+    h+=(act?('<td><button class="ufc" style="width:auto;padding:0 10px"'+ro+' onclick="_bdBook(\''+_jsq(k)+'\',\''+id+'\')">'+act+'</button></td>'):'')
       +'</tr>';
   });
   h+='</tbody></table></div>';
@@ -11675,17 +11715,17 @@ function _bdStamp(){var d=new Date();var p=function(n){return (n<10?'0':'')+n;};
   return todayISO()+'（'+'日一二三四五六'.charAt(d.getDay())+'）'+p(d.getHours())+':'+p(d.getMinutes());}
 function _bdSummary(D){
   var all=D.keys.length,tot=_bdBrk(D.keys);
-  var g=D.brk.gap.n,rq=D.brk.req.n,worst=null;
+  var g=D.brk.gap.n,rq=(D.m.lst||[]).length,worst=null;   // V0828-07 ⑮：rq＝名單全體（req 現在只是可交屋子集合）
   (D.m.gap||[]).forEach(function(k){var r=_bdRow(k,D);if(r.wait!=null&&(!worst||r.wait>worst.wait))worst=r;});
   var s1=_bdBrkTxt(tot)+'　（全社區 '+all+' 戶）';   // V0828-04 ③⑦：摘要也走同一支寫法函式
   // V0828-04 ④：每個「詞＋數字」小片段各自包 nowrap（中文會從詞中間斷行·V0819 血淚），換行只發生在片段之間
   var nw=function(t){return '<span style="white-space:nowrap">'+t+'</span>';};
   var s1h=_bdBrkParts(tot).map(function(p){return nw(p[0]+' '+p[1]);}).join(' · ')+'　｜　'+nw(esc(_bdBrkOwn(tot)))+'　'+nw('（全社區 '+all+' 戶）');
   // V0828-04 ⑤：沒貼名單＝那一行整行不畫（不是留空行）；貼了名單後的那行保留
-  var s2=rq?('業主要交屋 '+rq+' 戶，其中 <b style="color:#B3261E">'+g+' 戶未達可交屋</b>'+(worst?('（最久等 '+worst.wait+' 天：'+esc(worst.unit)+'）'):'')):'';
+  var s2=rq?('提前交屋名單 '+rq+' 戶，其中 <b style="color:#B3261E">'+g+' 戶未達可交屋</b>'+(worst?('（最久等 '+worst.wait+' 天：'+esc(worst.unit)+'）'):'')):'';   /* V0828-07 ⑮ */
   return {h:'<div style="margin-top:8px;border:1px solid var(--pborder);background:#fff;padding:9px 12px;font-size:14px;line-height:1.8">'+s1h+(s2?('<br>'+s2):'')
             +'<br><span style="color:#8A8783;font-size:12.5px">資料來源：G95 工程缺失追蹤系統</span></div>',   /* V0828-05 ③：刪「未約初驗 N 戶含店鋪 M 戶」只留資料來源 */
-          t:s1.replace(/　/g,' ')+(rq?('\n業主要交屋 '+rq+' 戶，其中 '+g+' 戶未達可交屋'+(worst?('\n最久等 '+worst.wait+' 天：'+worst.unit+'（還差 '+worst.pend+' 筆）'):'')):'')};
+          t:s1.replace(/　/g,' ')+(rq?('\n提前交屋名單 '+rq+' 戶，其中 '+g+' 戶未達可交屋'+(worst?('\n最久等 '+worst.wait+' 天：'+worst.unit+'（還差 '+worst.pend+' 筆）'):'')):'')};
 }
 // ── 動作 ──
 function _bdGoCard(id){if(!_bdOpen[id])delete _bdFlt[id];_bdOpen[id]=true;renderBoard();setTimeout(function(){try{var el=document.getElementById('bd-seg-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}},60);}   // V0805-02：展開一定要一起捲進畫面
@@ -11695,30 +11735,43 @@ function _bdGoPWO(k){try{window._pwoSearch=String(unitDisplayName(k)||'');switch
 function _bdBook(k,id){ if(window._VIEW_ONLY){try{_voWarn&&_voWarn();}catch(e){}return;}
   if(id==='ins0'){switchTab('hcal');setTimeout(function(){try{toast('已切到交屋行事曆，請為 '+unitDisplayName(k)+' 排初驗日','📆');}catch(e){}},80);return;}
   try{_riBook(k,'re');}catch(e){} }
-function _bdApply(){
+function _bdApply(add){                                     // V0828-07：add=真值＝「加入」（併進現有名單）；否則整份取代
   if(window._VIEW_ONLY){try{_voWarn&&_voWarn();}catch(e){}return;}
+  add=(add===true||add===1);                                // 選用參數只認明確真值（.map 塞 index 的老坑）
   var ta=document.getElementById('bd-req-in');if(!ta)return;
   var p=_bdParse(ta.value);
   if(!p.keys.length&&!p.bad.length){try{toast('沒有讀到任何戶別','⚠️');}catch(e){}return;}
-  var msg='要把業主交屋需求名單換成這 '+p.keys.length+' 戶嗎？\n\n'+p.keys.map(unitDisplayName).join('、')
-        +(p.bad.length?('\n\n⚠ 這 '+p.bad.length+' 個找不到對應戶別，會被略過：\n'+p.bad.join('、')):'')
-        +'\n\n（這份名單全員共用，別人也會看到）';
+  var old=_bdReq(),units,msg;
+  if(add){
+    var have={};(old.units||[]).forEach(function(k){have[k]=1;});
+    var news=p.keys.filter(function(k){return !have[k];});
+    if(!news.length){try{toast('這些戶別都已在名單裡（'+p.keys.length+' 戶）','📋');}catch(e){}return;}
+    units=(old.units||[]).concat(news);
+    msg='要把這 '+news.length+' 戶「加入」名單嗎？（'+p.keys.length+' 戶中 '+(p.keys.length-news.length)+' 戶已在名單）\n\n'
+       +news.map(unitDisplayName).join('、')
+       +(p.bad.length?('\n\n⚠ 這 '+p.bad.length+' 個找不到對應戶別，會被略過：\n'+p.bad.join('、')):'')
+       +'\n\n加入後名單共 '+units.length+' 戶（全員共用，別人也會看到）';
+  }else{
+    units=p.keys;
+    msg='要把提前交屋／借屋裝修名單「整份換成」這 '+p.keys.length+' 戶嗎？\n\n'+p.keys.map(unitDisplayName).join('、')
+       +(p.bad.length?('\n\n⚠ 這 '+p.bad.length+' 個找不到對應戶別，會被略過：\n'+p.bad.join('、')):'')
+       +'\n\n（這份名單全員共用，別人也會看到）';
+  }
   if(!confirm(msg))return;
-  var old=_bdReq();
-  S.hoReq={units:p.keys,at:new Date().toISOString(),by:String(window._authEmail||'').replace(/@gmail\.com$/,''),
+  S.hoReq={units:units,at:new Date().toISOString(),by:String(window._authEmail||'').replace(/@gmail\.com$/,''),
            prev:{units:(old.units||[]).slice(),at:old.at||'',by:old.by||''}};
-  try{logChange('📋 業主交屋需求','貼上名單 '+p.keys.length+' 戶'+(p.bad.length?('（略過 '+p.bad.length+' 個對不到的）'):''));}catch(e){}
+  try{logChange('📋 提前交屋名單',(add?'加入':'貼上名單 ')+units.length+' 戶'+(p.bad.length?('（略過 '+p.bad.length+' 個對不到的）'):''));}catch(e){}
   _bdClear();save();
-  try{toast('已套用 '+p.keys.length+' 戶'+(p.bad.length?('，'+p.bad.length+' 個略過'):''),'📋');}catch(e){}
+  try{toast((add?'已加入，名單共 ':'已套用 ')+units.length+' 戶'+(p.bad.length?('，'+p.bad.length+' 個略過'):''),'📋');}catch(e){}
   renderBoard();
 }
 function _bdClearReq(){
   if(window._VIEW_ONLY){try{_voWarn&&_voWarn();}catch(e){}return;}
   var old=_bdReq();if(!(old.units||[]).length){try{toast('名單本來就是空的','📋');}catch(e){}return;}
-  if(!confirm('要清空業主交屋需求名單嗎？（目前 '+old.units.length+' 戶·全員共用）'))return;
+  if(!confirm('要清空提前交屋／借屋裝修名單嗎？（目前 '+old.units.length+' 戶·全員共用）'))return;
   S.hoReq={units:[],at:new Date().toISOString(),by:String(window._authEmail||'').replace(/@gmail\.com$/,''),
            prev:{units:(old.units||[]).slice(),at:old.at||'',by:old.by||''}};
-  try{logChange('📋 業主交屋需求','清空名單（原 '+old.units.length+' 戶）');}catch(e){}
+  try{logChange('📋 提前交屋名單','清空名單（原 '+old.units.length+' 戶）');}catch(e){}
   _bdClear();save();renderBoard();
 }
 function _bdLdBlock(){ if(window._dfPartial||window._dfStale){ try{toast('資料還在載入中，數字尚未完整，先不出圖／複製','⏳');}catch(e){} return true; } return false; }   // V0828-04 ①：鈕已 disabled，這裡是第二道保險
@@ -11731,7 +11784,8 @@ function _bdRosterHTML(id,D){
   var blkName={all:'',A:'A棟 ',B:'B棟 ',S:'店鋪 '}[f.blk]||'';
   var col2=(id==='done')?'交屋日':(id==='gap'?'還差幾筆':'複驗日');
   function v2(r){return (id==='done')?(r.dd?_bdMD(r.dd):'未填'):(id==='gap'?String(r.pend):(r.re?_bdMD(r.re):'未約'));}
-  var rows=keys.map(function(k){var r=_bdRow(k,D);return [r.unit,v2(r)];});
+  var rows=keys.map(function(k){var r=_bdRow(k,D);return [r.unit,v2(r),_bdBlk(k)];});   // V0828-07 ⑪：名單出圖同步淡染
+  var TINT={A:'#EAF4FC',B:'#FBF3DC',S:'#E9F5EF'};
   var GN=Math.max(1,Math.min(3,Math.ceil(rows.length/15)));   // ≤15 戶 1 組、≤30 戶 2 組、更多 3 組並排
   var per=Math.ceil(rows.length/GN)||1;
   var h='<div style="background:#fff;border:1px solid #C9C7C2;padding:8px;width:560px;font-family:var(--font)">'
@@ -11744,7 +11798,7 @@ function _bdRosterHTML(id,D){
     h+='<tr>';
     for(var g2=0;g2<GN;g2++){
       var it=rows[g2*per+r0];
-      h+=it?('<td style="border:1px solid #C9D6E6;padding:2px 4px;text-align:center;height:22px;font-weight:600">'+esc(it[0])+'</td><td style="border:1px solid #C9D6E6;padding:2px 4px;text-align:center">'+esc(it[1])+'</td>')
+      h+=it?('<td style="border:1px solid #C9D6E6;padding:2px 4px;text-align:center;height:22px;font-weight:600;background:'+(TINT[it[2]]||'#fff')+'">'+esc(it[0])+'</td><td style="border:1px solid #C9D6E6;padding:2px 4px;text-align:center">'+esc(it[1])+'</td>')
            :'<td style="border:1px solid #C9D6E6;padding:2px 4px"></td><td style="border:1px solid #C9D6E6;padding:2px 4px"></td>';
     }
     h+='</tr>';
@@ -11795,13 +11849,14 @@ function renderBoard(){
     +'<button class="btn btn-p no-print"'+(ld?' disabled title="資料載入中，先不出圖"':'')+' onclick="_bdShotAll()">出總覽圖</button>'
     +'<button class="btn no-print"'+(ld?' disabled title="資料載入中，先不複製"':'')+' onclick="_bdText()">複製文字</button>'
     +'<span style="font-size:11px;color:var(--text3)">每一段右邊也有「出圖」，要細節才用。圖與文字都會印日期時間。</span></div>';
-  // ③ 貼上業主交屋需求名單
+  // ③ 貼上提前交屋／借屋裝修名單（V0828-07 ⑮⑯：改名＋吃 PDF 格式＋「加入」增量鈕）
   h+='<div style="border:1px solid var(--pborder);background:#fff;padding:10px;margin-top:10px">'
-    +'<div style="font-size:13px;font-weight:800;margin-bottom:5px">貼上業主交屋需求名單</div>'
-    +'<div style="font-size:11px;color:var(--text3);margin-bottom:5px">一行一戶或用逗號分隔（例：A1-31, B2-31）。按「套用」會存到雲端，<b>所有人都看得到</b>。</div>'
-    +'<textarea id="bd-req-in" style="width:100%;height:56px;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);font-size:13px;padding:6px;box-sizing:border-box" placeholder="A1-31, B2-31, B5-31"></textarea>'
+    +'<div style="font-size:13px;font-weight:800;margin-bottom:5px">貼上提前交屋／借屋裝修名單</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:5px">一行一戶或用逗號分隔。<b>帶 F（A1-23F）、店A20-1F、加購-店A18-1F 這些格式都認得，直接貼</b>。「套用」＝整份取代、「加入」＝併進現有名單，都會存到雲端，<b>所有人都看得到</b>。</div>'
+    +'<textarea id="bd-req-in" style="width:100%;height:56px;border:1px solid var(--pborder);border-radius:0;font-family:var(--font);font-size:13px;padding:6px;box-sizing:border-box" placeholder="A1-31, 店A20-1F, A7-06F"></textarea>'
     +'<div style="margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     +'<button class="btn btn-p no-print"'+ro+' onclick="_bdApply()">套用</button>'
+    +'<button class="btn no-print"'+ro+' onclick="_bdApply(true)">加入</button>'
     +'<button class="btn no-print"'+ro+' onclick="_bdClearReq()">清空</button>'
     +'<span style="font-size:11px;color:var(--text3)">'+(req.at?('目前 '+(req.units||[]).length+' 戶　·　'+esc(String(req.at).slice(0,10))+' 由 '+esc(req.by||'—')+' 貼上'):'還沒貼過名單')+'</span>'
     +'</div></div>';
@@ -25921,4 +25976,4 @@ try{
 </body>
 </html>
 
-<!-- v0828-06 preview · build 2026-08-28 11:45 +08 -->
+<!-- v0828-07 preview · build 2026-08-28 14:35 +08 -->
