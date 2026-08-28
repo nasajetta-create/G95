@@ -475,7 +475,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 #pane-board .bdc .r{display:grid;grid-template-columns:repeat(3,1fr);font-size:14.5px;font-weight:600;color:#44505C;border-top:1px solid #E1E7EC;padding-top:6px}   /* V0828-04 ③⑥：三固定欄＝各卡直行對齊 */
 #pane-board .bdc .r span{white-space:nowrap}
 /* V0828-04 ⑥：八段中間欄固定欄寬（直行對齊）。🔴 只掛一個 auto margin（ufbrk 靠右推、ufr 不再 auto）——兩個 auto 會把剩餘空間對半分＝段名長短不同就對不齊 */
-#pane-board .ufbrk{margin-left:auto;display:grid;grid-template-columns:64px 64px 64px 118px;gap:6px;font-size:11.5px;color:#5F5E5A;font-weight:400;flex:none;align-items:center}
+#pane-board .ufbrk{margin-left:auto;display:grid;grid-template-columns:64px 64px 64px 172px;gap:6px;font-size:11.5px;color:#5F5E5A;font-weight:400;flex:none;align-items:center}   /* V0828-05 ②：地主戶欄加寬放拆分 */
 #pane-board .ufbrk span{white-space:nowrap}
 #pane-board .ufbrk .na{color:#B9B7B0}
 #pane-board .ufrow .ufr{margin-left:0}
@@ -500,7 +500,8 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
   #pane-board .ufnote{order:9;width:100%;margin-left:28px;font-size:11px;text-align:left}
   #pane-board .ufnote:empty{display:none}
   /* V0828-04 ⑥ 手機：中間欄同樣換到第二行，但保持固定欄寬＝上下列照樣直行對齊 */
-  #pane-board .ufbrk{order:9;width:100%;margin-left:28px;grid-template-columns:56px 56px 56px 100px;gap:4px;font-size:11px}
+  #pane-board .ufbrk{order:9;width:100%;margin-left:28px;grid-template-columns:56px 56px 56px;gap:2px 4px;font-size:11px}   /* V0828-05 ②：手機三欄一行、地主戶自己一行（一行放不下拆分會被右緣切掉） */
+  #pane-board .ufbrk span:nth-child(4){grid-column:1/-1}
   #pane-board .ufr{grid-template-columns:56px 34px 50px;gap:4px}
   #pane-board .ufr .ufc{font-size:11.5px}
 }
@@ -511,7 +512,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-08-28 10:20 +08';
+window._BUILD_STAMP = '2026-08-28 11:05 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -538,7 +539,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 388;  // V0828-04 報告看板改版（交辦包 03_規格與討論/報告看板改版_V0828-04_交辦包_20260828.md·八項拍板①~⑦做⑧不做）：①🔴資料就緒守門＝全系統只有報告看板沒擋 _dfPartial/_dfStale（grep 0 次·其他看板全有），未載完時 pend 不全＝階段判定樂觀地錯（修繕中被誤判成等複驗）⇒ 載入中跳琥珀橫幅＋六格/八段整塊 grayscale+opacity .55（數字看得到但明顯不可信）＋出總覽圖/複製文字/每段出圖三種鈕全停用（disabled＋_bdLdBlock 第二道保險）；恢復＝掛在 _dfPartial 轉正處補 throttledRenderAll（沿用既有旗標時機·不用 setTimeout 猜）。②六格編號改 .ufno 方框（同八段 20×20·border-color:currentColor 跟卡片色）。③⑦棟別寫法單一出處＝_bdBrkParts/_bdBrkOwn/_bdBrkTxt/_bdBrkCells 四支，六格/八段/摘要全共用：A棟/B棟/店鋪、地主改「其中地主戶 N」（＝表達它是 A+B+店 的子集合）。④摘要行每個「詞＋數字」片段各包 nowrap（中文從詞中間斷行·V0819 血淚）。⑤沒貼名單＝「還沒貼業主交屋需求名單」整行不畫（不留空行）；貼了名單後那行與第三行小字保留（使用者截圖劃兩行、口頭只刪一行＝以口頭為準）。⑥八段中間欄改固定欄寬 grid（64×3+118·手機 56×3+100 換第二行）＝直行對齊；🔴只掛一個 auto margin（ufbrk 靠右推·board 內 .ufr margin-left:0）——兩個 auto 會把剩餘空間對半分＝段名長短不同就對不齊；req/gap 兩段＝同寬占位「（這兩段不分棟別）」。⑧排序規則寫表頭＝使用者明確不做。🔴判定一個字沒動（_riStat/_bdData/8297~8300 原封）。｜V0828-03 手機「更多」選單補上報告看板與交屋排程（0828 凌晨三輪實測抓到·使用者授權自動修正）：🩸🔴 **`g95HomeSheet()` 的清單是寫死的，不吃 `layoutCfg.grpOf`／`mobShow`** ⇒ 新分頁把 CLAUDE.md 的「六步」做完、`grpOf.board='報表中心'`／`mobShow.board=1`／`tabOrder` 都對，**手機上照樣進不去**。實測（線上真資料·390px iframe）：手機「更多 → 報表中心」只有 5 項（驗收統計／驗屋缺失分析／交屋進度報告／進度報告／進度里程碑），**找不到報告看板**；`hosch`（交屋排程·V0826-02）同樣漏了。修法＝在 `g95HomeSheet` 的「報表中心」補 `['board','報告看板']`（排最前）、「交屋」補 `['hosch','交屋排程']`。🔴 **新分頁從此是七步，不是六步**：TAB_DEFS → pane div → migrate 只 push 最後 → renderPane 分派 → migrate 補 grpOf/mobShow → `_TABIC` → **`g95HomeSheet` 手機更多選單**。（`wprog`／`uso` 也不在那份清單裡，但那是既有狀態、不確定是否刻意，本版不動。）｜V0828-02 交屋日「記得起來、查得到」（使用者：「已交屋的戶別，要記錄交屋日期，以後才能查找」）：🔴 **先查證**＝日期本來就有在存（`hu.deliveredDate`·勾已交屋自動填今天·線上唯一那戶 A8-31＝2026-08-27 有值），缺的只是**看得到／查得到** ⇒ 本版是顯示層＋一個既有 bug 的修復，沒有新資料欄位。**A 報告看板**：第 6 段「已交屋」多一欄**交屋日**（沒填會紅字「未填」），且該段排序改成**依交屋日新到舊**（其餘七段維持等最久在前）＝以後回頭查「這戶哪天交的」直接看。🩸🔴 **B1 順手挖到並修掉一個既有 bug（線上真資料查證·不是推測）**：戶況總表 `_usUnitList()` 的一列是「棟＋樓」組出來的 `A8-25F`（**帶 F**），但交屋戶名單 `S.handoverUnits` 的鍵是 `A8-25`（**不帶 F**），原本寫 `hu[o.unit]||hu[unitDisplayName(o.unit)]` 等於去查 `hu['A8']` ⇒ **全表 699 列的初驗日 0 筆有值**，連帶「停滯 N 天／無工班進場」那一區（判定要用初驗日）**從頭到尾是空的**。修法＝抽單一出處 `_usHuKey(o)`（`disp` 原樣 → 去尾 F → 舊行為保底），線上實查去掉 F 之後 **491 個住戶列有 417 列對得到**。🔴 **複驗日那條不要跟著改**：`S.reCheckUF` 的鍵本來就帶 F（`A1-25F`·線上 159 筆），一起改會把好的弄壞——同一個「戶」在這支程式裡有兩種鍵，改之前先分清楚哪一種對應哪一份資料。**B2 戶況總表**每一列加交屋日徽章：已交屋＝綠色「已交屋 MM/DD」（沒填日期會寫出來）／還沒交但排了交屋日＝灰色「交屋 MM/DD 預定」。⚠️ B1 的副作用要先講：修好之後「停滯」那一區會從 0 列變成有戶——**本來就該有，只是一直被錯誤的鍵藏著**。
+const CODE_VERSION = 389;  // V0828-05 報告看板微調六項（使用者紅字截圖三輪定案①~⑥）：🔴④**「位置」與「身分」兩個維度混用的既有錯誤修正**＝V0827-02 把「店鋪」欄寫成 isBizUnit（身分＝業主戶·全社區僅 6 戶），真正的店鋪清單是客戶清單 _CLM_SHOP 28 戶且多數身分是地主戶（A1-1/A6-1/A7-1…對照表都是「地」）⇒ _bdBlk 改查 _CLM_SHOP（位置），身分只拿來算「地主戶 N」；店鋪欄 6→28、A/B 欄跟著變＝修正不是改壞，preview 真資料驗過。使用者原話「店鋪不一定是地主戶」「店鋪不一定都是業主戶」。①刪「其中」＝「地主戶 N」。②地主戶拆棟別「地主戶 N（A棟 x · B棟 y · 店鋪 z）」（_bdBrk 補 ownA/ownB/ownS；0 時不加括號；八段用短標 A/B/店·欄寬 118→172、手機 100→158 前三欄 56→52；卡片括號段包 nowrap 整塊換行）。③摘要第三行刪「未約初驗 N 戶含店鋪 M 戶」只留資料來源。⑤標題刪「八段」。⑥底部說明刪開頭句與「店鋪＝業主戶」，改「A棟＋B棟＋店鋪＝位置合計；地主戶＝身分」。🔴另：使用者 10:49 截圖又見 138/253＝該台資料沒載全（同時線上載完全算＝57/21/24/5/10/1），已請按「重抓」——若重抓後仍錯＝旗標沒抓到的洞，要追。｜V0828-04 報告看板改版（交辦包 03_規格與討論/報告看板改版_V0828-04_交辦包_20260828.md·八項拍板①~⑦做⑧不做）：①🔴資料就緒守門＝全系統只有報告看板沒擋 _dfPartial/_dfStale（grep 0 次·其他看板全有），未載完時 pend 不全＝階段判定樂觀地錯（修繕中被誤判成等複驗）⇒ 載入中跳琥珀橫幅＋六格/八段整塊 grayscale+opacity .55（數字看得到但明顯不可信）＋出總覽圖/複製文字/每段出圖三種鈕全停用（disabled＋_bdLdBlock 第二道保險）；恢復＝掛在 _dfPartial 轉正處補 throttledRenderAll（沿用既有旗標時機·不用 setTimeout 猜）。②六格編號改 .ufno 方框（同八段 20×20·border-color:currentColor 跟卡片色）。③⑦棟別寫法單一出處＝_bdBrkParts/_bdBrkOwn/_bdBrkTxt/_bdBrkCells 四支，六格/八段/摘要全共用：A棟/B棟/店鋪、地主改「其中地主戶 N」（＝表達它是 A+B+店 的子集合）。④摘要行每個「詞＋數字」片段各包 nowrap（中文從詞中間斷行·V0819 血淚）。⑤沒貼名單＝「還沒貼業主交屋需求名單」整行不畫（不留空行）；貼了名單後那行與第三行小字保留（使用者截圖劃兩行、口頭只刪一行＝以口頭為準）。⑥八段中間欄改固定欄寬 grid（64×3+118·手機 56×3+100 換第二行）＝直行對齊；🔴只掛一個 auto margin（ufbrk 靠右推·board 內 .ufr margin-left:0）——兩個 auto 會把剩餘空間對半分＝段名長短不同就對不齊；req/gap 兩段＝同寬占位「（這兩段不分棟別）」。⑧排序規則寫表頭＝使用者明確不做。🔴判定一個字沒動（_riStat/_bdData/8297~8300 原封）。｜V0828-03 手機「更多」選單補上報告看板與交屋排程（0828 凌晨三輪實測抓到·使用者授權自動修正）：🩸🔴 **`g95HomeSheet()` 的清單是寫死的，不吃 `layoutCfg.grpOf`／`mobShow`** ⇒ 新分頁把 CLAUDE.md 的「六步」做完、`grpOf.board='報表中心'`／`mobShow.board=1`／`tabOrder` 都對，**手機上照樣進不去**。實測（線上真資料·390px iframe）：手機「更多 → 報表中心」只有 5 項（驗收統計／驗屋缺失分析／交屋進度報告／進度報告／進度里程碑），**找不到報告看板**；`hosch`（交屋排程·V0826-02）同樣漏了。修法＝在 `g95HomeSheet` 的「報表中心」補 `['board','報告看板']`（排最前）、「交屋」補 `['hosch','交屋排程']`。🔴 **新分頁從此是七步，不是六步**：TAB_DEFS → pane div → migrate 只 push 最後 → renderPane 分派 → migrate 補 grpOf/mobShow → `_TABIC` → **`g95HomeSheet` 手機更多選單**。（`wprog`／`uso` 也不在那份清單裡，但那是既有狀態、不確定是否刻意，本版不動。）
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1440,7 +1441,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0828-04</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0828-05</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -11496,21 +11497,29 @@ var _BDSEG=[
   {id:'gap', no:8, name:'業主要、我們還沒好', card:0, tone:'hot'}
 ];
 function _bdSegBy(id){for(var i=0;i<_BDSEG.length;i++)if(_BDSEG[i].id===id)return _BDSEG[i];return null;}
-// ── 分類（棟別／身分）：店鋪＝業主戶（使用者 0827 定案：A2-1/A3-1/A5-1/A28-1/A30-1/C2-1）──
+// ── 分類：🔴 V0828-05 ④「位置」與「身分」是兩個維度，不可混用（0828 使用者抓到：店鋪不一定是業主戶）──
+//   位置＝A棟/B棟/店鋪：店鋪看客戶清單的 _CLM_SHOP 28 戶清單（V0827-02 曾誤用身分＝業主戶當店鋪欄 ⇒ 店鋪只剩 6、真店面 A1-1 等被算進 A棟）
+//   身分＝地主戶/業主戶/自購戶：g95KindOf（對照表＋客戶清單），只拿來算「地主戶 N」那一行
 function _bdBiz(k){try{return typeof isBizUnit==='function'&&!!isBizUnit(k);}catch(e){return false;}}
 function _bdOwn(k){try{return typeof isOwnerUnit==='function'&&!!isOwnerUnit(k);}catch(e){return false;}}
-function _bdBlk(k){if(_bdBiz(k))return 'S';var n=String(unitDisplayName(k)||'');return /^B/i.test(n)?'B':'A';}
-function _bdBrk(keys){var o={A:0,B:0,S:0,own:0,n:(keys||[]).length};(keys||[]).forEach(function(k){o[_bdBlk(k)]++;if(_bdOwn(k))o.own++;});return o;}
-// V0828-04 ③⑦：棟別寫法單一出處——六格、八段、摘要全部從這裡拿字，不各寫各的（「其中地主戶」＝表達它是 A+B+店 的子集合、不另外加）
+function _bdBlk(k){var n=String(unitDisplayName(k)||'');try{if(typeof _CLM_SHOP!=='undefined'&&_CLM_SHOP.indexOf(n)>=0)return 'S';}catch(e){}return /^B/i.test(n)?'B':'A';}
+function _bdBrk(keys){var o={A:0,B:0,S:0,own:0,ownA:0,ownB:0,ownS:0,n:(keys||[]).length};(keys||[]).forEach(function(k){var b=_bdBlk(k);o[b]++;if(_bdOwn(k)){o.own++;o['own'+b]++;}});return o;}
+// V0828-04 ③⑦：棟別寫法單一出處——六格、八段、摘要全部從這裡拿字，不各寫各的
+// V0828-05 ①②：拿掉「其中」；地主戶拆棟別（0 時不加括號）；short＝八段用的短標（A/B/店）
 function _bdBrkParts(o){return [['A棟',o.A],['B棟',o.B],['店鋪',o.S]];}
-function _bdBrkOwn(o){return '其中地主戶 '+o.own;}
+function _bdBrkOwn(o,short){
+  if(!o.own)return '地主戶 0';
+  return short?('地主戶 '+o.own+'（A '+o.ownA+' · B '+o.ownB+' · 店 '+o.ownS+'）')
+              :('地主戶 '+o.own+'（A棟 '+o.ownA+' · B棟 '+o.ownB+' · 店鋪 '+o.ownS+'）');
+}
 function _bdBrkTxt(o){return _bdBrkParts(o).map(function(p){return p[0]+' '+p[1];}).join(' · ')+'　｜　'+_bdBrkOwn(o);}
+function _bdBrkOwnHTML(o){var t=_bdBrkOwn(o),i=t.indexOf('（');if(i<0)return esc(t);return esc(t.slice(0,i))+'<span style="white-space:nowrap">'+esc(t.slice(i))+'</span>';}   // 手機卡片窄：括號那段整塊換行，不從詞中間斷
 // ⑥ 八段中間欄＝固定欄寬 grid（直行對齊）；req/gap 不分棟別＝同寬占位字
 function _bdBrkCells(o){
   if(!o)return '<span class="ufbrk"><span class="na" style="grid-column:1/-1">（這兩段不分棟別）</span></span>';
   var h='<span class="ufbrk">';
   _bdBrkParts(o).forEach(function(p){h+='<span>'+p[0]+' '+p[1]+'</span>';});
-  return h+'<span>'+esc(_bdBrkOwn(o))+'</span></span>';
+  return h+'<span>'+esc(_bdBrkOwn(o,true))+'</span></span>';
 }
 // ── 業主交屋需求名單（唯一新資料·雲端全員共用）──
 function _bdReq(){var r=S.hoReq;if(!r||typeof r!=='object')r={units:[],at:'',by:''};if(!Array.isArray(r.units))r.units=[];return r;}
@@ -11611,7 +11620,7 @@ function _bdCardsHTML(D){
       +'<div class="t" style="color:'+fg+'"><span class="ufno">'+s.no+'</span>'+esc(s.name)+'</div>'   /* V0828-04 ②：編號同八段 .ufno 方框 */
       +'<div class="v" style="color:'+fg+'">'+o.n+'</div>'
       +'<div class="r">'+_bdBrkParts(o).map(function(p){return '<span>'+p[0]+' '+p[1]+'</span>';}).join('')+'</div>'   /* V0828-04 ③⑦：同一支寫法函式 */
-      +'<div class="o">'+esc(_bdBrkOwn(o))+'</div></div>';
+      +'<div class="o">'+_bdBrkOwnHTML(o)+'</div></div>';
   });
   return h+'</div>';
 }
@@ -11628,7 +11637,7 @@ function _bdSummary(D){
   // V0828-04 ⑤：沒貼名單＝那一行整行不畫（不是留空行）；貼了名單後的那行保留
   var s2=rq?('業主要交屋 '+rq+' 戶，其中 <b style="color:#B3261E">'+g+' 戶未達可交屋</b>'+(worst?('（最久等 '+worst.wait+' 天：'+esc(worst.unit)+'）'):'')):'';
   return {h:'<div style="margin-top:8px;border:1px solid var(--pborder);background:#fff;padding:9px 12px;font-size:14px;line-height:1.8">'+s1h+(s2?('<br>'+s2):'')
-            +'<br><span style="color:#8A8783;font-size:12.5px">未約初驗 '+D.brk.ins0.n+' 戶含店鋪 '+D.brk.ins0.S+' 戶　·　資料來源：G95 工程缺失追蹤系統</span></div>',
+            +'<br><span style="color:#8A8783;font-size:12.5px">資料來源：G95 工程缺失追蹤系統</span></div>',   /* V0828-05 ③：刪「未約初驗 N 戶含店鋪 M 戶」只留資料來源 */
           t:s1.replace(/　/g,' ')+(rq?('\n業主要交屋 '+rq+' 戶，其中 '+g+' 戶未達可交屋'+(worst?('\n最久等 '+worst.wait+' 天：'+worst.unit+'（還差 '+worst.pend+' 筆）'):'')):'')};
 }
 // ── 動作 ──
@@ -11713,7 +11722,7 @@ function renderBoard(){
     +'</div></div>';
   // ④ 八段（統一收合·沿用 V0825-06 元件）
   h+='<div style="margin-top:14px'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
-    +'<div class="ufrow ufhd"><span>報告看板　八段</span><span class="ufnote">資料時間 '+esc(_bdStamp())+'</span></div>';
+    +'<div class="ufrow ufhd"><span>報告看板</span><span class="ufnote">資料時間 '+esc(_bdStamp())+'</span></div>';   /* V0828-05 ⑤：拿掉「八段」 */
   _BDSEG.forEach(function(s){
     var o=D.brk[s.id],open=!!_bdOpen[s.id],
         bg=(s.tone==='hot'?'background:#FDF6F6;':(s.tone==='ok'?'background:#F2F8F2;':'')),
@@ -11732,8 +11741,8 @@ function renderBoard(){
   });
   h+='</div>';
   h+='<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.8">'
-    +'六格與前六段全部走既有的階段判定（<b>不另外寫一套</b>）：已約／未約複驗＝初驗後缺失已全數完成，差在有沒有約到複驗日；未約初驗＝還沒初驗、也還沒排初驗日；'
-    +'待交屋與待複驗2 加起來就是「複驗1做完」的全部（0 缺失→待交屋，有缺失→待複驗2）。店鋪＝業主戶。A＋B＋店＝合計，地主戶是其中幾戶、不另外加。</div>';
+    +'已約／未約複驗＝初驗後缺失已全數完成，差在有沒有約到複驗日；未約初驗＝還沒初驗、也還沒排初驗日；'
+    +'待交屋與待複驗2 加起來就是「複驗1做完」的全部（0 缺失→待交屋，有缺失→待複驗2）。A棟＋B棟＋店鋪＝位置合計；地主戶＝身分，是其中幾戶、不另外加。</div>';   /* V0828-05 ⑥：刪開頭那句與「店鋪＝業主戶」（位置與身分是兩個維度） */
   h+='</div>';
   el.innerHTML=h;
 }
@@ -25827,4 +25836,4 @@ try{
 </body>
 </html>
 
-<!-- v0828-04 preview · build 2026-08-28 10:20 +08 -->
+<!-- v0828-05 preview · build 2026-08-28 11:05 +08 -->
