@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A3
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A4
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -65,7 +65,7 @@ try {
       if (!window.__mmFp || window.__mmFp.v !== v) { window.__mmFp = { v: v, t: t }; return false; }
       return n > 0 && (t - window.__mmFp.t) > 30000;           // ③ 計數穩定 30 秒
     } catch (e) { return false; }
-  }, { timeout: 300000, polling: 5000 });
+  }, null, { timeout: 300000, polling: 5000 });   // V0828-A4：第二參數是 arg，選項要放第三個（A3 誤放第二個＝逾時退回預設 60s）
   console.log('資料載入完成（defects 就緒＋計數 30 秒未變）');
 
   // ── ③ 切到報告看板 ──────────────────────────────────────────────────
