@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A1
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A2
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -49,20 +49,20 @@ try {
   await page.waitForURL(u => u.href.includes('mode=view'), { timeout: 60000 });
   console.log('已進唯讀模式（?mode=view）');
 
-  // ── ② 等資料載完（沿用看板自己的守門旗標，不用 setTimeout 猜）────────
-  const ready = () => page.waitForFunction(() => {
+  // ── ② 等資料載完（V0828-A2：光看 _dfPartial 不夠——初載時旗標還沒豎起、
+  //     戶別清單先到＝Run #1 拍到「未約初驗 433 其他全 0」的半載數字。
+  //     改成：八段計數指紋連續 30 秒不變＋旗標乾淨，才算穩）──────────────
+  await page.waitForFunction(() => {
     try {
       if (typeof _bdData !== 'function' || typeof switchTab !== 'function') return false;
-      if (window._dfPartial || window._dfStale) return false;
       const D = _bdData(); let n = 0;
-      _BDSEG.forEach(s => { n += (D.brk[s.id] || {}).n || 0; });
-      return n > 0;
+      const v = _BDSEG.map(s => { const o = D.brk[s.id] || {}; n += o.n || 0; return [o.n, o.A, o.B, o.S].join(','); }).join('|');
+      const t = Date.now();
+      if (!window.__mmFp || window.__mmFp.v !== v) { window.__mmFp = { v: v, t: t }; return false; }
+      return n > 0 && !window._dfPartial && !window._dfStale && (t - window.__mmFp.t) > 30000;
     } catch (e) { return false; }
-  }, { timeout: 180000, polling: 2000 });
-  await ready();
-  await page.waitForTimeout(8000);   // 緩衝：讓最後幾批 Firestore 快照進來
-  await ready();                      // 緩衝後再驗一次守門旗標
-  console.log('資料載入完成');
+  }, { timeout: 300000, polling: 5000 });
+  console.log('資料載入完成（計數 30 秒未變）');
 
   // ── ③ 切到報告看板 ──────────────────────────────────────────────────
   await page.evaluate(() => switchTab('board'));
