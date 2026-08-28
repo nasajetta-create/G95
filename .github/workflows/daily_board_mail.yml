@@ -1,0 +1,49 @@
+# G95 報告看板每日郵件 V0828-A1
+# 每天 17:30（台灣）在 GitHub 雲端自動：開站截 9 張圖 → Gmail 寄給維護者
+# 需要 repo Secrets：BOARD_PASSCODE / GMAIL_USER / GMAIL_APP_PASSWORD（MAIL_TO 可選）
+# 手動測試：GitHub → Actions → daily-board-mail → Run workflow
+name: daily-board-mail
+
+on:
+  schedule:
+    - cron: '30 9 * * *'   # UTC 09:30 = 台灣 17:30（GitHub 排程可能晚 5~15 分鐘，正常）
+  workflow_dispatch: {}
+
+jobs:
+  mail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安裝中文字型（截圖不裝會變豆腐字）
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+
+      - name: 安裝套件與瀏覽器
+        working-directory: .github/scripts
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1 nodemailer@6
+          npx playwright install --with-deps chromium
+
+      - name: 截圖並寄信
+        working-directory: .github/scripts
+        env:
+          BOARD_PASSCODE: ${{ secrets.BOARD_PASSCODE }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: node board_mail.mjs
+
+      - name: 留存當天圖檔（除錯用，3 天後自動刪）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: board-images
+          path: .github/scripts/out/
+          retention-days: 3
+          if-no-files-found: ignore
