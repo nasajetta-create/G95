@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A7
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A8
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -110,24 +110,22 @@ try {
   files.push(f0);
   console.log('0_總覽 ✓');
 
+  // V0828-A8：使用者 2026-08-30 指定——附件 1~8 要「畫面上展開的完整段落」
+  // （統計列＋篩選列＋全欄位表格·樓層合併·全部戶不截前5），不是精簡名單出圖。
+  // 做法＝把八段的 開/展開全部 旗標都打開重繪，直接截每段 #bd-seg-<id> 整塊。
+  await page.evaluate(() => {
+    _BDSEG.forEach(s => { _bdOpen[s.id] = true; _bdFull[s.id] = true; });
+    renderBoard();
+  });
+  await page.waitForSelector('#bd-seg-' + (await page.evaluate(() => _BDSEG[0].id)), { timeout: 30000 });
+  await page.waitForTimeout(1500);
   const segs = await page.evaluate(() => _BDSEG.map(s => ({ id: s.id, no: s.no, name: s.name })));
   for (const s of segs) {
-    await page.evaluate((id) => {
-      let host = document.getElementById('mailcap');
-      if (!host) {
-        host = document.createElement('div');
-        host.id = 'mailcap';
-        host.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#fff';
-        document.getElementById('pane-board').appendChild(host);   // 放 #pane-board 內＝吃得到看板 CSS
-      }
-      host.innerHTML = _bdRosterHTML(id, _bdData());
-    }, s.id);
     const fp = path.join(OUT, s.no + '_' + safeName(s.name) + '.png');
-    await page.locator('#mailcap > div').screenshot({ path: fp });
+    await page.locator('#bd-seg-' + s.id).screenshot({ path: fp });
     files.push(fp);
     console.log(s.no + '_' + s.name + ' ✓');
   }
-  await page.evaluate(() => { const h = document.getElementById('mailcap'); if (h) h.remove(); });
 
   // ── ⑤ 信件內文＝看板「複製文字」同款摘要 ────────────────────────────
   const bodyText = await page.evaluate(() => {
