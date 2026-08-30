@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A4
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A5
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -38,6 +38,9 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 page.setDefaultTimeout(60000);
+// V0828-A5：網頁 console 轉印到 Actions log（[defects] 就緒/逾時 這些訊息＝診斷關鍵）
+page.on('console', m => { const t = m.text(); if (t && !t.startsWith('Failed to load resource')) console.log('[page]', t.slice(0, 300)); });
+page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
 
 try {
   // ── ① 開站＋檢視碼登入 ──────────────────────────────────────────────
@@ -49,23 +52,38 @@ try {
   await page.waitForURL(u => u.href.includes('mode=view'), { timeout: 60000 });
   console.log('已進唯讀模式（?mode=view）');
 
-  // ── ② 等資料載完（V0828-A3：Run #1/#2 都拍到「未約初驗 433 其他全 0」＝
-  //     缺失資料層還沒就緒。_dfPartial/_dfStale 是「載到一半／逾時」的旗標，
-  //     「還沒開始載」時兩個都是 false ⇒ 光看它們會提早放行。
-  //     正解＝三關全過：①_dfActive（defects 就緒，_dfBoot 成功才設 true）
-  //     ②旗標乾淨 ③八段計數指紋連續 30 秒不變）────────────────────────────
-  await page.waitForFunction(() => {
+  // ── ② 等資料載完（V0828-A3/A5）────────────────────────────────────────
+  //     三關全過才算穩：①_dfActive（defects 就緒，_dfBoot 成功才設 true）
+  //     ②_dfPartial/_dfStale 乾淨 ③八段計數指紋連續 30 秒不變。
+  //     A5：站內首載有 60s×2 逾時保險絲，冷開機載 1.8 萬份文件若超過 120 秒
+  //     ＝永久 _dfStale、之後等再久都不會轉正 ⇒ 偵測到 stale 就 reload 重來
+  //     （等於自動按「重抓」），最多兩回合。
+  const READY = () => page.waitForFunction(() => {
     try {
       if (typeof _bdData !== 'function' || typeof switchTab !== 'function') return false;
+      if (window._dfStale) return 'stale';                     // 保險絲燒了＝這回合不用再等
       if (window._dfActive !== true) return false;             // ① defects 資料層就緒
-      if (window._dfPartial || window._dfStale) return false;  // ② 沒有半載/過舊
+      if (window._dfPartial) return false;                     // ② 沒有半載
       const D = _bdData(); let n = 0;
       const v = _BDSEG.map(s => { const o = D.brk[s.id] || {}; n += o.n || 0; return [o.n, o.A, o.B, o.S].join(','); }).join('|');
       const t = Date.now();
       if (!window.__mmFp || window.__mmFp.v !== v) { window.__mmFp = { v: v, t: t }; return false; }
-      return n > 0 && (t - window.__mmFp.t) > 30000;           // ③ 計數穩定 30 秒
+      return (n > 0 && (t - window.__mmFp.t) > 30000) ? 'ok' : false;   // ③ 計數穩定 30 秒
     } catch (e) { return false; }
-  }, null, { timeout: 300000, polling: 5000 });   // V0828-A4：第二參數是 arg，選項要放第三個（A3 誤放第二個＝逾時退回預設 60s）
+  }, null, { timeout: 240000, polling: 5000 });
+  const DIAG = () => page.evaluate(() => {
+    const o = { dfActive: window._dfActive, dfPartial: window._dfPartial, dfStale: window._dfStale, fbReady: window._fbReady, staleBanner: !!document.getElementById('df-stale-banner') };
+    try { const D = _bdData(); o.counts = _BDSEG.map(s => s.id + ':' + ((D.brk[s.id] || {}).n || 0)).join(' '); } catch (e) { o.counts = 'ERR ' + e.message; }
+    return JSON.stringify(o);
+  }).then(s => console.log('[診斷]', s)).catch(() => {});
+  let verdict;
+  try { verdict = await READY().then(h => h.jsonValue()); } catch (e) { verdict = 'timeout'; }
+  if (verdict !== 'ok') {
+    console.log('第一回合未就緒（' + verdict + '），reload 重來一次…'); await DIAG();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    try { verdict = await READY().then(h => h.jsonValue()); } catch (e) { verdict = 'timeout'; }
+  }
+  if (verdict !== 'ok') { await DIAG(); throw new Error('資料載入未就緒（' + verdict + '）——診斷見上方 [診斷]/[page] 行'); }
   console.log('資料載入完成（defects 就緒＋計數 30 秒未變）');
 
   // ── ③ 切到報告看板 ──────────────────────────────────────────────────
