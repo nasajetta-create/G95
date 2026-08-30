@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A5
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A6
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -15,6 +15,7 @@ const PASSCODE      = process.env.BOARD_PASSCODE || '';
 const GMAIL_USER    = process.env.GMAIL_USER || '';
 const GMAIL_APP_PW  = process.env.GMAIL_APP_PASSWORD || '';
 const MAIL_TO       = process.env.MAIL_TO || GMAIL_USER;
+const APPCHECK_DBG  = process.env.APPCHECK_DEBUG_TOKEN || '';
 const OUT           = 'out';
 
 function todayTW(){
@@ -26,6 +27,7 @@ function die(msg){ console.error('✗ ' + msg); process.exit(1); }
 if (!PASSCODE)     die('缺 BOARD_PASSCODE（repo Secrets 未設定）');
 if (!GMAIL_USER)   die('缺 GMAIL_USER（repo Secrets 未設定）');
 if (!GMAIL_APP_PW) die('缺 GMAIL_APP_PASSWORD（repo Secrets 未設定）');
+if (!APPCHECK_DBG) die('缺 APPCHECK_DEBUG_TOKEN（Firebase App Check 偵錯權杖——Run #7 證實：機房 IP 過不了 reCAPTCHA、Firestore 全拒讀，必須用偵錯權杖）');
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -36,6 +38,9 @@ const ctx = await browser.newContext({
   locale: 'zh-TW',
   timezoneId: 'Asia/Taipei'
 });
+// V0828-A6：App Check 偵錯權杖——在任何頁面腳本執行前掛上（官方 CI 作法）。
+// 權杖要先在 Firebase Console → App Check → 管理偵錯權杖 登記過才有效。
+await ctx.addInitScript(t => { self.FIREBASE_APPCHECK_DEBUG_TOKEN = t; }, APPCHECK_DBG);
 const page = await ctx.newPage();
 page.setDefaultTimeout(60000);
 // V0828-A5：網頁 console 轉印到 Actions log（[defects] 就緒/逾時 這些訊息＝診斷關鍵）
