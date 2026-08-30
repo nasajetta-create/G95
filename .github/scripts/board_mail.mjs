@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A6
+// G95 報告看板每日郵件（GitHub Actions 專用）V0828-A7
 // 流程：開站 → 檢視碼登入（唯讀）→ 等資料載完 → 切報告看板
 //       → 截 9 張圖（八卡總覽 + 八段名單出圖）→ Gmail SMTP 寄出
 // 密碼來源：GitHub repo Secrets（GMAIL_APP_PASSWORD 由維護者本人設定，AI 不經手）
@@ -91,8 +91,15 @@ try {
   if (verdict !== 'ok') { await DIAG(); throw new Error('資料載入未就緒（' + verdict + '）——診斷見上方 [診斷]/[page] 行'); }
   console.log('資料載入完成（defects 就緒＋計數 30 秒未變）');
 
-  // ── ③ 切到報告看板 ──────────────────────────────────────────────────
-  await page.evaluate(() => switchTab('board'));
+  // ── ③ 渲染報告看板（V0828-A7：不走 switchTab——有未簽收必讀公告時
+  //     _annGateBlock 會把切換硬轉去公告欄，唯讀帳號簽不了收＝永遠到不了
+  //     看板（Run #9 卡點）。直接顯示 pane 並呼叫 renderBoard() 就好）────
+  await page.evaluate(() => {
+    try { window.activeTab = 'board'; } catch (e) {}
+    const el = document.getElementById('pane-board');
+    el.style.display = '';
+    renderBoard();
+  });
   await page.waitForSelector('#bd-shot', { timeout: 30000 });
   await page.waitForTimeout(1500);
 
