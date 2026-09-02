@@ -584,7 +584,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 399;  // V0902-05 驗屋日報三列小表「表頭獨立一列」＋存圖疊字修＋一鍵下載（使用者 0902 桌機截圖：格線缺角、「（」疊字、要直接下載 2 張）：①表頭改成獨立一列 .rtr-th（格內只有空 .rth＝無文字無換行 ⇒ innerText 不變）、已售格不再塞 .rth；.rtr-th 格 line-height:0＋text-indent:0 ⇒ 灰帶貼滿四邊、左上角不再缺角（v4 血淚：表頭跟數字擠同一格＝縮排把灰帶推歪）。②存圖「）（2/2）」「　（已排」疊字＝Chrome text-spacing-trim 預設縮全形標點、html2canvas 照未縮的量；.rptWide 加 text-spacing-trim:space-all 即對上（本機 html2canvas 重現＋驗證）。③預覽層頂端一顆「下載 N 張」（電腦 _capDlAll 逐張 a.download 間隔 350ms）／「存到相簿（N 張）」（手機 _capShareAll navigator.share 多檔、不支援退回逐張）；每張各自的鈕保留。桌機／手機同一支。程式行剪掉 V0902-02（已入註解史）。｜V0902-04 驗屋日報「完整方格」＋存圖改兩張（使用者 0902 手機截圖回饋·示意圖 v5 定案）：①三列小表改完整方格＝每格 inline-block 帶四邊框線（.rtl/.rtc 固定 em 寬、表頭列淡灰底、合計列上線深）；全形空白與直線分隔字留著但包 .rsp 寬 0 ⇒ innerText 逐字不變（rpt3/rpttri 等式）；表頭 .rth 改成空 span（畫面 ::before attr(data-h) 顯字、存圖 clone 由 JS 填字＝html2canvas 畫得出）、左上角空格也放 .rth 撐高（v4 血淚：空格高度 0 只剩一條線）；🩸.rth 不能 display:block（innerText 會多換行）＝inline-block width:100%＋已售列 pre-wrap 讓數字換到第二行。②「初驗未完成 N 戶」拆兩行（括號那串第二行）、「└ 未排 N 戶（完整清單見預警看板）」使用者劃掉＝刪。③存圖 _rptCapWide 改出兩張：540px、字 18px 行距 1.75、表格撐滿（.rptWide .rtl 3.9em/.rtc 7.2em）；從「本週統計」那個 rptBox 切到第二張、第二張標題加（2/2）；新 _capShowImages 預覽層每張各自存到相簿／下載。桌機／手機同一支。程式行剪掉 V0902-01（已入註解史）。｜V0902-03 驗屋日報存圖改寬版兩欄＋存圖表頭修復（使用者貼 LINE 圖「過於窄長」）：①「存圖」改走 _rptCapWide()＝把 rpt-card 內容複製到 1000px 寬的離屏容器（class rptWide·column-count:2·rptBox/Seg break-inside:avoid·BAR 隱藏）再 html2canvas scale 2 ⇒ 約 1000×620，LINE 一眼看完；畫面本身不動、複製文字不動。②bug：存圖裡「預計/實際/累計」表頭不見＝html2canvas 畫不出 ::before ⇒ rowHTML 在已售列每格加真表頭 .rth（平常 display:none＝不進 innerText、rpt3/rpttri 等式仍過；.rptWide 才顯示並關掉 ::before）。③離屏容器 finally 移除＋60s 保底。桌機／手機兩顆存圖鈕都改（手機 _rptMobRender 同一顆函式）。程式行剪掉 V0830-01（已入註解史）。
+const CODE_VERSION = 399;  // V0902-05 驗屋日報三列小表「表頭獨立一列」＋存圖疊字修＋一鍵下載（使用者 0902 桌機截圖：格線缺角、「（」疊字、要直接下載 2 張）：①表頭改成獨立一列 .rtr-th（格內只有空 .rth＝無文字無換行 ⇒ innerText 不變）、已售格不再塞 .rth；.rtr-th 格 line-height:0＋text-indent:0 ⇒ 灰帶貼滿四邊、左上角不再缺角（v4 血淚：表頭跟數字擠同一格＝縮排把灰帶推歪）。②存圖「）（2/2）」「　（已排」疊字＝Chrome text-spacing-trim 預設縮全形標點、html2canvas 照未縮的量；.rptWide 加 text-spacing-trim:space-all 即對上（本機 html2canvas 重現＋驗證）。③預覽層頂端一顆「下載 N 張」（電腦 _capDlAll 逐張 a.download 間隔 350ms）／「存到相簿（N 張）」（手機 _capShareAll navigator.share 多檔、不支援退回逐張）；每張各自的鈕保留。④線上驗收發現：預覽層 z-index 12000 被 #ir-banner（99994）蓋住頂端那排鈕 ⇒ 兩支預覽層（_capShowImage／_capShowImages）都改 99995、預覽版有 #preview-bar 時 paddingTop 讓開。桌機／手機同一支。程式行剪掉 V0902-02（已入註解史）。｜V0902-04 驗屋日報「完整方格」＋存圖改兩張（使用者 0902 手機截圖回饋·示意圖 v5 定案）：①三列小表改完整方格＝每格 inline-block 帶四邊框線（.rtl/.rtc 固定 em 寬、表頭列淡灰底、合計列上線深）；全形空白與直線分隔字留著但包 .rsp 寬 0 ⇒ innerText 逐字不變（rpt3/rpttri 等式）；表頭 .rth 改成空 span（畫面 ::before attr(data-h) 顯字、存圖 clone 由 JS 填字＝html2canvas 畫得出）、左上角空格也放 .rth 撐高（v4 血淚：空格高度 0 只剩一條線）；🩸.rth 不能 display:block（innerText 會多換行）＝inline-block width:100%＋已售列 pre-wrap 讓數字換到第二行。②「初驗未完成 N 戶」拆兩行（括號那串第二行）、「└ 未排 N 戶（完整清單見預警看板）」使用者劃掉＝刪。③存圖 _rptCapWide 改出兩張：540px、字 18px 行距 1.75、表格撐滿（.rptWide .rtl 3.9em/.rtc 7.2em）；從「本週統計」那個 rptBox 切到第二張、第二張標題加（2/2）；新 _capShowImages 預覽層每張各自存到相簿／下載。桌機／手機同一支。程式行剪掉 V0902-01（已入註解史）。｜V0902-03 驗屋日報存圖改寬版兩欄＋存圖表頭修復（使用者貼 LINE 圖「過於窄長」）：①「存圖」改走 _rptCapWide()＝把 rpt-card 內容複製到 1000px 寬的離屏容器（class rptWide·column-count:2·rptBox/Seg break-inside:avoid·BAR 隱藏）再 html2canvas scale 2 ⇒ 約 1000×620，LINE 一眼看完；畫面本身不動、複製文字不動。②bug：存圖裡「預計/實際/累計」表頭不見＝html2canvas 畫不出 ::before ⇒ rowHTML 在已售列每格加真表頭 .rth（平常 display:none＝不進 innerText、rpt3/rpttri 等式仍過；.rptWide 才顯示並關掉 ::before）。③離屏容器 finally 移除＋60s 保底。桌機／手機兩顆存圖鈕都改（手機 _rptMobRender 同一顆函式）。程式行剪掉 V0830-01（已入註解史）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -24132,7 +24132,7 @@ function _rptCapWide(){   // V0902-04：日報存圖＝兩張（①今日驗屋�
 function _capShowImages(list){   // V0902-04：多張截圖的預覽層（每張各自「存到相簿／下載」；沿用 _capShareImage 走 _capLastData）
   var ov=document.getElementById('capimg-ov');if(ov)ov.remove();
   ov=document.createElement('div');ov.id='capimg-ov';ov.className='no-print';
-  ov.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(18,24,38,.93);display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch';
+  ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(18,24,38,.93);display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch';
   var isMob=window.innerWidth<=700,_canShare=false;try{_canShare=!!(window.navigator&&navigator.share);}catch(e){}
   window._capMulti=list;window._capLastData=list[0].url;window._capLastName=list[0].fn;
   // V0902-05：頂端一顆「下載 N 張」（電腦＝逐張觸發 a.download）／「存到相簿（N 張）」（手機＝navigator.share 一次帶 N 個檔）；每張各自的鈕保留當備援
@@ -24146,6 +24146,7 @@ function _capShowImages(list){   // V0902-04：多張截圖的預覽層（每張
     return '<div style="padding:0 12px 18px"><div style="display:flex;align-items:center;gap:10px;color:#fff;font-size:13px;margin-bottom:6px"><span style="flex:1">'+esc(it.label||('第 '+(i+1)+' 張'))+'</span>'+btn+dl+'</div><div style="display:flex;justify-content:center"><img src="'+it.url+'" style="max-width:100%;height:auto;box-shadow:0 8px 30px rgba(0,0,0,.5);background:#fff"></div></div>';
   }).join('');
   ov.innerHTML=bar+'<div style="flex:1">'+body+'</div>';
+  try{var _pb=document.getElementById('preview-bar');if(_pb)ov.style.paddingTop=_pb.getBoundingClientRect().height+'px';}catch(e){}   // V0902-05：預覽版頂條 z 最大，避開它
   document.body.appendChild(ov);
 }
 function _capDlAll(){   // V0902-05：電腦一鍵下載全部（逐張點 a.download；間隔 350ms 免得瀏覽器只收第一張）
@@ -25613,7 +25614,7 @@ function _loadH2C(cb){
 function _capShowImage(dataUrl,filename){
   var ov=document.getElementById('capimg-ov');if(ov)ov.remove();
   ov=document.createElement('div');ov.id='capimg-ov';ov.className='no-print';
-  ov.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(18,24,38,.93);display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch';
+  ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(18,24,38,.93);display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch';
   var isMob=window.innerWidth<=700;
   // V0721-10：手機可用 Web Share API 一鍵「存到相簿」（系統分享面板→儲存影像）；不支援才退回長按
   window._capLastData=dataUrl;window._capLastName=filename||'截圖.png';
