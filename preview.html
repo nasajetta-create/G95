@@ -458,8 +458,8 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .rtl,.rtc{display:inline-block;vertical-align:top;box-sizing:border-box;border-right:1px solid #9FB0BF;border-bottom:1px solid #9FB0BF;background:#fff}
 .rtl{width:3.2em;border-left:1px solid #9FB0BF;text-indent:.3em}
 .rtc{width:5.2em;text-align:center}
-.rtr-h .rtl,.rtr-h .rtc{border-top:1px solid #9FB0BF;white-space:pre-wrap}   /* .rth 佔滿一行後，數字換到第二行；pre-wrap 讓「預計 0」中間那個空白留著＝innerText 不變 */
-.rth{display:inline-block;width:100%;box-sizing:border-box;height:1.6em;line-height:1.6em;font-size:.8em;color:#556;background:#F1F3F5;border-bottom:1px solid #9FB0BF;text-align:center;text-indent:0}
+.rtr-th{width:100%;vertical-align:top}.rtr-th .rtl,.rtr-th .rtc{border-top:1px solid #9FB0BF;height:1lh;text-indent:0;vertical-align:top}.rtr-th .rth{height:100%;display:inline-flex;align-items:center;justify-content:center}   /* V0902-05：表頭獨立一列（沒有文字＝innerText 不變）；width:100% 讓已售列自動落到下一行；格高 1lh＝跟行高一樣 ⇒ 表頭跟已售列之間不留縫；.rth inline-flex 置中（inline-flex 不是 block-level ⇒ innerText 不會多換行） */
+.rth{display:inline-block;vertical-align:top;width:100%;box-sizing:border-box;height:1.6em;line-height:1.6em;font-size:.8em;color:#556;background:#F1F3F5;border-bottom:1px solid #9FB0BF;text-align:center;text-indent:0}
 .rth::before{content:attr(data-h)}
 .rtk,.rsp{display:inline-block;width:0;overflow:hidden;white-space:nowrap;vertical-align:top}
 .rtr-sum{font-weight:700}
@@ -468,6 +468,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .rptWide .rptBox,.rptWide .rptSegI,.rptWide .rptSegR,.rptWide .rptSegD{break-inside:avoid}
 .rptWide .rptBar{display:none}
 .rptWide .rth::before{content:none}
+.rptWide{text-spacing-trim:space-all}   /* V0902-05：Chrome 預設會縮全形標點間距，html2canvas 照未縮的量 ⇒「）（」「　（」疊字；存圖 clone 關掉縮距就對得上 */
 .rptWide .rtl{width:3.9em}
 .rptWide .rtc{width:7.2em}
 
@@ -583,7 +584,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 398;  // V0902-04 驗屋日報「完整方格」＋存圖改兩張（使用者 0902 手機截圖回饋·示意圖 v5 定案）：①三列小表改完整方格＝每格 inline-block 帶四邊框線（.rtl/.rtc 固定 em 寬、表頭列淡灰底、合計列上線深）；全形空白與直線分隔字留著但包 .rsp 寬 0 ⇒ innerText 逐字不變（rpt3/rpttri 等式）；表頭 .rth 改成空 span（畫面 ::before attr(data-h) 顯字、存圖 clone 由 JS 填字＝html2canvas 畫得出）、左上角空格也放 .rth 撐高（v4 血淚：空格高度 0 只剩一條線）；🩸.rth 不能 display:block（innerText 會多換行）＝inline-block width:100%＋已售列 pre-wrap 讓數字換到第二行。②「初驗未完成 N 戶」拆兩行（括號那串第二行）、「└ 未排 N 戶（完整清單見預警看板）」使用者劃掉＝刪。③存圖 _rptCapWide 改出兩張：540px、字 18px 行距 1.75、表格撐滿（.rptWide .rtl 3.9em/.rtc 7.2em）；從「本週統計」那個 rptBox 切到第二張、第二張標題加（2/2）；新 _capShowImages 預覽層每張各自存到相簿／下載。桌機／手機同一支。程式行剪掉 V0902-01（已入註解史）。｜V0902-03 驗屋日報存圖改寬版兩欄＋存圖表頭修復（使用者貼 LINE 圖「過於窄長」）：①「存圖」改走 _rptCapWide()＝把 rpt-card 內容複製到 1000px 寬的離屏容器（class rptWide·column-count:2·rptBox/Seg break-inside:avoid·BAR 隱藏）再 html2canvas scale 2 ⇒ 約 1000×620，LINE 一眼看完；畫面本身不動、複製文字不動。②bug：存圖裡「預計/實際/累計」表頭不見＝html2canvas 畫不出 ::before ⇒ rowHTML 在已售列每格加真表頭 .rth（平常 display:none＝不進 innerText、rpt3/rpttri 等式仍過；.rptWide 才顯示並關掉 ::before）。③離屏容器 finally 移除＋60s 保底。桌機／手機兩顆存圖鈕都改（手機 _rptMobRender 同一顆函式）。程式行剪掉 V0830-01（已入註解史）。｜V0902-02 驗屋日報「已售／地主／合計」三列小表（使用者 0902 手繪＋整份示意圖八項全做·⑧刪）：①總戶數下加「已售 N 戶／地主 N 戶」（已售＝總−地主）②今日驗屋 初驗/複驗/交屋 各一張三列表（預計/實際/累計·初驗寫累計完成）；取消/未到改成表下一行 ③明日預計改表（欄 初驗/複驗/交屋）④本週統計三段同款 ⑤棟別累計改表下一行「累計（A棟…）」⑥差異說明照舊 ⑦下週預計同③ ⑧「地主戶統計」整段刪（重複）。實作＝buildDailyReportText 內 _tri() 產三行純文字（LINE 用·每格自帶標籤），_rptColorHTML.rowHTML 認 `^(已售|地主|合計)　` 排成對齊欄位：.rtl/.rtc inline-block 固定寬、表頭 ::before（data-h）不進 innerText、格內標籤 .rtk 寬 0 藏起來 ⇒ innerText 與純文字逐字相等（rpt3 斷言）。「顯示地主戶分算」取消勾選＝退回舊單行。手機 _rptMobRender 共用同一支＝一改兩邊。程式行剪掉 V0828-09（已入註解史）。
+const CODE_VERSION = 399;  // V0902-05 驗屋日報三列小表「表頭獨立一列」＋存圖疊字修＋一鍵下載（使用者 0902 桌機截圖：格線缺角、「（」疊字、要直接下載 2 張）：①表頭改成獨立一列 .rtr-th（格內只有空 .rth＝無文字無換行 ⇒ innerText 不變）、已售格不再塞 .rth；.rtr-th 格 line-height:0＋text-indent:0 ⇒ 灰帶貼滿四邊、左上角不再缺角（v4 血淚：表頭跟數字擠同一格＝縮排把灰帶推歪）。②存圖「）（2/2）」「　（已排」疊字＝Chrome text-spacing-trim 預設縮全形標點、html2canvas 照未縮的量；.rptWide 加 text-spacing-trim:space-all 即對上（本機 html2canvas 重現＋驗證）。③預覽層頂端一顆「下載 N 張」（電腦 _capDlAll 逐張 a.download 間隔 350ms）／「存到相簿（N 張）」（手機 _capShareAll navigator.share 多檔、不支援退回逐張）；每張各自的鈕保留。桌機／手機同一支。程式行剪掉 V0902-02（已入註解史）。｜V0902-04 驗屋日報「完整方格」＋存圖改兩張（使用者 0902 手機截圖回饋·示意圖 v5 定案）：①三列小表改完整方格＝每格 inline-block 帶四邊框線（.rtl/.rtc 固定 em 寬、表頭列淡灰底、合計列上線深）；全形空白與直線分隔字留著但包 .rsp 寬 0 ⇒ innerText 逐字不變（rpt3/rpttri 等式）；表頭 .rth 改成空 span（畫面 ::before attr(data-h) 顯字、存圖 clone 由 JS 填字＝html2canvas 畫得出）、左上角空格也放 .rth 撐高（v4 血淚：空格高度 0 只剩一條線）；🩸.rth 不能 display:block（innerText 會多換行）＝inline-block width:100%＋已售列 pre-wrap 讓數字換到第二行。②「初驗未完成 N 戶」拆兩行（括號那串第二行）、「└ 未排 N 戶（完整清單見預警看板）」使用者劃掉＝刪。③存圖 _rptCapWide 改出兩張：540px、字 18px 行距 1.75、表格撐滿（.rptWide .rtl 3.9em/.rtc 7.2em）；從「本週統計」那個 rptBox 切到第二張、第二張標題加（2/2）；新 _capShowImages 預覽層每張各自存到相簿／下載。桌機／手機同一支。程式行剪掉 V0902-01（已入註解史）。｜V0902-03 驗屋日報存圖改寬版兩欄＋存圖表頭修復（使用者貼 LINE 圖「過於窄長」）：①「存圖」改走 _rptCapWide()＝把 rpt-card 內容複製到 1000px 寬的離屏容器（class rptWide·column-count:2·rptBox/Seg break-inside:avoid·BAR 隱藏）再 html2canvas scale 2 ⇒ 約 1000×620，LINE 一眼看完；畫面本身不動、複製文字不動。②bug：存圖裡「預計/實際/累計」表頭不見＝html2canvas 畫不出 ::before ⇒ rowHTML 在已售列每格加真表頭 .rth（平常 display:none＝不進 innerText、rpt3/rpttri 等式仍過；.rptWide 才顯示並關掉 ::before）。③離屏容器 finally 移除＋60s 保底。桌機／手機兩顆存圖鈕都改（手機 _rptMobRender 同一顆函式）。程式行剪掉 V0830-01（已入註解史）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -23783,9 +23784,11 @@ function _rptColorHTML(txt){
     var m=triRe.exec(l);if(!m)return esc(l);
     // V0902-04 完整方格（使用者 0902 定案）：每格 inline-block 帶框線；「　」與「｜」文字留著但寬 0（.rsp）＝innerText 不變；
     //   表頭 .rth＝空 span（畫面用 ::before attr(data-h) 顯字、存圖 clone 由 JS 填字＝html2canvas 也畫得出），左上角空格也有 .rth 撐高。
-    var isH=(m[1]==='已售');var cells=m[2].split('｜').map(function(c){var mm=/^(\S+) (\S+)$/.exec(c);if(!mm)return esc(c);return '<span class="rtc">'+(isH?'<span class="rth" data-h="'+esc(mm[1])+'"></span>':'')+'<span class="rtk">'+esc(mm[1])+'</span> '+esc(mm[2])+'</span>';});
+    // V0902-05：表頭改成獨立一列 .rtr-th（格內只有空 .rth＝沒有文字、沒有換行 ⇒ innerText 不變）；已售格不再塞 .rth（v4 血淚：表頭跟數字擠同一格＝縮排把灰帶推歪、格線缺角）
+    var isH=(m[1]==='已售');var heads=[];var cells=m[2].split('｜').map(function(c){var mm=/^(\S+) (\S+)$/.exec(c);if(!mm)return esc(c);heads.push(mm[1]);return '<span class="rtc"><span class="rtk">'+esc(mm[1])+'</span> '+esc(mm[2])+'</span>';});
     var cls='rtr'+(isH?' rtr-h':'')+(m[1]==='合計'?' rtr-sum':'');
-    return '<span class="'+cls+'"><span class="rtl">'+(isH?'<span class="rth"></span>':'')+esc(m[1])+'</span><span class="rsp">　</span>'+cells.join('<span class="rsp">｜</span>')+'</span>';
+    var th=isH?('<span class="rtr rtr-th"><span class="rtl"><span class="rth"></span></span>'+heads.map(function(h){return '<span class="rtc"><span class="rth" data-h="'+esc(h)+'"></span></span>';}).join('')+'</span>'):'';
+    return th+'<span class="'+cls+'"><span class="rtl">'+esc(m[1])+'</span><span class="rsp">　</span>'+cells.join('<span class="rsp">｜</span>')+'</span>';
   }
   function secHTML(sec,colored){
     var h='<b>'+esc(sec[0])+'</b>',k=1;
@@ -24132,7 +24135,10 @@ function _capShowImages(list){   // V0902-04：多張截圖的預覽層（每張
   ov.style.cssText='position:fixed;inset:0;z-index:12000;background:rgba(18,24,38,.93);display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch';
   var isMob=window.innerWidth<=700,_canShare=false;try{_canShare=!!(window.navigator&&navigator.share);}catch(e){}
   window._capMulti=list;window._capLastData=list[0].url;window._capLastName=list[0].fn;
-  var bar='<div style="flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px;color:#fff;font-size:13.5px;font-weight:700"><span style="flex:1">共 '+list.length+' 張，'+(isMob?(_canShare?'每張各按「存到相簿」（分享面板往下捲、點「儲存影像」）；或長按圖片儲存':'長按圖片 → 儲存到相簿'):'每張各按「下載」')+'</span>'
+  // V0902-05：頂端一顆「下載 N 張」（電腦＝逐張觸發 a.download）／「存到相簿（N 張）」（手機＝navigator.share 一次帶 N 個檔）；每張各自的鈕保留當備援
+  var allBtn=isMob?(_canShare?'<button onclick="_capShareAll()" style="color:#fff;background:#3BA55D;border:1px solid #3BA55D;padding:7px 14px;font-weight:800;font-size:13px;font-family:var(--font);cursor:pointer">⬇ 存到相簿（'+list.length+' 張）</button>':'')
+    :'<button onclick="_capDlAll()" style="color:#fff;background:#185FA5;border:1px solid #185FA5;padding:7px 14px;font-weight:800;font-size:13px;font-family:var(--font);cursor:pointer">⬇ 下載 '+list.length+' 張</button>';
+  var bar='<div style="flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px;color:#fff;font-size:13.5px;font-weight:700;flex-wrap:wrap"><span style="flex:1">共 '+list.length+' 張'+(isMob?(_canShare?'（分享面板往下捲、點「儲存影像」；或長按圖片儲存）':'，長按圖片 → 儲存到相簿'):'')+'</span>'+allBtn
     +'<button onclick="var o=document.getElementById(\'capimg-ov\');if(o)o.remove();" style="color:#fff;background:transparent;border:1px solid rgba(255,255,255,.6);padding:7px 14px;font-weight:800;font-size:13px;font-family:var(--font);cursor:pointer">✕ 關閉</button></div>';
   var body=list.map(function(it,i){
     var btn=_canShare?'<button onclick="window._capLastData=window._capMulti['+i+'].url;window._capLastName=window._capMulti['+i+'].fn;_capShareImage()" style="color:#fff;background:#3BA55D;border:1px solid #3BA55D;padding:6px 12px;font-weight:800;font-size:13px;font-family:var(--font);cursor:pointer">⬇ 存到相簿</button>':'';
@@ -24141,6 +24147,17 @@ function _capShowImages(list){   // V0902-04：多張截圖的預覽層（每張
   }).join('');
   ov.innerHTML=bar+'<div style="flex:1">'+body+'</div>';
   document.body.appendChild(ov);
+}
+function _capDlAll(){   // V0902-05：電腦一鍵下載全部（逐張點 a.download；間隔 350ms 免得瀏覽器只收第一張）
+  var L=window._capMulti||[];L.forEach(function(it,i){setTimeout(function(){var a=document.createElement('a');a.href=it.url;a.download=it.fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},1000);},i*350);});
+  try{toast('已下載 '+L.length+' 張','📷');}catch(e){}
+}
+function _capShareAll(){   // V0902-05：手機一次分享全部（navigator.share files 多檔）；不支援多檔就退回逐張
+  var L=window._capMulti||[];if(!L.length)return;
+  Promise.all(L.map(function(it){return fetch(it.url).then(function(r){return r.blob();}).then(function(b){return new File([b],it.fn,{type:'image/png'});});})).then(function(files){
+    if(navigator.canShare&&!navigator.canShare({files:files}))throw new Error('nofile');
+    return navigator.share({files:files});
+  }).catch(function(e){if(e&&e.name==='AbortError')return;try{toast('此裝置一次只能存一張，請每張各按「存到相簿」','⚠️');}catch(_){}});
 }
 function copyDailyReport(){
   const card=document.getElementById('rpt-card');
@@ -26113,4 +26130,4 @@ try{
 </body>
 </html>
 
-<!-- v0902-04 preview · build 2026-09-02 14:43 +08 -->
+<!-- v0902-04 index · build 2026-09-02 14:43 +08 -->
