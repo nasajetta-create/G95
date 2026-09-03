@@ -561,7 +561,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 /* V0819-04 🕒 建置時間（Asia/Taipei）。改版號時一起改，全檔只有這一行寫日期。
    放 classic 不放 module：module 一旦載入失敗（離線／CDN 被擋）整段不執行，就讀不到了。
    🩸0819 兩次把「GitHub Pages 部署延遲」誤判成使用者推錯版本 ⇒ 線上到底是哪一份，要一眼看得到。 */
-window._BUILD_STAMP = '2026-09-03 00:41 +08';
+window._BUILD_STAMP = '2026-09-03 01:14 +08';
 document.addEventListener('DOMContentLoaded',function(){ try{
   var h=document.getElementById('hdr-ver');
   if(h) h.title='建置 '+window._BUILD_STAMP+'（Asia/Taipei）';
@@ -588,7 +588,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 402;  // V0903-01 手機 B4 客戶清單收合＋B5 驗屋日報 今日／本週頁籤＋B6 手機小字 12px（13_查核清單 B4/B5/B6·示意圖①～⑭定案·預設今日）：①客戶清單三格統計 標籤 11→12px、「A/B/店」9→12px。②搜尋框高 40px、placeholder 的 🔍 拿掉改在框左側放線條 SVG 放大鏡（circle r7＋斜線）。③身分／棟別 _clmSeg 每格釘死 32px（_HMSEG 共用常數不動，只在 span 補 inline height/line-height/padding）；樓層那列改共用 .ufrow（38px）。④_clmListHTML：A 棟／B 棟／店鋪 改群組標題列 .ufrow.ufhd（.uftri ▸▾＋名稱＋「N 戶」12px 灰字），點標題 _clmGrpTog(g) toggle、預設收合、狀態 _ufSt('g95_clm')；🔴 有搜尋字 _clm.q 或樓層篩選（_clm.floors／_clm.frange）時三組自動展開（_clmGrpAuto，不寫回 localStorage）。⑤戶列改 .ufrow（38px）：戶別 14px 粗、姓名 13px（flex:1 省略號）、完成率 12px 灰、身分徽章改 .ufc（24px）釘死 width:52px（地主 #EAF1FB/#185FA5/#B9D0EC、業主 #E6F3EE/#0F6E3D/#AEDBC8、自購 #F1F0ED/#6b6a66/#D3D1CC）、.uftri ▸▾；點列 _clmToggle 展開 _clmEditHTML 照舊（編輯卡本身零改動）。⑥組開時先列 5 戶＋.ufmore（32px）「展開全部 N 戶」、再點變「收合」回 5 戶、≤5 戶不出鈕（_clmGrpFull(g)）。⑦收合＝只剩標題列；分組間距 10px。🔴 兩支 toggle 都只重畫 #clm-list（_clmRepaintList），判定／排序／資料層／_clmEditHTML／既有 onclick 一字不動。⑧手機驗屋日報四顆鈕列下、日報卡上加 segment（沿用 _clmSeg 32px）：「今日 · 明日預計」／「本週 · 下週 · 推估」，狀態 _ufSt('g95_rptm').seg（預設 today）、切換 _rptMobSegSet(v) 只重畫手機頁。⑨實作＝只做顯示／隱藏：el.innerHTML 之後 _rptmSetup() 做 DOM 後處理，找第一個 class 含 rptBox 且 textContent 以「本週統計」開頭的節點，切點跟 _rptCapWide 完全一致（BAR 分隔行留在第一段），切點前包進 <span class="rptSegA" style="display:contents">、之後包進 .rptSegB，rpt-card 加 class rptm-today／rptm-week，CSS .rptm-today .rptSegB,.rptm-week .rptSegA{display:none!important}（🩸 包段帶 inline display:contents，inline 贏過 class ⇒ 必須 !important）；找不到切點＝不包、不出 segment。🩸display:contents 不是 block-level ⇒ innerText 不會多換行；但被 display:none 的段 innerText 會掉 ⇒ 複製 copyDailyReport／截圖 _rptCapWide／儲存 saveDailyReport 讀 rpt-card 前一律包 _rptmAll(fn)＝拆掉 .rptSegA/B 包裝＋拿掉 class → 執行 → finally 包回去（桌機沒 class＝原樣執行）；🔴 拆包是必要的：_rptCapWide 是照 card.innerHTML 的「頂層子節點」找切點，不拆包會只剩兩個 span ⇒ 存圖從兩張掉成一張。今日頁籤底部那條孤立 BAR 用 .rptm-today .rptSegA>.rptBar:last-child{display:none!important} 只在畫面上藏掉（讀 innerText 前 class 已被 _rptmAll 拿掉 ⇒ 複製／截圖／儲存照樣有分隔線）。segment 在時，日報卡外面（不進 innerText）加一行 12px 灰字提示另一頁籤收了哪幾段。⑩.rth font-size .8em → max(.8em,12px)（手機 13px 字時表頭 10.4→12px；存圖 clone 18px 字＝14.4px 不受影響）。⑪_wvwBadge「較上週」膠囊手機 10.5→12px（桌機 11.5px 不動）。⑫交屋進度「近 7 日每日完成」長條圖（_hrptDailyBarsSVG，桌機手機同一支）加 mob 參數：手機軸標（日期／Y 軸）font-size 9→19 viewBox 單位（620 縮到 ~390 ⇒ 畫面≈12px），桌機一個字沒動；柱上數字維持 8＝密集格子（柱寬僅 13 單位）。🩸_hrptTrendSVG（620 寬折線圖）全檔沒有呼叫端＝死碼，沒動它。⑬其餘手機路徑（函式名含 Mob／_clm）grep font-size:(8|9|10|10.5|11|11.5)px 共 53 行 69 處全升 12px；密集格子不動＝_hrptDailyBarsSVG 柱上數字 8、_vstatMobRender／_irPendingHTML／_evMobRender（V0902-06 已做）、_irChip 的 10.5px 是桌機分支。⑭不動：判定／資料層／桌機路徑；客戶清單編輯卡、批次修改、車位；日報設定／推算／使照／取消未到段。程式行剪掉 V0902-05（已入註解史·另存 dropped_V0902-05.txt）。｜V0902-07 效能：同一份資料算一次（13_查核清單 B3·線上實測 getDefectRows 掃全鍵 2.2s／uniqueUnits 86 萬次正則／_riSpan 逐日 6 萬次／殘影每格掃 432 戶）：①_buildDefectCache() 建完 Map 後多做 _defectCache._idx＝依 Map 插入順序每鍵一筆 {ru,rows,cleanU,ruCol}（clean=去「地／業」前綴 trim、cleanU 大寫、ruCol 去括號去非英數大寫），getDefectRows() 模糊比對改走 _idx 的 for 迴圈（同一順序、同一條件、同一算式），正則從「每次呼叫×每個鍵×3 支」降到「每次重建×每個鍵×3 支」；另加 _defectCache._memo＝unitKey→result 逐鍵記憶。失效＝_memo/_idx 都掛在 _defectCache 物件上，_buildDefectCache()（缺失資料唯一重建點）一叫就整包沒了。順手把「沒有 cache 就掃全表」的 source/db 兩行拿掉（開頭改成 if(!_defectCache)_buildDefectCache()＝一定有 cache；那條退路只掃 S.rows、漏 S.completed，V0812-02 已踩過）。②uniqueUnits() 改 decorate-sort-undecorate＝_unitSortKey 每個 unit 只算一次（比較函式三段條件原封不動、Array#sort 穩定 ⇒ 打平順序不變），外面包同 tick 記憶 _tickMemo()。③_vAZ() 同樣包 _tickMemo（內容不動）。④_riIsRest(iso)／_riSpan(from,to) 是純函式（只吃常數假日表）⇒ 永久記憶：iso→bool、from|to→{cal,rest,work}；🩸_TW_HOLIDAYS_2026 是同一支 script 後面才賦值的 var ⇒ typeof 還是 undefined 時算出來的答案不准存（存了會永遠錯）；_riSpan 回傳一律**新物件**（呼叫端會改欄位）。⑤_hcalGhosts(dateStr,slot) 改成同 tick 建一次索引 Map(date→[{key,ground,self,gtype,e,idx}])（掃 S.handoverUnits 一次：三輪 init/re/ho×noShow/cancel，self＝該輪本體日期），查表時只做原本那兩個跳過（self===dateStr／slot 不符），push 的欄位與順序（外層 key→輪→noShow/cancel→arr）逐筆相同；setTimeout(clear,0) 失效。🔴 判定／排序／資料層／版面零改動，回傳結果逐字逐筆同順序；回傳陣列一律 .slice() 複本（呼叫端 sort/push 汙染不到快取）。🔴 不用「長度＋時間戳」當指紋——資料原地改長度不變＝會吃到舊結果；只准三種失效：綁 _defectCache 物件／同 tick setTimeout(clear,0)／純函式永久記憶。程式行剪掉 V0902-04（已入註解史·另存 dropped_V0902-04.txt）。｜V0902-06 驗收統計＋進度里程碑 手機版面大小一致（使用者 0902 示意圖①～⑮定案）：①今日檢核標頭列 min-height 38px、「登記驗收筆數」鈕 32px（inline-flex 置中·12px）＋線條 SVG 鉛筆取代 ✎（時段標籤 11→12px 一併升）。②戶別小卡（_irChip mob）棟別徽章 9→12px、補登記／無缺失兩顆 10.5→12px 且高 28px 等高、筆數字 11.5→12px。③跨日待處理 head 手機改「群組標題列」＝沿用既有 .ufrow.ufhd（38px·#E9E7E1），左「跨日待處理 N」(#A11B1B)＋灰字「非今日漏登記」，右「一鍵補登記（N 戶）」改 .ufc 24px 控件（#185FA5 白字·onclick _irBulkReg() 不動）；桌機 table 路徑一個字沒動。④手機每戶卡改白底＋1px #B7C6D6 邊框、相鄰卡 margin-top:-1px 疊線；紅底／黃底大色塊全拿掉（_ok 判斷保留但只影響文字色）、驗次 11→12px。⑤卡內按鈕同列 flex:1／高 32px／12px（inline-flex 置中），主要動作（確認無誤更新）維持藍底白字、其餘白底灰框；文案與 onclick 不動。🩸.btn-sm 的 font-size/padding 帶 !important ⇒ inline 也要 !important 才蓋得過。⑥手機跨日待處理預設只列 5 戶，第 6 戶起收在既有 .ufmore（32px）「展開全部 N 戶／收合」後；狀態記 localStorage g95_vstatPendFull（_ufSt/_ufStSet）；≤5 戶不出鈕；桌機 table 不折。🩸reRenderActivePane() 沒有 inspstat 分支 ⇒ 折疊開關要直接叫 renderInspStat()。⑦_vstatMobRender 標題列：月份 select 與截圖鈕統一 32px／12.5px，截圖鈕加線條 SVG 相機。⑧日期卡三顆計數格標籤 10→12px、日期標頭列 38px。⑨展開的戶別卡拿掉 border-left:3px 左側色條 → 整卡依輪次淡染（初 #EAF4FC／複 #FBF3E6／交 #EEF6EA）＋1px #e0e3e8 邊、-1px 疊線；地主 9→12px、輪次 11→12px。⑩_evMobRender 四格統計 stt 標籤 10→12px。⑪「＋ 新增事件」鈕高 40px（inline-flex 置中）。⑫事件卡拿掉左側色條 → 逾期整卡 #FDF4F4／完成 #F4FBF4／進行中白、1px #B7C6D6 邊；單位 input 高 40px（1px #cdd9ea·padding 0 8px·14px 粗體）、逾期／完成狀態字 12px、刪除鈕 40×40（inline-flex 置中·SVG 不變）。⑬區域位置 input＋管理人 select 同列各 flex:1、高 40px、字 13px。⑭四個日期改 2×2 grid（1fr 1fr·gap 6px），每格標籤 12px 在上、input[type=date] 高 40px 在下；onchange 與欄位名不動、逾期紅框／完成綠框照舊。⑮已完成事件卡走同一支 evCard ⇒ 尺寸自然一致。🔴 只動 _irTodayHTML／_irDayTableHTML／_irChip／_irPendingHTML／_vstatMobRender／_evMobRender 的手機路徑；桌機路徑、_irPendingList、_vstatCollect、所有 onclick 函式名與參數零改動。程式行剪掉 V0902-03（已入註解史·另存 dropped_V0902-03.txt）。
+const CODE_VERSION = 403;  // V0903-02 複驗抽屜鍵穩定＋健檢「戶別寫法不一致」（13_查核清單 B10·線上實查 11 個店鋪戶缺失 unit 混寫 店A18／A18）：①_riUsKeyCalc 原本拿「第一筆缺失」的 unit 拼抽屜鍵（店A18-1F），第一筆一銷案就翻成 A18-1F ⇒ 已排複驗日／時段憑空不見、不報錯（A26-1 已翻過）；改成列出所有寫法（保留原順序）；🔴只處理「只差一個店字」的混寫，寫法差在樓層（整棟戶 A1 跨 1F/8F）維持舊行為＝第一筆（reseg 煙測守著）；一種＝與舊版逐字相同；抽屜已有東西（S.reCheckUF／S.reCheckSlot）的優先（含只剩一種寫法但另一種寫法的抽屜有東西＝店字那幾筆全刪光也讀得到）→ 帶「店」的 → 第一個（＝舊行為）。線上 9 戶存的鍵全部維持可讀。②健檢新條 mixUnit（戶層級·warn）：列出混寫戶＋各寫法筆數＋抽屜實際用哪把；只提醒不自動改資料。新增 _riUsKeyVariants／_dchkMixData／_dchkMixOne／_dchkMixBtn。③新煙測 smoke_g95_uskey.js：單一寫法＝舊算法逐字相同、混寫時第一筆銷案鍵不翻面、已存抽屜優先、店字優先、健檢列得出。程式行剪掉 V0902-06（已入註解史·另存 dropped_V0902-06.txt）。｜V0903-01 手機 B4 客戶清單收合＋B5 驗屋日報 今日／本週頁籤＋B6 手機小字 12px（13_查核清單 B4/B5/B6·示意圖①～⑭定案·預設今日）：①客戶清單三格統計 標籤 11→12px、「A/B/店」9→12px。②搜尋框高 40px、placeholder 的 🔍 拿掉改在框左側放線條 SVG 放大鏡（circle r7＋斜線）。③身分／棟別 _clmSeg 每格釘死 32px（_HMSEG 共用常數不動，只在 span 補 inline height/line-height/padding）；樓層那列改共用 .ufrow（38px）。④_clmListHTML：A 棟／B 棟／店鋪 改群組標題列 .ufrow.ufhd（.uftri ▸▾＋名稱＋「N 戶」12px 灰字），點標題 _clmGrpTog(g) toggle、預設收合、狀態 _ufSt('g95_clm')；🔴 有搜尋字 _clm.q 或樓層篩選（_clm.floors／_clm.frange）時三組自動展開（_clmGrpAuto，不寫回 localStorage）。⑤戶列改 .ufrow（38px）：戶別 14px 粗、姓名 13px（flex:1 省略號）、完成率 12px 灰、身分徽章改 .ufc（24px）釘死 width:52px（地主 #EAF1FB/#185FA5/#B9D0EC、業主 #E6F3EE/#0F6E3D/#AEDBC8、自購 #F1F0ED/#6b6a66/#D3D1CC）、.uftri ▸▾；點列 _clmToggle 展開 _clmEditHTML 照舊（編輯卡本身零改動）。⑥組開時先列 5 戶＋.ufmore（32px）「展開全部 N 戶」、再點變「收合」回 5 戶、≤5 戶不出鈕（_clmGrpFull(g)）。⑦收合＝只剩標題列；分組間距 10px。🔴 兩支 toggle 都只重畫 #clm-list（_clmRepaintList），判定／排序／資料層／_clmEditHTML／既有 onclick 一字不動。⑧手機驗屋日報四顆鈕列下、日報卡上加 segment（沿用 _clmSeg 32px）：「今日 · 明日預計」／「本週 · 下週 · 推估」，狀態 _ufSt('g95_rptm').seg（預設 today）、切換 _rptMobSegSet(v) 只重畫手機頁。⑨實作＝只做顯示／隱藏：el.innerHTML 之後 _rptmSetup() 做 DOM 後處理，找第一個 class 含 rptBox 且 textContent 以「本週統計」開頭的節點，切點跟 _rptCapWide 完全一致（BAR 分隔行留在第一段），切點前包進 <span class="rptSegA" style="display:contents">、之後包進 .rptSegB，rpt-card 加 class rptm-today／rptm-week，CSS .rptm-today .rptSegB,.rptm-week .rptSegA{display:none!important}（🩸 包段帶 inline display:contents，inline 贏過 class ⇒ 必須 !important）；找不到切點＝不包、不出 segment。🩸display:contents 不是 block-level ⇒ innerText 不會多換行；但被 display:none 的段 innerText 會掉 ⇒ 複製 copyDailyReport／截圖 _rptCapWide／儲存 saveDailyReport 讀 rpt-card 前一律包 _rptmAll(fn)＝拆掉 .rptSegA/B 包裝＋拿掉 class → 執行 → finally 包回去（桌機沒 class＝原樣執行）；🔴 拆包是必要的：_rptCapWide 是照 card.innerHTML 的「頂層子節點」找切點，不拆包會只剩兩個 span ⇒ 存圖從兩張掉成一張。今日頁籤底部那條孤立 BAR 用 .rptm-today .rptSegA>.rptBar:last-child{display:none!important} 只在畫面上藏掉（讀 innerText 前 class 已被 _rptmAll 拿掉 ⇒ 複製／截圖／儲存照樣有分隔線）。segment 在時，日報卡外面（不進 innerText）加一行 12px 灰字提示另一頁籤收了哪幾段。⑩.rth font-size .8em → max(.8em,12px)（手機 13px 字時表頭 10.4→12px；存圖 clone 18px 字＝14.4px 不受影響）。⑪_wvwBadge「較上週」膠囊手機 10.5→12px（桌機 11.5px 不動）。⑫交屋進度「近 7 日每日完成」長條圖（_hrptDailyBarsSVG，桌機手機同一支）加 mob 參數：手機軸標（日期／Y 軸）font-size 9→19 viewBox 單位（620 縮到 ~390 ⇒ 畫面≈12px），桌機一個字沒動；柱上數字維持 8＝密集格子（柱寬僅 13 單位）。🩸_hrptTrendSVG（620 寬折線圖）全檔沒有呼叫端＝死碼，沒動它。⑬其餘手機路徑（函式名含 Mob／_clm）grep font-size:(8|9|10|10.5|11|11.5)px 共 53 行 69 處全升 12px；密集格子不動＝_hrptDailyBarsSVG 柱上數字 8、_vstatMobRender／_irPendingHTML／_evMobRender（V0902-06 已做）、_irChip 的 10.5px 是桌機分支。⑭不動：判定／資料層／桌機路徑；客戶清單編輯卡、批次修改、車位；日報設定／推算／使照／取消未到段。程式行剪掉 V0902-05（已入註解史·另存 dropped_V0902-05.txt）。｜V0902-07 效能：同一份資料算一次（13_查核清單 B3·線上實測 getDefectRows 掃全鍵 2.2s／uniqueUnits 86 萬次正則／_riSpan 逐日 6 萬次／殘影每格掃 432 戶）：①_buildDefectCache() 建完 Map 後多做 _defectCache._idx＝依 Map 插入順序每鍵一筆 {ru,rows,cleanU,ruCol}（clean=去「地／業」前綴 trim、cleanU 大寫、ruCol 去括號去非英數大寫），getDefectRows() 模糊比對改走 _idx 的 for 迴圈（同一順序、同一條件、同一算式），正則從「每次呼叫×每個鍵×3 支」降到「每次重建×每個鍵×3 支」；另加 _defectCache._memo＝unitKey→result 逐鍵記憶。失效＝_memo/_idx 都掛在 _defectCache 物件上，_buildDefectCache()（缺失資料唯一重建點）一叫就整包沒了。順手把「沒有 cache 就掃全表」的 source/db 兩行拿掉（開頭改成 if(!_defectCache)_buildDefectCache()＝一定有 cache；那條退路只掃 S.rows、漏 S.completed，V0812-02 已踩過）。②uniqueUnits() 改 decorate-sort-undecorate＝_unitSortKey 每個 unit 只算一次（比較函式三段條件原封不動、Array#sort 穩定 ⇒ 打平順序不變），外面包同 tick 記憶 _tickMemo()。③_vAZ() 同樣包 _tickMemo（內容不動）。④_riIsRest(iso)／_riSpan(from,to) 是純函式（只吃常數假日表）⇒ 永久記憶：iso→bool、from|to→{cal,rest,work}；🩸_TW_HOLIDAYS_2026 是同一支 script 後面才賦值的 var ⇒ typeof 還是 undefined 時算出來的答案不准存（存了會永遠錯）；_riSpan 回傳一律**新物件**（呼叫端會改欄位）。⑤_hcalGhosts(dateStr,slot) 改成同 tick 建一次索引 Map(date→[{key,ground,self,gtype,e,idx}])（掃 S.handoverUnits 一次：三輪 init/re/ho×noShow/cancel，self＝該輪本體日期），查表時只做原本那兩個跳過（self===dateStr／slot 不符），push 的欄位與順序（外層 key→輪→noShow/cancel→arr）逐筆相同；setTimeout(clear,0) 失效。🔴 判定／排序／資料層／版面零改動，回傳結果逐字逐筆同順序；回傳陣列一律 .slice() 複本（呼叫端 sort/push 汙染不到快取）。🔴 不用「長度＋時間戳」當指紋——資料原地改長度不變＝會吃到舊結果；只准三種失效：綁 _defectCache 物件／同 tick setTimeout(clear,0)／純函式永久記憶。程式行剪掉 V0902-04（已入註解史·另存 dropped_V0902-04.txt）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1490,7 +1490,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0903-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0903-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -8718,15 +8718,46 @@ function _riUsKey(key){
   return _v;
 }
 function _riUsKeyCalc(key){
+  // V0903-02（13_查核清單 B10）：店鋪缺失 unit 混寫「店A18」＋「A18」（線上 11 戶）⇒ 原本拿「第一筆」的 unit 拼鍵，
+  //   第一筆一銷案就翻面（店A18-1F → A18-1F），已排的複驗日／時段整個「不見」且不報錯（A26-1 已翻過）。
+  //   改成：把所有寫法都列出來（保留原順序），只有一種＝跟以前一模一樣；多種時 ①先用「抽屜裡已經有東西」的那把
+  //   （S.reCheckUF／S.reCheckSlot 有值）⇒ 既有資料全讀得到 ②都沒有就用帶「店」字的 ③再沒有就第一個（＝舊行為）。
   try{
     var dr=getDefectRows(key)||[];
+    var cands=[],seen={};
     for(var i=0;i<dr.length;i++){
       var r=dr[i]; if(!r||!r.unit)continue;
-      return unitDisplayName(String(r.unit).trim())+(r.floor?('-'+String(r.floor).trim()):'');
+      var k=unitDisplayName(String(r.unit).trim())+(r.floor?('-'+String(r.floor).trim()):'');
+      if(!seen[k]){seen[k]=1;cands.push(k);}
     }
+    // 🔴 只處理「只差一個店字」的混寫（店A18-1F／A18-1F）；寫法差在樓層（整棟戶 A1 有 1F/2F/8F…）不在 B10 範圍，維持舊行為（第一筆）
+    var bases={}; cands.forEach(function(k){ bases[k.replace(/^店/,'')]=1; });
+    if(cands.length&&Object.keys(bases).length===1){
+      var uf=(typeof S!=='undefined'&&S.reCheckUF)||{}, sl=(typeof S!=='undefined'&&S.reCheckSlot)||{};
+      for(var a=0;a<cands.length;a++){ if(uf[cands[a]]||sl[cands[a]])return cands[a]; }
+      // 只剩一種寫法但「另一種寫法的抽屜」裡有東西（店字那幾筆已全部刪光／銷案）⇒ 仍用有東西的那把，已排的複驗日不會不見
+      for(var t=0;t<cands.length;t++){ var alt=/^店/.test(cands[t])?cands[t].slice(1):('店'+cands[t]); if(uf[alt]||sl[alt])return alt; }
+      if(cands.length===1)return cands[0];
+      for(var c=0;c<cands.length;c++){ if(/^店/.test(cands[c]))return cands[c]; }
+      return cands[0];
+    }
+    if(cands.length)return cands[0];   // 樓層不同的多種寫法＝舊行為（健檢 dupUsKey 那條負責報）
   }catch(e){}
   var d=unitDisplayName(key);
   return /-\d+$/.test(d)?(d+'F'):d;   // 退路：A5-24 → A5-24F
+}
+// V0903-02 健檢用：這戶的缺失 unit 有幾種寫法（>1＝混寫）。回傳 [{k:鍵, n:筆數}...] 依原順序
+function _riUsKeyVariants(key){
+  var out=[],idx={};
+  try{
+    (getDefectRows(key)||[]).forEach(function(r){
+      if(!r||!r.unit)return;
+      var k=unitDisplayName(String(r.unit).trim())+(r.floor?('-'+String(r.floor).trim()):'');
+      if(idx[k]==null){idx[k]=out.length;out.push({k:k,n:0});}
+      out[idx[k]].n++;
+    });
+  }catch(e){}
+  return out;
 }
 function _riRecheckOf(key){try{return (S.reCheckUF||{})[_riUsKey(key)]||'';}catch(e){return '';}}
 function _riSlotOf(key){try{return (S.reCheckSlot||{})[_riUsKey(key)]||'';}catch(e){return '';}}
@@ -11066,6 +11097,9 @@ var _DCHK=[
   {k:'dupUsKey',   t:'兩個戶共用同一個複驗抽屜', lv:'bad', one:_dchkDupOne, btn:_dchkDupBtn,   /* V0821-01 一鍵刪空殼戶 */   /* 函式宣告會提升，可以直接放參考、不必繞 window */
    why:'複驗日／時段存在 _riUsKey() 算出來的鍵底下。兩戶算出同一把鍵＝幫其中一戶排複驗，另一戶會跟著變，行事曆也會多算一格'},
   // V0826-05：也是「戶」層級（同 dupUsKey）。2026-08-26 事故＝有人無參數呼叫接待/排程函式，憑空長出 key 為 "undefined" 的空殼戶
+  // V0903-02（B10）：戶層級。同一戶缺失的 unit 有兩種寫法（店A18／A18）⇒ 複驗抽屜鍵靠 _riUsKeyCalc 的優先序撐著；資料統一與否由使用者決定
+  {k:'mixUnit',    t:'同一戶缺失的戶別寫法不一致（店A18／A18）', lv:'warn', one:_dchkMixOne, btn:_dchkMixBtn,
+   why:'複驗日抽屜鍵是從缺失的 unit 拼出來的；V0903-02 起已改成「抽屜裡有東西的那把優先、再來帶店字的」所以不會再翻面，但建議把 unit 統一（在缺失上把 A18 改成 店A18），以免其他地方分組分成兩戶'},
   {k:'badKey',     t:'交屋戶名單有無效鍵的空殼戶', lv:'bad', one:_dchkBadKeyOne, btn:_dchkBadKeyBtn,
    why:'戶別鍵是 undefined／null／空字串＝不是真的戶。它會被算進交屋戶總數、跑進各種統計與行事曆判定，而且不會報錯'}
 ];
@@ -12360,6 +12394,7 @@ function _dchkData(){
   }catch(e){}
   try{ o.dupUsKey=_dchkDupData(); }catch(e){ o.dupUsKey=[]; }   // V0820-04 戶層級：兩戶共用同一個複驗抽屜
   try{ o.badKey=_dchkBadKeyData(); }catch(e){ o.badKey=[]; }    // V0826-05 戶層級：無效戶鍵的空殼戶
+  try{ o.mixUnit=_dchkMixData(); }catch(e){ o.mixUnit=[]; }    // V0903-02 戶層級：缺失 unit 混寫
   o.total=0; _DCHK.forEach(function(d){ o.total+=(o[d.k]||[]).length; });
   return o;
 }
@@ -12518,6 +12553,25 @@ function _dchkBadKeyEmpty(k){
     return true;
   }catch(e){ return false; }
 }
+// V0903-02（B10）：掃 handoverUnits 全部戶＋缺失裡出現過的戶，找「同一戶的缺失 unit 有 ≥2 種寫法」
+function _dchkMixData(){
+  var out=[];
+  try{
+    var keys={}; Object.keys((S&&S.handoverUnits)||{}).forEach(function(k){ if(k)keys[k]=1; });
+    Object.keys(keys).forEach(function(k){
+      var v=_riUsKeyVariants(k); if(v.length<2)return;
+      var use=''; try{ use=_riUsKey(k); }catch(e){}
+      out.push({k:k, variants:v, use:use});
+    });
+    out.sort(function(a,b){ return String(a.k).localeCompare(String(b.k),undefined,{numeric:true}); });
+  }catch(e){ console.warn('[資料健檢] unit 混寫', e); }
+  return out;
+}
+function _dchkMixOne(x){
+  return '<b>'+esc(unitDisplayName(x.k))+'</b> <span style="color:#5F5E5A;font-size:11.5px">'+(x.variants||[]).map(function(v){ return esc(v.k)+'×'+v.n; }).join('／')+'</span>'
+    +'<span style="color:#8A8783;font-size:11px">（抽屜用 '+esc(x.use)+'）</span>';
+}
+function _dchkMixBtn(n){ return '<span style="color:#9A9896;font-size:11.5px">請自行統一 unit（不自動改）</span>'; }
 function _dchkBadKeyData(){
   var out=[];
   try{
@@ -26284,4 +26338,4 @@ try{
 </body>
 </html>
 
-<!-- v0903-01 preview · build 2026-09-03 00:41 +08 -->
+<!-- v0903-02 preview · build 2026-09-03 01:14 +08 -->
