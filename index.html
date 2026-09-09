@@ -597,7 +597,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 404;  // V0909-01 報告看板 ①與上次名單比 ②第 9 段 地主戶進度（mock_owner 帶編號示意圖定案）：①貼上名單區（#bd-req-in）下方新增一行純文字「與上次名單比　新增 N 戶：…　移除 N 戶：…（上次 MM/DD 帳號）」，資料來源＝既有 S.hoReq.prev（寫入點仍只有 _bdApply／_bdClearReq 兩處·只讀不另存），戶別走 unitDisplayName，沒有 prev 或 prev.units 空＝整行不畫（不是留空行）；新增 _bdPrevDiff／_bdPrevDiffHTML。②_BDSEG 追加第 9 段 own「地主戶進度」card:0 ⇒ 卡片區維持 4×2 八格（_bdCardsHTML／_bdText 本來就濾 s.card，一字未動）。對象＝_riAllKeys() 中 isOwnerUnit 為真的戶（🔴身分只認 isOwnerUnit／g95KindOf，位置另走 _bdBlk，兩個維度不可混·V0828-05 ④ 同一條）；分組鍵＝_ownerOf(k)（clientData 姓名 trim），空姓名歸一組「未填屋主」永遠排最後，共有戶多人＝照既有姓名鍵各自成組（不自創合併規則）。「完成」＝_riStat(k).stage 為 deliverable 或 delivered（使用者定案甲·🔴零新判定，只讀 stage 不另寫一套）。收合列統計字＝地主 N、全完成 X、戶 T（完成 C／未完成 U），「全完成」＝該地主所有戶都完成。展開後篩選三選一（全部／只看未全完成／只看全部完成）＋排序三選一（未完成多→少 預設／地主姓名／戶數），狀態存模組變數 _bdOwnF／_bdOwnS（不進雲端·重整回預設）；表格六欄＝地主、戶數、完成、未完成、已完成戶別、未完成戶別（目前階段），沿用 div.bdwrap>table.bdtb（table-layout:fixed＋colgroup 固定欄寬），戶別片段依棟淡染沿用 bduA/bduB/bduS，同一格內戶別排序走 _bdBlSortCmp，每個「戶別＋階段」片段包 white-space:nowrap；階段文字沿用八段同一把尺（re1 已約複驗＋複驗日 MM/DD、re0 未約複驗、ins0 未約初驗、re2 待複驗2、repair 修繕中 N＝pend、none 且有 planDate 已排初驗 MM/DD）。資料在 _bdData() 算一次放進 D.own（指紋快取沿用·render 內不重算 _riStat）；段容器 id bd-seg-own、出圖走既有 _bdShotSeg，載入中 _bdLoading() 一起灰化並由 _bdLdBlock 擋出圖；唯讀模式（?mode=view）篩選／排序是純查看＝放行；報告看板維持單一響應式（沒有 _bdMobRender），390px 靠 .bdwrap{overflow-x:auto} 不橫向溢出。新增 _bdOwnStageTxt／_bdOwnView／_bdOwnHTML／_bdOwnSet 與 CSS span.bdu*／.bdop／.bdo9。③新煙測 smoke_g95_own.js（8 區塊）並登記進 run_all_g95.js；smoke_g95_board.js ⑥「八段加一條標題列／編號連續」兩條隨規格改成九段。程式行剪掉 V0902-07（已入註解史·另存 CODE_VERSION註解史_追加.md）。｜V0903-02 複驗抽屜鍵穩定＋健檢「戶別寫法不一致」（13_查核清單 B10·線上實查 11 個店鋪戶缺失 unit 混寫 店A18／A18）：①_riUsKeyCalc 原本拿「第一筆缺失」的 unit 拼抽屜鍵（店A18-1F），第一筆一銷案就翻成 A18-1F ⇒ 已排複驗日／時段憑空不見、不報錯（A26-1 已翻過）；改成列出所有寫法（保留原順序）；🔴只處理「只差裝飾字」的混寫（店字、括號身分 A1(地)-6F＝線上 71 個地主戶也混寫），優先序 抽屜有東西→帶店→不帶括號→第一筆；寫法差在樓層（整棟戶 A1 跨 1F/8F）維持舊行為＝第一筆（reseg 煙測守著）；一種＝與舊版逐字相同；抽屜已有東西（S.reCheckUF／S.reCheckSlot）的優先（含只剩一種寫法但另一種寫法的抽屜有東西＝店字那幾筆全刪光也讀得到）→ 帶「店」的 → 第一個（＝舊行為）。線上 9 戶存的鍵全部維持可讀。②健檢新條 mixUnit（戶層級·warn）：列出混寫戶＋各寫法筆數＋抽屜實際用哪把；只提醒不自動改資料。新增 _riUsKeyVariants／_dchkMixData／_dchkMixOne／_dchkMixBtn。③新煙測 smoke_g95_uskey.js：單一寫法＝舊算法逐字相同、混寫時第一筆銷案鍵不翻面、已存抽屜優先、店字優先、健檢列得出。程式行剪掉 V0902-06（已入註解史·另存 dropped_V0902-06.txt）。｜V0903-01 手機 B4 客戶清單收合＋B5 驗屋日報 今日／本週頁籤＋B6 手機小字 12px（13_查核清單 B4/B5/B6·示意圖①～⑭定案·預設今日）：①客戶清單三格統計 標籤 11→12px、「A/B/店」9→12px。②搜尋框高 40px、placeholder 的 🔍 拿掉改在框左側放線條 SVG 放大鏡（circle r7＋斜線）。③身分／棟別 _clmSeg 每格釘死 32px（_HMSEG 共用常數不動，只在 span 補 inline height/line-height/padding）；樓層那列改共用 .ufrow（38px）。④_clmListHTML：A 棟／B 棟／店鋪 改群組標題列 .ufrow.ufhd（.uftri ▸▾＋名稱＋「N 戶」12px 灰字），點標題 _clmGrpTog(g) toggle、預設收合、狀態 _ufSt('g95_clm')；🔴 有搜尋字 _clm.q 或樓層篩選（_clm.floors／_clm.frange）時三組自動展開（_clmGrpAuto，不寫回 localStorage）。⑤戶列改 .ufrow（38px）：戶別 14px 粗、姓名 13px（flex:1 省略號）、完成率 12px 灰、身分徽章改 .ufc（24px）釘死 width:52px（地主 #EAF1FB/#185FA5/#B9D0EC、業主 #E6F3EE/#0F6E3D/#AEDBC8、自購 #F1F0ED/#6b6a66/#D3D1CC）、.uftri ▸▾；點列 _clmToggle 展開 _clmEditHTML 照舊（編輯卡本身零改動）。⑥組開時先列 5 戶＋.ufmore（32px）「展開全部 N 戶」、再點變「收合」回 5 戶、≤5 戶不出鈕（_clmGrpFull(g)）。⑦收合＝只剩標題列；分組間距 10px。🔴 兩支 toggle 都只重畫 #clm-list（_clmRepaintList），判定／排序／資料層／_clmEditHTML／既有 onclick 一字不動。⑧手機驗屋日報四顆鈕列下、日報卡上加 segment（沿用 _clmSeg 32px）：「今日 · 明日預計」／「本週 · 下週 · 推估」，狀態 _ufSt('g95_rptm').seg（預設 today）、切換 _rptMobSegSet(v) 只重畫手機頁。⑨實作＝只做顯示／隱藏：el.innerHTML 之後 _rptmSetup() 做 DOM 後處理，找第一個 class 含 rptBox 且 textContent 以「本週統計」開頭的節點，切點跟 _rptCapWide 完全一致（BAR 分隔行留在第一段），切點前包進 <span class="rptSegA" style="display:contents">、之後包進 .rptSegB，rpt-card 加 class rptm-today／rptm-week，CSS .rptm-today .rptSegB,.rptm-week .rptSegA{display:none!important}（🩸 包段帶 inline display:contents，inline 贏過 class ⇒ 必須 !important）；找不到切點＝不包、不出 segment。🩸display:contents 不是 block-level ⇒ innerText 不會多換行；但被 display:none 的段 innerText 會掉 ⇒ 複製 copyDailyReport／截圖 _rptCapWide／儲存 saveDailyReport 讀 rpt-card 前一律包 _rptmAll(fn)＝拆掉 .rptSegA/B 包裝＋拿掉 class → 執行 → finally 包回去（桌機沒 class＝原樣執行）；🔴 拆包是必要的：_rptCapWide 是照 card.innerHTML 的「頂層子節點」找切點，不拆包會只剩兩個 span ⇒ 存圖從兩張掉成一張。今日頁籤底部那條孤立 BAR 用 .rptm-today .rptSegA>.rptBar:last-child{display:none!important} 只在畫面上藏掉（讀 innerText 前 class 已被 _rptmAll 拿掉 ⇒ 複製／截圖／儲存照樣有分隔線）。segment 在時，日報卡外面（不進 innerText）加一行 12px 灰字提示另一頁籤收了哪幾段。⑩.rth font-size .8em → max(.8em,12px)（手機 13px 字時表頭 10.4→12px；存圖 clone 18px 字＝14.4px 不受影響）。⑪_wvwBadge「較上週」膠囊手機 10.5→12px（桌機 11.5px 不動）。⑫交屋進度「近 7 日每日完成」長條圖（_hrptDailyBarsSVG，桌機手機同一支）加 mob 參數：手機軸標（日期／Y 軸）font-size 9→19 viewBox 單位（620 縮到 ~390 ⇒ 畫面≈12px），桌機一個字沒動；柱上數字維持 8＝密集格子（柱寬僅 13 單位）。🩸_hrptTrendSVG（620 寬折線圖）全檔沒有呼叫端＝死碼，沒動它。⑬其餘手機路徑（函式名含 Mob／_clm）grep font-size:(8|9|10|10.5|11|11.5)px 共 53 行 69 處全升 12px；密集格子不動＝_hrptDailyBarsSVG 柱上數字 8、_vstatMobRender／_irPendingHTML／_evMobRender（V0902-06 已做）、_irChip 的 10.5px 是桌機分支。⑭不動：判定／資料層／桌機路徑；客戶清單編輯卡、批次修改、車位；日報設定／推算／使照／取消未到段。程式行剪掉 V0902-05（已入註解史·另存 dropped_V0902-05.txt）。
+const CODE_VERSION = 405;  // V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。｜V0909-01 報告看板 ①與上次名單比 ②第 9 段 地主戶進度（mock_owner 帶編號示意圖定案）：①貼上名單區（#bd-req-in）下方新增一行純文字「與上次名單比　新增 N 戶：…　移除 N 戶：…（上次 MM/DD 帳號）」，資料來源＝既有 S.hoReq.prev（寫入點仍只有 _bdApply／_bdClearReq 兩處·只讀不另存），戶別走 unitDisplayName，沒有 prev 或 prev.units 空＝整行不畫（不是留空行）；新增 _bdPrevDiff／_bdPrevDiffHTML。②_BDSEG 追加第 9 段 own「地主戶進度」card:0 ⇒ 卡片區維持 4×2 八格（_bdCardsHTML／_bdText 本來就濾 s.card，一字未動）。對象＝_riAllKeys() 中 isOwnerUnit 為真的戶（🔴身分只認 isOwnerUnit／g95KindOf，位置另走 _bdBlk，兩個維度不可混·V0828-05 ④ 同一條）；分組鍵＝_ownerOf(k)（clientData 姓名 trim），空姓名歸一組「未填屋主」永遠排最後，共有戶多人＝照既有姓名鍵各自成組（不自創合併規則）。「完成」＝_riStat(k).stage 為 deliverable 或 delivered（使用者定案甲·🔴零新判定，只讀 stage 不另寫一套）。收合列統計字＝地主 N、全完成 X、戶 T（完成 C／未完成 U），「全完成」＝該地主所有戶都完成。展開後篩選三選一（全部／只看未全完成／只看全部完成）＋排序三選一（未完成多→少 預設／地主姓名／戶數），狀態存模組變數 _bdOwnF／_bdOwnS（不進雲端·重整回預設）；表格六欄＝地主、戶數、完成、未完成、已完成戶別、未完成戶別（目前階段），沿用 div.bdwrap>table.bdtb（table-layout:fixed＋colgroup 固定欄寬），戶別片段依棟淡染沿用 bduA/bduB/bduS，同一格內戶別排序走 _bdBlSortCmp，每個「戶別＋階段」片段包 white-space:nowrap；階段文字沿用八段同一把尺（re1 已約複驗＋複驗日 MM/DD、re0 未約複驗、ins0 未約初驗、re2 待複驗2、repair 修繕中 N＝pend、none 且有 planDate 已排初驗 MM/DD）。資料在 _bdData() 算一次放進 D.own（指紋快取沿用·render 內不重算 _riStat）；段容器 id bd-seg-own、出圖走既有 _bdShotSeg，載入中 _bdLoading() 一起灰化並由 _bdLdBlock 擋出圖；唯讀模式（?mode=view）篩選／排序是純查看＝放行；報告看板維持單一響應式（沒有 _bdMobRender），390px 靠 .bdwrap{overflow-x:auto} 不橫向溢出。新增 _bdOwnStageTxt／_bdOwnView／_bdOwnHTML／_bdOwnSet 與 CSS span.bdu*／.bdop／.bdo9。③新煙測 smoke_g95_own.js（8 區塊）並登記進 run_all_g95.js；smoke_g95_board.js ⑥「八段加一條標題列／編號連續」兩條隨規格改成九段。程式行剪掉 V0902-07（已入註解史·另存 CODE_VERSION註解史_追加.md）。｜V0903-02 複驗抽屜鍵穩定＋健檢「戶別寫法不一致」（13_查核清單 B10·線上實查 11 個店鋪戶缺失 unit 混寫 店A18／A18）：①_riUsKeyCalc 原本拿「第一筆缺失」的 unit 拼抽屜鍵（店A18-1F），第一筆一銷案就翻成 A18-1F ⇒ 已排複驗日／時段憑空不見、不報錯（A26-1 已翻過）；改成列出所有寫法（保留原順序）；🔴只處理「只差裝飾字」的混寫（店字、括號身分 A1(地)-6F＝線上 71 個地主戶也混寫），優先序 抽屜有東西→帶店→不帶括號→第一筆；寫法差在樓層（整棟戶 A1 跨 1F/8F）維持舊行為＝第一筆（reseg 煙測守著）；一種＝與舊版逐字相同；抽屜已有東西（S.reCheckUF／S.reCheckSlot）的優先（含只剩一種寫法但另一種寫法的抽屜有東西＝店字那幾筆全刪光也讀得到）→ 帶「店」的 → 第一個（＝舊行為）。線上 9 戶存的鍵全部維持可讀。②健檢新條 mixUnit（戶層級·warn）：列出混寫戶＋各寫法筆數＋抽屜實際用哪把；只提醒不自動改資料。新增 _riUsKeyVariants／_dchkMixData／_dchkMixOne／_dchkMixBtn。③新煙測 smoke_g95_uskey.js：單一寫法＝舊算法逐字相同、混寫時第一筆銷案鍵不翻面、已存抽屜優先、店字優先、健檢列得出。程式行剪掉 V0902-06（已入註解史·另存 dropped_V0902-06.txt）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1499,7 +1499,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0909-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0909-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -3051,6 +3051,9 @@ function migrateState(d){
   try{ if(d.layoutCfg&&d.layoutCfg.grpOf&&d.layoutCfg.grpOf.hosch===undefined)d.layoutCfg.grpOf.hosch='交屋與排程'; if(d.layoutCfg&&d.layoutCfg.mobShow&&d.layoutCfg.mobShow.hosch===undefined)d.layoutCfg.mobShow.hosch=1; }catch(e){}   // V0826-02 側欄組別＋手機顯示預設（只補沒設過的，不覆蓋使用者調過的）
   if(!d.tabOrder.includes('board'))d.tabOrder.push('board');   // V0827-02 報告看板：新分頁只補在最後，位置由使用者自己擺（AI 不重排 tabOrder）
   try{ if(d.layoutCfg&&d.layoutCfg.grpOf&&d.layoutCfg.grpOf.board===undefined)d.layoutCfg.grpOf.board='報表中心'; if(d.layoutCfg&&d.layoutCfg.mobShow&&d.layoutCfg.mobShow.board===undefined)d.layoutCfg.mobShow.board=1; }catch(e){}   // V0827-02 側欄組別＋手機顯示預設（只補沒設過的）
+  // V0909-02 手機首頁 3 頁 × 8 格：新鍵 homePages／homePageNames（🔴 舊鍵 homeCards／homeCardNames 原封保留，沒更新的裝置照舊）
+  try{ if(d.layoutCfg&&d.layoutCfg.homePages===undefined)d.layoutCfg.homePages=_homePagesMigrate(d.layoutCfg.homeCards); }catch(e){}
+  try{ if(d.layoutCfg&&d.layoutCfg.homePageNames===undefined)d.layoutCfg.homePageNames=_HOMEPGNAMEDEF.slice(); }catch(e){}
   if(!d.hoReq||typeof d.hoReq!=='object')d.hoReq={units:[],at:'',by:''};   // V0827-02 業主交屋需求名單（S 頂層新鍵＝自動落進 meta 同步·免改白名單）
   if(d.tabOrder&&!d.tabOrder.includes('announce'))d.tabOrder.push('announce');   // V0707-02：新分頁補在最後，不動既有排序
   if(!d.viewPass)d.viewPass={expire:'2026-06-30',enabled:true};   // 檢視通行碼設定（到期/啟用）
@@ -20320,6 +20323,52 @@ var _HOMECAT={
 };
 var _HOMEDEF=['announce','hcal','main','reinsp','pwo','disp','defpivot','rpt','set','more'];
 function _homeCardOrder(){try{var lc=(S.layoutCfg&&S.layoutCfg.homeCards);if(lc&&lc.length)return lc.filter(function(id){return _HOMECAT[id];}).slice(0,10);}catch(e){}return _HOMEDEF.slice();}
+// ── V0909-02 首頁 3 頁 × 8 格：候選擴充到「全部手機看得到的分頁」──
+//   🔴 只補沒有的（既有 16 個一字不動）；名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt），圖示走 _homeIcoFor 的 _tabIco 後備。
+var _HOME_MOBHIDE=['zones','vendor','warn','cal','handover','units'];   // 與 g95TabMenu 的 _MOB_HIDE 同一份名單（手機看不到的分頁不當首頁候選）
+(function(){try{Object.keys(TAB_DEFS).forEach(function(id){
+  if(_HOMECAT[id])return; if(_HOME_MOBHIDE.indexOf(id)>=0)return;
+  var lb=''; try{lb=_tabTxt(TAB_DEFS[id].label||'');}catch(e){lb='';}
+  _HOMECAT[id]={name:lb||id,ic:''};
+});}catch(e){}})();
+// ── V0909-02 三頁預設（使用者定案甲）：set／more 釘死第 3 頁最後兩格 ──
+var _HOMEPGDEF=[
+ ['announce','hcal','main','reinsp','pwo','rpt','board','disp'],
+ ['hosch','ustat','ulookup','pwork','sprint','inspreg','defpivot','hreport'],
+ ['inspstat','prpt','wprog','uso','events',null,'set','more']
+];
+var _HOMEPGNAMEDEF=['常用','交屋與廠商','報表與名冊'];
+// 防呆：任何來源的 homePages 都先修成合法 3×8（未知 id／重複 → null；set/more 釘回頁3 末兩格，被擠掉的 id 補進第一個空格）
+function _homePagesFix(pg){
+ var src=Array.isArray(pg)?pg:[],out=[[],[],[]],seen={},p,i,v;
+ for(p=0;p<3;p++){var row=Array.isArray(src[p])?src[p]:[];
+  for(i=0;i<8;i++){v=row[i];
+   if(typeof v!=='string'||!_HOMECAT[v]||seen[v]){out[p][i]=null;}
+   else{out[p][i]=v;seen[v]=1;}}}
+ var moved=[];
+ for(p=0;p<3;p++)for(i=0;i<8;i++){v=out[p][i];if(v==='set'||v==='more')out[p][i]=null;}
+ for(i=6;i<8;i++){v=out[2][i];if(v)moved.push(v);}
+ out[2][6]='set';out[2][7]='more';
+ moved.forEach(function(id){for(var q=0;q<3;q++)for(var j=0;j<8;j++){if(out[q][j]===null&&!(q===2&&j>=6)){out[q][j]=id;return;}}});
+ return out;
+}
+function _homePagesGet(){var pg=null;try{pg=(S.layoutCfg&&S.layoutCfg.homePages);}catch(e){}
+ if(!Array.isArray(pg)||pg.length!==3||!pg.every(function(r){return Array.isArray(r);}))return _homePagesFix(_HOMEPGDEF);
+ return _homePagesFix(pg);}
+function _homePageNames(){var a=null;try{a=(S.layoutCfg&&S.layoutCfg.homePageNames);}catch(e){}
+ var o=[];for(var i=0;i<3;i++){var v=(Array.isArray(a)&&typeof a[i]==='string'&&String(a[i]).trim())?String(a[i]).trim():_HOMEPGNAMEDEF[i];o.push(v);}return o;}
+// 升級：舊 homeCards（10 格）→ 三頁。舊沒值＝全用預設。set/more 一律釘頁3 末兩格。
+function _homePagesMigrate(oldCards){
+ if(!Array.isArray(oldCards)||!oldCards.length)return _homePagesFix(_HOMEPGDEF);
+ var src=oldCards.filter(function(id){return _HOMECAT[id]&&id!=='set'&&id!=='more';});
+ var p1=src.slice(0,8);while(p1.length<8)p1.push(null);
+ var p2=src.slice(8,16);
+ var used={};p1.concat(p2).forEach(function(x){if(x)used[x]=1;});
+ _HOMEPGDEF[1].forEach(function(id){if(p2.length>=8||!id||used[id])return;p2.push(id);used[id]=1;});
+ while(p2.length<8)p2.push(null);
+ var p3=_HOMEPGDEF[2].map(function(id){return (id&&id!=='set'&&id!=='more'&&used[id])?null:id;});
+ return _homePagesFix([p1,p2,p3]);
+}
 function _homeIcoFor(id){var c=_HOMECAT[id];if(c&&c.ic&&_HOMEIC[c.ic])return _homeIco(c.ic);try{return _tabIco(id,19)||_homeIco('more');}catch(e){return _homeIco('more');}}
 function _homeName(id){try{var m=(S.layoutCfg&&S.layoutCfg.homeCardNames)||{};if(m[id])return m[id];}catch(e){}return (_HOMECAT[id]&&_HOMECAT[id].name)||id;}
 function _homeGoFor(id){if(id==='disp')return 'g95HomeDispatch()';if(id==='set')return "g95HomeSheet('set')";if(id==='more')return "g95HomeSheet('more')";if(id==='inspreg')return "g95HomeGo('inspstat')";return "g95HomeGo('"+id+"')";}
@@ -20362,32 +20411,56 @@ function _addHomeStepsFor(plat){
     +'<div style="font-size:11px;color:var(--text3);margin-top:8px">'+(plat==='ios'?'＊iPhone 只能這樣手動加入（Apple 規定，任何 App 都一樣）。':'＊部分 Android 按「加入主畫面」會直接跳系統安裝視窗、免走這三步。')+'</div>';
   _hmSheetOpen('addhome','加入主畫面步驟',body);
 }
+// ── V0909-02 首頁 3 頁 × 8 格（左右滑·scroll-snap）：單格畫法與 V0909-01 相同，只有邊框規則改成「頁內 i%2 ＋ 4 列」──
+function _homePgCell(id,i,st){
+ var L='1.5px solid rgba(70,102,158,.55)';
+ var ex='';if(i%2===0)ex+='border-right:'+L+';';if(i<6)ex+='border-bottom:'+L+';';
+ var base='position:relative;padding:16px 14px;min-height:106px;box-sizing:border-box;display:flex;flex-direction:column;';
+ if(!id||!_HOMECAT[id])return '<div class="g95hcell" style="'+base+ex+'"></div>';   // 空格：同尺寸、無文字、不可點（位置不塌陷）
+ var bg=(id==='set'||id==='more')?'background:#F1F5F9;':'';
+ return '<div class="g95hcell" data-hid="'+id+'" onclick="'+_homeGoFor(id)+'" style="'+base+'cursor:pointer;'+bg+ex+'">'
+  +'<div style="display:flex;align-items:center;gap:7px">'+_homeIcoFor(id)+'<span style="font-size:15px;font-weight:800;color:#26305A">'+esc(_homeName(id))+'</span></div>'
+  +'<div style="margin-top:auto">'+_homeBig(id,st)+'</div></div>';
+}
+function _homePgTitleHTML(idx){
+ var nm=_homePageNames(),dots='',i;
+ for(i=0;i<3;i++)dots+='<span class="g95hdot" onclick="_homePgTo('+i+')" style="display:inline-block;width:9px;height:9px;background:'+(i===idx?'#5B9BD5':'#9FB6CC')+';cursor:pointer"></span>';
+ return '<span style="font-size:13.5px;font-weight:800;color:#26305A">'+esc(nm[idx])+'</span>'
+  +'<span style="display:inline-flex;gap:6px;align-items:center">'+dots+'</span>'
+  +'<span style="font-size:12px;color:#5B6B85;font-weight:700">'+(idx+1)+'/3</span>';
+}
+function _homePgSet(i){window._g95HomePg=i;var t=document.getElementById('g95home-ptitle');if(t)t.innerHTML=_homePgTitleHTML(i);}
+function _homePgTo(i){var s=document.getElementById('g95home-scr');if(!s)return;var l=i*(s.clientWidth||0);try{s.scrollTo({left:l,behavior:'smooth'});}catch(e){s.scrollLeft=l;}_homePgSet(i);}
+function _homePgOnScroll(el){var w=el.clientWidth||1,i=Math.round(el.scrollLeft/w);if(i<0)i=0;if(i>2)i=2;if(window._g95HomePg!==i)_homePgSet(i);}
 function renderG95Home(){
  var st=_g95HomeStats();
  var sync='';try{var si=document.getElementById('sync-indicator');if(si)sync=si.textContent||'';}catch(e){}
  var uc='';try{var u=document.getElementById('user-count');if(u&&u.style.display!=='none')uc=u.textContent||'';}catch(e){}
  var ver='';try{var vs=document.querySelector('.hdr-seg span');if(vs)ver=vs.textContent||'';}catch(e){}
- var L='1.5px solid rgba(70,102,158,.55)';
- var order=_homeCardOrder();var n=order.length;var rows=Math.ceil(n/2);var lastRowStart=(rows-1)*2;
- var cells=order.map(function(id,i){var c=_HOMECAT[id];if(!c)return '';var ex='';if(i%2===0&&i!==n-1)ex+='border-right:'+L+';';if(i<lastRowStart)ex+='border-bottom:'+L+';';
-   return '<div onclick="'+_homeGoFor(id)+'" style="position:relative;padding:16px 14px;min-height:106px;display:flex;flex-direction:column;cursor:pointer;'+ex+'">'
-    +'<div style="display:flex;align-items:center;gap:7px">'+_homeIcoFor(id)+'<span style="font-size:15px;font-weight:800;color:#26305A">'+esc(_homeName(id))+'</span></div>'
-    +'<div style="margin-top:auto">'+_homeBig(id,st)+'</div></div>';
+ var pages=_homePagesGet();
+ var pgHTML=pages.map(function(row){
+   var cells=row.map(function(id,i){return _homePgCell(id,i,st);}).join('');
+   return '<div class="g95hpage" style="flex:0 0 100%;max-width:100%;scroll-snap-align:start;box-sizing:border-box;padding:0 14px">'
+    +'<div style="background:rgba(255,255,255,.5);backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 28px -8px rgba(40,60,110,.32);overflow:hidden">'
+     +'<div style="display:grid;grid-template-columns:1fr 1fr">'+cells+'</div>'
+    +'</div></div>';
  }).join('');
- var html='<div style="position:fixed;inset:0;z-index:8000;background:linear-gradient(165deg,#E8F1FB,#DCE7F4 55%,#E7E1F2);display:flex;flex-direction:column;overflow:hidden">'
+ var html='<style>#g95home-scr{scrollbar-width:none;-ms-overflow-style:none}#g95home-scr::-webkit-scrollbar{display:none;width:0;height:0}</style>'
+  +'<div style="position:fixed;inset:0;z-index:8000;background:linear-gradient(165deg,#E8F1FB,#DCE7F4 55%,#E7E1F2);display:flex;flex-direction:column;overflow:hidden">'
   +'<div style="flex:none;display:flex;align-items:center;gap:10px;background:#5B9BD5;color:#fff;padding:12px 14px;font-size:13px;font-weight:700">'
    +'<span>'+esc(sync||'已同步')+'</span><span style="font-weight:600">'+esc(ver)+'</span>'
    +'<span style="flex:1"></span>'+(uc?'<span>'+esc(uc)+'</span>':'')+'<span onclick="g95HomeEdit()" style="cursor:pointer;margin-left:10px">編輯</span><span onclick="_doLogout()" style="cursor:pointer;margin-left:12px">登出</span></div>'
   +'<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch">'
-   +'<div style="padding:18px 14px 30px">'
-    +'<div style="text-align:center;font-size:18px;font-weight:800;color:#1B2C55;letter-spacing:.5px;margin:6px 0 16px;padding:0 6px">KIMZO G95缺失/交屋管理系統</div>'
-    +'<div style="background:rgba(255,255,255,.5);backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 28px -8px rgba(40,60,110,.32);overflow:hidden">'
-     +'<div style="display:grid;grid-template-columns:1fr 1fr">'+cells+'</div>'
-    +'</div>'
-    +_g95AddHomeCardHTML()
+   +'<div style="padding:18px 0 30px">'
+    +'<div style="text-align:center;font-size:18px;font-weight:800;color:#1B2C55;letter-spacing:.5px;margin:6px 0 12px;padding:0 20px">KIMZO G95缺失/交屋管理系統</div>'
+    +'<div id="g95home-ptitle" style="display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 10px;padding:0 14px">'+_homePgTitleHTML(0)+'</div>'
+    +'<div id="g95home-scr" onscroll="_homePgOnScroll(this)" style="display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch">'+pgHTML+'</div>'
+    +'<div style="padding:0 14px">'+_g95AddHomeCardHTML()+'</div>'
     +'</div></div></div>';
  var ex=document.getElementById('g95home');if(ex)ex.remove();
  var d=document.createElement('div');d.id='g95home';d.innerHTML=html;document.body.appendChild(d);
+ window._g95HomePg=0;   // 重整回第 1 頁
+ try{var s=document.getElementById('g95home-scr');if(s)s.scrollLeft=0;}catch(e){}
 }
 function g95HomeOpen(){window._g95Home=true;renderG95Home();var m=document.getElementById('mnav');if(m)m.style.display='none';}
 function g95HomeClose(){window._g95Home=false;var a=document.getElementById('g95home');if(a)a.remove();_homeSheetClose();var m=document.getElementById('mnav');if(m)m.style.display='';}
@@ -20410,30 +20483,60 @@ function g95HomeSheet(kind){
  sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:15px;font-weight:800;margin-bottom:6px">'+(kind==='set'?'設定':'更多')+'</div>'+h;
  document.body.appendChild(bg);document.body.appendChild(sh);
 }
-// V0719-01 首頁卡片自訂排序編輯器（▲▼調序/✕移除/＋加入，最多10；存 S.layoutCfg.homeCards）
-var _homeEditWork=null,_homeEditNames=null;
-function g95HomeEdit(){_homeEditWork=_homeCardOrder().slice();_homeEditNames=Object.assign({},(S.layoutCfg&&S.layoutCfg.homeCardNames)||{});_renderHomeEdit();}
+// V0909-02 首頁編輯器：選頁 → 排該頁 8 格（▲▼調序／✕變空格／＋填進第一個空格；set·more 釘死頁 3 最後兩格·不可移除不可移動）
+//   舊鍵 homeCards／_HOMEDEF／_homeCardOrder 原封保留（沒更新的裝置照舊讀舊鍵），這裡只寫 homePages／homePageNames／homeCardNames
+var _homeEditWork=null,_homeEditNames=null,_homePgWork=null,_homePgNames=null,_homePgTab=0;
+function _homePgFixed(p,i){return p===2&&i>=6;}   // 頁 3 最後兩格＝設定／更多，釘死
+function g95HomeEdit(){_homePgWork=_homePagesGet();_homePgNames=_homePageNames();_homePgTab=0;_homeEditWork=_homeCardOrder().slice();_homeEditNames=Object.assign({},(S.layoutCfg&&S.layoutCfg.homeCardNames)||{});_renderHomeEdit();}
 function _homeEditRename(id,v){v=(v||'').trim();if(!_homeEditNames)_homeEditNames={};var def=(_HOMECAT[id]&&_HOMECAT[id].name)||'';if(!v||v===def){delete _homeEditNames[id];}else{_homeEditNames[id]=v;}}
+function _homeEditPgName(i,v){if(!_homePgNames)_homePgNames=_HOMEPGNAMEDEF.slice();v=String(v==null?'':v).trim();_homePgNames[i]=v||_HOMEPGNAMEDEF[i];}
+function _homeEditPage(i){_homePgTab=(i<0?0:(i>2?2:i));_renderHomeEdit();}
 function _renderHomeEdit(){
- var inUse=_homeEditWork,avail=Object.keys(_HOMECAT).filter(function(id){return inUse.indexOf(id)<0;});
- var h='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">▲▼ 調順序 · ✕ 移除 · 下方 ＋ 加入（最多 10 個）</div>';
- h+=inUse.map(function(id,i){return '<div style="display:flex;align-items:center;gap:6px;padding:9px 2px;border-bottom:1px solid var(--border2)"><span style="font-size:14px;font-weight:700;color:var(--text2);min-width:18px">'+(i+1)+'.</span><input value="'+esc(_homeName(id))+'" onchange="_homeEditRename(\''+id+'\',this.value)" title="點欄位可改卡片名稱" style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#26305A;border:1px solid #cdd9ea;border-radius:0;background:#F7FAFE;padding:6px 8px;font-family:var(--font)">'
-   +'<button onclick="_homeEditMove('+i+',-1)"'+(i===0?' disabled':'')+' style="font-size:15px;padding:4px 12px;border:1px solid #BCBDC9;border-radius:0;background:#fff;color:#26305A;font-family:var(--font)">▲</button>'
-   +'<button onclick="_homeEditMove('+i+',1)"'+(i===inUse.length-1?' disabled':'')+' style="font-size:15px;padding:4px 12px;border:1px solid #BCBDC9;border-radius:0;background:#fff;color:#26305A;font-family:var(--font)">▼</button>'
-   +'<button onclick="_homeEditRemove('+i+')" style="font-size:14px;padding:4px 12px;border:1px solid #E4B9B9;border-radius:0;background:#fff;color:#B3261E;font-family:var(--font)">✕</button></div>';}).join('');
- if(avail.length&&inUse.length<10)h+='<div style="font-size:12px;color:var(--text3);margin:10px 0 4px">可加入：</div>'+avail.map(function(id){return '<button onclick="_homeEditAdd(\''+id+'\')" style="font-size:14px;padding:7px 13px;margin:3px 4px 3px 0;border:1px solid #9DC3E6;border-radius:0;background:#EAF4FC;color:#185FA5;font-weight:700;font-family:var(--font)">＋ '+esc(_homeName(id))+'</button>';}).join('');
+ if(!_homePgWork)_homePgWork=_homePagesGet();
+ if(!_homePgNames)_homePgNames=_homePageNames();
+ var p=_homePgTab,cur=_homePgWork[p]||[];
+ var used={};_homePgWork.forEach(function(r){(r||[]).forEach(function(x){if(x)used[x]=1;});});
+ var avail=Object.keys(_HOMECAT).filter(function(id){return !used[id];});
+ var hasEmpty=cur.some(function(x,i){return !x&&!_homePgFixed(p,i);});
+ var BTN='font-size:15px;padding:4px 11px;border:1px solid #BCBDC9;border-radius:0;background:#fff;color:#26305A;font-family:var(--font)';
+ var BTNOFF='font-size:15px;padding:4px 11px;border:1px solid #DDDEE4;border-radius:0;background:#F3F4F7;color:#B7B9C3;font-family:var(--font)';
+ var h='<div style="display:flex;gap:6px;margin-bottom:9px">'+[0,1,2].map(function(i){var on=(i===p);
+   return '<button class="hpgtab" data-p="'+i+'" onclick="_homeEditPage('+i+')" style="flex:1;min-width:0;font-size:12.5px;font-weight:800;padding:8px 4px;border:1px solid '+(on?'#5B9BD5':'#BCBDC9')+';border-radius:0;background:'+(on?'#5B9BD5':'#fff')+';color:'+(on?'#fff':'#26305A')+';font-family:var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(i+1)+'. '+esc(_homePgNames[i])+'</button>';}).join('')+'</div>';
+ h+='<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="font-size:12px;color:var(--text2);font-weight:700;flex:none">頁名</span><input id="hpg-name" value="'+esc(_homePgNames[p])+'" onchange="_homeEditPgName('+p+',this.value)" style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#26305A;border:1px solid #cdd9ea;border-radius:0;background:#F7FAFE;padding:6px 8px;font-family:var(--font)"></div>';
+ h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">▲▼ 調順序 · ✕ 變空格（位置不遞補）· 下方 ＋ 填進第一個空格（每頁 2×4＝8 格）</div>';
+ h+=cur.map(function(id,i){
+   var fixed=_homePgFixed(p,i);
+   var upOff=(i===0)||fixed||_homePgFixed(p,i-1);
+   var dnOff=(i===7)||fixed||_homePgFixed(p,i+1);
+   var rmOff=fixed||!id;
+   var mid= id
+     ? '<input value="'+esc(_homeName(id))+'" onchange="_homeEditRename(\''+id+'\',this.value)" title="點欄位可改卡片名稱"'+(fixed?' readonly':'')+' style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#26305A;border:1px solid #cdd9ea;border-radius:0;background:'+(fixed?'#F1F5F9':'#F7FAFE')+';padding:6px 8px;font-family:var(--font)">'
+     : '<span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:#9FA6B8;border:1px dashed #cdd9ea;background:#FAFBFD;padding:7px 8px">（空格）</span>';
+   return '<div class="hpgrow" data-i="'+i+'" data-hid="'+esc(id||'')+'" style="display:flex;align-items:center;gap:6px;padding:8px 2px;border-bottom:1px solid var(--border2)">'
+     +'<span style="font-size:14px;font-weight:700;color:var(--text2);min-width:18px">'+(i+1)+'.</span>'+mid
+     +'<button class="hpgup" onclick="_homeEditMove('+i+',-1)"'+(upOff?' disabled':'')+' style="'+(upOff?BTNOFF:BTN)+'">▲</button>'
+     +'<button class="hpgdn" onclick="_homeEditMove('+i+',1)"'+(dnOff?' disabled':'')+' style="'+(dnOff?BTNOFF:BTN)+'">▼</button>'
+     +'<button class="hpgrm" onclick="_homeEditRemove('+i+')"'+(rmOff?' disabled':'')+' style="font-size:14px;padding:4px 11px;border:1px solid '+(rmOff?'#DDDEE4':'#E4B9B9')+';border-radius:0;background:'+(rmOff?'#F3F4F7':'#fff')+';color:'+(rmOff?'#B7B9C3':'#B3261E')+';font-family:var(--font)">✕</button></div>';
+ }).join('');
+ if(avail.length)h+='<div style="font-size:12px;color:var(--text3);margin:10px 0 4px">可加入'+(hasEmpty?'（填進本頁第一個空格）':'（本頁沒有空格，請先 ✕ 一格）')+'：</div>'
+   +avail.map(function(id){return '<button class="hpgadd" data-hid="'+esc(id)+'" onclick="_homeEditAdd(\''+id+'\')" style="font-size:14px;padding:7px 13px;margin:3px 4px 3px 0;border:1px solid #9DC3E6;border-radius:0;background:#EAF4FC;color:#185FA5;font-weight:700;font-family:var(--font)">＋ '+esc(_homeName(id))+'</button>';}).join('');
  h+='<div style="display:flex;gap:8px;padding-top:14px;align-items:center"><button onclick="_homeEditReset()" style="font-size:13px;border:1px solid #BCBDC9;border-radius:0;background:#fff;padding:8px 14px;font-family:var(--font)">還原預設</button><span style="flex:1"></span><button onclick="_homeSheetClose()" style="font-size:14px;border:1px solid #BCBDC9;border-radius:0;background:#fff;padding:8px 16px;font-family:var(--font)">取消</button><button onclick="_homeEditSave()" style="font-size:14px;font-weight:800;color:#fff;background:#5B9BD5;border:1px solid #5B9BD5;border-radius:0;padding:8px 18px;font-family:var(--font)">完成</button></div>';
  _homeSheetClose();
  var bg=document.createElement('div');bg.id='homesheet-bg';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:8100';bg.onclick=_homeSheetClose;
  var sh=document.createElement('div');sh.id='homesheet';sh.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:8200;background:var(--card);border-top:2px solid var(--border);max-height:82vh;overflow:auto;padding:12px 16px calc(16px + env(safe-area-inset-bottom))';
- sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:15px;font-weight:800;margin-bottom:6px">編輯首頁卡片</div>'+h;
+ sh.innerHTML='<div style="width:56px;height:5px;background:var(--border);margin:0 auto 10px"></div><div style="font-size:15px;font-weight:800;margin-bottom:6px">編輯首頁卡片（3 頁 × 8 格）</div>'+h;
  document.body.appendChild(bg);document.body.appendChild(sh);
 }
-function _homeEditMove(i,d){var a=_homeEditWork,j=i+d;if(j<0||j>=a.length)return;var t=a[i];a[i]=a[j];a[j]=t;_renderHomeEdit();}
-function _homeEditRemove(i){_homeEditWork.splice(i,1);_renderHomeEdit();}
-function _homeEditAdd(id){if(_homeEditWork.length>=10)return;if(_homeEditWork.indexOf(id)<0)_homeEditWork.push(id);_renderHomeEdit();}
-function _homeEditReset(){_homeEditWork=_HOMEDEF.slice();_homeEditNames={};_renderHomeEdit();}
-function _homeEditSave(){try{if(!S.layoutCfg)S.layoutCfg={};S.layoutCfg.homeCards=_homeEditWork.slice();S.layoutCfg.homeCardNames=Object.assign({},_homeEditNames||{});if(typeof save==='function')save();}catch(e){}_homeSheetClose();renderG95Home();try{toast('首頁卡片已更新','✅');}catch(e){}}
+function _homeEditMove(i,d){var p=_homePgTab,a=_homePgWork[p],j=i+d;
+ if(j<0||j>=8)return; if(_homePgFixed(p,i)||_homePgFixed(p,j))return;
+ var t=a[i];a[i]=a[j];a[j]=t;_renderHomeEdit();}
+function _homeEditRemove(i){var p=_homePgTab;if(_homePgFixed(p,i))return;_homePgWork[p][i]=null;_renderHomeEdit();}   // ✕＝變空格，不是擠掉
+function _homeEditAdd(id){var p=_homePgTab,a=_homePgWork[p];if(!_HOMECAT[id])return;
+ for(var q=0;q<3;q++)for(var j=0;j<8;j++){if(_homePgWork[q][j]===id)return;}
+ for(var i=0;i<8;i++){ if(!a[i]&&!_homePgFixed(p,i)){a[i]=id;_renderHomeEdit();return;} }
+ try{toast('這一頁沒有空格，請先用 ✕ 空出一格','⚠️');}catch(e){}}
+function _homeEditReset(){_homePgWork=_homePagesFix(_HOMEPGDEF);_homePgNames=_HOMEPGNAMEDEF.slice();_homeEditNames={};_renderHomeEdit();}
+function _homeEditSave(){try{S.layoutCfg=Object.assign({},S.layoutCfg||{},{homePages:_homePagesFix(_homePgWork),homePageNames:(_homePgNames||_HOMEPGNAMEDEF).slice(),homeCardNames:Object.assign({},_homeEditNames||{})});if(typeof save==='function')save();}catch(e){}_homeSheetClose();renderG95Home();try{toast('首頁卡片已更新','✅');}catch(e){}}
 // ⚙ 版面設定面板（_annAuthAsk 認證後開）：每看板選組別（含釘選）＋手機顯示勾選；存 S.layoutCfg 走 meta 同步
 function layoutCfgMenu(){
   var old=document.getElementById('layout-cfg-ov');if(old)old.remove();
@@ -20467,7 +20570,7 @@ function layoutCfgSave(){
     if(g==='釘選')pins.push(id);else if(g!=='其他')grpOf[id]=g;
     if((document.getElementById('lc-m-'+id)||{}).checked)mobShow[id]=1;
   });
-  S.layoutCfg={grpOrder:cfg.grpOrder,grpOf:grpOf,pins:pins,mobShow:mobShow};
+  S.layoutCfg=Object.assign({},S.layoutCfg||{},{grpOrder:cfg.grpOrder,grpOf:grpOf,pins:pins,mobShow:mobShow});   // 🔴 V0909-02 順手修：原本整包重建會把 homeCards／homeCardNames／homePages（首頁卡片設定）清光
   var ov=document.getElementById('layout-cfg-ov');if(ov)ov.remove();
   save();renderTabBar();toast('版面設定已儲存（全員同步）','⚙');
 }
@@ -20528,7 +20631,7 @@ function toggleTabEditMode(){
       while(arr2.length&&arr2[arr2.length-1]==null)arr2.pop();
       S.tabOrder=arr2;
       var c2=_lcfg();
-      S.layoutCfg={grpOrder:c2.grpOrder,grpOf:_sideEdit.grpOf,pins:_sideEdit.pins,mobShow:c2.mobShow};
+      S.layoutCfg=Object.assign({},S.layoutCfg||{},{grpOrder:c2.grpOrder,grpOf:_sideEdit.grpOf,pins:_sideEdit.pins,mobShow:c2.mobShow});   // 🔴 V0909-02 順手修：同 layoutCfgSave，整包重建會清掉首頁卡片設定
       _sideEdit=null;_editSlots=null;_tabEditMode=false;_tabOrderBackup=null;save();renderTabBar();toast('排序已儲存（全員同步）','🔒');return;
     }
     // 存檔＝所見即所得：只去尾端空格，中間空格保留＝版面（含刻意留白）關閉後照舊不跑掉
@@ -26464,4 +26567,4 @@ try{
 </body>
 </html>
 
-<!-- v0909-01 index · build 2026-09-09 08:18 +08 -->
+<!-- v0909-02 index · build 2026-09-09 10:22 +08 -->
