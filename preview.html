@@ -597,7 +597,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 405;  // V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。｜V0909-01 報告看板 ①與上次名單比 ②第 9 段 地主戶進度（mock_owner 帶編號示意圖定案）：①貼上名單區（#bd-req-in）下方新增一行純文字「與上次名單比　新增 N 戶：…　移除 N 戶：…（上次 MM/DD 帳號）」，資料來源＝既有 S.hoReq.prev（寫入點仍只有 _bdApply／_bdClearReq 兩處·只讀不另存），戶別走 unitDisplayName，沒有 prev 或 prev.units 空＝整行不畫（不是留空行）；新增 _bdPrevDiff／_bdPrevDiffHTML。②_BDSEG 追加第 9 段 own「地主戶進度」card:0 ⇒ 卡片區維持 4×2 八格（_bdCardsHTML／_bdText 本來就濾 s.card，一字未動）。對象＝_riAllKeys() 中 isOwnerUnit 為真的戶（🔴身分只認 isOwnerUnit／g95KindOf，位置另走 _bdBlk，兩個維度不可混·V0828-05 ④ 同一條）；分組鍵＝_ownerOf(k)（clientData 姓名 trim），空姓名歸一組「未填屋主」永遠排最後，共有戶多人＝照既有姓名鍵各自成組（不自創合併規則）。「完成」＝_riStat(k).stage 為 deliverable 或 delivered（使用者定案甲·🔴零新判定，只讀 stage 不另寫一套）。收合列統計字＝地主 N、全完成 X、戶 T（完成 C／未完成 U），「全完成」＝該地主所有戶都完成。展開後篩選三選一（全部／只看未全完成／只看全部完成）＋排序三選一（未完成多→少 預設／地主姓名／戶數），狀態存模組變數 _bdOwnF／_bdOwnS（不進雲端·重整回預設）；表格六欄＝地主、戶數、完成、未完成、已完成戶別、未完成戶別（目前階段），沿用 div.bdwrap>table.bdtb（table-layout:fixed＋colgroup 固定欄寬），戶別片段依棟淡染沿用 bduA/bduB/bduS，同一格內戶別排序走 _bdBlSortCmp，每個「戶別＋階段」片段包 white-space:nowrap；階段文字沿用八段同一把尺（re1 已約複驗＋複驗日 MM/DD、re0 未約複驗、ins0 未約初驗、re2 待複驗2、repair 修繕中 N＝pend、none 且有 planDate 已排初驗 MM/DD）。資料在 _bdData() 算一次放進 D.own（指紋快取沿用·render 內不重算 _riStat）；段容器 id bd-seg-own、出圖走既有 _bdShotSeg，載入中 _bdLoading() 一起灰化並由 _bdLdBlock 擋出圖；唯讀模式（?mode=view）篩選／排序是純查看＝放行；報告看板維持單一響應式（沒有 _bdMobRender），390px 靠 .bdwrap{overflow-x:auto} 不橫向溢出。新增 _bdOwnStageTxt／_bdOwnView／_bdOwnHTML／_bdOwnSet 與 CSS span.bdu*／.bdop／.bdo9。③新煙測 smoke_g95_own.js（8 區塊）並登記進 run_all_g95.js；smoke_g95_board.js ⑥「八段加一條標題列／編號連續」兩條隨規格改成九段。程式行剪掉 V0902-07（已入註解史·另存 CODE_VERSION註解史_追加.md）。｜V0903-02 複驗抽屜鍵穩定＋健檢「戶別寫法不一致」（13_查核清單 B10·線上實查 11 個店鋪戶缺失 unit 混寫 店A18／A18）：①_riUsKeyCalc 原本拿「第一筆缺失」的 unit 拼抽屜鍵（店A18-1F），第一筆一銷案就翻成 A18-1F ⇒ 已排複驗日／時段憑空不見、不報錯（A26-1 已翻過）；改成列出所有寫法（保留原順序）；🔴只處理「只差裝飾字」的混寫（店字、括號身分 A1(地)-6F＝線上 71 個地主戶也混寫），優先序 抽屜有東西→帶店→不帶括號→第一筆；寫法差在樓層（整棟戶 A1 跨 1F/8F）維持舊行為＝第一筆（reseg 煙測守著）；一種＝與舊版逐字相同；抽屜已有東西（S.reCheckUF／S.reCheckSlot）的優先（含只剩一種寫法但另一種寫法的抽屜有東西＝店字那幾筆全刪光也讀得到）→ 帶「店」的 → 第一個（＝舊行為）。線上 9 戶存的鍵全部維持可讀。②健檢新條 mixUnit（戶層級·warn）：列出混寫戶＋各寫法筆數＋抽屜實際用哪把；只提醒不自動改資料。新增 _riUsKeyVariants／_dchkMixData／_dchkMixOne／_dchkMixBtn。③新煙測 smoke_g95_uskey.js：單一寫法＝舊算法逐字相同、混寫時第一筆銷案鍵不翻面、已存抽屜優先、店字優先、健檢列得出。程式行剪掉 V0902-06（已入註解史·另存 dropped_V0902-06.txt）。
+const CODE_VERSION = 406;  // V0915-01 報告看板最上面新增「驗屋階段摘要」（#bd-stage·帶編號示意圖定案）：①整塊放在八格總覽 #bd-shot 上方，藍標題列（KIMZO 驗屋階段摘要＋_bdStamp()）＋四欄表格（table-layout:fixed＋colgroup 34/250/76/auto、每格 1px #B9C9D6、白底、字 15px、平角），七列＝一 初驗完成／二 複驗（＝下面四小列加總·右欄註「初驗完成 − 已交屋」）／1 複驗完成待交屋（綠 #2F7D2A）／2 複驗後尚需再驗／3 已修繕完成待約複驗（已約 a · 未約 b）／4 尚未修繕完成（紅 #B3261E）／三 已交屋（含借屋裝潢·綠）；一二三列淡藍底 #EAF4FC 粗體、四小列縮排 26px；頁尾小字左「全社區 T 戶 · 未初驗 U 戶」右「資料來源」。②🔴判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat、D.m 各段 keys、D.keys 全戶），render 內不重算 _riStat、不另寫一套判斷基準：1＝m.del、2＝m.re2、3＝m.re1(已約)＋m.re0(未約)、4＝m.rep、三＝m.done、一＝inspected 為真的戶；_bdData 順手新增 m.rep（stage 'repair'）＝第 4 小列唯一來源，brk 走既有 Object.keys(m) 迴圈自動算到。恆等式 一＝二＋三、一＋未初驗＝全社區（煙測守）；邊界＝「已交屋但沒有初驗完成紀錄」的戶也算進一（否則恆等式會被悄悄打破·anom 記數留查）。③表格與複製文字吃同一份 _bdStageData＝同一把尺；每個「詞＋數字」片段包 white-space:nowrap。④兩顆鈕（截圖 btn-p／複製文字）自成一排放在 bd-stage 下方、「出總覽圖」那排上方；截圖＝_bdStageShot() 走 _capEl(#bd-stage)、複製＝_bdStageText()，兩支都先過 _bdLdBlock()，載入中整塊 grayscale＋兩鈕 disabled（沿用 #bd-shot 同一套）；唯讀模式（?mode=view）純查看＝放行不掛 _hoSegRo。⑤報告看板維持單一響應式（無手機分流），表格外包 div.bdwrap（overflow-x:auto）⇒ 390px 不橫向溢出。新增 _bdStageData／_bdStageHTML／_bdStageText／_bdStageShot／_bdStageRow／_bdStageBrkTxt／_bdStageBrkHTML／_bdStageBookTxt／_bdStageBookHTML。⑥新煙測 smoke_g95_stage.js（7 區塊）並登記進 run_all_g95.js。程式行剪掉 V0903-02（另存 dropped_V0903-02.txt）。｜V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。｜V0909-01 報告看板 ①與上次名單比 ②第 9 段 地主戶進度（mock_owner 帶編號示意圖定案）：①貼上名單區（#bd-req-in）下方新增一行純文字「與上次名單比　新增 N 戶：…　移除 N 戶：…（上次 MM/DD 帳號）」，資料來源＝既有 S.hoReq.prev（寫入點仍只有 _bdApply／_bdClearReq 兩處·只讀不另存），戶別走 unitDisplayName，沒有 prev 或 prev.units 空＝整行不畫（不是留空行）；新增 _bdPrevDiff／_bdPrevDiffHTML。②_BDSEG 追加第 9 段 own「地主戶進度」card:0 ⇒ 卡片區維持 4×2 八格（_bdCardsHTML／_bdText 本來就濾 s.card，一字未動）。對象＝_riAllKeys() 中 isOwnerUnit 為真的戶（🔴身分只認 isOwnerUnit／g95KindOf，位置另走 _bdBlk，兩個維度不可混·V0828-05 ④ 同一條）；分組鍵＝_ownerOf(k)（clientData 姓名 trim），空姓名歸一組「未填屋主」永遠排最後，共有戶多人＝照既有姓名鍵各自成組（不自創合併規則）。「完成」＝_riStat(k).stage 為 deliverable 或 delivered（使用者定案甲·🔴零新判定，只讀 stage 不另寫一套）。收合列統計字＝地主 N、全完成 X、戶 T（完成 C／未完成 U），「全完成」＝該地主所有戶都完成。展開後篩選三選一（全部／只看未全完成／只看全部完成）＋排序三選一（未完成多→少 預設／地主姓名／戶數），狀態存模組變數 _bdOwnF／_bdOwnS（不進雲端·重整回預設）；表格六欄＝地主、戶數、完成、未完成、已完成戶別、未完成戶別（目前階段），沿用 div.bdwrap>table.bdtb（table-layout:fixed＋colgroup 固定欄寬），戶別片段依棟淡染沿用 bduA/bduB/bduS，同一格內戶別排序走 _bdBlSortCmp，每個「戶別＋階段」片段包 white-space:nowrap；階段文字沿用八段同一把尺（re1 已約複驗＋複驗日 MM/DD、re0 未約複驗、ins0 未約初驗、re2 待複驗2、repair 修繕中 N＝pend、none 且有 planDate 已排初驗 MM/DD）。資料在 _bdData() 算一次放進 D.own（指紋快取沿用·render 內不重算 _riStat）；段容器 id bd-seg-own、出圖走既有 _bdShotSeg，載入中 _bdLoading() 一起灰化並由 _bdLdBlock 擋出圖；唯讀模式（?mode=view）篩選／排序是純查看＝放行；報告看板維持單一響應式（沒有 _bdMobRender），390px 靠 .bdwrap{overflow-x:auto} 不橫向溢出。新增 _bdOwnStageTxt／_bdOwnView／_bdOwnHTML／_bdOwnSet 與 CSS span.bdu*／.bdop／.bdo9。③新煙測 smoke_g95_own.js（8 區塊）並登記進 run_all_g95.js；smoke_g95_board.js ⑥「八段加一條標題列／編號連續」兩條隨規格改成九段。程式行剪掉 V0902-07（已入註解史·另存 CODE_VERSION註解史_追加.md）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1499,7 +1499,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0909-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0915-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -11715,7 +11715,7 @@ function _bdData(){
   var fp=_bdFingerprint();if(_bdC&&_bdFp===fp)return _bdC;
   if(!_defectCache){try{_buildDefectCache();}catch(e){}}   /* V0830-01（待辦0y）：先保證 cache——V0812-02 同款（無 cache 退路只掃 S.rows、漏 S.completed）；快取被清後重算也拿得到全量 */
   var keys=[];try{keys=_riAllKeys();}catch(e){keys=[];}
-  var st={},m={re1:[],re0:[],ins0:[],del:[],re2:[],done:[],req:[],gap:[]};
+  var st={},m={re1:[],re0:[],ins0:[],del:[],re2:[],done:[],req:[],gap:[],rep:[]};   /* V0915-01：rep＝stage 'repair'（尚未修繕完成）＝驗屋階段摘要第 4 小列的唯一來源（brk 走既有 Object.keys(m) 迴圈自動算到） */
   keys.forEach(function(k){
     var s;try{s=_riStat(k);}catch(e){return;}
     st[k]=s;
@@ -11724,6 +11724,7 @@ function _bdData(){
     else if(s.stage==='none'){ if(!hu.planDate)m.ins0.push(k); }
     else if(s.stage==='deliverable')m.del.push(k);
     else if(s.stage==='re_repair')m.re2.push(k);
+    else if(s.stage==='repair')m.rep.push(k);   /* V0915-01：已初驗但還有未完成缺失＝尚未修繕完成 */
     else if(s.stage==='delivered')m.done.push(k);
   });
   var req=_bdReq(),live={};keys.forEach(function(k){live[k]=1;});
@@ -12076,6 +12077,88 @@ function _bdText(){
   try{ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);toast('已複製，可直接貼 LINE','📋');return;} }catch(e){}
   try{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已複製，可直接貼 LINE','📋');}catch(e){alert(t);}
 }
+// ═══════════════ V0915-01 驗屋階段摘要（#bd-stage·放在八格總覽上方）═══════════════
+// 🔴 判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat 結果、D.m 各段 keys、D.keys 全戶）：
+//    render 內不重算 _riStat、也不另寫一套判斷基準（V0813-07／V0825-03 同一條）。
+//    一 初驗完成 ＝ D.keys 中 inspected 為真的戶（含後面所有階段）
+//    二 複驗 ＝ 1 待交屋(del) ＋ 2 待複驗2(re2) ＋ 3 待約複驗(re1 已約＋re0 未約) ＋ 4 尚未修繕完成(rep)
+//    三 已交屋（含借屋裝潢）＝ done
+//    恆等式：一 ＝ 二 ＋ 三；一 ＋ 未初驗 ＝ 全社區
+// ⚠ 邊界：`已交屋但沒有初驗完成紀錄` 的戶（_riStat 會給 stage 'delivered' 但 inspected 為 false）
+//    一律算進「一 初驗完成」，否則它只出現在三、不出現在一 ⇒ 恆等式會被悄悄打破（anom 記數留查）。
+function _bdStageData(D){
+  var ins=[],uninsp=[],anom=0;
+  (D.keys||[]).forEach(function(k){
+    var s=D.st[k];
+    if(!s){uninsp.push(k);return;}                       // 算不出 _riStat 的戶留在未初驗＝「一＋未初驗＝全社區」不會漏
+    if(s.inspected||s.stage!=='none'){ins.push(k);if(!s.inspected)anom++;}
+    else uninsp.push(k);
+  });
+  var r1=(D.m.del||[]).slice(),r2=(D.m.re2||[]).slice(),
+      r3a=(D.m.re1||[]).slice(),r3b=(D.m.re0||[]).slice(),r3=r3a.concat(r3b),
+      r4=(D.m.rep||[]).slice(),done=(D.m.done||[]).slice();
+  var re=r1.concat(r2,r3,r4);
+  return {all:(D.keys||[]).slice(),ins:ins,uninsp:uninsp,anom:anom,
+          re:re,r1:r1,r2:r2,r3:r3,r3a:r3a,r3b:r3b,r4:r4,done:done,
+          bIns:_bdBrk(ins),bRe:_bdBrk(re),b1:_bdBrk(r1),b2:_bdBrk(r2),b3:_bdBrk(r3),b4:_bdBrk(r4),bDone:_bdBrk(done)};
+}
+// 棟別拆分寫法單一出處（表格與文字同一支）：每個「詞＋數字」片段各自 nowrap（中文會從詞中間斷行·V0819 血淚）
+function _bdStageBrkTxt(o){return 'A棟 '+o.A+' · B棟 '+o.B+' · 店 '+o.S;}
+function _bdStageBrkHTML(o){return ['A棟 '+o.A,'B棟 '+o.B,'店 '+o.S].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ');}
+function _bdStageBookTxt(G){return '已約 '+G.r3a.length+' · 未約 '+G.r3b.length;}
+function _bdStageBookHTML(G){return ['已約 '+G.r3a.length,'未約 '+G.r3b.length].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ');}
+function _bdStageRow(no,label,n,extra,opt){
+  opt=opt||{};
+  var td='border:1px solid #B9C9D6;padding:6px 10px;font-size:15px;border-radius:0;',
+      bg=(opt.hd?'background:#EAF4FC;':'background:#fff;'),
+      fw=(opt.hd?'font-weight:800;':''),
+      fg=(opt.fg?('color:'+opt.fg+';'):'');
+  return '<tr>'
+    +'<td style="'+td+bg+fw+'text-align:center">'+esc(no||'')+'</td>'
+    +'<td style="'+td+bg+fw+fg+(opt.ind?'padding-left:26px;':'')+'">'+esc(label)+'</td>'
+    +'<td style="'+td+bg+fw+fg+'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">'+n+' 戶</td>'
+    +'<td style="'+td+bg+fg+'">'+extra+'</td>'
+    +'</tr>';
+}
+function _bdStageHTML(D,ld){
+  var G=_bdStageData(D),GR='#2F7D2A',RD='#B3261E';
+  var h='<div id="bd-stage" style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
+    +'<div style="background:#5B9BD5;color:#fff;font-size:15px;font-weight:800;padding:8px 12px;margin:-10px -12px 11px">KIMZO 驗屋階段摘要　'+esc(_bdStamp())+'</div>'
+    +'<div class="bdwrap" style="overflow-x:auto"><table style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:560px;background:#fff;border-radius:0">'   /* min-width：窄螢幕寧可讓 .bdwrap 橫向捲，也不要把第四欄擠成 0 寬、每列爆成好幾行（390px 實測） */
+    +'<colgroup><col style="width:34px"><col style="width:250px"><col style="width:76px"><col></colgroup><tbody>'
+    +_bdStageRow('一','初驗完成',G.ins.length,_bdStageBrkHTML(G.bIns),{hd:1})
+    +_bdStageRow('二','複驗',G.re.length,'<span style="white-space:nowrap">初驗完成 − 已交屋</span>',{hd:1})
+    +_bdStageRow('','1　複驗完成，待交屋',G.r1.length,_bdStageBrkHTML(G.b1),{ind:1,fg:GR})
+    +_bdStageRow('','2　複驗後尚需再驗',G.r2.length,_bdStageBrkHTML(G.b2),{ind:1})
+    +_bdStageRow('','3　已修繕完成，待約複驗',G.r3.length,_bdStageBookHTML(G),{ind:1})
+    +_bdStageRow('','4　尚未修繕完成',G.r4.length,_bdStageBrkHTML(G.b4),{ind:1,fg:RD})
+    +_bdStageRow('三','已交屋（含借屋裝潢）',G.done.length,_bdStageBrkHTML(G.bDone),{hd:1,fg:GR})
+    +'</tbody></table></div>'
+    +'<div id="bd-stage-ft" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:12.5px;color:#8A8783">'
+    +'<span>'+['全社區 '+G.all.length+' 戶','未初驗 '+G.uninsp.length+' 戶'].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ')+'</span>'
+    +'<span style="white-space:nowrap">資料來源：G95 工程缺失追蹤系統</span></div>'
+    +'</div>';
+  return h;
+}
+function _bdStageText(){
+  if(_bdLdBlock())return;
+  var D=_bdData(),G=_bdStageData(D);
+  var L=['KIMZO 驗屋階段摘要 '+_bdStamp(),
+    '一、初驗完成 '+G.ins.length+' 戶（'+_bdStageBrkTxt(G.bIns)+'）',
+    '二、複驗 '+G.re.length+' 戶',
+    '　1 複驗完成，待交屋 '+G.r1.length+' 戶（'+_bdStageBrkTxt(G.b1)+'）',
+    '　2 複驗後尚需再驗 '+G.r2.length+' 戶（'+_bdStageBrkTxt(G.b2)+'）',
+    '　3 已修繕完成，待約複驗 '+G.r3.length+' 戶（'+_bdStageBookTxt(G)+'）',
+    '　4 尚未修繕完成 '+G.r4.length+' 戶（'+_bdStageBrkTxt(G.b4)+'）',
+    '三、已交屋（含借屋裝潢）'+G.done.length+' 戶（'+_bdStageBrkTxt(G.bDone)+'）',
+    '全社區 '+G.all.length+' 戶 · 未初驗 '+G.uninsp.length+' 戶',
+    '資料來源：G95 工程缺失追蹤系統'];
+  var t=L.join('\n');
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);toast('已複製，可直接貼 LINE','📋');return t;} }catch(e){}
+  try{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已複製，可直接貼 LINE','📋');}catch(e){alert(t);}
+  return t;
+}
+function _bdStageShot(){if(_bdLdBlock())return;try{_capEl(document.getElementById('bd-stage'),'驗屋階段摘要_'+todayISO()+'.png');}catch(e){}}
 // ── 主 render（單一響應式·無手機分流）──
 function renderBoard(){
   var el=document.getElementById('pane-board');if(!el)return;
@@ -12090,8 +12173,14 @@ function renderBoard(){
       +((window._dfStale||(window._fbReady&&window._dfActive!==true&&!window._dfPartial))?'　<span onclick="try{g95ForceResync()}catch(e){}" style="font-size:12px;font-weight:700;color:#B3261E;border:1px solid #E39B9B;background:#fff;padding:3px 12px;cursor:pointer">重抓</span>':'')
       +'</div>';
   }
+  // ⓪ V0915-01 驗屋階段摘要（整塊＝「截圖」拍的東西·載入中一起灰化）
+  h+=_bdStageHTML(D,ld)
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 4px">'
+    +'<button class="btn btn-p no-print"'+(ld?' disabled title="資料載入中，先不出圖"':'')+' onclick="_bdStageShot()">截圖</button>'
+    +'<button class="btn no-print"'+(ld?' disabled title="資料載入中，先不複製"':'')+' onclick="_bdStageText()">複製文字</button>'
+    +'<span style="font-size:11px;color:var(--text3)">圖與文字都印日期時間。</span></div>';
   // ① 六格＋摘要（這一整塊就是「出總覽圖」拍的東西＝所見即所得）
-  h+='<div id="bd-shot" style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
+  h+='<div id="bd-shot"style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
     +'<div style="background:#5B9BD5;color:#fff;font-size:15px;font-weight:800;padding:8px 12px;margin:-10px -12px 11px">KIMZO 交屋進度總覽　'+esc(_bdStamp())+'</div>'
     +_bdCardsHTML(D)+sum.h+'</div>';
   // ② 三顆鈕
@@ -26567,4 +26656,4 @@ try{
 </body>
 </html>
 
-<!-- v0909-02 preview · build 2026-09-09 10:08 +08 -->
+<!-- v0915-01 preview · build 2026-09-15 23:47 +08 -->
