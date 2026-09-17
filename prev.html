@@ -597,7 +597,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 406;  // V0915-01 報告看板最上面新增「驗屋階段摘要」（#bd-stage·帶編號示意圖定案）：①整塊放在八格總覽 #bd-shot 上方，藍標題列（KIMZO 驗屋階段摘要＋_bdStamp()）＋四欄表格（table-layout:fixed＋colgroup 34/250/76/auto、每格 1px #B9C9D6、白底、字 15px、平角），七列＝一 初驗完成／二 複驗（＝下面四小列加總·右欄註「初驗完成 − 已交屋」）／1 複驗完成待交屋（綠 #2F7D2A）／2 複驗後尚需再驗／3 已修繕完成待約複驗（已約 a · 未約 b）／4 尚未修繕完成（紅 #B3261E）／三 已交屋（含借屋裝潢·綠）；一二三列淡藍底 #EAF4FC 粗體、四小列縮排 26px；頁尾小字左「全社區 T 戶 · 未初驗 U 戶」右「資料來源」。②🔴判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat、D.m 各段 keys、D.keys 全戶），render 內不重算 _riStat、不另寫一套判斷基準：1＝m.del、2＝m.re2、3＝m.re1(已約)＋m.re0(未約)、4＝m.rep、三＝m.done、一＝inspected 為真的戶；_bdData 順手新增 m.rep（stage 'repair'）＝第 4 小列唯一來源，brk 走既有 Object.keys(m) 迴圈自動算到。恆等式 一＝二＋三、一＋未初驗＝全社區（煙測守）；邊界＝「已交屋但沒有初驗完成紀錄」的戶也算進一（否則恆等式會被悄悄打破·anom 記數留查）。③表格與複製文字吃同一份 _bdStageData＝同一把尺；每個「詞＋數字」片段包 white-space:nowrap。④兩顆鈕（截圖 btn-p／複製文字）自成一排放在 bd-stage 下方、「出總覽圖」那排上方；截圖＝_bdStageShot() 走 _capEl(#bd-stage)、複製＝_bdStageText()，兩支都先過 _bdLdBlock()，載入中整塊 grayscale＋兩鈕 disabled（沿用 #bd-shot 同一套）；唯讀模式（?mode=view）純查看＝放行不掛 _hoSegRo。⑤報告看板維持單一響應式（無手機分流），表格外包 div.bdwrap（overflow-x:auto）⇒ 390px 不橫向溢出。新增 _bdStageData／_bdStageHTML／_bdStageText／_bdStageShot／_bdStageRow／_bdStageBrkTxt／_bdStageBrkHTML／_bdStageBookTxt／_bdStageBookHTML。⑥新煙測 smoke_g95_stage.js（7 區塊）並登記進 run_all_g95.js。程式行剪掉 V0903-02（另存 dropped_V0903-02.txt）。｜V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。｜V0909-01 報告看板 ①與上次名單比 ②第 9 段 地主戶進度（mock_owner 帶編號示意圖定案）：①貼上名單區（#bd-req-in）下方新增一行純文字「與上次名單比　新增 N 戶：…　移除 N 戶：…（上次 MM/DD 帳號）」，資料來源＝既有 S.hoReq.prev（寫入點仍只有 _bdApply／_bdClearReq 兩處·只讀不另存），戶別走 unitDisplayName，沒有 prev 或 prev.units 空＝整行不畫（不是留空行）；新增 _bdPrevDiff／_bdPrevDiffHTML。②_BDSEG 追加第 9 段 own「地主戶進度」card:0 ⇒ 卡片區維持 4×2 八格（_bdCardsHTML／_bdText 本來就濾 s.card，一字未動）。對象＝_riAllKeys() 中 isOwnerUnit 為真的戶（🔴身分只認 isOwnerUnit／g95KindOf，位置另走 _bdBlk，兩個維度不可混·V0828-05 ④ 同一條）；分組鍵＝_ownerOf(k)（clientData 姓名 trim），空姓名歸一組「未填屋主」永遠排最後，共有戶多人＝照既有姓名鍵各自成組（不自創合併規則）。「完成」＝_riStat(k).stage 為 deliverable 或 delivered（使用者定案甲·🔴零新判定，只讀 stage 不另寫一套）。收合列統計字＝地主 N、全完成 X、戶 T（完成 C／未完成 U），「全完成」＝該地主所有戶都完成。展開後篩選三選一（全部／只看未全完成／只看全部完成）＋排序三選一（未完成多→少 預設／地主姓名／戶數），狀態存模組變數 _bdOwnF／_bdOwnS（不進雲端·重整回預設）；表格六欄＝地主、戶數、完成、未完成、已完成戶別、未完成戶別（目前階段），沿用 div.bdwrap>table.bdtb（table-layout:fixed＋colgroup 固定欄寬），戶別片段依棟淡染沿用 bduA/bduB/bduS，同一格內戶別排序走 _bdBlSortCmp，每個「戶別＋階段」片段包 white-space:nowrap；階段文字沿用八段同一把尺（re1 已約複驗＋複驗日 MM/DD、re0 未約複驗、ins0 未約初驗、re2 待複驗2、repair 修繕中 N＝pend、none 且有 planDate 已排初驗 MM/DD）。資料在 _bdData() 算一次放進 D.own（指紋快取沿用·render 內不重算 _riStat）；段容器 id bd-seg-own、出圖走既有 _bdShotSeg，載入中 _bdLoading() 一起灰化並由 _bdLdBlock 擋出圖；唯讀模式（?mode=view）篩選／排序是純查看＝放行；報告看板維持單一響應式（沒有 _bdMobRender），390px 靠 .bdwrap{overflow-x:auto} 不橫向溢出。新增 _bdOwnStageTxt／_bdOwnView／_bdOwnHTML／_bdOwnSet 與 CSS span.bdu*／.bdop／.bdo9。③新煙測 smoke_g95_own.js（8 區塊）並登記進 run_all_g95.js；smoke_g95_board.js ⑥「八段加一條標題列／編號連續」兩條隨規格改成九段。程式行剪掉 V0902-07（已入註解史·另存 CODE_VERSION註解史_追加.md）。
+const CODE_VERSION = 407;  // V0917-01 三項。A 進度報告「分區小計」「各廠商」兩張表改「前期／本周／結算」（示意圖 分區小計_前期本周結算_20260917 定案）：_ulqWoW2 與 _ulqWoW 回傳多帶 exPrev／donePrev／exNow／doneNow 四鍵（既有七鍵一字不改·wvw／basewin／lwk 零迴歸）；新增 _rptPbsHead 兩層表頭（名稱欄 rowspan2·前期（到 MM/DD）總缺失／累計完成／未完成·本周（MM/DD ~ MM/DD）新增缺失／已完成·結算（到 MM/DD）未完成／已完成·最右本周完成率 rowspan2）＋_rptPbsCols（fixed＋colgroup 108/108/108/100/100/108/108/120·名稱欄吃剩餘寬·外包 overflow-x:auto＋min-width 防名稱欄被擠成 0 寬）＋_rptPbsTds（累計完成／前期未完成／結算未完成／結算已完成＝筆數＋12px 灰 %，分母＝該時點總缺失；千分位 _rptNum；倒退淡紅底只標結算已完成那格·非小計列）；「本周」字樣跟比較起點走 _rptPerWord（上週一＝本周·近7天＝近 7 天·自訂＝本期）；本周完成率 _rptWkRate＝fixed÷(pendPrev＋added) 四捨五入、分母 0 顯示—；表尾 _rptIdLine 逐列檢核「前期未完成＋本周新增－本周已完成＝結算未完成」（任一列不成立＝⚠ 並點名；算法上只有「完成日早於產生日、產生日又落在本期」的列會讓它不成立＝去查那幾筆不是程式錯）＋保留 室內＋公設＋其他＋未分類＝總體；上週兩欄改由「顯示上週」開關 _rptLwChk 控制（localStorage g95_rptLw＝1 開·預設關·每台自己記·class view-allow 唯讀放行·改變即 renderProgReport），開時仍在名稱欄之後、組名「上週（MM/DD ~ MM/DD）」，關時整組不畫（含手機副行與複製文字）；分區表與廠商表同一套（廠商多一欄 #）；手機 _rptMRow 新增 opt.sub 整列寬副行 _rptMSub（前期未完成 n → 結算 n／本周 新增 a · 完成 f／本周完成率 x%，片段各自 nowrap），右側只留結算未完成，390px 不溢出；_rptCopyText 分區／廠商行改同格式 _rptMText。B 交屋行事曆已交屋戶保留「複驗日≤交屋日」的複驗章：_reBookedRaw 加第四參數 deliveredDate（已交屋時複驗日≤交屋日才回章·沒填交屋日以今天算），_reBooked／_ulqBookedIdx 都傳 h.deliveredDate，renderHCal 的 _reIdx 同一條規則（歷史紀錄：交屋前那次複驗真的有來）；_ulqBkFp 指紋把已交屋戶的交屋日算進去；缺口預警 _slotGapData／_hoGapData 原本就明寫 if(h.delivered)return 排除已交屋（不是靠回 null），統計列與接待人力算到過去日期的已交屋戶＝那天本來就有來。C 驗屋階段摘要改四段（示意圖 驗屋階段摘要_四段版_20260917）＋在 _riStat 源頭新增 stage re_next（使用者定案：複驗抓到缺失、修完但還沒再驗＝要排下一輪，不能算待交屋）：hasReDone 時 pend>0＝re_repair、pend＝0 且那一輪有抓到缺失＝re_next、pend＝0 且那一輪沒抓到＝deliverable；判定根據＝lastReDate 最近一次已完成複驗日（type 以 /^複驗/ 判、date≤今天，同 hasReDone 那把尺）、reRound＝那次 type 的數字（程式寫入端 type 一律 複驗N·沒數字的舊值退回已完成複驗筆數）、roundDefects＝該戶缺失中 產生日（_wpAddDate，round 為複驗N 時對到該戶複驗N 驗收日）≥lastReDate 或 createdAt≥lastReDate 的筆數（createdAt 補判的理由＝新增缺失畫面輪次預設初驗，複驗現場沒改輪次就存的缺失 _wpAddDate 會對到初驗日而漏掉·寧可多排一輪複驗不可誤判可交屋）；_riStat 回傳多帶 reRound／lastReDate／roundDefects。消費者：六態卡可交屋與交屋排程第 1 段仍只收 deliverable；報告看板第 5 段改名「待下一輪複驗」收 re_next、新增第 10 段「複驗後修繕中」收 re_repair（card:0 卡片維持 4×2·恆等式 4＋5＋10＝複驗做完未交屋的全部）；地主戶完成仍只認 deliverable／delivered；_bdOwnStageTxt／_bdStageTag／_ULQ_STAGE 補 re_next 文字「待複驗N+1（已約 MM/DD／未約）」（抽屜日期不晚於上一輪複驗日＝舊的不算已約）。摘要表 _bdStageData／_bdStageHTML／_bdStageLines 重寫：七欄 34／剩餘／88×4／230；一 初驗狀態（全社區·已完成初驗／未完成初驗／已初驗有缺失未修繕需追蹤＝repair 紅／已初驗已修繕待約複驗1＝reinsp 已約 a · 未約 b）；二起依 reRound 動態畫「複驗N」段（最少到複驗2·0 戶也畫），三小列 0 缺失待交屋（綠）／有缺失已修繕安排複驗N+1（已約·未約）／有缺失未修繕需追蹤（紅）；最後「已交屋（含借屋裝潢）」小列自購戶／地主戶（業主戶>0 才畫·_clmTypeOf）；段序號隨段數；頁尾「已完成初驗＝一的兩小列＋各複驗段＋已交屋 ✓／⚠」；複製文字 _bdStageText 吃同一份 _bdStageData；截圖 _bdStageShot 與載入守門 _bdLdBlock 不動。補（preview 真資料對帳後使用者定案）：分區恆等式差 107＝自驗列（產生日落在本期、完成日在前期＝登記前就修好），本期新增有算、既有 fixed 沒算 ⇒ _ulqWoW2／_ulqWoW 多一個累加器 fixedPre（dn 且 dd≤base 且 base<ad≤end），進度報告這張表的本期已完成、本周完成率分子、恆等式一律用 _rptFix＝fixed＋fixedPre，該格 fixedPre>0 時小字「含自驗 N」，hint 行說明自驗；既有 fixed 一字不改、上週兩欄照舊用 fixed；第二條恆等式 前期累計完成＋本期已完成＝結算已完成 由煙測守（真資料 7,145＋2,935＋107＝10,187）。同版再補：進度報告表格上方摘要行（_rptHero 桌機手機同一支）、複製文字「■ 室內／■ 總體」與複驗戶缺改進度表（桌機、手機、複製文字）的修掉／已完成一律改印 _rptFix，跟前期／本周／結算表同口徑；上週兩欄與顯示篩選條件照舊用 fixed。煙測：新增 smoke_g95_pbs.js 並登記總跑器；stage 重寫；lwk／rptcols／rebatch／rptsec／board／own／replan 隨規格改；hocal 加 ⑨ 已交屋複驗章。程式行剪掉 V0909-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0915-01 報告看板最上面新增「驗屋階段摘要」（#bd-stage·帶編號示意圖定案）：①整塊放在八格總覽 #bd-shot 上方，藍標題列（KIMZO 驗屋階段摘要＋_bdStamp()）＋四欄表格（table-layout:fixed＋colgroup 34/250/76/auto、每格 1px #B9C9D6、白底、字 15px、平角），七列＝一 初驗完成／二 複驗（＝下面四小列加總·右欄註「初驗完成 − 已交屋」）／1 複驗完成待交屋（綠 #2F7D2A）／2 複驗後尚需再驗／3 已修繕完成待約複驗（已約 a · 未約 b）／4 尚未修繕完成（紅 #B3261E）／三 已交屋（含借屋裝潢·綠）；一二三列淡藍底 #EAF4FC 粗體、四小列縮排 26px；頁尾小字左「全社區 T 戶 · 未初驗 U 戶」右「資料來源」。②🔴判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat、D.m 各段 keys、D.keys 全戶），render 內不重算 _riStat、不另寫一套判斷基準：1＝m.del、2＝m.re2、3＝m.re1(已約)＋m.re0(未約)、4＝m.rep、三＝m.done、一＝inspected 為真的戶；_bdData 順手新增 m.rep（stage 'repair'）＝第 4 小列唯一來源，brk 走既有 Object.keys(m) 迴圈自動算到。恆等式 一＝二＋三、一＋未初驗＝全社區（煙測守）；邊界＝「已交屋但沒有初驗完成紀錄」的戶也算進一（否則恆等式會被悄悄打破·anom 記數留查）。③表格與複製文字吃同一份 _bdStageData＝同一把尺；每個「詞＋數字」片段包 white-space:nowrap。④兩顆鈕（截圖 btn-p／複製文字）自成一排放在 bd-stage 下方、「出總覽圖」那排上方；截圖＝_bdStageShot() 走 _capEl(#bd-stage)、複製＝_bdStageText()，兩支都先過 _bdLdBlock()，載入中整塊 grayscale＋兩鈕 disabled（沿用 #bd-shot 同一套）；唯讀模式（?mode=view）純查看＝放行不掛 _hoSegRo。⑤報告看板維持單一響應式（無手機分流），表格外包 div.bdwrap（overflow-x:auto）⇒ 390px 不橫向溢出。新增 _bdStageData／_bdStageHTML／_bdStageText／_bdStageShot／_bdStageRow／_bdStageBrkTxt／_bdStageBrkHTML／_bdStageBookTxt／_bdStageBookHTML。⑥新煙測 smoke_g95_stage.js（7 區塊）並登記進 run_all_g95.js。程式行剪掉 V0903-02（另存 dropped_V0903-02.txt）。｜V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1499,7 +1499,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0915-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0917-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -8423,16 +8423,36 @@ function _riStat(key){
   var pend=pendRows.length;
   var insp1=_riInsp1Date(hu);
   var inspected=!!insp1;   // V0720-10：只認「已完成初驗紀錄」＝與驗屋日報累計完成一致（原 ||tot>0 會把有缺失但無初驗紀錄的戶＝業主代驗/屋主未到 也算已初驗，已依使用者定案移除）
+  // ══ V0917-01 複驗後分三種（使用者定案：複驗抓到缺失、修完了但還沒再驗＝要安排下一輪複驗，不能算待交屋）══
+  //   lastReDate＝最近一次「已完成」複驗日（同 hasReDone 那把尺：type /^複驗/、date≤今天）
+  //   reRound  ＝那一次的輪次：type 帶數字（'複驗2'）就用數字；沒數字（舊資料 type='複驗'）＝已完成複驗筆數
+  //   roundDefects＝「那一輪抓到的缺失」筆數＝缺失產生日 ≥ lastReDate。產生日用 _wpAddDate（_ulqWoW 同一支：
+  //     列的 round 是複驗N＝對到該戶複驗N的驗收日；round 空白／初驗＝對到初驗日）；
+  //     另外 createdAt（缺失建立時間）≥ lastReDate 也算——因為新增缺失畫面輪次預設是「初驗」，
+  //     複驗現場沒改輪次就存的缺失，_wpAddDate 會對到初驗日而漏掉（寧可多排一輪複驗，不可誤判可交屋）。
+  var lastReDate='', reRound=0, reN=0, roundDefects=0;
+  if(hasReDone){
+    insps.forEach(function(i){ var t=inspTypeOf(i); if(!/^複驗/.test(t)||!i.date||i.date>todayISO())return; reN++;
+      if(i.date>=lastReDate){ var m=String(t).match(/(\d+)/); if(i.date>lastReDate||!reRound){ lastReDate=i.date; reRound=m?(+m[1]):0; } else if(m&&(+m[1])>reRound){ reRound=+m[1]; } } });
+    if(!reRound)reRound=reN;
+    var _om={}; insps.forEach(function(i){ if(!i||!i.date)return; var t=inspTypeOf(i); if(!_om[t]||i.date<_om[t])_om[t]=i.date; });   // 同 _wpDateMap 單戶版
+    dr.forEach(function(r){
+      var dm={}; try{ dm[_wpUnitOf(r)]=_om; }catch(e){}
+      var a=''; try{ a=_wpAddDate(r,dm)||''; }catch(e){}
+      var c=''; try{ if(r.createdAt)c=_isoL(new Date(r.createdAt)); }catch(e){}
+      if((a&&a>=lastReDate)||(c&&c>=lastReDate))roundDefects++;
+    });
+  }
   var stage;
   if(delivered)stage='delivered';
-  else if(hasReDone)stage=(pend===0)?'deliverable':'re_repair';
+  else if(hasReDone)stage=(pend>0)?'re_repair':(roundDefects>0?'re_next':'deliverable');   // V0917-01：re_next＝有缺失、已修繕，待下一輪複驗
   else if(inspected)stage=(pend===0)?'reinsp':'repair';
   else stage='none';
   var lastDone='';
   if(tot>0&&pend===0){dr.forEach(function(r){var d=r.actualDone||'';if(d&&d>lastDone)lastDone=d;});}
   var workComplete=(insp1&&lastDone)?_riSpan(insp1,lastDone).work:0;
   var sp=(insp1&&pend>0)?_riSpan(insp1,todayISO()):{cal:0,rest:0,work:0};
-  return {hu:hu,inspected:inspected,hasReDone:hasReDone,delivered:delivered,outsource:outsource,tot:tot,pend:pend,pendRows:pendRows,insp1:insp1,stage:stage,dr:dr,lastDone:lastDone,workComplete:workComplete,calDays:sp.cal,restDays:sp.rest,dateAnomaly:!!(insp1&&lastDone&&lastDone<insp1)};  // V0720-14：完成日早於初驗日＝資料異常
+  return {hu:hu,inspected:inspected,hasReDone:hasReDone,reRound:reRound,lastReDate:lastReDate,roundDefects:roundDefects,delivered:delivered,outsource:outsource,tot:tot,pend:pend,pendRows:pendRows,insp1:insp1,stage:stage,dr:dr,lastDone:lastDone,workComplete:workComplete,calDays:sp.cal,restDays:sp.rest,dateAnomaly:!!(insp1&&lastDone&&lastDone<insp1)};  // V0720-14：完成日早於初驗日＝資料異常
 }
 function _riCardBrk(c){
   if(_riBrk==='off')return '';        // V0804-05 ②：預設不出細分
@@ -10796,14 +10816,16 @@ function _rptCopyText(){
   var D=window._rptD||_rptData(); var T=[];
   var span=_wvwSpanWord(1), prev=_wvwPrevWord();
   T.push('G95 修繕進度報告 '+D.t+'（即時）·比較 '+_rptSpanFrom(D)+' → '+(D.end||D.t));   // V0820-01 ⑪：起日寫實際計入的第一天
-  if(D.lw&&D.overallLw) T.push('◆ 上週（'+D.lw.from+' 一 ~ '+D.lw.to+' 日·固定）：總體已完成 '+D.overallLw.fixed+'｜'+_rptPct(D.overallLw));
-  T.push('■ 室內：未完成 '+D.g['室內'].pendNow+'（'+prev+' '+D.g['室內'].pendPrev+'）｜'+span+'修掉 '+D.g['室內'].fixed+'·新增 '+D.g['室內'].added+'｜'+_rptPct(D.g['室內']));
-  T.push('■ 總體：未完成 '+D.overall.pendNow+'（'+prev+' '+D.overall.pendPrev+'）｜'+span+'修掉 '+D.overall.fixed+'·新增 '+D.overall.added+'｜'+_rptPct(D.overall));
+  var _lwOn=_rptLwOn();   // V0917-01：上週那組跟「顯示上週」開關走（關＝複製文字也不出現）
+  if(_lwOn&&D.lw&&D.overallLw) T.push('◆ 上週（'+D.lw.from+' 一 ~ '+D.lw.to+' 日·固定）：總體已完成 '+D.overallLw.fixed+'｜'+_rptPct(D.overallLw));
+  T.push('■ 室內：未完成 '+D.g['室內'].pendNow+'（'+prev+' '+D.g['室內'].pendPrev+'）｜'+span+'修掉 '+_rptFix(D.g['室內'])+'·新增 '+D.g['室內'].added+'｜'+_rptPct(D.g['室內']));
+  T.push('■ 總體：未完成 '+D.overall.pendNow+'（'+prev+' '+D.overall.pendPrev+'）｜'+span+'修掉 '+_rptFix(D.overall)+'·新增 '+D.overall.added+'｜'+_rptPct(D.overall));
   T.push('■ 分區：');
-  D.subs.forEach(function(x){ T.push('　'+x.name+'｜欠 '+x.w.pendNow+'｜修 '+x.w.fixed+' 新 '+x.w.added+'｜'+_rptPct(x.w)+(x.wl?('｜上週修 '+x.wl.fixed+'·'+_rptPct(x.wl)):'')); });
-  if(D.batches.length){ T.push('■ 複驗戶缺改進度：'); D.batches.forEach(function(z){ var b=z.blk||{},sg=[]; if(b.A)sg.push('A棟 '+b.A); if(b.B)sg.push('B棟 '+b.B); if(b.S)sg.push('店鋪 '+b.S); if(b.X)sg.push('其他 '+b.X); T.push('　'+_rptRocDay(z.d)+'｜'+(sg.join('＋')||'—')+'＝'+z.n+' 戶｜已完成 '+z.w.fixed+'｜未完成 '+z.w.pendPrev+'→'+z.w.pendNow); }); }
+  // V0917-01：分區／廠商行改「前期→結算／本周流量／本周完成率」（同畫面表格同一份數字）
+  D.subs.forEach(function(x){ T.push('　'+x.name+'｜'+_rptMText(D,x.w)+((_lwOn&&x.wl)?('｜上週修 '+x.wl.fixed+'·'+_rptPct(x.wl)):'')); });
+  if(D.batches.length){ T.push('■ 複驗戶缺改進度：'); D.batches.forEach(function(z){ var b=z.blk||{},sg=[]; if(b.A)sg.push('A棟 '+b.A); if(b.B)sg.push('B棟 '+b.B); if(b.S)sg.push('店鋪 '+b.S); if(b.X)sg.push('其他 '+b.X); T.push('　'+_rptRocDay(z.d)+'｜'+(sg.join('＋')||'—')+'＝'+z.n+' 戶｜已完成 '+_rptFix(z.w)+'｜未完成 '+z.w.pendPrev+'→'+z.w.pendNow); }); }
   T.push('■ 廠商（還欠多→少·前10）：');
-  D.vend.slice(0,10).forEach(function(v){ T.push('　'+v.name+'｜欠 '+v.pend+'｜修 '+v.w.fixed+' 新 '+v.w.added+'｜'+_rptPct(v.w)+(v.wl?('｜上週修 '+v.wl.fixed+'·'+_rptPct(v.wl)):'')); });
+  D.vend.slice(0,10).forEach(function(v){ T.push('　'+v.name+'｜'+_rptMText(D,v.w)+((_lwOn&&v.wl)?('｜上週修 '+v.wl.fixed+'·'+_rptPct(v.wl)):'')); });
   return T.join('\n');
 }
 function _rptCopy(){
@@ -10830,10 +10852,10 @@ function _rptScopeBtns(D,mob){
 function _rptHero(D,mob){
   var sc=D.scope, w=(sc==='in')?D.g['室內']:((sc==='pub')?D.g['公設']:D.overall);
   var lb=(sc==='in')?'室內':((sc==='pub')?'公設':'全工地');
-  var sub='全工地：未完成 '+D.overall.pendNow+'（'+_wvwPrevWord()+' '+D.overall.pendPrev+'）·'+_wvwSpanWord()+'修掉 '+D.overall.fixed+'·新增 '+D.overall.added+'·完成率 '+_rptPct(D.overall);
-  if(sc==='all') sub='室內：未完成 '+D.g['室內'].pendNow+'·修掉 '+D.g['室內'].fixed+'　公設：未完成 '+D.g['公設'].pendNow+'·修掉 '+D.g['公設'].fixed;
+  var sub='全工地：未完成 '+D.overall.pendNow+'（'+_wvwPrevWord()+' '+D.overall.pendPrev+'）·'+_wvwSpanWord()+'修掉 '+_rptFix(D.overall)+'·新增 '+D.overall.added+'·完成率 '+_rptPct(D.overall);
+  if(sc==='all') sub='室內：未完成 '+D.g['室內'].pendNow+'·修掉 '+_rptFix(D.g['室內'])+'　公設：未完成 '+D.g['公設'].pendNow+'·修掉 '+_rptFix(D.g['公設']);   // V0917-01：修掉＝含自驗（_rptFix），跟前期／本周／結算表同口徑
   return '<div style="border:1px solid #A9CBE8;background:#EAF4FC;padding:'+(mob?'10px 12px':'12px 16px')+';font-size:'+(mob?'14px':'15px')+';margin-bottom:6px">'
-    +lb+'未完成 <b style="font-size:'+(mob?'22px':'26px')+';color:#B3261E">'+w.pendNow+'</b> 筆（'+_wvwPrevWord()+' '+w.pendPrev+'）　'+_wvwSpanWord()+'修掉 <b>'+w.fixed+'</b>·新增 <b>'+w.added+'</b>　完成率 <b>'+_rptPct(w)+'</b>'
+    +lb+'未完成 <b style="font-size:'+(mob?'22px':'26px')+';color:#B3261E">'+w.pendNow+'</b> 筆（'+_wvwPrevWord()+' '+w.pendPrev+'）　'+_wvwSpanWord()+'修掉 <b>'+_rptFix(w)+'</b>·新增 <b>'+w.added+'</b>　完成率 <b>'+_rptPct(w)+'</b>'
     +'<div style="font-size:'+(mob?'12px':'13px')+';color:#555;margin-top:4px">'+sub+'</div></div>';
 }
 function _rptCalLine(D){
@@ -10847,6 +10869,15 @@ function _rptCalLine(D){
 }
 function _rptMRow(left,right,opt){
   opt=opt||{};
+  // V0917-01：opt.sub＝整列寬的副行（可在片段之間換行）；opt.lw 仍在右側小字（開關開時才會給）
+  if(opt.sub!=null){
+    return '<div style="padding:6px 9px;font-size:13px;border-top:1px solid #e4e9f0'
+      +(opt.sum?';background:#F0F4EA;font-weight:700':'')+(opt.bad?';background:#FCF0F0':'')+'">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(opt.ind?';padding-left:14px':'')+'">'+left+'</span>'
+      +'<span style="flex:none;white-space:nowrap;text-align:right">'+right+'</span></div>'
+      +'<div style="font-size:12px;font-weight:400;color:#444;line-height:1.5'+(opt.ind?';padding-left:14px':'')+'">'+opt.sub+'</div>'
+      +(opt.lw?'<div style="font-size:11.5px;font-weight:400;color:#6b6257'+(opt.ind?';padding-left:14px':'')+'">'+opt.lw+'</div>':'')+'</div>';
+  }
   return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 9px;font-size:13px;border-top:1px solid #e4e9f0'
     +(opt.sum?';background:#F0F4EA;font-weight:700':'')+(opt.bad?';background:#FCF0F0':'')+'">'
     +'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(opt.ind?';padding-left:14px':'')+'">'+left+'</span>'
@@ -10884,8 +10915,8 @@ function _rptLwLabel(L){ try{ if(!L)return ''; return _rptRoc(L.from).slice(4)+'
 // 🩸鐵律：中文會從詞中間斷行（V0819-03 血淚「尚未安排 ×16戶」被斷成兩半）⇒ 兩端各自 nowrap，只准在「~」處換行
 function _rptLwLabelH(L){ try{ var s=_rptLwLabel(L); if(!s)return ''; var a=s.split(' ~ ');
   return '<span style="white-space:nowrap">'+a[0]+'</span> ~ <span style="white-space:nowrap">'+a[1]+'</span>'; }catch(e){ return ''; } }
-function _rptLwTh(D,right){ return '<th style="'+_RPT_LWTH+(right?';text-align:right':'')+'">'+(right?'上週已完成':'上週完成率')
-  +'<div style="font-size:11.5px;font-weight:400;color:#6b6257">'+_rptLwLabelH(D&&D.lw)+'</div></th>'; }
+// V0917-01：上週兩欄改成第二層小標（第一層那組叫「上週（MM/DD ~ MM/DD）」），而且由「顯示上週」開關控制
+function _rptLwTh(D,right){ return '<th style="'+_RPT_LWTH+(right?';text-align:right':'')+'">'+(right?'已完成':'完成率')+'</th>'; }
 // ⑦-A 兩端都寫（跟右邊完全一致）／④ 只有這一格倒退才淡紅底、小計列不標紅（同右邊規則）
 function _rptLwTds(wl,sum){
   var td=sum?_RPT_LWSUM:_RPT_LWTD;
@@ -10896,10 +10927,90 @@ function _rptLwTds(wl,sum){
 }
 // ⑧-A 手機：主行維持現狀，上週那段當小字副行（390px 一行塞不下兩段＝會橫向溢出）
 function _rptLwSub(wl){ return wl?('上週 已完成 '+wl.fixed+'｜'+wl.ratePrev+'%→'+wl.rateNow+'%（'+(wl.diff>=0?'+':'')+wl.diff+'）'):''; }
+// ══ V0917-01 分區小計／廠商表改「前期／本周／結算」（示意圖 分區小計_前期本周結算_20260917 定案）══
+// 🔴 數字全部來自同一支 _ulqWoW2（前期＝base 收盤、結算＝end 收盤、本周＝(base,end] 流量）＝不另立一把尺。
+// 🔴 本周完成率＝本周已完成 ÷（前期未完成＋本周新增）＝「這段期間清掉手上待修的幾成」；分母 0 顯示「—」。
+// 🔴 恆等式：前期未完成＋本周新增－本周已完成（＝_rptFix＝fixed＋fixedPre 自驗列）＝結算未完成。
+//    自驗列（本周才初驗、缺失在前期就修好）已納入本周已完成（使用者 0917 定案）；仍會 ⚠ 的只剩「產生日在迄日之後、完成日在本期」這類資料異常。
+// 🔴 「顯示上週」開關：localStorage g95_rptLw＝'1' 開（預設關·每台自己記）；關的時候上週那組整組不畫（含手機副行與複製文字）。
+function _rptLwOn(){ try{ return localStorage.getItem('g95_rptLw')==='1'; }catch(e){ return false; } }
+function _rptLwSet(on){ try{ localStorage.setItem('g95_rptLw',on?'1':'0'); }catch(e){} try{ renderProgReport(); }catch(e){} }
+function _rptLwChk(){
+  return '<label class="view-allow" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:#333;cursor:pointer;white-space:nowrap">'
+    +'<input type="checkbox" class="view-allow rpt-lwchk"'+(_rptLwOn()?' checked':'')+' onchange="_rptLwSet(this.checked)" style="width:20px;height:20px;flex:none;margin:0">顯示上週</label>';
+}
+// 「本周」這個字跟比較起點走：上週一＝本周／近 7 天＝近 7 天／自訂＝本期
+function _rptPerWord(D){ var m=(D&&D.mode)||_wvwBaseMode(); return (m==='wk')?'本周':((m==='custom')?'本期':'近 7 天'); }
+function _rptNum(n){ n=Number(n)||0; return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function _rptPc(n,d){ return d?(Math.round((Number(n)||0)*100/d)+'%'):'—'; }
+// V0917-01 使用者定案（preview 真資料分區恆等式差 107）：本期已完成＝fixed＋fixedPre（自驗列：產生日在本期、完成日在前期，本期新增有算、已完成也要算）
+//   🔴 只用在前期／本周／結算這張表；_ulqWoW 的 fixed 本身一字不改（vprog／wvw／lwk 上週兩欄照舊）
+function _rptFix(w){ return ((w&&w.fixed)||0)+((w&&w.fixedPre)||0); }
+function _rptWkRate(w){ var den=(w.pendPrev||0)+(w.added||0); return den?(Math.round(_rptFix(w)*100/den)+'%'):'—'; }
+function _rptIdOk(w){ return !!w&&(w.pendPrev+w.added-_rptFix(w)===w.pendNow); }
+function _rptIdOk2(w){ return !!w&&(w.donePrev+_rptFix(w)===w.doneNow); }   // 第二條：前期累計完成＋本期已完成＝結算已完成
+// 表頭兩層：lead＝最左邊 rowspan=2 的欄（分區：['分區']；廠商：['#','廠商']）
+function _rptPbsHead(D,lead){
+  var lw=_rptLwOn()&&D.lw, per=_rptPerWord(D);
+  var nw=function(s){ return '<span style="white-space:nowrap">'+s+'</span>'; };
+  var g=_RPT_TH+';text-align:center';
+  var r1='<tr>', r2='<tr>';
+  lead.forEach(function(x){ r1+='<th rowspan="2" style="'+_RPT_TH+(x.right?';text-align:right':'')+';vertical-align:middle">'+x.t+'</th>'; });
+  if(lw) r1+='<th colspan="2" style="'+_RPT_LWTH+';text-align:center">'+nw('上週')+nw('（'+_wvwMD(D.lw.from)+' ~ '+_wvwMD(D.lw.to)+'）')+'</th>';
+  r1+='<th colspan="3" style="'+g+'">'+nw('前期')+nw('（到 '+_wvwMD(D.base)+'）')+'</th>'
+    +'<th colspan="2" style="'+g+'">'+nw(per)+nw('（'+_wvwMD(_rptSpanFrom(D))+' ~ '+_wvwMD(D.end||D.t)+'）')+'</th>'
+    +'<th colspan="2" style="'+g+'">'+nw('結算')+nw('（到 '+_wvwMD(D.end||D.t)+'）')+'</th>'
+    +'<th rowspan="2" style="'+_RPT_TH+';text-align:right;vertical-align:middle">'+nw(per)+nw('完成率')+'</th></tr>';
+  if(lw) r2+=_rptLwTh(D,1)+_rptLwTh(D,0);
+  var s=function(t){ return '<th style="'+_RPT_TH+';text-align:right">'+t+'</th>'; };
+  r2+=s('總缺失')+s('累計完成')+s('未完成')+s('新增缺失')+s('已完成')+s('未完成')+s('已完成')+'</tr>';
+  return '<thead>'+r1+r2+'</thead>';
+}
+// 固定欄合計（px）：外層包 overflow-x:auto、table 給 min-width＝固定欄＋名稱欄保底，窄視窗橫捲而不是把名稱欄擠成 0 寬
+function _rptPbsMinW(lead){ return lead+964+(_rptLwOn()?240:0); }
+function _rptPbsCols(lead){ return lead+(_rptLwOn()?'<col style="width:84px"><col style="width:156px">':'')
+  +'<col style="width:108px"><col style="width:108px"><col style="width:108px"><col style="width:100px"><col style="width:100px"><col style="width:108px"><col style="width:108px"><col style="width:120px">'; }
+// 一列的數字格（上週兩格〔開關開才有〕＋前期三＋本周二＋結算二＋本周完成率）
+function _rptPbsTds(w,opt){
+  opt=opt||{}; var sum=!!opt.sum, td=sum?_RPT_SUM:_RPT_TD;
+  var b=function(x){ return sum?('<b>'+x+'</b>'):x; };
+  var one=function(n){ return '<td style="'+td+';text-align:right">'+b(_rptNum(n))+'</td>'; };
+  var two=function(n,d,bad){ return '<td style="'+(bad?(_RPT_TD+';background:#FCF0F0'):td)+';text-align:right;line-height:1.2">'+b(_rptNum(n))
+    +'<div style="font-size:12px;font-weight:400;color:#888">'+_rptPc(n,d)+'</div></td>'; };
+  var h=_rptLwOn()?_rptLwTds(opt.wl,sum):'';
+  h+=one(w.exPrev)+two(w.donePrev,w.exPrev)+two(w.pendPrev,w.exPrev)
+    +one(w.added)
+    +'<td style="'+td+';text-align:right;line-height:1.2">'+b(_rptNum(_rptFix(w)))+(w.fixedPre?('<div class="rpt-selfchk" style="font-size:12px;font-weight:400;color:#888;white-space:nowrap">含自驗 '+_rptNum(w.fixedPre)+'</div>'):'')+'</td>'
+    +two(w.pendNow,w.exNow)+two(w.doneNow,w.exNow,(!sum&&w.diff<0))   // 倒退＝結算 % 小於前期 %（非小計列）
+    +'<td style="'+td+';text-align:right">'+b(_rptWkRate(w))+'</td>';
+  return h;
+}
+// 恆等式檢核（逐列）：回不成立的名稱清單
+function _rptIdBad(list){ var bad=[]; (list||[]).forEach(function(x){ if(x&&x.w&&!_rptIdOk(x.w))bad.push(x.name); }); return bad; }
+function _rptIdLine(D,bad){
+  var per=_rptPerWord(D);
+  return '前期未完成 ＋ '+per+'新增 － '+per+'已完成 ＝ 結算未完成 '+(bad.length?('⚠（'+bad.slice(0,6).join('、')+(bad.length>6?' 等 '+bad.length+' 列':'')+'）'):'✓');
+}
+// 手機副行：前期未完成 n → 結算 n｜本周 新增 a · 完成 f｜本周完成率 x%（各片段 nowrap，只在片段之間換行＝390px 不溢出）
+function _rptMSub(D,w){
+  var per=_rptPerWord(D), nw=function(s){ return '<span style="white-space:nowrap">'+s+'</span>'; };
+  return nw('前期未完成 '+_rptNum(w.pendPrev)+' → 結算 '+_rptNum(w.pendNow))+'｜'+nw(per+' 新增 '+_rptNum(w.added)+' · 完成 '+_rptNum(_rptFix(w)))+'｜'+nw(per+'完成率 '+_rptWkRate(w));
+}
+function _rptMText(D,w){ var per=_rptPerWord(D); return '前期未完成 '+w.pendPrev+' → 結算 '+w.pendNow+'｜'+per+' 新增 '+w.added+' · 完成 '+_rptFix(w)+'｜'+per+'完成率 '+_rptWkRate(w); }
 function _rptZoneTable(D,mob){
+  var lwOn=_rptLwOn();
+  // 恆等式檢核範圍＝有出現在表上的小計列＋分區列（逐列都算）
+  var idList=[{name:'室內小計',w:D.g['室內']},{name:'公設小計',w:D.g['公設']}];
+  if(D.g['其他'].pendNow>0||D.g['其他'].fixed>0) idList.push({name:'其他小計',w:D.g['其他']});
+  if(D.g['未分類'].pendNow>0||D.g['未分類'].fixed>0) idList.push({name:'未分類',w:D.g['未分類']});
+  idList=idList.concat(D.subs.map(function(x){ return {name:x.name,w:x.w}; }));
+  var idBad=_rptIdBad(idList);
+  var totLine='室內＋公設＋其他＋未分類＝總體（恆等式'+(D.ok?'成立 ✓':'不成立 ⚠')+'）';
   if(mob){
     var b='';
-    var mrow=function(name,w,opt,wl){ opt=opt||{}; if(wl)opt.lw=_rptLwSub(wl); return _rptMRow(name,'未完成 '+w.pendNow+'｜已完成 '+w.fixed+'｜'+_rptDiffTxt(w),opt); };
+    // V0917-01：右邊只留「結算未完成」，前期→結算／本周流量／本周完成率改成整列寬副行（390px 塞不下一行）
+    var mrow=function(name,w,opt,wl){ opt=opt||{}; opt.sub=_rptMSub(D,w); if(wl&&lwOn)opt.lw=_rptLwSub(wl); return _rptMRow(name,'結算未完成 '+_rptNum(w.pendNow),opt); };
+    b+='<div style="display:flex;justify-content:flex-end;padding:5px 9px;border-top:1px solid #e4e9f0">'+_rptLwChk()+'</div>';
     b+=mrow('室內小計',D.g['室內'],{sum:1},D.gl['室內']);
     D.subs.forEach(function(x){ if(x.g==='室內')b+=mrow(x.zid?'<span onclick="_rptGoMain(\''+x.zid+'\',null)" style="color:#2f5fb3;text-decoration:underline">'+x.name+'</span>':x.name,x.w,{ind:1,bad:x.w.diff<0},x.wl); });
     b+=mrow('公設小計',D.g['公設'],{sum:1},D.gl['公設']);
@@ -10909,24 +11020,24 @@ function _rptZoneTable(D,mob){
       var ids=D.unclsIds.slice(0,10).map(function(id){ return '<span onclick="gotoMainRow('+id+')" style="color:#2f5fb3;text-decoration:underline">#'+id+'</span>'; }).join('、');
       b+=mrow('⚠未分類'+(ids?('：'+ids):''),D.g['未分類'],{sum:1},D.gl['未分類']);
     }
-    b+='<div style="font-size:11px;color:#777;padding:5px 9px;border-top:1px solid #e4e9f0">灰色小字＝上週（'+_rptLwLabel(D.lw)+'·固定週一~週日）<br>室內＋公設＋其他＋未分類＝總體（恆等式'+(D.ok?'成立 ✓':'不成立 ⚠')+'）</div>';
+    b+='<div style="font-size:11px;color:#777;padding:5px 9px;border-top:1px solid #e4e9f0">'
+      +(lwOn?('灰色小字＝上週（'+_rptLwLabel(D.lw)+'·固定週一~週日）<br>'):'')
+      +_rptIdLine(D,idBad)+'<br>'+totLine+'</div>';
     return _rptMCard('分區小計（'+_rptRocRange(D)+'）',b);
   }
-  // V0820-01：上週兩欄插在分區名與「未完成」之間（＝使用者紅框處）；分區名欄仍吃剩餘寬
-  var cg='<colgroup><col><col style="width:132px"><col style="width:156px"><col style="width:150px"><col style="width:95px"><col style="width:95px"><col style="width:250px"></colgroup>';   // V0817-03 滿版：分區名欄吃剩餘寬
-  var h='<div style="font-size:12px;color:#777;margin:2px 0 6px">點分區名→跳追蹤總表篩選該區·暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）</div>'   // V0817-05：段標題改由收合列提供
-    +'<table style="border-collapse:collapse;table-layout:fixed;width:100%">'+cg
-    +'<tr><th style="'+_RPT_TH+'">分區（'+_rptRocRange(D)+'）</th>'+_rptLwTh(D,1)+_rptLwTh(D,0)+'<th style="'+_RPT_TH+';text-align:right">未完成(含新增)</th><th style="'+_RPT_TH+';text-align:right">已完成</th><th style="'+_RPT_TH+';text-align:right">新增</th><th style="'+_RPT_TH+'">完成率</th></tr>';
+  var cg='<colgroup>'+_rptPbsCols('<col>')+'</colgroup>';   // 分區名欄吃剩餘寬
+  var h='<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#777;margin:2px 0 6px"><span style="min-width:0">點分區名→跳追蹤總表篩選該區'
+    +' · 前期＝'+_wvwMD(D.base)+' 收盤 · '+_rptPerWord(D)+'＝'+_wvwMD(_rptSpanFrom(D))+' ~ '+_wvwMD(D.end||D.t)+' · 結算＝'+_wvwMD(D.end||D.t)+' 收盤'
+    +' · 自驗＝登記前就修好的缺失，算本期新增也算本期已完成'
+    +(lwOn?' · 暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）':'')+'</span><span style="flex:1"></span>'+_rptLwChk()+'</div>'
+    +'<div class="rpt-pbswrap" style="overflow-x:auto"><table class="rpt-pbs" style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:'+_rptPbsMinW(180)+'px">'+cg
+    +_rptPbsHead(D,[{t:'分區'}])+'<tbody>';
   function row(name,w,opt){
     opt=opt||{};
     var td=opt.sum?_RPT_SUM:_RPT_TD;
     var nameHtml=name;
     if(opt.zid) nameHtml='<span onclick="_rptGoMain(\''+opt.zid+'\',null)" style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+name+'</span>';
-    return '<tr><td style="'+td+(opt.ind?';padding-left:26px':'')+'">'+nameHtml+'</td>'
-      +_rptLwTds(opt.wl,opt.sum)
-      +'<td style="'+td+';text-align:right">'+(opt.sum?'<b>'+w.pendNow+'</b>':w.pendNow)+'</td>'
-      +'<td style="'+td+';text-align:right">'+w.fixed+'</td><td style="'+td+';text-align:right">'+w.added+'</td>'
-      +'<td style="'+(opt.sum?td:(w.diff<0?_RPT_TD+';background:#FCF0F0':_RPT_TD))+'">'+_rptPct(w)+'</td></tr>';
+    return '<tr><td style="'+td+(opt.ind?';padding-left:26px':'')+'">'+nameHtml+'</td>'+_rptPbsTds(w,opt)+'</tr>';
   }
   h+=row('室內小計',D.g['室內'],{sum:1,wl:D.gl['室內']});
   D.subs.forEach(function(x){ if(x.g==='室內')h+=row(x.name,x.w,{ind:1,zid:x.zid,wl:x.wl}); });
@@ -10937,7 +11048,7 @@ function _rptZoneTable(D,mob){
     var ids=D.unclsIds.slice(0,20).map(function(id){ return '<span onclick="gotoMainRow('+id+')" style="color:#2f5fb3;text-decoration:underline;cursor:pointer">#'+id+'</span>'; }).join('、');
     h+=row('⚠未分類（缺分區）'+(ids?('：'+ids):''),D.g['未分類'],{sum:1,wl:D.gl['未分類']});
   }
-  h+='</table><div style="font-size:12px;color:#777;margin-top:3px">室內＋公設＋其他＋未分類＝總體（恆等式'+(D.ok?'成立 ✓':'不成立 ⚠')+'）</div>';
+  h+='</tbody></table></div><div class="rpt-idline" style="font-size:12px;color:#777;margin-top:3px">'+_rptIdLine(D,idBad)+'　·　'+totLine+'</div>';
   return h;
 }
 // ══ V0819-03 複驗戶缺改進度（原「複驗批進度」）·使用者 2026-08-19 紅字＋示意圖 v3 定案 ══
@@ -10978,7 +11089,7 @@ function _rptBatchTable(D,mob){
         +'<div style="font-weight:700'+(i===0?';color:#B3261E':'')+'">'+_rptRocDay(z.d)+'</div>'
         +(sline?('<div style="font-size:11px;color:#5F5E5A">'+sline+'</div>'):'')
         +'<div>'+(seg.join(' ＋')||'—')+' ＝ <b>'+z.n+'</b></div>'
-        +'<div>已完成 '+z.w.fixed+'　·　未完成 '+z.w.pendPrev+'→'+z.w.pendNow+'</div>'
+        +'<div>已完成 '+_rptFix(z.w)+'　·　未完成 '+z.w.pendPrev+'→'+z.w.pendNow+'</div>'
         +'<div>'+_rptPct(z.w)+'</div></div>';
     });
     return _rptMCard('複驗戶缺改進度',b);
@@ -11003,7 +11114,7 @@ function _rptBatchTable(D,mob){
       +(shop?('<td style="'+_RB_TD+';text-align:right'+(blk.S?';font-weight:700;color:#0F6E56':'')+'">'+(blk.S||dash)+'</td>'):'')
       +(oth?('<td style="'+_RB_TD+';text-align:right'+(blk.X?';font-weight:700;color:#B3261E':'')+'">'+(blk.X||dash)+'</td>'):'')
       +'<td style="'+_RB_TD+';text-align:right;font-weight:700">'+z.n+'</td>'
-      +'<td style="'+_RB_TD+';text-align:right">'+z.w.fixed+'</td>'
+      +'<td style="'+_RB_TD+';text-align:right">'+_rptFix(z.w)+'</td>'
       +'<td style="'+_RB_TD+';text-align:right">'+z.w.pendPrev+'→'+z.w.pendNow+'</td>'
       +'<td style="'+_RB_TD+'">'+_rptPct(z.w)+'</td></tr>';
   });
@@ -11012,28 +11123,32 @@ function _rptBatchTable(D,mob){
 
 function _rptVendTable(D,mob){
   var lb=(D.scope==='in')?'室內':((D.scope==='pub')?'公設':'全工地');
+  var lwOn=_rptLwOn();
+  var idBad=_rptIdBad(D.vend);   // 恆等式逐家都算（含沒展開的）
   if(mob){
     var cap=window._rptVendAll?D.vend.length:10;
-    var b='';
+    var b='<div style="display:flex;justify-content:flex-end;padding:5px 9px;border-top:1px solid #e4e9f0">'+_rptLwChk()+'</div>';
     D.vend.slice(0,cap).forEach(function(v){
       var vn='<span onclick="_rptGoMain(null,\''+String(v.name).replace(/'/g,"\\'")+'\')" style="color:#2f5fb3;text-decoration:underline">'+v.name+'</span>';
-      b+=_rptMRow(vn,'未完成 '+v.pend+'｜已完成 '+v.w.fixed+'｜'+_rptDiffTxt(v.w),{bad:v.w.diff<0,lw:_rptLwSub(v.wl)});
+      b+=_rptMRow(vn,'結算未完成 '+_rptNum(v.w.pendNow),{bad:v.w.diff<0,sub:_rptMSub(D,v.w),lw:(lwOn?_rptLwSub(v.wl):'')});
     });
     if(D.vend.length>10) b+='<div onclick="_rptVendTog()" style="text-align:center;padding:8px;font-size:13px;color:#2f5fb3;border-top:1px solid #e4e9f0">'+(window._rptVendAll?'▲ 收合為前 10 家':'⋯ 展開全部 '+D.vend.length+' 家')+'</div>';
-    b+='<div style="font-size:11px;color:#777;padding:5px 9px;border-top:1px solid #e4e9f0">灰色小字＝上週（'+_rptLwLabel(D.lw)+'·固定週一~週日）</div>';
+    b+='<div style="font-size:11px;color:#777;padding:5px 9px;border-top:1px solid #e4e9f0">'
+      +(lwOn?('灰色小字＝上週（'+_rptLwLabel(D.lw)+'·固定週一~週日）<br>'):'')+_rptIdLine(D,idBad)+'</div>';
     return _rptMCard('各廠商（'+lb+'）·還欠多→少（'+_rptRocRange(D)+'）',b);
   }
-  // V0820-01 ⑤：跟分區小計同一套（位置、欄名、算法完全一致）
-  var cg='<colgroup><col style="width:52px"><col><col style="width:132px"><col style="width:156px"><col style="width:150px"><col style="width:95px"><col style="width:95px"><col style="width:250px"></colgroup>';   // V0817-03 滿版：廠商名欄吃剩餘寬
+  // V0917-01：跟分區小計同一套表頭與格式（多一欄 #）
+  var cg='<colgroup>'+_rptPbsCols('<col style="width:52px"><col>')+'</colgroup>';   // 廠商名欄吃剩餘寬
   var capN=(window._rptVendAllD?D.vend.length:15);   // V0817-05 ③：桌機預設前 15 家（複製文字仍輸出全部）
-  var h='<div style="font-size:12px;color:#777;margin:2px 0 6px">還欠多→少·紅底＝完成率倒退·點廠商→跳追蹤總表篩選·暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）</div>'
-    +'<table id="rpt-vend" style="border-collapse:collapse;table-layout:fixed;width:100%">'+cg
-    +'<tr><th style="'+_RPT_TH+';text-align:right">#</th><th style="'+_RPT_TH+'">廠商（'+_rptRocRange(D)+'）</th>'+_rptLwTh(D,1)+_rptLwTh(D,0)+'<th style="'+_RPT_TH+';text-align:right">未完成(含新增)</th><th style="'+_RPT_TH+';text-align:right">已完成</th><th style="'+_RPT_TH+';text-align:right">新增</th><th style="'+_RPT_TH+'">完成率</th></tr>';
+  var h='<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#777;margin:2px 0 6px"><span style="min-width:0">還欠多→少·結算已完成淡紅底＝完成率倒退·點廠商→跳追蹤總表篩選·自驗＝登記前就修好的缺失，算本期新增也算本期已完成'
+    +(lwOn?'·暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）':'')+'</span><span style="flex:1"></span>'+_rptLwChk()+'</div>'
+    +'<div class="rpt-pbswrap" style="overflow-x:auto"><table id="rpt-vend" class="rpt-pbs" style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:'+_rptPbsMinW(52+180)+'px">'+cg
+    +_rptPbsHead(D,[{t:'#',right:1},{t:'廠商'}])+'<tbody>';
   D.vend.slice(0,capN).forEach(function(v,i){
     var vn='<span onclick="_rptGoMain(null,\''+String(v.name).replace(/'/g,"\\'")+'\')" style="color:#2f5fb3;text-decoration:underline;cursor:pointer">'+v.name+'</span>';
-    h+='<tr'+(v.w.diff<0?' style="background:#FCF0F0"':'')+'><td style="'+_RPT_TD+';text-align:right">'+(i+1)+'</td><td style="'+_RPT_TD+'">'+vn+'</td>'+_rptLwTds(v.wl,0)+'<td style="'+_RPT_TD+';text-align:right"><b>'+v.pend+'</b></td><td style="'+_RPT_TD+';text-align:right">'+v.w.fixed+'</td><td style="'+_RPT_TD+';text-align:right">'+v.w.added+'</td><td style="'+_RPT_TD+'">'+_rptPct(v.w)+'</td></tr>';
+    h+='<tr><td style="'+_RPT_TD+';text-align:right">'+(i+1)+'</td><td style="'+_RPT_TD+'">'+vn+'</td>'+_rptPbsTds(v.w,{wl:v.wl})+'</tr>';
   });
-  h+='</table>';
+  h+='</tbody></table></div><div class="rpt-idline" style="font-size:12px;color:#777;margin-top:3px">'+_rptIdLine(D,idBad)+'</div>';
   if(D.vend.length>15) h+='<div onclick="_rptVendTogD()" style="text-align:center;padding:8px;font-size:13.5px;color:#2f5fb3;border:1px dashed #9FB8D6;background:#F7FAFE;cursor:pointer;margin-top:6px">'
     +(window._rptVendAllD?'▲ 收合為前 15 家':'⋯ 展開全部 '+D.vend.length+' 家')+'</div>';
   return h;
@@ -11631,9 +11746,9 @@ function _hoSegSetSlot(key,slot){ _hoSegSetField(key,'hoSlot',slot); }        //
 //      （V0804-04→V0805-01 那條：排序、要不要顯示、標題數字講同一件事就必須共用同一個函式）。
 //      1 已約複驗 = stage 'reinsp' 且 reCheckUF 有值   2 未約複驗 = stage 'reinsp' 且沒值
 //      3 未約初驗 = stage 'none' 且沒有 planDate（有排初驗日的＝已經約好了，不算·使用者 0827 定案）
-//      4 待交屋   = stage 'deliverable'                 5 待複驗2 = stage 're_repair'
-//      6 已交屋   = stage 'delivered'
-//      4+5 就是「複驗1做完」的全部：0 缺失→待交屋，有缺失→待複驗2。
+//      4 待交屋   = stage 'deliverable'                 5 待下一輪複驗 = stage 're_next'（V0917-01 起；原 re_repair）
+//      6 已交屋   = stage 'delivered'                    10 複驗後修繕中 = stage 're_repair'（V0917-01 新增·card:0）
+//      4+5+10 就是「複驗做完、未交屋」的全部：那輪 0 缺失→待交屋；抓到缺失已修完→待下一輪複驗；還沒修完→複驗後修繕中。
 //   🔴 唯一的新資料＝S.hoReq（業主交屋需求名單），只有「貼上」一個寫入口。
 //   🔴 本分頁單一響應式（同 renderHCal），**沒有手機分流的第二支**；窄螢幕靠 CSS。
 // ═══════════════════════════════════════════════════════════════════
@@ -11652,11 +11767,12 @@ var _BDSEG=[
   {id:'re0', no:2, name:'未約複驗',           card:1, tone:'hot'},
   {id:'ins0',no:3, name:'未約初驗',           card:1, tone:'hot'},
   {id:'del', no:4, name:'待交屋',             card:1, tone:''},
-  {id:'re2', no:5, name:'待複驗2',            card:1, tone:''},
+  {id:'re2', no:5, name:'待下一輪複驗',       card:1, tone:''},   /* V0917-01：改收 stage 're_next'（複驗有抓到缺失、已全部修繕，待下一輪複驗）；原本收 re_repair＝名實不符 */
   {id:'done',no:6, name:'已交屋',             card:1, tone:'ok'},
   {id:'req', no:7, name:'提前交屋_借屋裝修(可以交屋)', cn:'提前交屋(可以交屋)', card:1, tone:'ok'},    /* V0828-07 ⑮ 名單自動分流；V0828-08 ⑲ 進卡片區（cn＝卡片短標） */
   {id:'gap', no:8, name:'提前交屋_借屋裝修(尚有缺失)', cn:'提前交屋(尚有缺失)', card:1, tone:'hot'},   /* V0828-07 ⑮ 名單其餘；V0828-08 ⑲ 進卡片區 */
-  {id:'own', no:9, name:'地主戶進度',        card:0, tone:''}                                    /* V0909-01：🔴 card:0＝不進卡片區（卡片維持 4×2 八格）；凡讀 _BDSEG 畫卡片的地方一律 .filter(s.card) */
+  {id:'own', no:9, name:'地主戶進度',        card:0, tone:''},                                   /* V0909-01：🔴 card:0＝不進卡片區（卡片維持 4×2 八格）；凡讀 _BDSEG 畫卡片的地方一律 .filter(s.card) */
+  {id:'rer', no:10,name:'複驗後修繕中',       card:0, tone:'hot'}                                 /* V0917-01：stage 're_repair'（複驗後還有未完成缺失）；card:0＝卡片維持 4×2。恆等式 4+5+10＝複驗做完（未交屋）的全部 */
 ];
 function _bdSegBy(id){for(var i=0;i<_BDSEG.length;i++)if(_BDSEG[i].id===id)return _BDSEG[i];return null;}
 // ── 分類：🔴 V0828-05 ④「位置」與「身分」是兩個維度，不可混用（0828 使用者抓到：店鋪不一定是業主戶）──
@@ -11715,7 +11831,7 @@ function _bdData(){
   var fp=_bdFingerprint();if(_bdC&&_bdFp===fp)return _bdC;
   if(!_defectCache){try{_buildDefectCache();}catch(e){}}   /* V0830-01（待辦0y）：先保證 cache——V0812-02 同款（無 cache 退路只掃 S.rows、漏 S.completed）；快取被清後重算也拿得到全量 */
   var keys=[];try{keys=_riAllKeys();}catch(e){keys=[];}
-  var st={},m={re1:[],re0:[],ins0:[],del:[],re2:[],done:[],req:[],gap:[],rep:[]};   /* V0915-01：rep＝stage 'repair'（尚未修繕完成）＝驗屋階段摘要第 4 小列的唯一來源（brk 走既有 Object.keys(m) 迴圈自動算到） */
+  var st={},m={re1:[],re0:[],ins0:[],del:[],re2:[],done:[],req:[],gap:[],rep:[],rer:[]};   /* V0917-01：rer＝re_repair（複驗後修繕中） */   /* V0915-01：rep＝stage 'repair'（尚未修繕完成）＝驗屋階段摘要第 4 小列的唯一來源（brk 走既有 Object.keys(m) 迴圈自動算到） */
   keys.forEach(function(k){
     var s;try{s=_riStat(k);}catch(e){return;}
     st[k]=s;
@@ -11723,7 +11839,8 @@ function _bdData(){
     if(s.stage==='reinsp'){ var booked=false;try{booked=!!((S.reCheckUF||{})[_riUsKey(k)]);}catch(e){} (booked?m.re1:m.re0).push(k); }
     else if(s.stage==='none'){ if(!hu.planDate)m.ins0.push(k); }
     else if(s.stage==='deliverable')m.del.push(k);
-    else if(s.stage==='re_repair')m.re2.push(k);
+    else if(s.stage==='re_next')m.re2.push(k);     /* V0917-01：5 待下一輪複驗 */
+    else if(s.stage==='re_repair')m.rer.push(k);   /* V0917-01：10 複驗後修繕中 */
     else if(s.stage==='repair')m.rep.push(k);   /* V0915-01：已初驗但還有未完成缺失＝尚未修繕完成 */
     else if(s.stage==='delivered')m.done.push(k);
   });
@@ -11763,7 +11880,9 @@ function _bdOwnStageTxt(k,s){
   var hu=(S.handoverUnits||{})[k]||{};
   if(s.stage==='reinsp'){var re='';try{re=(S.reCheckUF||{})[_riUsKey(k)]||'';}catch(e){}
     return re?('已約複驗 '+_bdMD(re)):'未約複驗';}                 /* 1 已約複驗／2 未約複驗 */
-  if(s.stage==='re_repair')return '待複驗2';                        /* 5 待複驗2 */
+  if(s.stage==='re_next'){var rn='';try{rn=(S.reCheckUF||{})[_riUsKey(k)]||'';}catch(e){} if(rn&&s.lastReDate&&rn<=s.lastReDate)rn='';   /* V0917-01：5 待下一輪複驗（抽屜裡的日期不晚於上一輪＝那是舊的，不算已約） */
+    return '待複驗'+((s.reRound||1)+1)+(rn?('（已約 '+_bdMD(rn)+'）'):'（未約）');}
+  if(s.stage==='re_repair')return '複驗後修繕中 '+(s.pend||0);        /* V0917-01：10 複驗後修繕中（原寫「待複驗2」名實不符） */
   if(s.stage==='repair')return '修繕中 '+(s.pend||0);
   if(s.stage==='none')return hu.planDate?('已排初驗 '+_bdMD(hu.planDate)):'未約初驗';   /* 3 未約初驗＝沒有 planDate */
   return '—';
@@ -11774,11 +11893,12 @@ function _bdRow(k,D){
   var re='';try{re=(S.reCheckUF||{})[_riUsKey(k)]||'';}catch(e){}
   var wait=null;try{if(s.insp1)wait=Math.max(0,-du(s.insp1));}catch(e){}
   return {key:k,unit:unitDisplayName(k),name:cd.name||'',dd:(hu.deliveredDate||''),kind:(typeof _clmTypeOf==='function'?_clmTypeOf(k):(_bdBiz(k)?'業主戶':(_bdOwn(k)?'地主戶':'自購戶'))),
-          stage:s.stage||'',pend:s.pend||0,insp1:s.insp1||'',wait:wait,re:re,slot:(hu.hoSlot||''),ho:(hu.hoDate||''),host:''};
+          stage:s.stage||'',rr:s.reRound||0,pend:s.pend||0,insp1:s.insp1||'',wait:wait,re:re,slot:(hu.hoSlot||''),ho:(hu.hoDate||''),host:''};
 }
-function _bdStageTag(stage,re){
+function _bdStageTag(stage,re,rr){
   var t={reinsp:(re?['已約複驗','#EAF5EA','#2F7D2A','#A9CFA6']:['未約複驗','#FFF7E6','#8A5A00','#E3C98A']),
-         repair:['修繕中','#FDECEA','#B3261E','#E39B9B'],re_repair:['待複驗2','#FDECEA','#B3261E','#E39B9B'],
+         repair:['修繕中','#FDECEA','#B3261E','#E39B9B'],re_repair:['複驗後修繕中','#FDECEA','#B3261E','#E39B9B'],   /* V0917-01 */
+         re_next:['待複驗'+((rr||1)+1),'#FFF7E6','#8A5A00','#E3C98A'],                                               /* V0917-01 */
          deliverable:['待交屋','#EAF5EA','#2F7D2A','#A9CFA6'],delivered:['已交屋','#EAF5EA','#2F7D2A','#A9CFA6'],
          none:['未初驗','#EFEDE9','#5F5E5A','#C8C5BF']}[stage]||['—','#EFEDE9','#5F5E5A','#C8C5BF'];
   return '<span style="display:inline-flex;align-items:center;justify-content:center;height:19px;padding:0 7px;font-size:11px;font-weight:700;background:'+t[1]+';color:'+t[2]+';border:1px solid '+t[3]+';border-radius:0">'+esc(t[0])+'</span>';
@@ -11857,7 +11977,7 @@ function _bdListHTML(id,D){
     if(mergeFlr){ if(flrLeft===0){var n1=spanOf(i,_bdFlrLbl);flrLeft=n1;h+='<td class="bdfl" rowspan="'+n1+'">'+esc(_bdFlrLbl(k))+'</td>';} flrLeft--; }
     else h+='<td class="bdfl">'+esc(_bdFlrLbl(k))+'</td>';
     h+=_bdUnitTd(k)+'<td class="l">'+esc(r.name||'—')+'</td><td>'+esc(r.kind)+'</td>'
-      +'<td>'+_bdStageTag(r.stage,r.re)+'</td>'
+      +'<td>'+_bdStageTag(r.stage,r.re,r.rr)+'</td>'
       +(id==='gap'?('<td'+(r.pend>0?' style="font-weight:800;color:#B3261E"':'')+'>'+(r.pend>0?('<span onclick="_bdGoPWO(\''+_jsq(k)+'\')" style="cursor:pointer;text-decoration:underline">'+r.pend+'</span>'):'0')+'</td>'):'')
       +(id==='done'?('<td style="font-weight:700;color:#2F7D2A">'+(r.dd?_bdMD(r.dd):'<span style="color:#B3261E;font-weight:400">未填</span>')+'</td>'):'')
       +'<td style="color:#185FA5">'+_bdMD(r.insp1)+'</td>'
@@ -12078,82 +12198,132 @@ function _bdText(){
   try{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已複製，可直接貼 LINE','📋');}catch(e){alert(t);}
 }
 // ═══════════════ V0915-01 驗屋階段摘要（#bd-stage·放在八格總覽上方）═══════════════
+// ══ V0917-01 改四段（示意圖 驗屋階段摘要_四段版_20260917·照老闆 Excel）══
 // 🔴 判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat 結果、D.m 各段 keys、D.keys 全戶）：
 //    render 內不重算 _riStat、也不另寫一套判斷基準（V0813-07／V0825-03 同一條）。
-//    一 初驗完成 ＝ D.keys 中 inspected 為真的戶（含後面所有階段）
-//    二 複驗 ＝ 1 待交屋(del) ＋ 2 待複驗2(re2) ＋ 3 待約複驗(re1 已約＋re0 未約) ＋ 4 尚未修繕完成(rep)
-//    三 已交屋（含借屋裝潢）＝ done
-//    恆等式：一 ＝ 二 ＋ 三；一 ＋ 未初驗 ＝ 全社區
+//    一 初驗狀態（全社區）＝ 已完成初驗（ins）／未完成初驗（uninsp）
+//         └ 已初驗，有缺失，未修繕，需追蹤＝rep（stage repair）
+//         └ 已初驗，已修繕，待約複驗1＝re1＋re0（stage reinsp；已約＝複驗抽屜有日期）
+//    二起 複驗N（N＝_riStat.reRound＝最近一次已完成複驗的輪次；最少畫到複驗2，0 戶也畫＝老闆的表固定）
+//         └ 0 缺失，待交屋＝del（deliverable）
+//         └ 有缺失，已修繕，安排複驗N+1＝re2（re_next；已約＝抽屜日期晚於上一輪複驗日）
+//         └ 有缺失，未修繕，需追蹤＝rer（re_repair）
+//    最後 已交屋（含借屋裝潢）＝done；小列 自購戶／地主戶（＋業主戶 >0 才畫），身分走 _clmTypeOf
+//    恆等式：已完成初驗 ＝ rep ＋ 待約複驗1 ＋ 各複驗段 ＋ 已交屋
 // ⚠ 邊界：`已交屋但沒有初驗完成紀錄` 的戶（_riStat 會給 stage 'delivered' 但 inspected 為 false）
-//    一律算進「一 初驗完成」，否則它只出現在三、不出現在一 ⇒ 恆等式會被悄悄打破（anom 記數留查）。
+//    一律算進「已完成初驗」，否則它只出現在已交屋、不出現在初驗 ⇒ 恆等式會被悄悄打破（anom 記數留查）。
+function _bdReNextBooked(k,D){
+  var s=(D&&D.st&&D.st[k])||{}, d='';
+  try{ d=(S.reCheckUF||{})[_riUsKey(k)]||''; }catch(e){ d=''; }
+  return !!(d&&(!s.lastReDate||d>s.lastReDate));   // 抽屜裡是上一輪（或更早）的日期＝還沒約下一輪
+}
 function _bdStageData(D){
   var ins=[],uninsp=[],anom=0;
   (D.keys||[]).forEach(function(k){
     var s=D.st[k];
-    if(!s){uninsp.push(k);return;}                       // 算不出 _riStat 的戶留在未初驗＝「一＋未初驗＝全社區」不會漏
+    if(!s){uninsp.push(k);return;}                       // 算不出 _riStat 的戶留在未初驗＝「已完成＋未完成＝全社區」不會漏
     if(s.inspected||s.stage!=='none'){ins.push(k);if(!s.inspected)anom++;}
     else uninsp.push(k);
   });
-  var r1=(D.m.del||[]).slice(),r2=(D.m.re2||[]).slice(),
-      r3a=(D.m.re1||[]).slice(),r3b=(D.m.re0||[]).slice(),r3=r3a.concat(r3b),
-      r4=(D.m.rep||[]).slice(),done=(D.m.done||[]).slice();
-  var re=r1.concat(r2,r3,r4);
+  var rep=(D.m.rep||[]).slice(), r3a=(D.m.re1||[]).slice(), r3b=(D.m.re0||[]).slice(), r3=r3a.concat(r3b), done=(D.m.done||[]).slice();
+  var maxN=2;
+  var rr=function(k){ var s=D.st[k]||{}; return s.reRound||1; };
+  (D.m.del||[]).concat(D.m.re2||[],D.m.rer||[]).forEach(function(k){ if(rr(k)>maxN)maxN=rr(k); });
+  var rounds=[], reAll=0;
+  for(var n=1;n<=maxN;n++){
+    var ok=(D.m.del||[]).filter(function(k){return rr(k)===n;}),
+        nx=(D.m.re2||[]).filter(function(k){return rr(k)===n;}),
+        rp=(D.m.rer||[]).filter(function(k){return rr(k)===n;});
+    var nxA=nx.filter(function(k){return _bdReNextBooked(k,D);}), nxB=nx.filter(function(k){return !_bdReNextBooked(k,D);});
+    rounds.push({n:n,tot:ok.length+nx.length+rp.length,ok:ok,nx:nx,nxA:nxA,nxB:nxB,rp:rp,bOk:_bdBrk(ok),bNx:_bdBrk(nx),bRp:_bdBrk(rp)});
+    reAll+=ok.length+nx.length+rp.length;
+  }
+  var kind=function(k){ var t=''; try{ t=(typeof _clmTypeOf==='function')?_clmTypeOf(k):''; }catch(e){ t=''; } return (t==='地主戶'||t==='業主戶')?t:'自購戶'; };
+  var dSelf=done.filter(function(k){return kind(k)==='自購戶';}), dOwn=done.filter(function(k){return kind(k)==='地主戶';}), dBiz=done.filter(function(k){return kind(k)==='業主戶';});
+  var sumParts=rep.length+r3.length+reAll+done.length;
   return {all:(D.keys||[]).slice(),ins:ins,uninsp:uninsp,anom:anom,
-          re:re,r1:r1,r2:r2,r3:r3,r3a:r3a,r3b:r3b,r4:r4,done:done,
-          bIns:_bdBrk(ins),bRe:_bdBrk(re),b1:_bdBrk(r1),b2:_bdBrk(r2),b3:_bdBrk(r3),b4:_bdBrk(r4),bDone:_bdBrk(done)};
+          rep:rep,r3:r3,r3a:r3a,r3b:r3b,rounds:rounds,reAll:reAll,done:done,dSelf:dSelf,dOwn:dOwn,dBiz:dBiz,
+          ok:(sumParts===ins.length),sumParts:sumParts,
+          bAll:_bdBrk(D.keys||[]),bIns:_bdBrk(ins),bUn:_bdBrk(uninsp),bRep:_bdBrk(rep),b3:_bdBrk(r3),bDone:_bdBrk(done),
+          bSelf:_bdBrk(dSelf),bOwn:_bdBrk(dOwn),bBiz:_bdBrk(dBiz)};
 }
-// 棟別拆分寫法單一出處（表格與文字同一支）：每個「詞＋數字」片段各自 nowrap（中文會從詞中間斷行·V0819 血淚）
-function _bdStageBrkTxt(o){return 'A棟 '+o.A+' · B棟 '+o.B+' · 店 '+o.S;}
-function _bdStageBrkHTML(o){return ['A棟 '+o.A,'B棟 '+o.B,'店 '+o.S].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ');}
-function _bdStageBookTxt(G){return '已約 '+G.r3a.length+' · 未約 '+G.r3b.length;}
-function _bdStageBookHTML(G){return ['已約 '+G.r3a.length,'未約 '+G.r3b.length].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ');}
-function _bdStageRow(no,label,n,extra,opt){
+var _BD_CN=['一','二','三','四','五','六','七','八','九','十'];
+function _bdCn(i){ return _BD_CN[i]||String(i+1); }
+// 「詞＋數字」小片段各自 nowrap（中文會從詞中間斷行·V0819 血淚）
+function _bdNw(t){ return '<span style="white-space:nowrap">'+esc(t)+'</span>'; }
+function _bdStageBookTxt(a,b){ return '已約 '+a+' · 未約 '+b; }
+function _bdStageBookHTML(a,b){ return _bdNw('已約 '+a)+' · '+_bdNw('未約 '+b); }
+// 一列：no／label／戶數／A／B／店（o＝_bdBrk 結果；o 為 null＝三格寫「—」）／說明
+function _bdStageRow(no,label,n,o,note,opt){
   opt=opt||{};
   var td='border:1px solid #B9C9D6;padding:6px 10px;font-size:15px;border-radius:0;',
       bg=(opt.hd?'background:#EAF4FC;':'background:#fff;'),
       fw=(opt.hd?'font-weight:800;':''),
-      fg=(opt.fg?('color:'+opt.fg+';'):'');
-  return '<tr>'
+      fg=(opt.fg?('color:'+opt.fg+';'):''),
+      num='text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;';
+  var c=function(v){ return '<td style="'+td+bg+fw+fg+num+'">'+v+'</td>'; };
+  return '<tr class="bdst-'+(opt.hd?'hd':'sub')+'">'
     +'<td style="'+td+bg+fw+'text-align:center">'+esc(no||'')+'</td>'
-    +'<td style="'+td+bg+fw+fg+(opt.ind?'padding-left:26px;':'')+'">'+esc(label)+'</td>'
-    +'<td style="'+td+bg+fw+fg+'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">'+n+' 戶</td>'
-    +'<td style="'+td+bg+fg+'">'+extra+'</td>'
+    +'<td style="'+td+bg+fw+fg+(opt.ind?'padding-left:26px;':'')+'">'+_bdNw(label)+'</td>'
+    +c(n)+(o?(c(o.A)+c(o.B)+c(o.S)):(c('—')+c('—')+c('—')))
+    +'<td style="'+td+bg+fw+'">'+(note||'')+'</td>'
     +'</tr>';
 }
 function _bdStageHTML(D,ld){
-  var G=_bdStageData(D),GR='#2F7D2A',RD='#B3261E';
-  var h='<div id="bd-stage" style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
+  var G=_bdStageData(D),GR='#2F7D2A',RD='#B3261E',i=0,h;
+  h='<div id="bd-stage" style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
     +'<div style="background:#5B9BD5;color:#fff;font-size:15px;font-weight:800;padding:8px 12px;margin:-10px -12px 11px">KIMZO 驗屋階段摘要　'+esc(_bdStamp())+'</div>'
-    +'<div class="bdwrap" style="overflow-x:auto"><table style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:560px;background:#fff;border-radius:0">'   /* min-width：窄螢幕寧可讓 .bdwrap 橫向捲，也不要把第四欄擠成 0 寬、每列爆成好幾行（390px 實測） */
-    +'<colgroup><col style="width:34px"><col style="width:250px"><col style="width:76px"><col></colgroup><tbody>'
-    +_bdStageRow('一','初驗完成',G.ins.length,_bdStageBrkHTML(G.bIns),{hd:1})
-    +_bdStageRow('二','複驗',G.re.length,'<span style="white-space:nowrap">初驗完成 − 已交屋</span>',{hd:1})
-    +_bdStageRow('','1　複驗完成，待交屋',G.r1.length,_bdStageBrkHTML(G.b1),{ind:1,fg:GR})
-    +_bdStageRow('','2　複驗後尚需再驗',G.r2.length,_bdStageBrkHTML(G.b2),{ind:1})
-    +_bdStageRow('','3　已修繕完成，待約複驗',G.r3.length,_bdStageBookHTML(G),{ind:1})
-    +_bdStageRow('','4　尚未修繕完成',G.r4.length,_bdStageBrkHTML(G.b4),{ind:1,fg:RD})
-    +_bdStageRow('三','已交屋（含借屋裝潢）',G.done.length,_bdStageBrkHTML(G.bDone),{hd:1,fg:GR})
+    +'<div class="bdwrap" style="overflow-x:auto"><table style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:900px;background:#fff;border-radius:0">'   /* min-width：窄螢幕讓 .bdwrap 橫向捲，不把「階段」欄擠成 0 寬 */
+    +'<colgroup><col style="width:34px"><col><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:230px"></colgroup>'
+    +'<thead><tr>'+['','階段','戶數','A棟','B棟','店鋪','說明'].map(function(t,j){
+        return '<th style="border:1px solid #B9C9D6;padding:6px 10px;font-size:14px;background:#DCE6EF;border-radius:0;text-align:'+((j>=2&&j<=5)?'right':'left')+'">'+t+'</th>'; }).join('')+'</tr></thead><tbody>'
+    +_bdStageRow(_bdCn(i++),'初驗狀態',G.all.length,null,_bdNw('全社區'),{hd:1})
+    +_bdStageRow('','已完成初驗',G.ins.length,G.bIns,'',{ind:1})
+    +_bdStageRow('','未完成初驗',G.uninsp.length,G.bUn,'',{ind:1})
+    +_bdStageRow('','已初驗，有缺失，未修繕，需追蹤',G.rep.length,G.bRep,'',{ind:1,fg:RD})
+    +_bdStageRow('','已初驗，已修繕，待約複驗1',G.r3.length,G.b3,_bdStageBookHTML(G.r3a.length,G.r3b.length),{ind:1});
+  G.rounds.forEach(function(R){
+    h+=_bdStageRow(_bdCn(i++),'複驗'+R.n,R.tot,null,_bdNw('最近一次複驗＝複驗'+R.n),{hd:1})
+      +_bdStageRow('','0 缺失，待交屋',R.ok.length,R.bOk,'',{ind:1,fg:GR})
+      +_bdStageRow('','有缺失，已修繕，安排複驗'+(R.n+1),R.nx.length,R.bNx,_bdStageBookHTML(R.nxA.length,R.nxB.length),{ind:1})
+      +_bdStageRow('','有缺失，未修繕，需追蹤',R.rp.length,R.bRp,'',{ind:1,fg:RD});
+  });
+  h+=_bdStageRow(_bdCn(i++),'已交屋（含借屋裝潢）',G.done.length,G.bDone,'',{hd:1,fg:GR})
+    +_bdStageRow('','自購戶',G.dSelf.length,G.bSelf,'',{ind:1})
+    +_bdStageRow('','地主戶',G.dOwn.length,G.bOwn,'',{ind:1})
+    +(G.dBiz.length?_bdStageRow('','業主戶',G.dBiz.length,G.bBiz,'',{ind:1}):'')
     +'</tbody></table></div>'
     +'<div id="bd-stage-ft" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:12.5px;color:#8A8783">'
-    +'<span>'+['全社區 '+G.all.length+' 戶','未初驗 '+G.uninsp.length+' 戶'].map(function(t){return '<span style="white-space:nowrap">'+esc(t)+'</span>';}).join(' · ')+'</span>'
+    +'<span>'+_bdNw('已完成初驗 '+G.ins.length)+' ＝ '+_bdNw('一的兩小列')+' ＋ '+_bdNw('各複驗段')+' ＋ '+_bdNw('已交屋')+' '+(G.ok?'✓':('⚠（加總 '+G.sumParts+'）'))+'</span>'
     +'<span style="white-space:nowrap">資料來源：G95 工程缺失追蹤系統</span></div>'
     +'</div>';
   return h;
 }
+function _bdStageLines(D){
+  var G=_bdStageData(D),i=0,b=function(o){ return 'A棟 '+o.A+' · B棟 '+o.B+' · 店 '+o.S; };
+  var L=['KIMZO 驗屋階段摘要 '+_bdStamp(),
+    _bdCn(i++)+'、初驗狀態 '+G.all.length+' 戶（全社區）',
+    '　已完成初驗 '+G.ins.length+' 戶（'+b(G.bIns)+'）',
+    '　未完成初驗 '+G.uninsp.length+' 戶（'+b(G.bUn)+'）',
+    '　已初驗，有缺失，未修繕，需追蹤 '+G.rep.length+' 戶（'+b(G.bRep)+'）',
+    '　已初驗，已修繕，待約複驗1 '+G.r3.length+' 戶（'+_bdStageBookTxt(G.r3a.length,G.r3b.length)+'）'];
+  G.rounds.forEach(function(R){
+    L.push(_bdCn(i++)+'、複驗'+R.n+' '+R.tot+' 戶（最近一次複驗＝複驗'+R.n+'）');
+    L.push('　0 缺失，待交屋 '+R.ok.length+' 戶（'+b(R.bOk)+'）');
+    L.push('　有缺失，已修繕，安排複驗'+(R.n+1)+' '+R.nx.length+' 戶（'+_bdStageBookTxt(R.nxA.length,R.nxB.length)+'）');
+    L.push('　有缺失，未修繕，需追蹤 '+R.rp.length+' 戶（'+b(R.bRp)+'）');
+  });
+  L.push(_bdCn(i++)+'、已交屋（含借屋裝潢）'+G.done.length+' 戶（'+b(G.bDone)+'）');
+  L.push('　自購戶 '+G.dSelf.length+' 戶');
+  L.push('　地主戶 '+G.dOwn.length+' 戶');
+  if(G.dBiz.length)L.push('　業主戶 '+G.dBiz.length+' 戶');
+  L.push('已完成初驗 '+G.ins.length+' ＝ 一的兩小列 ＋ 各複驗段 ＋ 已交屋 '+(G.ok?'✓':'⚠'));
+  L.push('資料來源：G95 工程缺失追蹤系統');
+  return L;
+}
 function _bdStageText(){
   if(_bdLdBlock())return;
-  var D=_bdData(),G=_bdStageData(D);
-  var L=['KIMZO 驗屋階段摘要 '+_bdStamp(),
-    '一、初驗完成 '+G.ins.length+' 戶（'+_bdStageBrkTxt(G.bIns)+'）',
-    '二、複驗 '+G.re.length+' 戶',
-    '　1 複驗完成，待交屋 '+G.r1.length+' 戶（'+_bdStageBrkTxt(G.b1)+'）',
-    '　2 複驗後尚需再驗 '+G.r2.length+' 戶（'+_bdStageBrkTxt(G.b2)+'）',
-    '　3 已修繕完成，待約複驗 '+G.r3.length+' 戶（'+_bdStageBookTxt(G)+'）',
-    '　4 尚未修繕完成 '+G.r4.length+' 戶（'+_bdStageBrkTxt(G.b4)+'）',
-    '三、已交屋（含借屋裝潢）'+G.done.length+' 戶（'+_bdStageBrkTxt(G.bDone)+'）',
-    '全社區 '+G.all.length+' 戶 · 未初驗 '+G.uninsp.length+' 戶',
-    '資料來源：G95 工程缺失追蹤系統'];
-  var t=L.join('\n');
+  var t=_bdStageLines(_bdData()).join('\n');
   try{ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);toast('已複製，可直接貼 LINE','📋');return t;} }catch(e){}
   try{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已複製，可直接貼 LINE','📋');}catch(e){alert(t);}
   return t;
@@ -12236,7 +12406,7 @@ function renderBoard(){
   h+='</div>';
   h+='<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.8">'
     +'已約／未約複驗＝初驗後缺失已全數完成，差在有沒有約到複驗日；未約初驗＝還沒初驗、也還沒排初驗日；'
-    +'待交屋與待複驗2 加起來就是「複驗1做完」的全部（0 缺失→待交屋，有缺失→待複驗2）。A棟＋B棟＋店鋪＝位置合計；地主戶＝身分，是其中幾戶、不另外加。</div>';   /* V0828-05 ⑥：刪開頭那句與「店鋪＝業主戶」（位置與身分是兩個維度） */
+    +'待交屋＋待下一輪複驗＋複驗後修繕中＝「複驗做完、還沒交屋」的全部（那一輪 0 缺失→待交屋；抓到缺失已修完→待下一輪複驗；還沒修完→複驗後修繕中）。A棟＋B棟＋店鋪＝位置合計；地主戶＝身分，是其中幾戶、不另外加。</div>';   /* V0828-05 ⑥：刪開頭那句與「店鋪＝業主戶」（位置與身分是兩個維度） */
   h+='</div>';
   el.innerHTML=h;
 }
@@ -17754,14 +17924,17 @@ function _recepRoundLabel(r){return r==='re'?'複驗':(r==='ho'?'交屋':'初驗
 // 🔴 V0818-02：判定層抽出來（_reBookedRaw）＝「已敲定」的唯一判準；_reBooked 只是取值層的薄包裝。
 //    這樣需要快速批次判定時（_ulqBookedIdx 掃全庫），可以用便宜的取值路徑餵同一支判定，
 //    而不是複製一份判準（V0813-12 的教訓：_riUsKey 每戶要掃一次缺失表，433 戶全冷＝817ms）。
-function _reBookedRaw(d,sl,delivered){
-  if(delivered)return null;
+// V0917-01：已交屋戶保留「複驗日 ≤ 交屋日」的複驗章（歷史紀錄：交屋前那次複驗真的有來）；複驗日在交屋日之後＝不會再複驗 ⇒ 仍回 null。
+//   交屋日沒填（舊資料）＝以今天當交屋日（過去的章留、未來的不排）。
+//   🔴 「缺口預警／待排」這類「還要做的事」不可以靠這支回 null 排除已交屋，一律在呼叫端明確 if(h.delivered) 跳過。
+function _reBookedRaw(d,sl,delivered,deliveredDate){
   if(!d||HCAL_SLOTS.indexOf(sl)<0)return null;
+  if(delivered&&d>(deliveredDate||todayISO()))return null;
   return {date:d, slot:sl};
 }
 function _reBooked(key){
   var h=(S.handoverUnits||{})[key]||{};
-  return _reBookedRaw(_recepDateOf(key,'re'), _recepSlotOf(key,'re'), h.delivered);
+  return _reBookedRaw(_recepDateOf(key,'re'), _recepSlotOf(key,'re'), h.delivered, h.deliveredDate||'');
 }
 // ══ V0818-01：未到／取消 每輪各一份（初驗 cancelled/noShow；複驗 cancelledRe/noShowRe）══
 // 使用者 2026-08-18 定案「複驗當天客戶沒到，要能標記」。舊版是每戶一個布林，標了複驗初驗那格也會變灰 ⇒ 非拆不可。
@@ -18344,9 +18517,9 @@ function renderHCal(){
       const hus=S.handoverUnits||{};
       Object.keys(hus).forEach(k=>{
         const h=hus[k]||{};
-        if(h.delivered)return;                                   // 已交屋不再排複驗
         let d='';try{ d=(typeof _riRecheckOf==='function')?(_riRecheckOf(k)||''):''; }catch(e){}
         if(!d)return;
+        if(h.delivered&&d>(h.deliveredDate||todayISO()))return;  // V0917-01：已交屋只留交屋日當天或之前的複驗章＝歷史紀錄（同 _reBookedRaw）
         let sl='';try{ sl=(typeof _riSlotOf==='function')?(_riSlotOf(k)||''):''; }catch(e){}
         if(HCAL_SLOTS.indexOf(sl)<0)return;                      // 🔴 沒填時段＝還沒跟屋主敲定 ⇒ 不進格子
         const kk=d+'|'+sl;
@@ -21358,6 +21531,7 @@ var _ULQ_STAGE={
   repair:     {label:'修繕中',   bg:'#FCEBEB',bd:'#E2A6A6',fg:'#A32D2D'},
   reinsp:     {label:'可複驗',   bg:'#E1F5EE',bd:'#7FC4AC',fg:'#085041'},
   re_repair:  {label:'複驗後修繕',bg:'#FBEFCB',bd:'#E0B84B',fg:'#7a4a08'},
+  re_next:    {label:'待下一輪複驗',bg:'#FFF7E6',bd:'#E3C98A',fg:'#8A5A00'},   // V0917-01：複驗抓到缺失、已修完、待再驗（不是可交屋）
   deliverable:{label:'可交屋',   bg:'#EAF6E0',bd:'#A9C48F',fg:'#3B6D11'},
   delivered:  {label:'已交屋',   bg:'#EAF4FC',bd:'#A9CBE8',fg:'#185FA5'}
 };
@@ -21405,9 +21579,10 @@ function _ulqBkClear(){_ulqBkC=null;_ulqBkFpC='';}
 function _ulqBkFp(){
   try{
     var hu=S.handoverUnits||{},d=0;
-    for(var k in hu){if(hu[k]&&hu[k].delivered)d++;}
+    var dd='';   // V0917-01：已交屋戶的交屋日也進指紋（改交屋日＝複驗章去留會變＝索引要失效）
+    for(var k in hu){if(hu[k]&&hu[k].delivered){d++;dd+=k+'='+(hu[k].deliveredDate||'')+';';}}
     return JSON.stringify(S.reCheckUF||{})+''+JSON.stringify(S.reCheckSlot||{})
-      +''+d+''+((S.rows||[]).length)+'/'+((S.completed||[]).length);
+      +''+d+''+dd+''+((S.rows||[]).length)+'/'+((S.completed||[]).length);
   }catch(e){return '';}
 }
 function _ulqBookedIdx(){
@@ -21427,7 +21602,7 @@ function _ulqBookedIdx(){
       var k=m[uk];
       if(!k){hard=true;return;}
       done[k]=1;
-      put(k,_reBookedRaw(uf[uk], sl[uk]||'', (hu[k]||{}).delivered));   // 判準仍是同一支
+      put(k,_reBookedRaw(uf[uk], sl[uk]||'', (hu[k]||{}).delivered, (hu[k]||{}).deliveredDate||''));   // 判準仍是同一支（V0917-01 帶交屋日）
     });
     // 有對不到的鍵才付昂貴代價（結果與逐戶跑 _reBooked 完全相同，不是「猜對就好」）
     if(hard){
@@ -21532,7 +21707,7 @@ function _ulqBatchKeys(){
 // 🔴 不給 base2 時行為與舊版**逐欄相同**（零迴歸，煙測 wvw／basewin／lwk 都有斷言）。
 function _ulqWoW2(us,dmap,base,end,base2,end2){
   var E=end||todayISO(), E2=end2||E, two=!!base2;
-  var A={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0}, B={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0};
+  var A={f:0,fp:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0}, B={f:0,fp:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0};
   function acc(o,ad,dn,dd,b,e){
     var exN=(!ad||ad<=e);                      // 迄日當天存在的缺失
     var dnN=dn&&dd&&dd<=e;                     // 迄日當天已完成
@@ -21540,6 +21715,7 @@ function _ulqWoW2(us,dmap,base,end,base2,end2){
     if(exN){ o.eN++; if(dnN)o.dN++; else o.pN++; }
     if(exP){ o.eP++; if(dnP)o.dP++; else o.pP++; }
     if(dn&&dd&&dd>b&&dd<=e)o.f++;
+    if(dn&&dd&&dd<=b&&ad&&ad>b&&ad<=e)o.fp++;   // V0917-01 fixedPre＝自驗列：產生日落在本期、完成日在前期（登記前就修好）＝既有 fixed 不算，另計
     if(ad&&ad>b&&ad<=e)o.a++;
   }
   us.forEach(function(u){ (u.rows||[]).forEach(function(r){
@@ -21549,11 +21725,12 @@ function _ulqWoW2(us,dmap,base,end,base2,end2){
     if(two)acc(B,ad,dn,dd,base2,E2);
   });});
   function fin(o){ var rN=o.eN?Math.round(o.dN*100/o.eN):0, rP=o.eP?Math.round(o.dP*100/o.eP):0;
-    return {fixed:o.f,added:o.a,pendPrev:o.pP,pendNow:o.pN,ratePrev:rP,rateNow:rN,diff:rN-rP}; }
+    // V0917-01：多帶四個鍵（前期／結算兩個時點的總缺失與已完成）給進度報告「前期／本周／結算」表用；既有七鍵一字不改
+    return {fixed:o.f,added:o.a,pendPrev:o.pP,pendNow:o.pN,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:o.eP,donePrev:o.dP,exNow:o.eN,doneNow:o.dN,fixedPre:o.fp}; }
   return [fin(A), two?fin(B):null];
 }
 function _ulqWoW(us,dmap,base,end){
-  var fixed=0,added=0,pendNow=0,pendPrev=0,exNow=0,exPrev=0,doneNow=0,donePrev=0;
+  var fixed=0,added=0,pendNow=0,pendPrev=0,exNow=0,exPrev=0,doneNow=0,donePrev=0,fixedPre=0;
   var E=end||todayISO();
   us.forEach(function(u){ (u.rows||[]).forEach(function(r){
     var dn=(r.compId!=null), dd=r.actualDone||'', ad='';
@@ -21565,10 +21742,11 @@ function _ulqWoW(us,dmap,base,end){
     if(exN){ exNow++; if(dnN)doneNow++; else pendNow++; }
     if(exP){exPrev++; if(dnP)donePrev++; else pendPrev++;}
     if(dn&&dd&&dd>base&&dd<=E)fixed++;
+    if(dn&&dd&&dd<=base&&ad&&ad>base&&ad<=E)fixedPre++;   // V0917-01 同 _ulqWoW2 fixedPre
     if(ad&&ad>base&&ad<=E)added++;
   });});
   var rN=exNow?Math.round(doneNow*100/exNow):0, rP=exPrev?Math.round(donePrev*100/exPrev):0;
-  return {fixed:fixed,added:added,pendPrev:pendPrev,pendNow:pendNow,ratePrev:rP,rateNow:rN,diff:rN-rP};
+  return {fixed:fixed,added:added,pendPrev:pendPrev,pendNow:pendNow,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:exPrev,donePrev:donePrev,exNow:exNow,doneNow:doneNow,fixedPre:fixedPre};   // V0917-01 同 _ulqWoW2 多帶四鍵
 }
 function _ulqWoWChip(w,mob){
   if(!w)return '';
@@ -26656,4 +26834,4 @@ try{
 </body>
 </html>
 
-<!-- V0915-01 prev -->
+<!-- V0917-01 prev -->
