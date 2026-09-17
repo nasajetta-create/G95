@@ -597,7 +597,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 407;  // V0917-01 三項。A 進度報告「分區小計」「各廠商」兩張表改「前期／本周／結算」（示意圖 分區小計_前期本周結算_20260917 定案）：_ulqWoW2 與 _ulqWoW 回傳多帶 exPrev／donePrev／exNow／doneNow 四鍵（既有七鍵一字不改·wvw／basewin／lwk 零迴歸）；新增 _rptPbsHead 兩層表頭（名稱欄 rowspan2·前期（到 MM/DD）總缺失／累計完成／未完成·本周（MM/DD ~ MM/DD）新增缺失／已完成·結算（到 MM/DD）未完成／已完成·最右本周完成率 rowspan2）＋_rptPbsCols（fixed＋colgroup 108/108/108/100/100/108/108/120·名稱欄吃剩餘寬·外包 overflow-x:auto＋min-width 防名稱欄被擠成 0 寬）＋_rptPbsTds（累計完成／前期未完成／結算未完成／結算已完成＝筆數＋12px 灰 %，分母＝該時點總缺失；千分位 _rptNum；倒退淡紅底只標結算已完成那格·非小計列）；「本周」字樣跟比較起點走 _rptPerWord（上週一＝本周·近7天＝近 7 天·自訂＝本期）；本周完成率 _rptWkRate＝fixed÷(pendPrev＋added) 四捨五入、分母 0 顯示—；表尾 _rptIdLine 逐列檢核「前期未完成＋本周新增－本周已完成＝結算未完成」（任一列不成立＝⚠ 並點名；算法上只有「完成日早於產生日、產生日又落在本期」的列會讓它不成立＝去查那幾筆不是程式錯）＋保留 室內＋公設＋其他＋未分類＝總體；上週兩欄改由「顯示上週」開關 _rptLwChk 控制（localStorage g95_rptLw＝1 開·預設關·每台自己記·class view-allow 唯讀放行·改變即 renderProgReport），開時仍在名稱欄之後、組名「上週（MM/DD ~ MM/DD）」，關時整組不畫（含手機副行與複製文字）；分區表與廠商表同一套（廠商多一欄 #）；手機 _rptMRow 新增 opt.sub 整列寬副行 _rptMSub（前期未完成 n → 結算 n／本周 新增 a · 完成 f／本周完成率 x%，片段各自 nowrap），右側只留結算未完成，390px 不溢出；_rptCopyText 分區／廠商行改同格式 _rptMText。B 交屋行事曆已交屋戶保留「複驗日≤交屋日」的複驗章：_reBookedRaw 加第四參數 deliveredDate（已交屋時複驗日≤交屋日才回章·沒填交屋日以今天算），_reBooked／_ulqBookedIdx 都傳 h.deliveredDate，renderHCal 的 _reIdx 同一條規則（歷史紀錄：交屋前那次複驗真的有來）；_ulqBkFp 指紋把已交屋戶的交屋日算進去；缺口預警 _slotGapData／_hoGapData 原本就明寫 if(h.delivered)return 排除已交屋（不是靠回 null），統計列與接待人力算到過去日期的已交屋戶＝那天本來就有來。C 驗屋階段摘要改四段（示意圖 驗屋階段摘要_四段版_20260917）＋在 _riStat 源頭新增 stage re_next（使用者定案：複驗抓到缺失、修完但還沒再驗＝要排下一輪，不能算待交屋）：hasReDone 時 pend>0＝re_repair、pend＝0 且那一輪有抓到缺失＝re_next、pend＝0 且那一輪沒抓到＝deliverable；判定根據＝lastReDate 最近一次已完成複驗日（type 以 /^複驗/ 判、date≤今天，同 hasReDone 那把尺）、reRound＝那次 type 的數字（程式寫入端 type 一律 複驗N·沒數字的舊值退回已完成複驗筆數）、roundDefects＝該戶缺失中 產生日（_wpAddDate，round 為複驗N 時對到該戶複驗N 驗收日）≥lastReDate 或 createdAt≥lastReDate 的筆數（createdAt 補判的理由＝新增缺失畫面輪次預設初驗，複驗現場沒改輪次就存的缺失 _wpAddDate 會對到初驗日而漏掉·寧可多排一輪複驗不可誤判可交屋）；_riStat 回傳多帶 reRound／lastReDate／roundDefects。消費者：六態卡可交屋與交屋排程第 1 段仍只收 deliverable；報告看板第 5 段改名「待下一輪複驗」收 re_next、新增第 10 段「複驗後修繕中」收 re_repair（card:0 卡片維持 4×2·恆等式 4＋5＋10＝複驗做完未交屋的全部）；地主戶完成仍只認 deliverable／delivered；_bdOwnStageTxt／_bdStageTag／_ULQ_STAGE 補 re_next 文字「待複驗N+1（已約 MM/DD／未約）」（抽屜日期不晚於上一輪複驗日＝舊的不算已約）。摘要表 _bdStageData／_bdStageHTML／_bdStageLines 重寫：七欄 34／剩餘／88×4／230；一 初驗狀態（全社區·已完成初驗／未完成初驗／已初驗有缺失未修繕需追蹤＝repair 紅／已初驗已修繕待約複驗1＝reinsp 已約 a · 未約 b）；二起依 reRound 動態畫「複驗N」段（最少到複驗2·0 戶也畫），三小列 0 缺失待交屋（綠）／有缺失已修繕安排複驗N+1（已約·未約）／有缺失未修繕需追蹤（紅）；最後「已交屋（含借屋裝潢）」小列自購戶／地主戶（業主戶>0 才畫·_clmTypeOf）；段序號隨段數；頁尾「已完成初驗＝一的兩小列＋各複驗段＋已交屋 ✓／⚠」；複製文字 _bdStageText 吃同一份 _bdStageData；截圖 _bdStageShot 與載入守門 _bdLdBlock 不動。煙測：新增 smoke_g95_pbs.js 並登記總跑器；stage 重寫；lwk／rptcols／rebatch／rptsec／board／own／replan 隨規格改；hocal 加 ⑨ 已交屋複驗章。程式行剪掉 V0909-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0915-01 報告看板最上面新增「驗屋階段摘要」（#bd-stage·帶編號示意圖定案）：①整塊放在八格總覽 #bd-shot 上方，藍標題列（KIMZO 驗屋階段摘要＋_bdStamp()）＋四欄表格（table-layout:fixed＋colgroup 34/250/76/auto、每格 1px #B9C9D6、白底、字 15px、平角），七列＝一 初驗完成／二 複驗（＝下面四小列加總·右欄註「初驗完成 − 已交屋」）／1 複驗完成待交屋（綠 #2F7D2A）／2 複驗後尚需再驗／3 已修繕完成待約複驗（已約 a · 未約 b）／4 尚未修繕完成（紅 #B3261E）／三 已交屋（含借屋裝潢·綠）；一二三列淡藍底 #EAF4FC 粗體、四小列縮排 26px；頁尾小字左「全社區 T 戶 · 未初驗 U 戶」右「資料來源」。②🔴判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat、D.m 各段 keys、D.keys 全戶），render 內不重算 _riStat、不另寫一套判斷基準：1＝m.del、2＝m.re2、3＝m.re1(已約)＋m.re0(未約)、4＝m.rep、三＝m.done、一＝inspected 為真的戶；_bdData 順手新增 m.rep（stage 'repair'）＝第 4 小列唯一來源，brk 走既有 Object.keys(m) 迴圈自動算到。恆等式 一＝二＋三、一＋未初驗＝全社區（煙測守）；邊界＝「已交屋但沒有初驗完成紀錄」的戶也算進一（否則恆等式會被悄悄打破·anom 記數留查）。③表格與複製文字吃同一份 _bdStageData＝同一把尺；每個「詞＋數字」片段包 white-space:nowrap。④兩顆鈕（截圖 btn-p／複製文字）自成一排放在 bd-stage 下方、「出總覽圖」那排上方；截圖＝_bdStageShot() 走 _capEl(#bd-stage)、複製＝_bdStageText()，兩支都先過 _bdLdBlock()，載入中整塊 grayscale＋兩鈕 disabled（沿用 #bd-shot 同一套）；唯讀模式（?mode=view）純查看＝放行不掛 _hoSegRo。⑤報告看板維持單一響應式（無手機分流），表格外包 div.bdwrap（overflow-x:auto）⇒ 390px 不橫向溢出。新增 _bdStageData／_bdStageHTML／_bdStageText／_bdStageShot／_bdStageRow／_bdStageBrkTxt／_bdStageBrkHTML／_bdStageBookTxt／_bdStageBookHTML。⑥新煙測 smoke_g95_stage.js（7 區塊）並登記進 run_all_g95.js。程式行剪掉 V0903-02（另存 dropped_V0903-02.txt）。｜V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。
+const CODE_VERSION = 407;  // V0917-01 三項。A 進度報告「分區小計」「各廠商」兩張表改「前期／本周／結算」（示意圖 分區小計_前期本周結算_20260917 定案）：_ulqWoW2 與 _ulqWoW 回傳多帶 exPrev／donePrev／exNow／doneNow 四鍵（既有七鍵一字不改·wvw／basewin／lwk 零迴歸）；新增 _rptPbsHead 兩層表頭（名稱欄 rowspan2·前期（到 MM/DD）總缺失／累計完成／未完成·本周（MM/DD ~ MM/DD）新增缺失／已完成·結算（到 MM/DD）未完成／已完成·最右本周完成率 rowspan2）＋_rptPbsCols（fixed＋colgroup 108/108/108/100/100/108/108/120·名稱欄吃剩餘寬·外包 overflow-x:auto＋min-width 防名稱欄被擠成 0 寬）＋_rptPbsTds（累計完成／前期未完成／結算未完成／結算已完成＝筆數＋12px 灰 %，分母＝該時點總缺失；千分位 _rptNum；倒退淡紅底只標結算已完成那格·非小計列）；「本周」字樣跟比較起點走 _rptPerWord（上週一＝本周·近7天＝近 7 天·自訂＝本期）；本周完成率 _rptWkRate＝fixed÷(pendPrev＋added) 四捨五入、分母 0 顯示—；表尾 _rptIdLine 逐列檢核「前期未完成＋本周新增－本周已完成＝結算未完成」（任一列不成立＝⚠ 並點名；算法上只有「完成日早於產生日、產生日又落在本期」的列會讓它不成立＝去查那幾筆不是程式錯）＋保留 室內＋公設＋其他＋未分類＝總體；上週兩欄改由「顯示上週」開關 _rptLwChk 控制（localStorage g95_rptLw＝1 開·預設關·每台自己記·class view-allow 唯讀放行·改變即 renderProgReport），開時仍在名稱欄之後、組名「上週（MM/DD ~ MM/DD）」，關時整組不畫（含手機副行與複製文字）；分區表與廠商表同一套（廠商多一欄 #）；手機 _rptMRow 新增 opt.sub 整列寬副行 _rptMSub（前期未完成 n → 結算 n／本周 新增 a · 完成 f／本周完成率 x%，片段各自 nowrap），右側只留結算未完成，390px 不溢出；_rptCopyText 分區／廠商行改同格式 _rptMText。B 交屋行事曆已交屋戶保留「複驗日≤交屋日」的複驗章：_reBookedRaw 加第四參數 deliveredDate（已交屋時複驗日≤交屋日才回章·沒填交屋日以今天算），_reBooked／_ulqBookedIdx 都傳 h.deliveredDate，renderHCal 的 _reIdx 同一條規則（歷史紀錄：交屋前那次複驗真的有來）；_ulqBkFp 指紋把已交屋戶的交屋日算進去；缺口預警 _slotGapData／_hoGapData 原本就明寫 if(h.delivered)return 排除已交屋（不是靠回 null），統計列與接待人力算到過去日期的已交屋戶＝那天本來就有來。C 驗屋階段摘要改四段（示意圖 驗屋階段摘要_四段版_20260917）＋在 _riStat 源頭新增 stage re_next（使用者定案：複驗抓到缺失、修完但還沒再驗＝要排下一輪，不能算待交屋）：hasReDone 時 pend>0＝re_repair、pend＝0 且那一輪有抓到缺失＝re_next、pend＝0 且那一輪沒抓到＝deliverable；判定根據＝lastReDate 最近一次已完成複驗日（type 以 /^複驗/ 判、date≤今天，同 hasReDone 那把尺）、reRound＝那次 type 的數字（程式寫入端 type 一律 複驗N·沒數字的舊值退回已完成複驗筆數）、roundDefects＝該戶缺失中 產生日（_wpAddDate，round 為複驗N 時對到該戶複驗N 驗收日）≥lastReDate 或 createdAt≥lastReDate 的筆數（createdAt 補判的理由＝新增缺失畫面輪次預設初驗，複驗現場沒改輪次就存的缺失 _wpAddDate 會對到初驗日而漏掉·寧可多排一輪複驗不可誤判可交屋）；_riStat 回傳多帶 reRound／lastReDate／roundDefects。消費者：六態卡可交屋與交屋排程第 1 段仍只收 deliverable；報告看板第 5 段改名「待下一輪複驗」收 re_next、新增第 10 段「複驗後修繕中」收 re_repair（card:0 卡片維持 4×2·恆等式 4＋5＋10＝複驗做完未交屋的全部）；地主戶完成仍只認 deliverable／delivered；_bdOwnStageTxt／_bdStageTag／_ULQ_STAGE 補 re_next 文字「待複驗N+1（已約 MM/DD／未約）」（抽屜日期不晚於上一輪複驗日＝舊的不算已約）。摘要表 _bdStageData／_bdStageHTML／_bdStageLines 重寫：七欄 34／剩餘／88×4／230；一 初驗狀態（全社區·已完成初驗／未完成初驗／已初驗有缺失未修繕需追蹤＝repair 紅／已初驗已修繕待約複驗1＝reinsp 已約 a · 未約 b）；二起依 reRound 動態畫「複驗N」段（最少到複驗2·0 戶也畫），三小列 0 缺失待交屋（綠）／有缺失已修繕安排複驗N+1（已約·未約）／有缺失未修繕需追蹤（紅）；最後「已交屋（含借屋裝潢）」小列自購戶／地主戶（業主戶>0 才畫·_clmTypeOf）；段序號隨段數；頁尾「已完成初驗＝一的兩小列＋各複驗段＋已交屋 ✓／⚠」；複製文字 _bdStageText 吃同一份 _bdStageData；截圖 _bdStageShot 與載入守門 _bdLdBlock 不動。補（preview 真資料對帳後使用者定案）：分區恆等式差 107＝自驗列（產生日落在本期、完成日在前期＝登記前就修好），本期新增有算、既有 fixed 沒算 ⇒ _ulqWoW2／_ulqWoW 多一個累加器 fixedPre（dn 且 dd≤base 且 base<ad≤end），進度報告這張表的本期已完成、本周完成率分子、恆等式一律用 _rptFix＝fixed＋fixedPre，該格 fixedPre>0 時小字「含自驗 N」，hint 行說明自驗；既有 fixed 一字不改、上週兩欄照舊用 fixed；第二條恆等式 前期累計完成＋本期已完成＝結算已完成 由煙測守（真資料 7,145＋2,935＋107＝10,187）。煙測：新增 smoke_g95_pbs.js 並登記總跑器；stage 重寫；lwk／rptcols／rebatch／rptsec／board／own／replan 隨規格改；hocal 加 ⑨ 已交屋複驗章。程式行剪掉 V0909-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0915-01 報告看板最上面新增「驗屋階段摘要」（#bd-stage·帶編號示意圖定案）：①整塊放在八格總覽 #bd-shot 上方，藍標題列（KIMZO 驗屋階段摘要＋_bdStamp()）＋四欄表格（table-layout:fixed＋colgroup 34/250/76/auto、每格 1px #B9C9D6、白底、字 15px、平角），七列＝一 初驗完成／二 複驗（＝下面四小列加總·右欄註「初驗完成 − 已交屋」）／1 複驗完成待交屋（綠 #2F7D2A）／2 複驗後尚需再驗／3 已修繕完成待約複驗（已約 a · 未約 b）／4 尚未修繕完成（紅 #B3261E）／三 已交屋（含借屋裝潢·綠）；一二三列淡藍底 #EAF4FC 粗體、四小列縮排 26px；頁尾小字左「全社區 T 戶 · 未初驗 U 戶」右「資料來源」。②🔴判定全部只讀 _bdData() 回來的 D（D.st[k]＝_riStat、D.m 各段 keys、D.keys 全戶），render 內不重算 _riStat、不另寫一套判斷基準：1＝m.del、2＝m.re2、3＝m.re1(已約)＋m.re0(未約)、4＝m.rep、三＝m.done、一＝inspected 為真的戶；_bdData 順手新增 m.rep（stage 'repair'）＝第 4 小列唯一來源，brk 走既有 Object.keys(m) 迴圈自動算到。恆等式 一＝二＋三、一＋未初驗＝全社區（煙測守）；邊界＝「已交屋但沒有初驗完成紀錄」的戶也算進一（否則恆等式會被悄悄打破·anom 記數留查）。③表格與複製文字吃同一份 _bdStageData＝同一把尺；每個「詞＋數字」片段包 white-space:nowrap。④兩顆鈕（截圖 btn-p／複製文字）自成一排放在 bd-stage 下方、「出總覽圖」那排上方；截圖＝_bdStageShot() 走 _capEl(#bd-stage)、複製＝_bdStageText()，兩支都先過 _bdLdBlock()，載入中整塊 grayscale＋兩鈕 disabled（沿用 #bd-shot 同一套）；唯讀模式（?mode=view）純查看＝放行不掛 _hoSegRo。⑤報告看板維持單一響應式（無手機分流），表格外包 div.bdwrap（overflow-x:auto）⇒ 390px 不橫向溢出。新增 _bdStageData／_bdStageHTML／_bdStageText／_bdStageShot／_bdStageRow／_bdStageBrkTxt／_bdStageBrkHTML／_bdStageBookTxt／_bdStageBookHTML。⑥新煙測 smoke_g95_stage.js（7 區塊）並登記進 run_all_g95.js。程式行剪掉 V0903-02（另存 dropped_V0903-02.txt）。｜V0909-02 手機首頁「十宮格」改 3 頁 × 8 格左右滑（mock_home3 帶編號示意圖定案·預設三頁走甲案）：①新鍵 S.layoutCfg.homePages＝[[8],[8],[8]]（格內＝_HOMECAT id 或 null 空格）與 homePageNames（預設 常用／交屋與廠商／報表與名冊）；🔴舊鍵 homeCards／homeCardNames 原封保留不動＝沒更新的裝置照舊走十宮格（_HOMEDEF／_homeCardOrder 一字未改）。②預設三頁：頁1 announce·hcal·main·reinsp·pwo·rpt·board·disp；頁2 hosch·ustat·ulookup·pwork·sprint·inspreg·defpivot·hreport；頁3 inspstat·prpt·wprog·uso·events·空格·set·more。set／more 釘死頁3 最後兩格（設定是唯一入口）。③migrateState 照既有 === undefined 前例只補一次：homePages 不存在時，舊 homeCards 去掉 set/more 後前 8 進頁1、其餘進頁2 開頭、頁2 剩餘位置依序補預設頁2 中尚未出現的 id、頁3＝預設頁3（已用過的挖空）；舊沒值＝全用預設。讀取端 _homePagesGet 一律過 _homePagesFix 防呆（非陣列／長度不對／未知 id／重複 → 修成合法 3×8，set/more 釘回、被擠掉的 id 補進第一個空格）。④_HOMECAT 候選由 16 擴到 30：把 TAB_DEFS 內不在 _MOB_HIDE（zones/vendor/warn/cal/handover/units）的分頁全補進來，名稱＝TAB_DEFS[id].label 去 emoji（_tabTxt）、圖示沿用 _homeIcoFor 的 _tabIco 後備、_homeBig 沒對應的照舊「點開查看」；既有 16 個一字不動。⑤版面：#g95home-scr 容器 display:flex+overflow-x:auto+scroll-snap-type:x mandatory，每頁 flex:0 0 100%+scroll-snap-align:start，捲軸隱藏；頁標題列＝頁名＋三個頁點＋n/3（點頁點 _homePgTo 走 scrollTo，scroll 事件 _homePgOnScroll 算目前頁更新頁點）；每頁 2×4 格、格子畫法與 V0909-01 相同（min-height 106），邊框改成頁內 i%2 右框＋i<6 下框；null＝同尺寸空白格不可點；設定／更多格底色 #F1F5F9；平角、無 emoji、無左側色條；重整回第 1 頁。新增 _homePgCell／_homePgTitleHTML／_homePgSet／_homePgTo／_homePgOnScroll。⑥編輯器改「選頁 → 排該頁 8 格」：sheet 上方三顆頁鈕（頁名可改·_homeEditPgName）、每格列＝序號＋名稱（可改名）＋▲▼＋✕；✕＝變 null 空格（不擠位）、「可加入」點了填進該頁第一個空格（沒空格出提示）、set／more 不可 ✕ 不可移動出頁3 末兩格（鈕灰化）、還原預設＝三頁全回預設；存檔走 Object.assign 只寫 homePages／homePageNames／homeCardNames（保留其他鍵）＋save()。新增 _homePgFixed／_homeEditPage／_homeEditPgName，_homeEditMove／_homeEditRemove／_homeEditAdd／_homeEditReset／_homeEditSave 改頁制。⑦順手修既有 bug：layoutCfgSave 與側欄排序存檔（toggleTabEditMode）原本 S.layoutCfg={grpOrder,grpOf,pins,mobShow} 整包重建 ⇒ 每存一次版面設定就把首頁卡片設定清光；兩處都改成 Object.assign({},S.layoutCfg||{},{...})。⑧renderG95Home 仍只在手機殼觸發（innerWidth<=700＋_mnavEnabled），桌機一個字不受影響。⑨新煙測 smoke_g95_home3p.js（7 區塊·390×844）並登記進 run_all_g95.js。程式行剪掉 V0903-01（已入註解史·另存 CODE_VERSION註解史_追加2.md）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -10930,8 +10930,8 @@ function _rptLwSub(wl){ return wl?('上週 已完成 '+wl.fixed+'｜'+wl.ratePre
 // ══ V0917-01 分區小計／廠商表改「前期／本周／結算」（示意圖 分區小計_前期本周結算_20260917 定案）══
 // 🔴 數字全部來自同一支 _ulqWoW2（前期＝base 收盤、結算＝end 收盤、本周＝(base,end] 流量）＝不另立一把尺。
 // 🔴 本周完成率＝本周已完成 ÷（前期未完成＋本周新增）＝「這段期間清掉手上待修的幾成」；分母 0 顯示「—」。
-// 🔴 恆等式：前期未完成＋本周新增－本周已完成＝結算未完成。算法上只有「完成日早於產生日、且產生日落在本期」這種列會讓它不成立
-//    （例：本周才初驗、但缺失在上週自主檢查就修好），出現 ⚠ 就去查那幾筆，不是程式算錯。
+// 🔴 恆等式：前期未完成＋本周新增－本周已完成（＝_rptFix＝fixed＋fixedPre 自驗列）＝結算未完成。
+//    自驗列（本周才初驗、缺失在前期就修好）已納入本周已完成（使用者 0917 定案）；仍會 ⚠ 的只剩「產生日在迄日之後、完成日在本期」這類資料異常。
 // 🔴 「顯示上週」開關：localStorage g95_rptLw＝'1' 開（預設關·每台自己記）；關的時候上週那組整組不畫（含手機副行與複製文字）。
 function _rptLwOn(){ try{ return localStorage.getItem('g95_rptLw')==='1'; }catch(e){ return false; } }
 function _rptLwSet(on){ try{ localStorage.setItem('g95_rptLw',on?'1':'0'); }catch(e){} try{ renderProgReport(); }catch(e){} }
@@ -10943,8 +10943,12 @@ function _rptLwChk(){
 function _rptPerWord(D){ var m=(D&&D.mode)||_wvwBaseMode(); return (m==='wk')?'本周':((m==='custom')?'本期':'近 7 天'); }
 function _rptNum(n){ n=Number(n)||0; return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 function _rptPc(n,d){ return d?(Math.round((Number(n)||0)*100/d)+'%'):'—'; }
-function _rptWkRate(w){ var den=(w.pendPrev||0)+(w.added||0); return den?(Math.round((w.fixed||0)*100/den)+'%'):'—'; }
-function _rptIdOk(w){ return !!w&&(w.pendPrev+w.added-w.fixed===w.pendNow); }
+// V0917-01 使用者定案（preview 真資料分區恆等式差 107）：本期已完成＝fixed＋fixedPre（自驗列：產生日在本期、完成日在前期，本期新增有算、已完成也要算）
+//   🔴 只用在前期／本周／結算這張表；_ulqWoW 的 fixed 本身一字不改（vprog／wvw／lwk 上週兩欄照舊）
+function _rptFix(w){ return ((w&&w.fixed)||0)+((w&&w.fixedPre)||0); }
+function _rptWkRate(w){ var den=(w.pendPrev||0)+(w.added||0); return den?(Math.round(_rptFix(w)*100/den)+'%'):'—'; }
+function _rptIdOk(w){ return !!w&&(w.pendPrev+w.added-_rptFix(w)===w.pendNow); }
+function _rptIdOk2(w){ return !!w&&(w.donePrev+_rptFix(w)===w.doneNow); }   // 第二條：前期累計完成＋本期已完成＝結算已完成
 // 表頭兩層：lead＝最左邊 rowspan=2 的欄（分區：['分區']；廠商：['#','廠商']）
 function _rptPbsHead(D,lead){
   var lw=_rptLwOn()&&D.lw, per=_rptPerWord(D);
@@ -10975,7 +10979,8 @@ function _rptPbsTds(w,opt){
     +'<div style="font-size:12px;font-weight:400;color:#888">'+_rptPc(n,d)+'</div></td>'; };
   var h=_rptLwOn()?_rptLwTds(opt.wl,sum):'';
   h+=one(w.exPrev)+two(w.donePrev,w.exPrev)+two(w.pendPrev,w.exPrev)
-    +one(w.added)+one(w.fixed)
+    +one(w.added)
+    +'<td style="'+td+';text-align:right;line-height:1.2">'+b(_rptNum(_rptFix(w)))+(w.fixedPre?('<div class="rpt-selfchk" style="font-size:12px;font-weight:400;color:#888;white-space:nowrap">含自驗 '+_rptNum(w.fixedPre)+'</div>'):'')+'</td>'
     +two(w.pendNow,w.exNow)+two(w.doneNow,w.exNow,(!sum&&w.diff<0))   // 倒退＝結算 % 小於前期 %（非小計列）
     +'<td style="'+td+';text-align:right">'+b(_rptWkRate(w))+'</td>';
   return h;
@@ -10989,9 +10994,9 @@ function _rptIdLine(D,bad){
 // 手機副行：前期未完成 n → 結算 n｜本周 新增 a · 完成 f｜本周完成率 x%（各片段 nowrap，只在片段之間換行＝390px 不溢出）
 function _rptMSub(D,w){
   var per=_rptPerWord(D), nw=function(s){ return '<span style="white-space:nowrap">'+s+'</span>'; };
-  return nw('前期未完成 '+_rptNum(w.pendPrev)+' → 結算 '+_rptNum(w.pendNow))+'｜'+nw(per+' 新增 '+_rptNum(w.added)+' · 完成 '+_rptNum(w.fixed))+'｜'+nw(per+'完成率 '+_rptWkRate(w));
+  return nw('前期未完成 '+_rptNum(w.pendPrev)+' → 結算 '+_rptNum(w.pendNow))+'｜'+nw(per+' 新增 '+_rptNum(w.added)+' · 完成 '+_rptNum(_rptFix(w)))+'｜'+nw(per+'完成率 '+_rptWkRate(w));
 }
-function _rptMText(D,w){ var per=_rptPerWord(D); return '前期未完成 '+w.pendPrev+' → 結算 '+w.pendNow+'｜'+per+' 新增 '+w.added+' · 完成 '+w.fixed+'｜'+per+'完成率 '+_rptWkRate(w); }
+function _rptMText(D,w){ var per=_rptPerWord(D); return '前期未完成 '+w.pendPrev+' → 結算 '+w.pendNow+'｜'+per+' 新增 '+w.added+' · 完成 '+_rptFix(w)+'｜'+per+'完成率 '+_rptWkRate(w); }
 function _rptZoneTable(D,mob){
   var lwOn=_rptLwOn();
   // 恆等式檢核範圍＝有出現在表上的小計列＋分區列（逐列都算）
@@ -11023,6 +11028,7 @@ function _rptZoneTable(D,mob){
   var cg='<colgroup>'+_rptPbsCols('<col>')+'</colgroup>';   // 分區名欄吃剩餘寬
   var h='<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#777;margin:2px 0 6px"><span style="min-width:0">點分區名→跳追蹤總表篩選該區'
     +' · 前期＝'+_wvwMD(D.base)+' 收盤 · '+_rptPerWord(D)+'＝'+_wvwMD(_rptSpanFrom(D))+' ~ '+_wvwMD(D.end||D.t)+' · 結算＝'+_wvwMD(D.end||D.t)+' 收盤'
+    +' · 自驗＝登記前就修好的缺失，算本期新增也算本期已完成'
     +(lwOn?' · 暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）':'')+'</span><span style="flex:1"></span>'+_rptLwChk()+'</div>'
     +'<div class="rpt-pbswrap" style="overflow-x:auto"><table class="rpt-pbs" style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:'+_rptPbsMinW(180)+'px">'+cg
     +_rptPbsHead(D,[{t:'分區'}])+'<tbody>';
@@ -11134,7 +11140,7 @@ function _rptVendTable(D,mob){
   // V0917-01：跟分區小計同一套表頭與格式（多一欄 #）
   var cg='<colgroup>'+_rptPbsCols('<col style="width:52px"><col>')+'</colgroup>';   // 廠商名欄吃剩餘寬
   var capN=(window._rptVendAllD?D.vend.length:15);   // V0817-05 ③：桌機預設前 15 家（複製文字仍輸出全部）
-  var h='<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#777;margin:2px 0 6px"><span style="min-width:0">還欠多→少·結算已完成淡紅底＝完成率倒退·點廠商→跳追蹤總表篩選'
+  var h='<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#777;margin:2px 0 6px"><span style="min-width:0">還欠多→少·結算已完成淡紅底＝完成率倒退·點廠商→跳追蹤總表篩選·自驗＝登記前就修好的缺失，算本期新增也算本期已完成'
     +(lwOn?'·暖灰兩欄＝上週（固定週一~週日，不跟比較起點走）':'')+'</span><span style="flex:1"></span>'+_rptLwChk()+'</div>'
     +'<div class="rpt-pbswrap" style="overflow-x:auto"><table id="rpt-vend" class="rpt-pbs" style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:'+_rptPbsMinW(52+180)+'px">'+cg
     +_rptPbsHead(D,[{t:'#',right:1},{t:'廠商'}])+'<tbody>';
@@ -21701,7 +21707,7 @@ function _ulqBatchKeys(){
 // 🔴 不給 base2 時行為與舊版**逐欄相同**（零迴歸，煙測 wvw／basewin／lwk 都有斷言）。
 function _ulqWoW2(us,dmap,base,end,base2,end2){
   var E=end||todayISO(), E2=end2||E, two=!!base2;
-  var A={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0}, B={f:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0};
+  var A={f:0,fp:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0}, B={f:0,fp:0,a:0,pN:0,pP:0,eN:0,eP:0,dN:0,dP:0};
   function acc(o,ad,dn,dd,b,e){
     var exN=(!ad||ad<=e);                      // 迄日當天存在的缺失
     var dnN=dn&&dd&&dd<=e;                     // 迄日當天已完成
@@ -21709,6 +21715,7 @@ function _ulqWoW2(us,dmap,base,end,base2,end2){
     if(exN){ o.eN++; if(dnN)o.dN++; else o.pN++; }
     if(exP){ o.eP++; if(dnP)o.dP++; else o.pP++; }
     if(dn&&dd&&dd>b&&dd<=e)o.f++;
+    if(dn&&dd&&dd<=b&&ad&&ad>b&&ad<=e)o.fp++;   // V0917-01 fixedPre＝自驗列：產生日落在本期、完成日在前期（登記前就修好）＝既有 fixed 不算，另計
     if(ad&&ad>b&&ad<=e)o.a++;
   }
   us.forEach(function(u){ (u.rows||[]).forEach(function(r){
@@ -21719,11 +21726,11 @@ function _ulqWoW2(us,dmap,base,end,base2,end2){
   });});
   function fin(o){ var rN=o.eN?Math.round(o.dN*100/o.eN):0, rP=o.eP?Math.round(o.dP*100/o.eP):0;
     // V0917-01：多帶四個鍵（前期／結算兩個時點的總缺失與已完成）給進度報告「前期／本周／結算」表用；既有七鍵一字不改
-    return {fixed:o.f,added:o.a,pendPrev:o.pP,pendNow:o.pN,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:o.eP,donePrev:o.dP,exNow:o.eN,doneNow:o.dN}; }
+    return {fixed:o.f,added:o.a,pendPrev:o.pP,pendNow:o.pN,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:o.eP,donePrev:o.dP,exNow:o.eN,doneNow:o.dN,fixedPre:o.fp}; }
   return [fin(A), two?fin(B):null];
 }
 function _ulqWoW(us,dmap,base,end){
-  var fixed=0,added=0,pendNow=0,pendPrev=0,exNow=0,exPrev=0,doneNow=0,donePrev=0;
+  var fixed=0,added=0,pendNow=0,pendPrev=0,exNow=0,exPrev=0,doneNow=0,donePrev=0,fixedPre=0;
   var E=end||todayISO();
   us.forEach(function(u){ (u.rows||[]).forEach(function(r){
     var dn=(r.compId!=null), dd=r.actualDone||'', ad='';
@@ -21735,10 +21742,11 @@ function _ulqWoW(us,dmap,base,end){
     if(exN){ exNow++; if(dnN)doneNow++; else pendNow++; }
     if(exP){exPrev++; if(dnP)donePrev++; else pendPrev++;}
     if(dn&&dd&&dd>base&&dd<=E)fixed++;
+    if(dn&&dd&&dd<=base&&ad&&ad>base&&ad<=E)fixedPre++;   // V0917-01 同 _ulqWoW2 fixedPre
     if(ad&&ad>base&&ad<=E)added++;
   });});
   var rN=exNow?Math.round(doneNow*100/exNow):0, rP=exPrev?Math.round(donePrev*100/exPrev):0;
-  return {fixed:fixed,added:added,pendPrev:pendPrev,pendNow:pendNow,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:exPrev,donePrev:donePrev,exNow:exNow,doneNow:doneNow};   // V0917-01 同 _ulqWoW2 多帶四鍵
+  return {fixed:fixed,added:added,pendPrev:pendPrev,pendNow:pendNow,ratePrev:rP,rateNow:rN,diff:rN-rP,exPrev:exPrev,donePrev:donePrev,exNow:exNow,doneNow:doneNow,fixedPre:fixedPre};   // V0917-01 同 _ulqWoW2 多帶四鍵
 }
 function _ulqWoWChip(w,mob){
   if(!w)return '';
