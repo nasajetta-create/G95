@@ -597,7 +597,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 410;  // V0918-03 缺失資料改「增量監聽」＋心跳降頻（動機＝Firestore 規定監聽斷線超過 30 分鐘再接上就整個查詢結果重新計費，約 9,000 份 defects × 7 人一天約 28 次＝每日 25 萬 reads；目標壓到 1 萬以下）。_dfInit 重寫成四步：①本機底稿 getDocsFromCache 讀 SDK 離線快取（零計費）並算出最大 mt ②快取空（冷開機／剛重抓）才 getDocs 全量一次、順便把快取灌暖 ③改成只監聽 query(defectsCol, where('mt','>', since))，since＝最大 mt 減 10 分鐘（mt 是客端 Date.now()，各台時鐘會偏，重疊 10 分鐘當保險）；第一包把增量併進底稿後直接 resolve（底稿已在手上，不再有「空快取包先 return 等伺服器包」那段），_dfServerOk 仍照舊等 fromCache===false 才設＝存檔閘門一字不動 ④第一次收到伺服器包後 getCountFromServer 對帳（約 9 reads）：份數相等記 window._dfReconcile={ok:true}，不等就 console.warn 並做一次全量重載，把新增／修改／本機有雲端沒有（removed）轉成 onDocs 事件補齊（_dfPurgeTombs 物理刪除後其他裝置快取仍留舊文件、mt 不變＝增量看不到，就是靠這條對帳補救）。新增讀取帳本 window._dfReadStat={cache,full,inc,count} 與 console 一行「讀取帳本 快取／全量／增量／對帳」＝preview 真資料驗證看這行。_dfGetPending／_dfSaveDocs(+Rv)／_dfApplyDocs／_dfRebuildIntoS／rv 樂觀鎖／_dfBoot 冷開機墊檔全部一字不動（墊檔判斷的是 localStorage 不是 SDK 快取）。同版順手：presence 心跳 HEARTBEAT_MS 10 秒→60 秒、離線門檻 STALE_MS 25 秒→210 秒（3.5 倍心跳，否則全員被判離線）。新增煙測 smoke_g95_dfinc.js（假 firestore 模組驗暖開機不全量／since＝maxMt−600000／第一包 50 併 3／count 不等觸發全量與 removed／讀取帳本數字／冷開機全量）。程式行剪掉 V0917-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0918-02 手機版派工單兩處（V0918-01 線上實測順手抓到·都是既有行為）：①_pwRender 收列改跟桌機 _pwoRows 同一把尺（有廠商·未銷案·沒填實際完成日），以前沒排除已填實際完成日的列＝手機 E441 顯示 233、桌機 209；②廠商列各輪小字（初驗 a／複驗1 b／…）另起一行放廠商名下方（四輪時原本擠成兩行），第一行只留名稱＋未完成 N＋箭頭，兩行同一個點擊。桌機一字不動。程式行剪掉 V0915-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0918-01 廠商派工單「初驗／複驗1 怎麼分」定案（示意圖 派工單_接待徽章與輪次_20260827 ⑦＋⑧b＋⑨a）：篩選▾輪次下拉新增「全部（分輪次）」並改為預設，_pwoRows 在 all 時收全部輪次（單選某一輪的判斷基準一字不改）；新增 _PWO_ROUND_ORDER／_pwoRowRound（round 空白＝未分輪）／_pwoSegments（依 初驗→複驗1..5→自檢→未分輪 排段）／_pwoSegSummary／_pwoRoundLabel；_pwoRoundDate 在 all 時看該列自己的輪次、未分輪退回初驗日（線上 445 筆 round 空白的公設缺失以前任何輪次都選不到＝派工單完全看不到，現在自成「未分輪」段排最後）；桌機 _pwoVendorBlock 拆出 _pwoRowsHTML／_pwoHeadHTML，all 時同一家廠商內依輪次分段（段標題列淡藍 #EEF3F8＋各段自己表頭·完成日欄名跟該輪走）、廠商列徽章「N 筆未完成（初驗 a／複驗1 b／未分輪 c）」；PDF 一份含各輪：_pwoPdfRowsArr 在 all 時每段前插 colspan 11 段標題列（拆出 _pwoPdfRowsArr1 原邏輯）、sub 行帶各輪筆數、表頭「該輪完成」；手機 _pwRender 展開廠商時也依輪次分段（段標題＋廠商列小字各輪筆數）。煙測 smoke_g95_pwoseg.js 新增並登記總跑器。程式行剪掉 V0909-02（原封貼進 refs/CODE_VERSION註解史.md 最上面）。
+const CODE_VERSION = 411;  // V0918-04 缺失快照底稿＋冷開機分段載入（動機＝V0918-03 只救得了暖開機；冷開機——新裝置／清快取／按過重抓——仍要全量 11,569 reads，Spark 每日 5 萬額度一兩次就見底。線上實測 defects 共 11,571 份：未完成 1,026／已完成 10,491／墓碑 54＝墓碑只有 54 份，「跳過墓碑」那種省法完全沒用，要省只能不要一份一份讀；目標把冷開機壓到 ~20 reads）。A 缺失快照：新增 snaps/defects＝meta {at,by,ver,n,parts,zbytes}，內容分塊 snaps/defects_p1..pN（每塊 z 字串 ≤ 700,000 字元·Firestore 單文件上限 1 MiB），內容＝JSON 物件 {k:文件原封(d,st,mt,del,by,ver,rv…)} 含墓碑、用既有 _zEnc（gzip+base64）壓縮；🔴rv 一定要保留（rv 是樂觀鎖與規則層檢查的基準，掉了會整批被拒寫）。新增 module 函式 window._dfSnapWrite(opts)＝從 window._dfBaseMap（_dfInit 手上那份 baseMap·同一個 Map 不複製）序列化，先寫各 _pN、最後才寫 meta（讀的人以 meta 為準＝寫到一半斷線最多是讀到舊快照，不會讀到半套新的）；重入鎖 window._dfSnapDone；教學版沙盒（S.__demoSeed 為真或 window._demoSeal 存在）一律 return 'demo' 不寫。寫入時機＝classic _g95SnapTick 裡用同一組就緒閘門（_dfActive＋_dfServerOk＋非 _dfPartial／_dfStale／_VIEW_ONLY／_versionBlocked／_idleLocked）呼叫 _dfSnapWrite({maxAgeMs:20小時})，每個分頁每次開機只試一次（window._dfSnapTicked）；meta 的 at 超過 20 小時或快照不存在才寫，失敗只 console.warn 不影響使用。B _dfInit 開機路徑改成：①getDocsFromCache 本機底稿（零計費）②一律再讀 snaps/defects meta（1 read），存在就讀各 _pN（parts reads）、_zDec 解析後與快取合併＝同 key 取 mt 較大者（mt 相同取 rv 較大者），快取有快照沒有的保留、快照有快取沒有的加入（「一律讀」的理由＝用快照開機之後 SDK 離線快取裡只會有增量那幾份，下次開機照樣得靠快照補齊）③只有「快取空且快照不存在／讀失敗」才走全量，而且全量改成分段：先 getDocs(query(defectsCol,where('st','==','o'))) 未完成（約 1,026 份）立刻 resolve {docs,partial:true,rest}，rest 是接著 getDocs(query(defectsCol,where('st','==','d'))) 已完成的 Promise、resolve 成不含第一段 key 的 [{k,d}] 陣列，stat.full 累計兩段；增量監聽包成 _attachListen()、等 rest 完成才掛（maxMt 要兩段都到齊才算得準），提早 resolve 後第一包增量改走 onDocs（否則整包掉在地上）④增量監聽 where('mt','>',since)、since＝maxMt−600000、includeMetadataChanges、_dfServerOk 只在 fromCache===false 才設＝V0918-03 這段邏輯一字不改（只是包進函式）⑤_reconcileOnce 對帳照舊（count 不符→全量重載→added／modified／removed 事件），並在修補後若非唯讀直接觸發一次 _dfSnapWrite({force:true})（墓碑被物理刪除後舊快照會一直讓對帳不符）。讀取帳本改成 window._dfReadStat={cache,snap,snapReads,full,inc,count}，console 一行改成「讀取帳本 快取 X／快照 Y(讀 Z)／全量 F／增量 I／對帳 C」＝preview 真資料驗證看這行。C classic _dfBoot：刪掉冷開機另發一筆 _dfGetPending 墊檔那段（那是額外的 1,026 reads·window._dfGetPending 函式本身保留，「資料不見了」SOP 會用），改成處理 first.partial===true＝把 first.docs 灌進 _dfMap／_dfPartial=true／_dfRebuildIntoS／_dfCntUpd／throttledRenderAll／toast「未完成資料已就緒…」，再 await first.rest 併進 _dfMap（同 key 取 mt 大者＝分段期間被 _dfOnDocs 更新過的較新值不會被第二段舊值蓋回去），然後 _dfPartial=false＋setSyncStatus('online')＋toast「全部資料載入完成 ✓」＋重組重繪，最後才 _dfReady／_dfActive；存檔閘門（_dfPartial 期間鎖存檔）與 60 秒逾時／_dfStale 一字不動，非 partial 走原路。順手：_g95SnapPrune 只清形如 YYYY-MM-DD 的 id＝snaps/defects 不會被誤刪。已知限制：①快照最舊可能是 20 小時前，這段空窗靠增量監聽的 since（maxMt 往前推 10 分鐘）往回補 ②物理刪除（_dfPurgeTombs）在快照與別台快取裡都還留著＝靠 count 對帳＋重寫快照收斂，不是即時。新增煙測 smoke_g95_dfsnap.js 並登記進 run_all_g95.js；smoke_g95_dfinc.js 隨規格改（冷開機期望從「全量一次」改成「先過快照 meta、再分段」）。程式行剪掉 V0918-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0918-03 缺失資料改「增量監聽」＋心跳降頻（動機＝Firestore 規定監聽斷線超過 30 分鐘再接上就整個查詢結果重新計費，約 9,000 份 defects × 7 人一天約 28 次＝每日 25 萬 reads；目標壓到 1 萬以下）。_dfInit 重寫成四步：①本機底稿 getDocsFromCache 讀 SDK 離線快取（零計費）並算出最大 mt ②快取空（冷開機／剛重抓）才 getDocs 全量一次、順便把快取灌暖 ③改成只監聽 query(defectsCol, where('mt','>', since))，since＝最大 mt 減 10 分鐘（mt 是客端 Date.now()，各台時鐘會偏，重疊 10 分鐘當保險）；第一包把增量併進底稿後直接 resolve（底稿已在手上，不再有「空快取包先 return 等伺服器包」那段），_dfServerOk 仍照舊等 fromCache===false 才設＝存檔閘門一字不動 ④第一次收到伺服器包後 getCountFromServer 對帳（約 9 reads）：份數相等記 window._dfReconcile={ok:true}，不等就 console.warn 並做一次全量重載，把新增／修改／本機有雲端沒有（removed）轉成 onDocs 事件補齊（_dfPurgeTombs 物理刪除後其他裝置快取仍留舊文件、mt 不變＝增量看不到，就是靠這條對帳補救）。新增讀取帳本 window._dfReadStat={cache,full,inc,count} 與 console 一行「讀取帳本 快取／全量／增量／對帳」＝preview 真資料驗證看這行。_dfGetPending／_dfSaveDocs(+Rv)／_dfApplyDocs／_dfRebuildIntoS／rv 樂觀鎖／_dfBoot 冷開機墊檔全部一字不動（墊檔判斷的是 localStorage 不是 SDK 快取）。同版順手：presence 心跳 HEARTBEAT_MS 10 秒→60 秒、離線門檻 STALE_MS 25 秒→210 秒（3.5 倍心跳，否則全員被判離線）。新增煙測 smoke_g95_dfinc.js（假 firestore 模組驗暖開機不全量／since＝maxMt−600000／第一包 50 併 3／count 不等觸發全量與 removed／讀取帳本數字／冷開機全量）。程式行剪掉 V0917-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0918-02 手機版派工單兩處（V0918-01 線上實測順手抓到·都是既有行為）：①_pwRender 收列改跟桌機 _pwoRows 同一把尺（有廠商·未銷案·沒填實際完成日），以前沒排除已填實際完成日的列＝手機 E441 顯示 233、桌機 209；②廠商列各輪小字（初驗 a／複驗1 b／…）另起一行放廠商名下方（四輪時原本擠成兩行），第一行只留名稱＋未完成 N＋箭頭，兩行同一個點擊。桌機一字不動。程式行剪掉 V0915-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -748,7 +748,8 @@ window._g95SnapRead = async function(dateStr){
 };
 window._g95SnapPrune = async function(cutoffStr){
   const all = await getDocs(snapsCol); const del=[];
-  all.forEach(d=>{ const base=d.id.replace(/_p\d$/,''); if(base < String(cutoffStr)) del.push(d.id); });
+  // V0918-04：只清「日期字串」id 的每日還原點；snaps/defects（缺失快照）與任何非日期 id 一律跳過
+  all.forEach(d=>{ const base=d.id.replace(/_p\d+$/,''); if(!/^\d{4}-\d{2}-\d{2}$/.test(base)) return; if(base < String(cutoffStr)) del.push(d.id); });
   for(const id of del){ await deleteDoc(doc(snapsCol, id)); }
   return del.length;
 };
@@ -1124,46 +1125,102 @@ window._dfMigrate = async function(state){
   console.log('[defects] 一次性遷移完成：未完成 '+(state.rows||[]).length+'＋已完成 '+(state.completed||[]).length+' 筆');
   return list.length;
 };
-// ═══ V0918-03 🔴增量監聽（省 Firestore 讀取）═══════════════════════════
-// 動機：舊版對「整個 defects 集合」掛 onSnapshot，Firestore 規定「監聽斷線超過 30 分鐘再接上＝整個查詢結果重新計費」，
-// 約 9,000 份 ⇒ 每個人每天第一次開、或離開半小時再回來＝一次 9,000 reads；7 人一天約 28 次＝每日 25 萬 reads。
-// 新做法四步：①本機底稿 getDocsFromCache（讀 SDK 離線快取·零計費）②快取空＝冷開機才 getDocs 全量一次（同時把快取灌暖）
-// ③只監聽 where('mt','>', since)，since＝底稿最大 mt 往前推 10 分鐘（mt 是客端 Date.now()＝各台時鐘會偏，重疊 10 分鐘當保險）
-// ④第一次收到伺服器包後用 getCountFromServer 對帳（約 9 reads）：份數不符才做一次全量重載補差異。
-// ⚠️ 已知限制：_dfPurgeTombs 之類「物理刪除」在其他裝置的離線快取裡仍留著那些文件（mt 不會變＝增量監聽看不到），
-//    靠第 ④ 步的 count 對帳補救（份數會不等 ⇒ 觸發全量重載、把多出來的當 removed 補齊）。
-// 讀取帳本 window._dfReadStat={cache,full,inc,count}＝這次開機各管道實際讀了幾份，preview 真資料驗證看 console 那行。
+// ═══ V0918-04 🔴缺失快照底稿＋冷開機分段（省 Firestore 讀取）═══════════
+// 動機：V0918-03 的增量監聽只救得了「暖開機」；冷開機（新裝置／清快取／重抓）仍要全量 11,569 reads，
+// Spark 每日 5 萬額度一兩次就見底。線上實測 defects 共 11,571 份（未完成 1,026／已完成 10,491／墓碑 54）
+// ＝墓碑只有 54 份，「跳過墓碑」那種省法完全沒用，要省只能不要一份一份讀。
+// 做法 A 缺失快照：snaps/defects（meta {at,by,ver,n,parts,zbytes}）＋ snaps/defects_p1..pN（每塊 z 字串 ≤ 700,000 字元），
+//   內容＝ {k: 文件原封}（含墓碑·含 rv——rv 是樂觀鎖＋規則層檢查的基準，掉了會整批拒寫）用 _zEnc 壓縮；
+//   一天寫一次（_g95SnapTick 同一組就緒閘門＋_dfSnapWrite({maxAgeMs:20小時})），demo 沙盒一律不寫。
+// 做法 B 開機路徑：①getDocsFromCache 本機底稿（零計費）②一律讀 snaps/defects meta（1 read）＋各塊（parts reads），
+//   與快取合併＝同 key 取 mt 大者（mt 相同取 rv 大者）③只有「快取空且快照不存在／讀失敗」才全量，
+//   而且全量改分段：先 st=='o' 未完成（約 1,026 份）立刻 resolve {partial:true, rest}，已完成在背景第二段補。
+//   ④增量監聽 where('mt','>', since)、since＝maxMt−10 分鐘、includeMetadataChanges、_dfServerOk 等 fromCache===false（一字不改）
+//   ⑤getCountFromServer 對帳不符＝全量重載補差異，並順手重寫一次快照（否則墓碑被物理刪除後舊快照會讓對帳天天不符）。
+// 做法 C classic _dfBoot：拿掉 _dfGetPending 墊檔那段（改由 _dfInit 的分段供應），改成處理 first.partial／first.rest。
+// ⚠️ 已知限制：①快照最舊可能 20 小時前＝這段空窗靠增量監聽 since 往回補（since 只看快取/快照的最大 mt，會涵蓋）
+//   ②物理刪除（_dfPurgeTombs）在快照與別台快取裡都還留著＝靠 count 對帳＋重寫快照收斂，不是即時。
+// 讀取帳本 window._dfReadStat={cache,snap,snapReads,full,inc,count}＝這次開機各管道實際讀了幾份，preview 看 console 那行。
 window._dfInit = function(onDocs){
   return new Promise((resolve)=>{
-    const stat = { cache:0, full:0, inc:0, count:0 };
+    const stat = { cache:0, snap:0, snapReads:0, full:0, inc:0, count:0 };
     window._dfReadStat = stat;
     const baseMap = new Map();          // 目前已知的全部文件（底稿 ∪ 增量）：k → 文件內容
+    window._dfBaseMap = baseMap;        // V0918-04：曝露給 _dfSnapWrite 序列化用（同一份 Map，不複製）
     const _mtOf = v => (v && typeof v.mt === 'number') ? v.mt : 0;
+    const _rvOf = v => (v && typeof v.rv === 'number') ? v.rv : 0;
     let maxMt = 0;
     function _absorb(dd){ const v = dd.data(); baseMap.set(dd.id, v); const m = _mtOf(v); if(m > maxMt) maxMt = m; }
+    // V0918-04：快照與快取合併＝同 key 取 mt 大者；mt 相同取 rv 大者（rv 只增不減＝同毫秒寫入時的決勝局）
+    function _merge(k, v){
+      const old = baseMap.get(k);
+      if(old){
+        const om = _mtOf(old), nm = _mtOf(v);
+        if(nm < om) return;
+        if(nm === om && _rvOf(v) <= _rvOf(old)) return;
+      }
+      baseMap.set(k, v);
+      const m = _mtOf(v); if(m > maxMt) maxMt = m;
+    }
     (async ()=>{
       // ① 本機底稿（零計費）
       try{
         const cs = await getDocsFromCache(defectsCol);
         cs.forEach(_absorb);
         stat.cache = baseMap.size;
-      }catch(e){ console.warn('[defects] 讀本機快取失敗，改走冷開機全量', e); }
-      // ② 冷開機（快取空或讀取失敗）＝全量一次，之後 SDK 快取就暖了
+      }catch(e){ console.warn('[defects] 讀本機快取失敗，改靠缺失快照／全量', e); }
+      // ② 缺失快照底稿（snaps/defects）：一律讀一次 meta（1 read），有就把各塊拉下來合併（parts reads）。
+      //    ⚠️ 一定要「一律」讀：用快照開機之後 SDK 離線快取裡只會有增量那幾份，下次開機照樣得靠快照補齊。
+      try{
+        const ms = await getDoc(doc(snapsCol, 'defects'));
+        stat.snapReads += 1;
+        const mv = ms.exists() ? (ms.data()||{}) : null;
+        window._dfSnapMetaAt = (mv && typeof mv.at === 'number') ? mv.at : 0;
+        window._dfSnapMetaKnown = true;   // 開機已讀過＝_dfSnapWrite 不必再讀一次 meta
+        if(mv){
+          const parts = Math.max(1, mv.parts|0);
+          let z = '';
+          for(let i=1;i<=parts;i++){
+            const p = await getDoc(doc(snapsCol, 'defects_p'+i));
+            stat.snapReads += 1;
+            if(p.exists()) z += (p.data().z || '');
+          }
+          if(z){
+            const obj = JSON.parse(await _zDec(z));
+            let n = 0;
+            Object.keys(obj).forEach(k=>{ _merge(k, obj[k]); n++; });
+            stat.snap = n;
+            console.log('[defects] 缺失快照底稿 '+n+' 份（讀 '+stat.snapReads+' 次·寫於 '+(window._dfSnapMetaAt?new Date(window._dfSnapMetaAt).toLocaleString():'?')+'）');
+          }
+        }
+      }catch(e){ console.warn('[defects] 缺失快照讀取失敗（改走原路）', e); }
+      // ③ 只有「快取空且快照不存在／讀失敗」才全量，而且分段：未完成（量少）先上、已完成背景補
+      let restP = null;
       if(!baseMap.size){
         try{
-          const fs = await getDocs(defectsCol);
-          fs.forEach(_absorb);
-          stat.full = baseMap.size;
-          console.log('[defects] 冷開機全量載入 '+baseMap.size+' 份');
+          const fo = await getDocs(query(defectsCol, where('st','==','o')));
+          fo.forEach(_absorb);
+          stat.full += fo.size;
+          console.log('[defects] 冷開機分段①未完成 '+fo.size+' 份先上（已完成背景載入中）');
+          restP = (async ()=>{
+            const fd = await getDocs(query(defectsCol, where('st','==','d')));
+            stat.full += fd.size;
+            const out = [];
+            fd.forEach(dd=>{
+              const v = dd.data(); const m = _mtOf(v); if(m > maxMt) maxMt = m;
+              if(baseMap.has(dd.id)) return;   // 已在第一段的 key 不重複回報
+              baseMap.set(dd.id, v);
+              out.push({ k:dd.id, d:v });
+            });
+            console.log('[defects] 冷開機分段②已完成 '+fd.size+' 份到齊');
+            return out;
+          })();
         }catch(e){
-          console.error('[defects] 冷開機全量載入失敗', e);
+          console.error('[defects] 冷開機分段載入失敗', e);
           resolve(null); return;
         }
       }
-      // ③ 增量監聽：只收 mt 比底稿更新的文件（10 分鐘重疊防時鐘偏差）
-      const since = Math.max(0, maxMt - 10*60*1000);
-      window._dfIncSince = since;
-      let first = true, reconciled = false;
+      let first = true, reconciled = false, resolvedEarly = false;
       // 對帳（只做一次）：count 不等＝全量重載，把差異轉成 onDocs 事件補齊
       async function _reconcileOnce(){
         if(reconciled) return; reconciled = true;
@@ -1189,8 +1246,15 @@ window._dfInit = function(onDocs){
           Array.from(baseMap.keys()).forEach(k=>{ if(!seen.has(k)){ baseMap.delete(k); evs.push({ k:k, type:'removed', d:null }); } });
           if(evs.length && typeof onDocs === 'function') onDocs(evs);
           window._dfReconcile = { local:local, server:server, fixed:true, fixedN:evs.length };
+          // V0918-04：對帳不符＝快照多半也過期了（墓碑被物理刪除後舊快照會讓對帳天天不符）⇒ 直接重寫一次
+          try{ if(!window._VIEW_ONLY && typeof window._dfSnapWrite === 'function') window._dfSnapWrite({ force:true }); }catch(e2){}
         }catch(e){ console.warn('[defects] 份數對帳失敗（不影響使用）', e); }
       }
+      // ④ 增量監聽：只收 mt 比底稿更新的文件（10 分鐘重疊防時鐘偏差）——V0918-03 這段邏輯一字不改，
+      //    只是包成函式，好讓冷開機分段在「兩段都到齊、maxMt 算好」之後才掛。
+      function _attachListen(){
+      const since = Math.max(0, maxMt - 10*60*1000);
+      window._dfIncSince = since;
       // V0729-01 斷根②：includeMetadataChanges＝快取已是最新時也會收到「fromCache 轉 false」的 metadata 事件，
       // 否則暖開機且無變動＝永遠等不到伺服器包、_dfServerOk 永遠 false（存檔會被鎖死）。
       onSnapshot(query(defectsCol, where('mt','>', since)), {includeMetadataChanges:true}, snap=>{
@@ -1205,11 +1269,17 @@ window._dfInit = function(onDocs){
           if(first){
             // 底稿已在手上 ⇒ 第一包不論空不空都直接 resolve（_dfServerOk 仍照舊等 fromCache===false）
             first = false;
-            snap.docs.forEach(dd=>{ baseMap.set(dd.id, dd.data()); });   // 同 key 以新包為準
+            const chs0 = [];
+            snap.docs.forEach(dd=>{
+              const v = dd.data();
+              chs0.push({ k:dd.id, type:(baseMap.has(dd.id)?'modified':'added'), d:v });
+              baseMap.set(dd.id, v);   // 同 key 以新包為準
+            });
             stat.inc += snap.size;
-            const docs = Array.from(baseMap, kv=>({ k:kv[0], d:kv[1] }));
-            resolve({ docs: docs });
-            console.log('[defects] 讀取帳本 快取 '+stat.cache+'／全量 '+stat.full+'／增量 '+stat.inc+'／對帳 '+stat.count);
+            // V0918-04：冷開機分段已提早 resolve 過＝這包改走 onDocs（否則第一包的增量會整包掉在地上）
+            if(resolvedEarly){ if(chs0.length && typeof onDocs==='function') onDocs(chs0); }
+            else resolve({ docs: Array.from(baseMap, kv=>({ k:kv[0], d:kv[1] })) });
+            console.log('[defects] 讀取帳本 快取 '+stat.cache+'／快照 '+stat.snap+'(讀 '+stat.snapReads+')／全量 '+stat.full+'／增量 '+stat.inc+'／對帳 '+stat.count);
             return;
           }
           const chs = snap.docChanges().map(c=>({ k:c.doc.id, type:c.type, d:(c.type==='removed'?null:c.doc.data()) }));
@@ -1217,9 +1287,65 @@ window._dfInit = function(onDocs){
           stat.inc += chs.length;
           if(chs.length && typeof onDocs==='function') onDocs(chs);
         }catch(e){ console.error('[defects] listen 處理失敗', e); }
-      }, err=>{ console.error('[defects] listen error', err); if(first){ first=false; resolve(null); } });
+      }, err=>{ console.error('[defects] listen error', err); if(first){ first=false; if(!resolvedEarly) resolve(null); } });
+      }
+      // V0918-04：冷開機分段＝第一段就 resolve（partial:true），增量監聽等第二段到齊、maxMt 算好之後才掛
+      if(restP){
+        const rest2 = restP.then(arr=>{ _attachListen(); return arr; }, e=>{ console.error('[defects] 冷開機分段②失敗', e); _attachListen(); return []; });
+        resolvedEarly = true;
+        resolve({ docs: Array.from(baseMap, kv=>({ k:kv[0], d:kv[1] })), partial:true, rest: rest2 });
+        return;
+      }
+      _attachListen();
     })();
   });
+};
+// ═══ V0918-04 缺失快照寫入（snaps/defects＋_pN）═══════════════════════════
+// 來源＝_dfInit 現在手上的 baseMap（底稿 ∪ 增量）；先寫各 _pN、最後才寫 meta ⇒ 讀的人以 meta 為準，
+// 寫到一半斷線最多是「meta 還是舊的」＝下次開機讀到舊快照，不會讀到半套新的。
+// opts：{ maxAgeMs:上次寫入超過這麼久才重寫（預設 20 小時）, force:不看時間直接寫 }
+// 回傳 'demo'／'nodata'／'busy'／'fresh'／'metafail'／'fail'／{ok:true,n,parts,zbytes}
+window._dfSnapWrite = async function(opts){
+  opts = opts || {};
+  try{ if((typeof S!=='undefined' && S && S.__demoSeed) || window._demoSeal) return 'demo'; }catch(e){}   // 教學版沙盒一律不寫真雲端
+  const bm = window._dfBaseMap;
+  if(!bm || !bm.size) return 'nodata';
+  if(window._dfSnapDone) return 'busy';        // 重入鎖（底下是 async）
+  if(!opts.force){
+    let at = 0;
+    if(window._dfSnapMetaKnown){ at = +window._dfSnapMetaAt || 0; }   // ⚠️ 毫秒時間戳不可用 |0（超過 32 位元會被截斷成負數）
+    else {
+      try{
+        const ms = await getDoc(doc(snapsCol, 'defects'));
+        at = (ms.exists() && typeof ms.data().at === 'number') ? ms.data().at : 0;
+        window._dfSnapMetaAt = at; window._dfSnapMetaKnown = true;
+        if(window._dfReadStat) window._dfReadStat.snapReads += 1;
+      }catch(e){ console.warn('[defects] 缺失快照 meta 讀取失敗（這輪不寫）', e); return 'metafail'; }
+    }
+    const maxAge = (typeof opts.maxAgeMs === 'number') ? opts.maxAgeMs : 20*3600*1000;
+    if(at && (Date.now() - at) < maxAge) return 'fresh';
+  }
+  window._dfSnapDone = true;
+  try{
+    const obj = {};
+    bm.forEach((v,k)=>{ obj[k] = v; });          // 文件原封（含墓碑 del、含 rv——rv 掉了會整批拒寫）
+    const n = bm.size;
+    const z = await _zEnc(JSON.stringify(obj));
+    const CH = 700000;                            // Firestore 單文件 1 MiB，留餘裕
+    const parts = Math.max(1, Math.ceil(z.length / CH));
+    for(let i=0;i<parts;i++){
+      await setDoc(doc(snapsCol, 'defects_p'+(i+1)), { z: z.slice(i*CH, (i+1)*CH) });
+    }
+    const at = Date.now();
+    await setDoc(doc(snapsCol, 'defects'), {
+      at: at, by: String(window._authEmail||'').replace(/@gmail\.com$/,''),
+      ver: CODE_VERSION, n: n, parts: parts, zbytes: z.length
+    });
+    window._dfSnapMetaAt = at; window._dfSnapMetaKnown = true;
+    console.log('[defects] 缺失快照已更新：'+n+' 份／'+parts+' 塊／壓縮 '+Math.round(z.length/1024)+' KB');
+    return { ok:true, n:n, parts:parts, zbytes:z.length };
+  }catch(e){ console.warn('[defects] 缺失快照寫入失敗（不影響使用）', e); return 'fail'; }
+  finally{ window._dfSnapDone = false; }
 };
 // 測試/重置工具（console 手動用）：清空 defects 集合＋遷移標記，從 legacy _fields/rows+completed 重新遷移（上 index 前清 preview 測試資料用）
 window._dfResetFromLegacy = async function(pass){
@@ -1570,7 +1696,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0918-03</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0918-04</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -2181,21 +2307,9 @@ async function _dfBoot(st){
     // V0723-05 B：首載逾時 20s→60s＋自動再等一輪（監聽是同一個 Promise、下載不會重來）；
     // 仍失敗＝標記 _dfStale＋紅色橫幅＋鎖存檔——不再「靜默退回舊快照還照常給存」（手機網路慢 20s 載不完 18k 文件＝重抓看起來沒效的根因）。
     var _initP=window._dfInit(_dfOnDocs);
-    // V0724-04 首載分段：只在「冷開機」（沒有本機快照＝剛重抓過或全新裝置）多發一筆未完成查詢墊檔；
-    // 暖開機走原路＝零額外讀取。全量快照先到＝墊檔結果直接作廢（_dfReady 守門）。分段期間 _dfPartial=true 鎖存檔。
-    var _cold=false; try{ _cold=!localStorage.getItem(SK); }catch(e){}
-    if(_cold && typeof window._dfGetPending==='function'){
-      window._dfGetPending().then(function(docs){
-        if(_dfReady || !docs || !docs.length) return;
-        _dfMap={}; docs.forEach(function(it){ _dfMap[it.k]=it.d; });
-        window._dfPartial=true;
-        _dfRebuildIntoS({}, true);
-        try{ _dfCntUpd(); }catch(e){}
-        try{ throttledRenderAll(); }catch(e){}
-        try{ if(typeof toast==='function') toast('未完成資料已就緒，可先查看；已完成資料背景載入中…','⏳'); }catch(e){}
-        console.log('[defects] 首載分段：未完成 '+docs.length+' 份先上（已完成背景載入中）');
-      }).catch(function(e){ console.warn('[defects] 首載分段查詢失敗（不影響全量載入）', e); });
-    }
+    // V0918-04：拿掉原本冷開機另發一筆 _dfGetPending 墊檔（那是「額外」1,026 reads）；
+    // 分段改由 _dfInit 供應（first.partial/first.rest），而且只在「快取空＋沒有缺失快照」時才會分段。
+    // window._dfGetPending 函式本身保留（「資料不見了」SOP 手動查證用）。
     var _race=function(){ return Promise.race([_initP, new Promise(function(res){ setTimeout(function(){ res('__DFTIMEOUT__'); },60000); })]); };
     var first=await _race();
     if(first==='__DFTIMEOUT__'){ console.warn('[defects] 首載逾時 60s，繼續等第二輪 60s…'); first=await _race(); }
@@ -2203,13 +2317,37 @@ async function _dfBoot(st){
     window._dfStale=false; try{ var _sb=document.getElementById('df-stale-banner'); if(_sb)_sb.remove(); }catch(e){}
     _dfMap={};
     first.docs.forEach(function(it){ _dfMap[it.k]=it.d; });
-    if(window._dfPartial){ window._dfPartial=false; try{ if(typeof setSyncStatus==='function') setSyncStatus('online'); }catch(e){}  /* V0727-02：載完才轉「已同步」 */ try{ if(typeof toast==='function') toast('全部資料載入完成 ✓','✅'); }catch(e){} try{ throttledRenderAll(); }catch(e){} }  // V0724-04：分段轉正；V0828-04 ①：轉正後補一次重繪＝報告看板守門橫幅/灰化自動恢復（沿用旗標轉正時機，不用 setTimeout 猜）
+    // V0918-04 冷開機分段：第一段（未完成·量少）先上畫面可看不可存，第二段（已完成）背景到齊才轉正
+    if(first.partial===true && first.rest && typeof first.rest.then==='function'){
+      window._dfPartial=true;
+      _dfRebuildIntoS({}, true);
+      try{ _dfCntUpd(); }catch(e){}
+      try{ throttledRenderAll(); }catch(e){}
+      try{ if(typeof toast==='function') toast('未完成資料已就緒，可先查看；已完成資料背景載入中…','⏳'); }catch(e){}
+      console.log('[defects] 冷開機分段：未完成 '+first.docs.length+' 份先上（已完成背景載入中）');
+      var _rest=[]; try{ _rest=await first.rest; }catch(e){ console.warn('[defects] 已完成分段載入失敗（靠增量／對帳補）', e); _rest=[]; }
+      (_rest||[]).forEach(function(it){
+        if(!it || !it.d) return;
+        var cur=_dfMap[it.k];
+        // 同 key 取 mt 大者＝分段期間已被 _dfOnDocs 更新過的較新內容不會被第二段的舊值蓋回去
+        if(cur && (+cur.mt||0) >= (+it.d.mt||0)) return;
+        _dfMap[it.k]=it.d;
+      });
+      window._dfPartial=false;
+      try{ if(typeof setSyncStatus==='function') setSyncStatus('online'); }catch(e){}
+      try{ if(typeof toast==='function') toast('全部資料載入完成 ✓','✅'); }catch(e){}
+      _dfRebuildIntoS({}, true);
+      try{ _dfCntUpd(); }catch(e){}
+      try{ throttledRenderAll(); }catch(e){}
+      console.log('[defects] 冷開機分段完成：合計 '+Object.keys(_dfMap).length+' 份');
+    }
+    else if(window._dfPartial){ window._dfPartial=false; try{ if(typeof setSyncStatus==='function') setSyncStatus('online'); }catch(e){}  /* V0727-02：載完才轉「已同步」 */ try{ if(typeof toast==='function') toast('全部資料載入完成 ✓','✅'); }catch(e){} try{ throttledRenderAll(); }catch(e){} }  // V0724-04：分段轉正；V0828-04 ①：轉正後補一次重繪＝報告看板守門橫幅/灰化自動恢復（沿用旗標轉正時機，不用 setTimeout 猜）
     _dfReady=true; window._dfActive=true; window._dfBootAt=Date.now();  // V0729-01：對帳看門狗計時起點
   try{ if(typeof setSyncStatus==='function') setSyncStatus('online'); }catch(e){}   // V0727-02：defects 就緒→刷新同步狀態
     _dfRebuildIntoS({}, true);   // 開機＝純雲端（legacy 列沒 _k 會被誤當新增而翻倍＝V0716-02 preview 實測抓到的 bug）
     try{ _dfCntUpd(); }catch(e){}  // V0724-01 ④
     _dfFlushPending();
-    console.log('[defects] 就緒：'+first.docs.length+' 份文件（未完成 '+S.rows.length+'／已完成 '+S.completed.length+'）');
+    console.log('[defects] 就緒：'+Object.keys(_dfMap).length+' 份文件（未完成 '+S.rows.length+'／已完成 '+S.completed.length+'）');   // V0918-04：分段時 first.docs 只有第一段，改數 _dfMap
     try{ setTimeout(function(){ try{ if(typeof _dfHealthCheck==='function') _dfHealthCheck(); }catch(e){} }, 8000); }catch(e){}  // V0720-11：開機健檢（延遲 8s 待 onSnapshot 收斂）
   } finally { _dfBootBusy=false; }
 }
@@ -7306,9 +7444,19 @@ function g95FullRestore(file){
 window._g95SnapDone=false;
 function _g95SnapTick(){
   try{
-    if(window._g95SnapDone) return 'done';
     if(!window._dfActive || !window._dfServerOk || window._dfPartial || window._dfStale) return 'notready';
     if(window._VIEW_ONLY || window._versionBlocked || window._idleLocked) return 'blocked';
+    // V0918-04：缺失快照（冷開機底稿）——同一組就緒閘門，超過 20 小時沒寫才寫；每個分頁每次開機只試一次
+    if(!window._dfSnapTicked && typeof window._dfSnapWrite==='function'){
+      window._dfSnapTicked=true;
+      try{
+        window._dfSnapWrite({ maxAgeMs: 20*3600*1000 }).then(function(r){
+          if(r && r.ok) console.log('[defects] 缺失快照 tick 已寫入 '+r.n+' 份');
+          else console.log('[defects] 缺失快照 tick：'+r);
+        }).catch(function(e){ console.warn('[defects] 缺失快照 tick 失敗（不影響使用）', e); });
+      }catch(e){}
+    }
+    if(window._g95SnapDone) return 'done';
     if(typeof window._g95SnapHas!=='function' || typeof window._g95SnapWrite!=='function') return 'nofn';
     window._g95SnapDone=true;   // 先鎖（底下是 async，避免重入重複寫）
     var d=todayISO();
@@ -26941,6 +27089,4 @@ try{
 </body>
 </html>
 
-<!-- V0918-03 index -->
-
-<!-- V0918-03 prev -->
+<!-- V0918-04 prev -->
