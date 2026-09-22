@@ -439,6 +439,7 @@ td textarea{resize:vertical;min-height:32px;line-height:1.5}
 .ulq-zh .zbt{display:grid;grid-template-columns:76px 54px 54px 76px;gap:6px;justify-content:end}
 .ulq-zh .zbt .btn{width:100%;justify-content:center;text-align:center}
 @media (max-width:1230px){.ulq-zh{display:flex;flex-wrap:wrap;gap:6px 10px}.ulq-zh .zbt{display:flex;margin-left:auto}.ulq-zh .zbt .btn{width:auto}}
+.ulq-zh.ulq-late,.ulq-zh.ulq-past,.ulq-zh.ulq-pastz{margin-top:10px}   /* V0922-01 過期批次三種列 */
 /* V0817-02 ⑤〜⑦ 交屋行事曆約定複驗面板 */
 #pane-hcal .ap-drow{display:grid;grid-template-columns:186px minmax(0,1fr);gap:0 12px;padding:7px 0;border-bottom:1px solid #E1E8F2;align-items:start}
 #pane-hcal .ap-drow:last-child{border-bottom:none}
@@ -597,7 +598,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 412;  // V0921-01 交屋行事曆輪次徽章修正（使用者截圖：A1-17 複驗1 已完成 08/28、複驗2 列預留但空殼、09/24 存在約定複驗日 reCheckUF ⇒ _stageOf 的 reN 只數有日期的列＝1 ⇒ 09/24 那格印「複1」應為「複2」）：_stageOf 新增回傳 calN／calDone（約定日＝某輪完成日 ⇒ 那一輪實心；否則已完成到第 N 輪 ⇒ N+1 空心；沒複驗過 ⇒ reN||1），inspStageBadgeCal 格子輪次改讀 calN、_rndDoneOf 改讀 calDone＝徽章文字與實心判定同一份基準；🔴 full 一字不改＝不帶 round 呼叫的戶況總表等舊行為原封。複驗3、4… 自動跟著（煙測 smoke_g95_calround 覆蓋完成 1／2／3 輪＋約定日等於完成日的實心案）。｜V0918-04 缺失快照底稿＋冷開機分段載入（動機＝V0918-03 只救得了暖開機；冷開機——新裝置／清快取／按過重抓——仍要全量 11,569 reads，Spark 每日 5 萬額度一兩次就見底。線上實測 defects 共 11,571 份：未完成 1,026／已完成 10,491／墓碑 54＝墓碑只有 54 份，「跳過墓碑」那種省法完全沒用，要省只能不要一份一份讀；目標把冷開機壓到 ~20 reads）。A 缺失快照：新增 snaps/defects＝meta {at,by,ver,n,parts,zbytes}，內容分塊 snaps/defects_p1..pN（每塊 z 字串 ≤ 700,000 字元·Firestore 單文件上限 1 MiB），內容＝JSON 物件 {k:文件原封(d,st,mt,del,by,ver,rv…)} 含墓碑、用既有 _zEnc（gzip+base64）壓縮；🔴rv 一定要保留（rv 是樂觀鎖與規則層檢查的基準，掉了會整批被拒寫）。新增 module 函式 window._dfSnapWrite(opts)＝從 window._dfBaseMap（_dfInit 手上那份 baseMap·同一個 Map 不複製）序列化，先寫各 _pN、最後才寫 meta（讀的人以 meta 為準＝寫到一半斷線最多是讀到舊快照，不會讀到半套新的）；重入鎖 window._dfSnapDone；教學版沙盒（S.__demoSeed 為真或 window._demoSeal 存在）一律 return 'demo' 不寫。寫入時機＝classic _g95SnapTick 裡用同一組就緒閘門（_dfActive＋_dfServerOk＋非 _dfPartial／_dfStale／_VIEW_ONLY／_versionBlocked／_idleLocked）呼叫 _dfSnapWrite({maxAgeMs:20小時})，每個分頁每次開機只試一次（window._dfSnapTicked）；meta 的 at 超過 20 小時或快照不存在才寫，失敗只 console.warn 不影響使用。B _dfInit 開機路徑改成：①getDocsFromCache 本機底稿（零計費）②一律再讀 snaps/defects meta（1 read），存在就讀各 _pN（parts reads）、_zDec 解析後與快取合併＝同 key 取 mt 較大者（mt 相同取 rv 較大者），快取有快照沒有的保留、快照有快取沒有的加入（「一律讀」的理由＝用快照開機之後 SDK 離線快取裡只會有增量那幾份，下次開機照樣得靠快照補齊）③只有「快取空且快照不存在／讀失敗」才走全量，而且全量改成分段：先 getDocs(query(defectsCol,where('st','==','o'))) 未完成（約 1,026 份）立刻 resolve {docs,partial:true,rest}，rest 是接著 getDocs(query(defectsCol,where('st','==','d'))) 已完成的 Promise、resolve 成不含第一段 key 的 [{k,d}] 陣列，stat.full 累計兩段；增量監聽包成 _attachListen()、等 rest 完成才掛（maxMt 要兩段都到齊才算得準），提早 resolve 後第一包增量改走 onDocs（否則整包掉在地上）④增量監聽 where('mt','>',since)、since＝maxMt−600000、includeMetadataChanges、_dfServerOk 只在 fromCache===false 才設＝V0918-03 這段邏輯一字不改（只是包進函式）⑤_reconcileOnce 對帳照舊（count 不符→全量重載→added／modified／removed 事件），並在修補後若非唯讀直接觸發一次 _dfSnapWrite({force:true})（墓碑被物理刪除後舊快照會一直讓對帳不符）。讀取帳本改成 window._dfReadStat={cache,snap,snapReads,full,inc,count}，console 一行改成「讀取帳本 快取 X／快照 Y(讀 Z)／全量 F／增量 I／對帳 C」＝preview 真資料驗證看這行。C classic _dfBoot：刪掉冷開機另發一筆 _dfGetPending 墊檔那段（那是額外的 1,026 reads·window._dfGetPending 函式本身保留，「資料不見了」SOP 會用），改成處理 first.partial===true＝把 first.docs 灌進 _dfMap／_dfPartial=true／_dfRebuildIntoS／_dfCntUpd／throttledRenderAll／toast「未完成資料已就緒…」，再 await first.rest 併進 _dfMap（同 key 取 mt 大者＝分段期間被 _dfOnDocs 更新過的較新值不會被第二段舊值蓋回去），然後 _dfPartial=false＋setSyncStatus('online')＋toast「全部資料載入完成 ✓」＋重組重繪，最後才 _dfReady／_dfActive；存檔閘門（_dfPartial 期間鎖存檔）與 60 秒逾時／_dfStale 一字不動，非 partial 走原路。順手：_g95SnapPrune 只清形如 YYYY-MM-DD 的 id＝snaps/defects 不會被誤刪。已知限制：①快照最舊可能是 20 小時前，這段空窗靠增量監聽的 since（maxMt 往前推 10 分鐘）往回補 ②物理刪除（_dfPurgeTombs）在快照與別台快取裡都還留著＝靠 count 對帳＋重寫快照收斂，不是即時。新增煙測 smoke_g95_dfsnap.js 並登記進 run_all_g95.js；smoke_g95_dfinc.js 隨規格改（冷開機期望從「全量一次」改成「先過快照 meta、再分段」）。程式行剪掉 V0918-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。｜V0918-03 缺失資料改「增量監聽」＋心跳降頻（動機＝Firestore 規定監聽斷線超過 30 分鐘再接上就整個查詢結果重新計費，約 9,000 份 defects × 7 人一天約 28 次＝每日 25 萬 reads；目標壓到 1 萬以下）。_dfInit 重寫成四步：①本機底稿 getDocsFromCache 讀 SDK 離線快取（零計費）並算出最大 mt ②快取空（冷開機／剛重抓）才 getDocs 全量一次、順便把快取灌暖 ③改成只監聽 query(defectsCol, where('mt','>', since))，since＝最大 mt 減 10 分鐘（mt 是客端 Date.now()，各台時鐘會偏，重疊 10 分鐘當保險）；第一包把增量併進底稿後直接 resolve（底稿已在手上，不再有「空快取包先 return 等伺服器包」那段），_dfServerOk 仍照舊等 fromCache===false 才設＝存檔閘門一字不動 ④第一次收到伺服器包後 getCountFromServer 對帳（約 9 reads）：份數相等記 window._dfReconcile={ok:true}，不等就 console.warn 並做一次全量重載，把新增／修改／本機有雲端沒有（removed）轉成 onDocs 事件補齊（_dfPurgeTombs 物理刪除後其他裝置快取仍留舊文件、mt 不變＝增量看不到，就是靠這條對帳補救）。新增讀取帳本 window._dfReadStat={cache,full,inc,count} 與 console 一行「讀取帳本 快取／全量／增量／對帳」＝preview 真資料驗證看這行。_dfGetPending／_dfSaveDocs(+Rv)／_dfApplyDocs／_dfRebuildIntoS／rv 樂觀鎖／_dfBoot 冷開機墊檔全部一字不動（墊檔判斷的是 localStorage 不是 SDK 快取）。同版順手：presence 心跳 HEARTBEAT_MS 10 秒→60 秒、離線門檻 STALE_MS 25 秒→210 秒（3.5 倍心跳，否則全員被判離線）。新增煙測 smoke_g95_dfinc.js（假 firestore 模組驗暖開機不全量／since＝maxMt−600000／第一包 50 併 3／count 不等觸發全量與 removed／讀取帳本數字／冷開機全量）。程式行剪掉 V0917-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。
+const CODE_VERSION = 413;  // V0922-01 複驗交屋追蹤表「過期批次收合」（示意圖 複驗批次已驗完收起 v2 ①〜④·使用者截圖：A3-29 複驗1 已於 08/24 登記完成、約定複驗日仍是 08/24 ⇒ 一直掛在「複驗 08/24 · 最近」紅色批裡，看板越來越長）：_ulqData 每批再分「驗完／沒驗」兩堆（判斷基準只有一份 _ulqReDoneOn＝有完成日 ≥ 批次日且 ≤ 今天的複驗紀錄；複驗當場開的新缺失不影響），curZones／lateZones／pastZones；_ulqZonesHTML 拆成 renderZone＋三段＝①今天起的批完全照舊（「最近」改只看今天起的批）②逾期未驗集中一列留在外面提醒（預設展開·底下每個日期一批·四顆鈕原封）③④已過期批次收成一列（預設收合·批數／戶數／日期範圍寫在列上·展開後每批一行灰色再點才出戶卡·無改期／解散鈕）。只改顯示、資料不動；桌機手機同一支。煙測 smoke_g95_pastzone。｜V0921-01 交屋行事曆輪次徽章修正（使用者截圖：A1-17 複驗1 已完成 08/28、複驗2 列預留但空殼、09/24 存在約定複驗日 reCheckUF ⇒ _stageOf 的 reN 只數有日期的列＝1 ⇒ 09/24 那格印「複1」應為「複2」）：_stageOf 新增回傳 calN／calDone（約定日＝某輪完成日 ⇒ 那一輪實心；否則已完成到第 N 輪 ⇒ N+1 空心；沒複驗過 ⇒ reN||1），inspStageBadgeCal 格子輪次改讀 calN、_rndDoneOf 改讀 calDone＝徽章文字與實心判定同一份基準；🔴 full 一字不改＝不帶 round 呼叫的戶況總表等舊行為原封。複驗3、4… 自動跟著（煙測 smoke_g95_calround 覆蓋完成 1／2／3 輪＋約定日等於完成日的實心案）。｜V0918-04 缺失快照底稿＋冷開機分段載入（動機＝V0918-03 只救得了暖開機；冷開機——新裝置／清快取／按過重抓——仍要全量 11,569 reads，Spark 每日 5 萬額度一兩次就見底。線上實測 defects 共 11,571 份：未完成 1,026／已完成 10,491／墓碑 54＝墓碑只有 54 份，「跳過墓碑」那種省法完全沒用，要省只能不要一份一份讀；目標把冷開機壓到 ~20 reads）。A 缺失快照：新增 snaps/defects＝meta {at,by,ver,n,parts,zbytes}，內容分塊 snaps/defects_p1..pN（每塊 z 字串 ≤ 700,000 字元·Firestore 單文件上限 1 MiB），內容＝JSON 物件 {k:文件原封(d,st,mt,del,by,ver,rv…)} 含墓碑、用既有 _zEnc（gzip+base64）壓縮；🔴rv 一定要保留（rv 是樂觀鎖與規則層檢查的基準，掉了會整批被拒寫）。新增 module 函式 window._dfSnapWrite(opts)＝從 window._dfBaseMap（_dfInit 手上那份 baseMap·同一個 Map 不複製）序列化，先寫各 _pN、最後才寫 meta（讀的人以 meta 為準＝寫到一半斷線最多是讀到舊快照，不會讀到半套新的）；重入鎖 window._dfSnapDone；教學版沙盒（S.__demoSeed 為真或 window._demoSeal 存在）一律 return 'demo' 不寫。寫入時機＝classic _g95SnapTick 裡用同一組就緒閘門（_dfActive＋_dfServerOk＋非 _dfPartial／_dfStale／_VIEW_ONLY／_versionBlocked／_idleLocked）呼叫 _dfSnapWrite({maxAgeMs:20小時})，每個分頁每次開機只試一次（window._dfSnapTicked）；meta 的 at 超過 20 小時或快照不存在才寫，失敗只 console.warn 不影響使用。B _dfInit 開機路徑改成：①getDocsFromCache 本機底稿（零計費）②一律再讀 snaps/defects meta（1 read），存在就讀各 _pN（parts reads）、_zDec 解析後與快取合併＝同 key 取 mt 較大者（mt 相同取 rv 較大者），快取有快照沒有的保留、快照有快取沒有的加入（「一律讀」的理由＝用快照開機之後 SDK 離線快取裡只會有增量那幾份，下次開機照樣得靠快照補齊）③只有「快取空且快照不存在／讀失敗」才走全量，而且全量改成分段：先 getDocs(query(defectsCol,where('st','==','o'))) 未完成（約 1,026 份）立刻 resolve {docs,partial:true,rest}，rest 是接著 getDocs(query(defectsCol,where('st','==','d'))) 已完成的 Promise、resolve 成不含第一段 key 的 [{k,d}] 陣列，stat.full 累計兩段；增量監聽包成 _attachListen()、等 rest 完成才掛（maxMt 要兩段都到齊才算得準），提早 resolve 後第一包增量改走 onDocs（否則整包掉在地上）④增量監聽 where('mt','>',since)、since＝maxMt−600000、includeMetadataChanges、_dfServerOk 只在 fromCache===false 才設＝V0918-03 這段邏輯一字不改（只是包進函式）⑤_reconcileOnce 對帳照舊（count 不符→全量重載→added／modified／removed 事件），並在修補後若非唯讀直接觸發一次 _dfSnapWrite({force:true})（墓碑被物理刪除後舊快照會一直讓對帳不符）。讀取帳本改成 window._dfReadStat={cache,snap,snapReads,full,inc,count}，console 一行改成「讀取帳本 快取 X／快照 Y(讀 Z)／全量 F／增量 I／對帳 C」＝preview 真資料驗證看這行。C classic _dfBoot：刪掉冷開機另發一筆 _dfGetPending 墊檔那段（那是額外的 1,026 reads·window._dfGetPending 函式本身保留，「資料不見了」SOP 會用），改成處理 first.partial===true＝把 first.docs 灌進 _dfMap／_dfPartial=true／_dfRebuildIntoS／_dfCntUpd／throttledRenderAll／toast「未完成資料已就緒…」，再 await first.rest 併進 _dfMap（同 key 取 mt 大者＝分段期間被 _dfOnDocs 更新過的較新值不會被第二段舊值蓋回去），然後 _dfPartial=false＋setSyncStatus('online')＋toast「全部資料載入完成 ✓」＋重組重繪，最後才 _dfReady／_dfActive；存檔閘門（_dfPartial 期間鎖存檔）與 60 秒逾時／_dfStale 一字不動，非 partial 走原路。順手：_g95SnapPrune 只清形如 YYYY-MM-DD 的 id＝snaps/defects 不會被誤刪。已知限制：①快照最舊可能是 20 小時前，這段空窗靠增量監聽的 since（maxMt 往前推 10 分鐘）往回補 ②物理刪除（_dfPurgeTombs）在快照與別台快取裡都還留著＝靠 count 對帳＋重寫快照收斂，不是即時。新增煙測 smoke_g95_dfsnap.js 並登記進 run_all_g95.js；smoke_g95_dfinc.js 隨規格改（冷開機期望從「全量一次」改成「先過快照 meta、再分段」）。程式行剪掉 V0918-01（原封貼進 refs/CODE_VERSION註解史.md 最上面）。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1696,7 +1697,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0921-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0922-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -21559,7 +21560,7 @@ function switchTab(id){
 //  V0720-13 戶別查詢（唯讀）：輸入戶別 → ①驗收履歷(哪天·幾次) ②全部缺失(含已完成) ③漏登提示
 //  同屋主可帶出名下其他戶別。純查詢、不改缺失內容（要改點 #ID 跳追蹤總表）。
 // ══════════════════════════════════════════════════════════════════════════
-var _ulq={units:[],skipOwner:{},tag:{},src:{},notfound:[],
+var _ulq={units:[],skipOwner:{},tag:{},src:{},notfound:[],zPast:{},pastOpen:false,lateOpen:true,   // V0922-01 過期批次收合狀態（只活在畫面、不進資料）
           doneOpen:{},        // V0813-07 ⑩ 每戶「已完成」折疊段的展開狀態（預設收合）
           vOpen:{},           // V0813-07 ⑧ 廠商彙總展開中的廠商
           tagOpen:false,      // V0813-07 轉換說明預設收合（真資料 10 戶會佔 3 行）
@@ -22015,6 +22016,13 @@ function _ulqWoWChip(w,mob){
   return '<span title="'+esc(_cm?_sp:'')+'" style="font-size:'+(mob?'11.5px':'12px')+';font-weight:700;padding:2px 9px;'+c+'">'+txt+'</span>';
 }
 // 🔴 效能鐵律（V0807-02）：整份資料一次算好，往下傳；各區塊不准自己再掃一輪
+// V0922-01：這戶在「這一批的日期」之後有沒有真的驗過（完成日 ≥ 批次日 且 ≤ 今天）＝過期批次分流的唯一判斷基準
+function _ulqReDoneOn(key,date,T){
+  var hu=(S.handoverUnits||{})[key]||{}; var ins=hu.inspections||[]; T=T||todayISO();
+  for(var i=0;i<ins.length;i++){ var t=(typeof inspTypeOf==='function')?inspTypeOf(ins[i]):(ins[i].type||''); if(!/^複驗/.test(t))continue;
+    var d=ins[i].date||''; if(d&&d>=date&&d<=T)return true; }
+  return false;
+}
 function _ulqData(){
   var out={units:[],vendors:[],tot:0,pend:0,done:0,stage:{},exitHO:[],batchN:0,inputN:0,okN:0};
   var vm={};
@@ -22085,6 +22093,20 @@ function _ulqData(){
             lead:d?_riSubWork(d,_ulqLead()):''};
   });
   out.dates=out.zones.filter(function(z){return !!z.date;}).map(function(z){return z.date;});
+  // ── V0922-01 過期批次分流（示意圖 複驗批次已驗完收起 v2 ①〜④）──
+  // 🔴 只改顯示、資料一律不動：批次仍是「約定複驗日」現算，這裡只是把每批再分成「驗完／沒驗」兩堆。
+  // 🔴 「驗完」判斷基準只有一份＝_ulqReDoneOn：該戶有一筆複驗紀錄，完成日 ≥ 批次日 且 ≤ 今天。
+  //    複驗當場開出的新缺失（輪次 複驗1）不影響判定——那是「複驗後修繕中」，去驗收/修繕進度追。
+  var _T0=todayISO();
+  out.zones.forEach(function(z){
+    z.past=!!(z.date&&z.date<_T0); z.doneUs=[]; z.lateUs=[];
+    if(z.past){ z.units.forEach(function(u){ (_ulqReDoneOn(u.key,z.date,_T0)?z.doneUs:z.lateUs).push(u); }); }
+  });
+  out.curZones=out.zones.filter(function(z){return !z.past;});
+  out.lateZones=out.zones.filter(function(z){return z.past&&z.lateUs.length;});
+  out.pastZones=out.zones.filter(function(z){return z.past&&z.doneUs.length;}).slice().reverse();   // 過期批：近→遠（最近驗完的在最上）
+  out.lateN=out.lateZones.reduce(function(a,z){return a+z.lateUs.length;},0);
+  out.pastN=out.pastZones.reduce(function(a,z){return a+z.doneUs.length;},0);
   // V0816-03：跟上週比＝這裡一次算好往下傳（dmap 只建一次）
   try{
     // V0819-01：改跟「比較起點」那組設定走（近7天／上週一／自訂區間）＝與進度報告、驗收/修繕進度同一份設定，不再自己寫死 7 天
@@ -22782,13 +22804,15 @@ function _ulqUnmarkEarly(key){
 //      也不會有「這戶被排到兩個批次」「批次刪了戶還在」這種要維護的東西。
 function _ulqZoneTog(d){_ulq.zOpen[d]=(_ulq.zOpen[d]===false);renderUnitLookup();}
 function _ulqZonesHTML(D,mob){
-  var h='',idx=0,D1=D.dates[0]||'';
-  D.zones.forEach(function(z){
+  var h='',idx=0;
+  // V0922-01：「最近」只看今天起的批（以前 D.dates[0] 可能是一個月前的過期批，紅色「最近」掛在早就驗完的日期上）
+  var _cz=(D.curZones||D.zones), D1=(_cz.filter(function(z){return !!z.date;})[0]||{}).date||'';
+  var renderZone=function(z,late){
     var open=_ulq.zOpen[z.date]!==false;
-    var urgent=z.date&&z.date===D1;
+    var urgent=!late&&z.date&&z.date===D1;
     var ubg=(z.date?(urgent?'#FBEDED':'#E7EAF0'):'#F4F3EF');   // V0816-02 ②：戶卡標題列＝該批淡色（同一天同底色）
     var bg=(z.date?(urgent?'#F5DAD6':'#D9E1EC'):'#EBE8E1');      // V0816-02 ①：區標＝同色系加深一階當色帽
-    var ttl=(open?'▾':'▸')+' '+(z.date?('複驗 '+_ulqDM(z.date)+(urgent?' · 最近':'')):'尚未排複驗日');
+    var ttl=(open?'▾':'▸')+' '+(z.date?('複驗 '+_ulqDM(z.date)+(urgent?' · 最近':'')+(late?' · 逾期未驗':'')):'尚未排複驗日');
     var btns=(_ulqRO()?'':('<button class="btn btn-sm" onclick="event.stopPropagation();_ulqZoneBook(\''+_riEscJs(z.date)+'\')" style="font-size:12px">'+(z.date?'整區改期':'排複驗日')+'</button>'))
       +'<button class="btn btn-sm" onclick="event.stopPropagation();_ulqZoneShot(\''+_riEscJs(z.date)+'\')" style="font-size:12px">截圖</button>'
       +'<button class="btn btn-sm" onclick="event.stopPropagation();_ulqZoneCopy(\''+_riEscJs(z.date)+'\')" style="font-size:12px">複製</button>'
@@ -22825,9 +22849,46 @@ function _ulqZonesHTML(D,mob){
         h+=(mob?_ulqMobUnit(u.key,idx++,u):_ulqUnitBlock(u.key,idx++,u)); });
       h+='</div>';
     } else { idx+=z.n; }
-  });
+  };
+  // ① 今天起的批次（含「尚未排複驗日」）＝完全照舊
+  (D.curZones||D.zones).forEach(function(z){ renderZone(z,false); });
+  // ② 逾期未驗：批次日已過、還沒登記複驗完成的戶 ⇒ 集中一列留在外面提醒（預設展開），底下每個日期一批、四顆鈕原封
+  var LZ=D.lateZones||[];
+  if(LZ.length){
+    var lopen=_ulq.lateOpen!==false;
+    var ldesc=LZ.map(function(z){return _ulqDM(z.date).slice(0,5)+' ×'+z.lateUs.length;}).join('、');
+    h+='<div class="ulq-zh ulq-late" onclick="_ulq.lateOpen=!'+(lopen?'true':'false')+';renderUnitLookup()" style="background:#F5DAD6;color:#B3261E;grid-template-columns:228px minmax(0,1fr)">'
+      +'<span>'+(lopen?'▾':'▸')+' 逾期未驗 <b>'+D.lateN+'</b> 戶</span>'
+      +'<span style="font-size:12.5px;font-weight:600;white-space:normal">'+esc(ldesc)+'　<span style="font-weight:400;color:#7A2E2E">批次日已過、還沒登記複驗完成 ⇒ 要改期或補登</span></span></div>';
+    if(lopen){ LZ.forEach(function(z){
+      var zz={date:z.date,units:z.lateUs,n:z.lateUs.length,ok:z.lateUs.filter(function(u){return !u.pend.length;}).length,
+              pend:z.lateUs.reduce(function(a,u){return a+u.pend.length;},0),wow:z.wow,lead:z.lead};
+      renderZone(zz,true); }); }
+  }
+  // ③④ 已過期批次：戶都驗完的批 ⇒ 收成一列（預設收合），展開後每批一行灰色，再點那一行才出戶卡；沒有改期／解散鈕
+  var PZ=D.pastZones||[];
+  if(PZ.length){
+    var popen=_ulq.pastOpen===true;
+    var dr=_ulqDM(PZ[PZ.length-1].date).slice(0,5)+'～'+_ulqDM(PZ[0].date).slice(0,5);
+    h+='<div class="ulq-zh ulq-past" onclick="_ulq.pastOpen=!'+(popen?'true':'false')+';renderUnitLookup()" style="background:#CFCBC2;color:#444;grid-template-columns:228px minmax(0,1fr) auto">'
+      +'<span>'+(popen?'▾':'▸')+' 已過期批次</span>'
+      +'<span style="font-size:13px;font-weight:600"><b>'+PZ.length+'</b> 批 · <b>'+D.pastN+'</b> 戶（'+esc(dr)+'）　<span style="font-weight:400;color:#666">全部驗完的批，預設收合</span></span>'
+      +'<span class="zbt" style="grid-template-columns:auto"><button class="btn btn-sm" onclick="event.stopPropagation();_ulqPastAll('+(popen?'false':'true')+')" style="font-size:12px">'+(popen?'全部收合':'展開全部')+'</button></span></div>';
+    if(popen){ PZ.forEach(function(z){
+      var zo=_ulq.zPast[z.date]===true;
+      var line=z.doneUs.slice(0,3).map(function(u){return u.disp+' '+((u.si&&u.si.label)||'')+(u.pend.length?('（未完成 '+u.pend.length+'）'):'');}).join('、')+(z.doneUs.length>3?' …':'');
+      h+='<div class="ulq-zh ulq-pastz" onclick="_ulq.zPast[\''+_riEscJs(z.date)+'\']='+(zo?'false':'true')+';renderUnitLookup()" style="background:#E7E5DF;color:#666;font-weight:600;font-size:14px;margin:6px 0 0 '+(mob?'0':'22px')+';grid-template-columns:206px 110px minmax(0,1fr)">'
+        +'<span>'+(zo?'▾':'▸')+' 複驗 '+_ulqDM(z.date)+'</span>'
+        +'<span style="font-size:11.5px;font-weight:700;padding:1px 7px;border:1px solid #aaa;color:#666;background:#fff;justify-self:start">已驗完 '+z.doneUs.length+' 戶</span>'
+        +'<span style="font-size:12.5px;font-weight:400;white-space:normal">'+esc(line)+'</span></div>';
+      if(zo){ h+='<div id="ulq-zpast-'+z.date+'" style="margin-left:'+(mob?'0':'22px')+'">';
+        z.doneUs.forEach(function(u,ui){ u._zNo=ui+1;u._zN=z.doneUs.length;u._zBg='#F4F3EF'; h+=(mob?_ulqMobUnit(u.key,idx++,u):_ulqUnitBlock(u.key,idx++,u)); });
+        h+='</div>'; } else idx+=z.doneUs.length;
+    }); }
+  }
   return h;
 }
+function _ulqPastAll(on){ _ulq.pastOpen=!!on; var D=_ulqData(); (D.pastZones||[]).forEach(function(z){ _ulq.zPast[z.date]=!!on; }); renderUnitLookup(); }
 // ── V0813-10 ⑰ 解散這批＝把這批戶的複驗日清掉（＝它們自動離批，回到「尚未排複驗日」）──
 // 🔴 破壞性動作：確認窗必須看得見對象（批名＋戶數＋整串戶別＋筆數），並先做快照可復原。
 // 🔴 只清複驗日 S.reCheckUF/reCheckSlot，**絕不動缺失、也不動 hu.planDate**（那是交屋行事曆的格子位置）。
@@ -27099,4 +27160,4 @@ try{
 </body>
 </html>
 
-<!-- V0921-01 index -->
+<!-- V0922-01 index -->
