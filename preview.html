@@ -598,7 +598,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 415;  // V0922-03 開機遙測 bootlog（起因＝9/21～22 Firestore 讀取爆量到 Quota exceeded、同事寫不進去；15:05 額度歸零後 AI 開站實測讀取帳本 快取 503／快照 11654(讀 3)／全量 0／增量 175／對帳 0＝一次開站約 200 reads，不是 1.1 萬 ⇒ 燒量的是別台裝置或 17:30 Action，光看自己這台查不出來）：新增 module 函式 window._dfBootLog(rec)＝份數對帳完成那一刻把讀取帳本寫 1 筆到 projects/main/bootlog/{sid}（欄位 sid/at/atS/by/ver/src/dev/br/mob/view/cache/snap/snapReads/full/inc/count/reads/cold/n/rec/exp），_reconcileOnce 三個出口（✓／不符全量補齊／失敗）各掛一次；之後每 60 分鐘增量數有變才再 merge 一次（抓監聽重連補讀）；沒人監聽 bootlog＝0 reads、每台每天 1～數 writes；教學版沙盒不寫；寫失敗只 console.warn。exp＝14 天後給 Firestore TTL 政策自動清。🔴 規則層要加 match /bootlog/{id}（任何登入者可讀寫·與 presence 同級），檔在 04_Firestore規則/Firestore規則_加bootlog_20260922.txt；規則沒發布前寫入被拒＝只 warn、功能照常。煙測 smoke_g95_bootlog（假 setDoc 驗路徑／欄位／reads 加總／same 去重／demo 不寫／對帳三出口）。｜V0922-02 複驗交屋追蹤表廠商彙總改跟「今天起的批」走（V0922-01 線上實測順手抓到：表頭寫「最近複驗 08/24 的排前面」、三個日期欄是 08/24～08/26＝一個月前的過期批）：_ulqData 新增 vDates（今天起近→遠在前、過期近→遠在後）與 D1（今天起第一批＝全看板唯一「最近」），廠商排序／表頭／三個日期欄／展開明細／複製文字／手機晶片六處全部改讀這兩個；dates 原封（解散／改期／摘要照舊）。煙測 smoke_g95_pastzone 補 4 條。｜V0922-01 複驗交屋追蹤表「過期批次收合」（示意圖 複驗批次已驗完收起 v2 ①〜④·使用者截圖：A3-29 複驗1 已於 08/24 登記完成、約定複驗日仍是 08/24 ⇒ 一直掛在「複驗 08/24 · 最近」紅色批裡，看板越來越長）：_ulqData 每批再分「驗完／沒驗」兩堆（判斷基準只有一份 _ulqReDoneOn＝有完成日 ≥ 批次日且 ≤ 今天的複驗紀錄；複驗當場開的新缺失不影響），curZones／lateZones／pastZones；_ulqZonesHTML 拆成 renderZone＋三段＝①今天起的批完全照舊（「最近」改只看今天起的批）②逾期未驗集中一列留在外面提醒（預設展開·底下每個日期一批·四顆鈕原封）③④已過期批次收成一列（預設收合·批數／戶數／日期範圍寫在列上·展開後每批一行灰色再點才出戶卡·無改期／解散鈕）。只改顯示、資料不動；桌機手機同一支。煙測 smoke_g95_pastzone。
+const CODE_VERSION = 416;  // V0922-04 報告看板「下載 Excel」一顆鈕（待辦 0b 瘦身版·使用者 2026-09-22 指示派子代理做·示意圖 xlsxbtn_v2）：renderBoard 頂部工具列在「複製文字」之後多一顆 #bd-xlsx-btn（class btn no-print·_icoSVG dl·_bdLoading 時 disabled＋title 資料載入中·唯讀檢視碼可按＝純讀不寫）。新增 _bdXlsxData()＝純資料 {rows,cand,top50,stat}（算法一律走既有 _riAllKeys／_riStat（stage/pend/tot/dr/hu）／_riInsp1Date／inspTypeOf／_riUsKey＋S.reCheckUF／unitDisplayName／S.clientData；最後修繕日＝dr 中 compId!=null 的最大 actualDone；已複驗＝完成日≤今天的複驗列；交屋日＝已交屋 deliveredDate、未交屋 hoDate 前加「預定」）與 _bdXlsxDownload()＝只組 5 張表（50戶建議／可交屋候選／地主戶追蹤／自購戶追蹤／階段統計·民國日期·!cols·欄名列起 !autofilter）＋XLSX.writeFile（SheetJS 早已載入）。50 戶＝候選裡地主 30＋自購 20，可交屋→待下輪複驗→可複驗（可複驗內排定複驗日早者、再最後修繕日早者、沒排定的最後）。煙測 smoke_g95_xlsxbtn（53 綠·XLSX.writeFile 換假的驗表名順序／欄名／autofilter／列數·舊版 17 紅）登記 run_all（60 支）。🔴 沙盒沒網路＝SheetJS 用替身，真 .xlsx 打不打得開要上 preview 真按一次。｜V0922-03 開機遙測 bootlog（起因＝9/21～22 Firestore 讀取爆量到 Quota exceeded、同事寫不進去；15:05 額度歸零後 AI 開站實測讀取帳本 快取 503／快照 11654(讀 3)／全量 0／增量 175／對帳 0＝一次開站約 200 reads，不是 1.1 萬 ⇒ 燒量的是別台裝置或 17:30 Action，光看自己這台查不出來）：新增 module 函式 window._dfBootLog(rec)＝份數對帳完成那一刻把讀取帳本寫 1 筆到 projects/main/bootlog/{sid}（欄位 sid/at/atS/by/ver/src/dev/br/mob/view/cache/snap/snapReads/full/inc/count/reads/cold/n/rec/exp），_reconcileOnce 三個出口（✓／不符全量補齊／失敗）各掛一次；之後每 60 分鐘增量數有變才再 merge 一次（抓監聽重連補讀）；沒人監聽 bootlog＝0 reads、每台每天 1～數 writes；教學版沙盒不寫；寫失敗只 console.warn。exp＝14 天後給 Firestore TTL 政策自動清。🔴 規則層要加 match /bootlog/{id}（任何登入者可讀寫·與 presence 同級），檔在 04_Firestore規則/Firestore規則_加bootlog_20260922.txt；規則沒發布前寫入被拒＝只 warn、功能照常。煙測 smoke_g95_bootlog（假 setDoc 驗路徑／欄位／reads 加總／same 去重／demo 不寫／對帳三出口）。｜V0922-02 複驗交屋追蹤表廠商彙總改跟「今天起的批」走（V0922-01 線上實測順手抓到：表頭寫「最近複驗 08/24 的排前面」、三個日期欄是 08/24～08/26＝一個月前的過期批）：_ulqData 新增 vDates（今天起近→遠在前、過期近→遠在後）與 D1（今天起第一批＝全看板唯一「最近」），廠商排序／表頭／三個日期欄／展開明細／複製文字／手機晶片六處全部改讀這兩個；dates 原封（解散／改期／摘要照舊）。煙測 smoke_g95_pastzone 補 4 條。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1730,7 +1730,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0922-03</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0922-04</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -12583,6 +12583,107 @@ function _bdStageText(){
 }
 function _bdStageShot(){if(_bdLdBlock())return;try{_capEl(document.getElementById('bd-stage'),'驗屋階段摘要_'+todayISO()+'.png');}catch(e){}}
 // ── 主 render（單一響應式·無手機分流）──
+/* ══ V0922-04（待辦 0b）：報告看板「下載 Excel」——一顆鈕、5 張工作表 ══
+   🔴 算資料與寫檔分兩支：_bdXlsxData() 只回純資料（煙測驗這支，不用真的下載）；
+      _bdXlsxDownload() 只負責組工作表＋XLSX.writeFile。
+   🔴 算法一律走既有函式：_riAllKeys／_riStat（含 dr/tot/pend/stage）／_riInsp1Date／
+      inspTypeOf／_riUsKey／unitDisplayName，這裡不自己重算判定。 */
+var _BDXL_STAGE={repair:'修繕中',reinsp:'可複驗',re_repair:'複驗後修繕中',re_next:'待下輪複驗',deliverable:'可交屋',delivered:'已交屋',none:'未初驗'};
+var _BDXL_STAGES=['已交屋','可交屋','待下輪複驗','可複驗','複驗後修繕中','修繕中','未初驗'];
+var _BDXL_TIP={'可交屋':'可直接排交屋','待下輪複驗':'排一次複驗、過了就交屋','可複驗':'先排複驗'};
+var _BDXL_CAND={'可交屋':0,'待下輪複驗':1,'可複驗':2};
+var _BDXL_COLS=['戶別','類型','客戶姓名','初驗日','排定複驗日','已複驗','階段','剩餘缺失','總缺失','最後修繕日','交屋日','備註'];
+var _BDXL_W=[13,8,14,11,11,22,13,9,9,11,15,18];
+var _BDXL_FAR='9999-99-99';   /* 沒排定的排最後 */
+function _bdXlRoc(iso){ var p=String(iso==null?'':iso).split('-'); if(p.length<3||!p[0])return ''; var y=parseInt(p[0],10); if(!y)return ''; return (y-1911)+'/'+p[1]+'/'+p[2]; }
+function _bdXlsxData(){
+  var t=todayISO();
+  var rows=_riAllKeys().map(function(key){
+    var st=_riStat(key), hu=st.hu||{}, c=(typeof S!=='undefined'&&S.clientData&&S.clientData[key])||{};
+    var lastFix='';   /* 最後修繕日＝已銷案列（compId!=null）中最近的實際完成日 */
+    (st.dr||[]).forEach(function(r){ if(!r||r.compId==null)return; var d=r.actualDone||''; if(d&&d>lastFix)lastFix=d; });
+    var re=[]; (hu.inspections||[]).forEach(function(i){ if(i&&i.date&&/^複驗/.test(inspTypeOf(i))&&i.date<=t)re.push(i.date); });
+    re.sort();
+    var rp=''; try{ rp=(S.reCheckUF&&S.reCheckUF[_riUsKey(key)])||''; }catch(e){ rp=''; }
+    return { key:key, unit:unitDisplayName(key), type:c.type||'', name:c.name||'',
+      insp1:_riInsp1Date(hu)||'', rePlan:rp, reDone:re, stage:_BDXL_STAGE[st.stage]||'',
+      pend:st.pend, tot:st.tot, lastFix:lastFix,
+      hoDate:(st.delivered?(hu.deliveredDate||''):(hu.hoDate||'')), hoPre:(!st.delivered&&!!hu.hoDate),
+      note:c.note||'' };
+  }).sort(function(a,b){ return a.unit<b.unit?-1:a.unit>b.unit?1:0; });
+  /* 可交屋候選：可交屋→待下輪複驗→可複驗，同階段依戶別 */
+  var cand=rows.filter(function(r){ return _BDXL_CAND[r.stage]!==undefined; })
+    .sort(function(a,b){ return (_BDXL_CAND[a.stage]-_BDXL_CAND[b.stage])||(a.unit<b.unit?-1:a.unit>b.unit?1:0); })
+    .map(function(r){ var o={}; for(var k in r){ if(Object.prototype.hasOwnProperty.call(r,k))o[k]=r[k]; } o.tip=_BDXL_TIP[r.stage]||''; return o; });
+  /* 50 戶建議：可交屋→待下輪複驗→可複驗；可複驗內依排定複驗日早者優先（沒排定的最後），再依最後修繕日早者 */
+  var srt=cand.slice().sort(function(a,b){
+    var d=_BDXL_CAND[a.stage]-_BDXL_CAND[b.stage]; if(d)return d;
+    if(a.stage==='可複驗'){
+      var x=a.rePlan||_BDXL_FAR, y=b.rePlan||_BDXL_FAR; if(x!==y)return x<y?-1:1;
+      var p=a.lastFix||_BDXL_FAR, q=b.lastFix||_BDXL_FAR; if(p!==q)return p<q?-1:1;
+    }
+    return a.unit<b.unit?-1:a.unit>b.unit?1:0;
+  });
+  var nO=0,nS=0;
+  var top50=srt.filter(function(r){
+    if(r.type==='地主戶')return (nO++)<30;
+    if(r.type==='自購戶')return (nS++)<20;
+    return false;
+  });
+  /* 階段統計：七階段 ×（地主戶／自購戶／業主戶／未填／合計），最後一列合計 */
+  var idx={}, stat=_BDXL_STAGES.map(function(sg,i){ idx[sg]=i; return {stage:sg,owner:0,self:0,biz:0,none:0,total:0}; });
+  var sum={stage:'合計',owner:0,self:0,biz:0,none:0,total:0};
+  rows.forEach(function(r){
+    var o=stat[idx[r.stage]]; if(!o)return;
+    var f=(r.type==='地主戶')?'owner':(r.type==='自購戶')?'self':(r.type==='業主戶')?'biz':'none';
+    o[f]++; o.total++; sum[f]++; sum.total++;
+  });
+  stat.push(sum);
+  return {rows:rows,cand:cand,top50:top50,stat:stat};
+}
+function _bdXlCol(n){ var s=''; n=n+1; while(n>0){ var m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-m-1)/26); } return s; }
+function _bdXlUnitRow(r,withTip){
+  var a=[r.unit,r.type,r.name,_bdXlRoc(r.insp1),_bdXlRoc(r.rePlan),
+    (r.reDone||[]).map(function(d){ return _bdXlRoc(d); }).join('、'),
+    r.stage,r.pend,r.tot,_bdXlRoc(r.lastFix),
+    (r.hoDate?((r.hoPre?'預定 ':'')+_bdXlRoc(r.hoDate)):''),r.note];
+  if(withTip)a.push(r.tip||'');
+  return a;
+}
+function _bdXlAdd(wb,name,title,note,cols,widths,data){
+  var aoa=[[title]]; if(note)aoa.push([note]); aoa.push(cols);
+  data.forEach(function(r){ aoa.push(r); });
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=widths.map(function(w){ return {wch:w}; });
+  var hr=note?3:2;                       /* 欄名列（1-based） */
+  ws['!autofilter']={ref:'A'+hr+':'+_bdXlCol(cols.length-1)+(hr+data.length)};
+  XLSX.utils.book_append_sheet(wb,ws,name);
+  return ws;
+}
+function _bdXlsxDownload(){
+  try{
+    if(typeof XLSX==='undefined'||!XLSX.utils)throw new Error('Excel 元件尚未載入，請重新整理再試');
+    if(_bdLoading()){ try{ toast('資料還在載入中，先不下載','⏳'); }catch(e){} return; }
+    var D=_bdXlsxData(), t=todayISO(), roc=_bdXlRoc(t);
+    var CT=_BDXL_COLS.concat(['建議']), WT=_BDXL_W.concat([20]);
+    var wb=XLSX.utils.book_new();
+    _bdXlAdd(wb,'50戶建議','建議先交屋 50 戶（地主戶 30＋自購戶 20）　資料日期 '+roc,
+      '挑法：可交屋 → 待下輪複驗 → 可複驗（可複驗內依排定複驗日早者優先，再依最後修繕日早者）',
+      CT,WT,D.top50.map(function(r){ return _bdXlUnitRow(r,1); }));
+    _bdXlAdd(wb,'可交屋候選','可交屋候選名單　資料日期 '+roc+'　排序：可交屋 → 待下輪複驗 → 可複驗','',
+      CT,WT,D.cand.map(function(r){ return _bdXlUnitRow(r,1); }));
+    _bdXlAdd(wb,'地主戶追蹤','地主戶追蹤　資料日期 '+roc,'',_BDXL_COLS,_BDXL_W,
+      D.rows.filter(function(r){ return r.type==='地主戶'; }).map(function(r){ return _bdXlUnitRow(r,0); }));
+    _bdXlAdd(wb,'自購戶追蹤','自購戶追蹤　資料日期 '+roc,'',_BDXL_COLS,_BDXL_W,
+      D.rows.filter(function(r){ return r.type==='自購戶'; }).map(function(r){ return _bdXlUnitRow(r,0); }));
+    _bdXlAdd(wb,'階段統計','階段統計　資料日期 '+roc,'',
+      ['階段','地主戶','自購戶','業主戶','未填','合計'],[14,10,10,10,10,10],
+      D.stat.map(function(r){ return [r.stage,r.owner,r.self,r.biz,r.none,r.total]; }));
+    XLSX.writeFile(wb,'開禧_交屋追蹤總表_'+String(t).replace(/-/g,'')+'.xlsx');
+    try{ toast('已下載 Excel ✓','📥'); }catch(e){}
+  }catch(e){ try{ toast('下載失敗：'+((e&&e.message)||e),'⚠️'); }catch(_e){} }
+}
+window._bdXlsxData=_bdXlsxData; window._bdXlsxDownload=_bdXlsxDownload;
 function renderBoard(){
   var el=document.getElementById('pane-board');if(!el)return;
   var D=_bdData(),req=D.req,ro=_hoSegRo(),sum=_bdSummary(D);
@@ -12601,6 +12702,7 @@ function renderBoard(){
     +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 4px">'
     +'<button class="btn btn-p no-print"'+(ld?' disabled title="資料載入中，先不出圖"':'')+' onclick="_bdStageShot()">截圖</button>'
     +'<button class="btn no-print"'+(ld?' disabled title="資料載入中，先不複製"':'')+' onclick="_bdStageText()">複製文字</button>'
+    +'<button class="btn no-print" id="bd-xlsx-btn"'+(ld?' disabled title="資料載入中"':' title="下載 5 張表的 Excel（可自行篩選）"')+' onclick="_bdXlsxDownload()">'+_icoSVG('dl',14)+' 下載 Excel</button>'
     +'<span style="font-size:11px;color:var(--text3)">圖與文字都印日期時間。</span></div>';
   // ① 六格＋摘要（這一整塊就是「出總覽圖」拍的東西＝所見即所得）
   h+='<div id="bd-shot"style="background:var(--bg);padding:10px 12px 12px;border:1px solid var(--pborder)'+(ld?';filter:grayscale(1);opacity:.55':'')+'">'
@@ -27197,4 +27299,4 @@ try{
 </body>
 </html>
 
-<!-- V0922-03 preview -->
+<!-- V0922-04 preview -->

@@ -598,7 +598,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 414;  // V0922-02 複驗交屋追蹤表廠商彙總改跟「今天起的批」走（V0922-01 線上實測順手抓到：表頭寫「最近複驗 08/24 的排前面」、三個日期欄是 08/24～08/26＝一個月前的過期批）：_ulqData 新增 vDates（今天起近→遠在前、過期近→遠在後）與 D1（今天起第一批＝全看板唯一「最近」），廠商排序／表頭／三個日期欄／展開明細／複製文字／手機晶片六處全部改讀這兩個；dates 原封（解散／改期／摘要照舊）。煙測 smoke_g95_pastzone 補 4 條。｜V0922-01 複驗交屋追蹤表「過期批次收合」（示意圖 複驗批次已驗完收起 v2 ①〜④·使用者截圖：A3-29 複驗1 已於 08/24 登記完成、約定複驗日仍是 08/24 ⇒ 一直掛在「複驗 08/24 · 最近」紅色批裡，看板越來越長）：_ulqData 每批再分「驗完／沒驗」兩堆（判斷基準只有一份 _ulqReDoneOn＝有完成日 ≥ 批次日且 ≤ 今天的複驗紀錄；複驗當場開的新缺失不影響），curZones／lateZones／pastZones；_ulqZonesHTML 拆成 renderZone＋三段＝①今天起的批完全照舊（「最近」改只看今天起的批）②逾期未驗集中一列留在外面提醒（預設展開·底下每個日期一批·四顆鈕原封）③④已過期批次收成一列（預設收合·批數／戶數／日期範圍寫在列上·展開後每批一行灰色再點才出戶卡·無改期／解散鈕）。只改顯示、資料不動；桌機手機同一支。煙測 smoke_g95_pastzone。｜V0921-01 交屋行事曆輪次徽章修正（使用者截圖：A1-17 複驗1 已完成 08/28、複驗2 列預留但空殼、09/24 存在約定複驗日 reCheckUF ⇒ _stageOf 的 reN 只數有日期的列＝1 ⇒ 09/24 那格印「複1」應為「複2」）：_stageOf 新增回傳 calN／calDone（約定日＝某輪完成日 ⇒ 那一輪實心；否則已完成到第 N 輪 ⇒ N+1 空心；沒複驗過 ⇒ reN||1），inspStageBadgeCal 格子輪次改讀 calN、_rndDoneOf 改讀 calDone＝徽章文字與實心判定同一份基準；🔴 full 一字不改＝不帶 round 呼叫的戶況總表等舊行為原封。複驗3、4… 自動跟著（煙測 smoke_g95_calround 覆蓋完成 1／2／3 輪＋約定日等於完成日的實心案）。
+const CODE_VERSION = 415;  // V0922-03 開機遙測 bootlog（起因＝9/21～22 Firestore 讀取爆量到 Quota exceeded、同事寫不進去；15:05 額度歸零後 AI 開站實測讀取帳本 快取 503／快照 11654(讀 3)／全量 0／增量 175／對帳 0＝一次開站約 200 reads，不是 1.1 萬 ⇒ 燒量的是別台裝置或 17:30 Action，光看自己這台查不出來）：新增 module 函式 window._dfBootLog(rec)＝份數對帳完成那一刻把讀取帳本寫 1 筆到 projects/main/bootlog/{sid}（欄位 sid/at/atS/by/ver/src/dev/br/mob/view/cache/snap/snapReads/full/inc/count/reads/cold/n/rec/exp），_reconcileOnce 三個出口（✓／不符全量補齊／失敗）各掛一次；之後每 60 分鐘增量數有變才再 merge 一次（抓監聽重連補讀）；沒人監聽 bootlog＝0 reads、每台每天 1～數 writes；教學版沙盒不寫；寫失敗只 console.warn。exp＝14 天後給 Firestore TTL 政策自動清。🔴 規則層要加 match /bootlog/{id}（任何登入者可讀寫·與 presence 同級），檔在 04_Firestore規則/Firestore規則_加bootlog_20260922.txt；規則沒發布前寫入被拒＝只 warn、功能照常。煙測 smoke_g95_bootlog（假 setDoc 驗路徑／欄位／reads 加總／same 去重／demo 不寫／對帳三出口）。｜V0922-02 複驗交屋追蹤表廠商彙總改跟「今天起的批」走（V0922-01 線上實測順手抓到：表頭寫「最近複驗 08/24 的排前面」、三個日期欄是 08/24～08/26＝一個月前的過期批）：_ulqData 新增 vDates（今天起近→遠在前、過期近→遠在後）與 D1（今天起第一批＝全看板唯一「最近」），廠商排序／表頭／三個日期欄／展開明細／複製文字／手機晶片六處全部改讀這兩個；dates 原封（解散／改期／摘要照舊）。煙測 smoke_g95_pastzone 補 4 條。｜V0922-01 複驗交屋追蹤表「過期批次收合」（示意圖 複驗批次已驗完收起 v2 ①〜④·使用者截圖：A3-29 複驗1 已於 08/24 登記完成、約定複驗日仍是 08/24 ⇒ 一直掛在「複驗 08/24 · 最近」紅色批裡，看板越來越長）：_ulqData 每批再分「驗完／沒驗」兩堆（判斷基準只有一份 _ulqReDoneOn＝有完成日 ≥ 批次日且 ≤ 今天的複驗紀錄；複驗當場開的新缺失不影響），curZones／lateZones／pastZones；_ulqZonesHTML 拆成 renderZone＋三段＝①今天起的批完全照舊（「最近」改只看今天起的批）②逾期未驗集中一列留在外面提醒（預設展開·底下每個日期一批·四顆鈕原封）③④已過期批次收成一列（預設收合·批數／戶數／日期範圍寫在列上·展開後每批一行灰色再點才出戶卡·無改期／解散鈕）。只改顯示、資料不動；桌機手機同一支。煙測 smoke_g95_pastzone。
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1232,6 +1232,7 @@ window._dfInit = function(onDocs){
           if(server === local){
             window._dfReconcile = { local:local, server:server, ok:true };
             console.log('[defects] 份數對帳 ✓ 本機 '+local+'＝雲端 '+server);
+            try{ window._dfBootLog({ ok:true, local:local, server:server }); }catch(e3){}   // V0922-03 開機遙測
             return;
           }
           console.warn('[defects] 份數對帳不符：本機 '+local+'／雲端 '+server+' ⇒ 做一次全量重載補齊');
@@ -1247,9 +1248,10 @@ window._dfInit = function(onDocs){
           Array.from(baseMap.keys()).forEach(k=>{ if(!seen.has(k)){ baseMap.delete(k); evs.push({ k:k, type:'removed', d:null }); } });
           if(evs.length && typeof onDocs === 'function') onDocs(evs);
           window._dfReconcile = { local:local, server:server, fixed:true, fixedN:evs.length };
+          try{ window._dfBootLog({ fixed:true, local:local, server:server, n:evs.length }); }catch(e3){}   // V0922-03 開機遙測：這種就是燒 1.1 萬的裝置
           // V0918-04：對帳不符＝快照多半也過期了（墓碑被物理刪除後舊快照會讓對帳天天不符）⇒ 直接重寫一次
           try{ if(!window._VIEW_ONLY && typeof window._dfSnapWrite === 'function') window._dfSnapWrite({ force:true }); }catch(e2){}
-        }catch(e){ console.warn('[defects] 份數對帳失敗（不影響使用）', e); }
+        }catch(e){ console.warn('[defects] 份數對帳失敗（不影響使用）', e); try{ window._dfBootLog({ fail:String((e&&e.code)||e).slice(0,80) }); }catch(e3){} }
       }
       // ④ 增量監聽：只收 mt 比底稿更新的文件（10 分鐘重疊防時鐘偏差）——V0918-03 這段邏輯一字不改，
       //    只是包成函式，好讓冷開機分段在「兩段都到齊、maxMt 算好」之後才掛。
@@ -1302,6 +1304,37 @@ window._dfInit = function(onDocs){
   });
 };
 // ═══ V0918-04 缺失快照寫入（snaps/defects＋_pN）═══════════════════════════
+// ═══ V0922-03 開機遙測：每次開站把讀取帳本寫 1 筆到 projects/main/bootlog/{sid}（沒人監聽＝0 reads、1 write）═══
+// 動機＝9/21～22 讀取爆量，但 AI 這台開站只讀約 200 ⇒ 要點名是哪台裝置在燒（全量重載／監聽重連補讀）。
+// 規則層 bootlog 任何登入者可寫（與 presence 同級）；寫失敗只 console.warn、不影響使用；教學版沙盒一律不寫。
+// 之後每 60 分鐘若增量數有變再補寫一次（同一份文件 merge）；exp＝14 天後（Firestore TTL 欄位，主控台設 TTL 政策自動清）。
+// 查法：console 跑 _dfBootLog() 看回傳；或 Firebase 主控台 projects/main/bootlog 依 at 排序。
+const _blSid = Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+let _blN = 0, _blInc = -1, _blTimer = null;
+window._dfBootLog = async function(rec){
+  try{
+    try{ if((typeof S!=='undefined' && S && S.__demoSeed) || window._demoSeal) return 'demo'; }catch(e){}
+    const st = window._dfReadStat || {};
+    if(_blN>0 && (st.inc|0)===_blInc && !rec) return 'same';
+    _blInc = st.inc|0; _blN++;
+    const ua = navigator.userAgent||'';
+    const dev = /iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Windows/.test(ua)?'Win':/Mac/.test(ua)?'Mac':'other';
+    const br = /Edg\//.test(ua)?'Edge':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':/Firefox\//.test(ua)?'Firefox':'other';
+    const now = Date.now();
+    const d = { sid:_blSid, at:now, atS:new Date(now).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}),
+      by:String(window._authEmail||'').replace(/@gmail\.com$/,''), ver:CODE_VERSION,
+      src:(location.pathname.split('/').pop()||'index.html').replace(/\.html$/,''), dev:dev, br:br,
+      mob:window.innerWidth<=700, view:!!window._VIEW_ONLY,
+      cache:st.cache|0, snap:st.snap|0, snapReads:st.snapReads|0, full:st.full|0, inc:st.inc|0, count:st.count|0,
+      reads:(st.snapReads|0)+(st.full|0)+(st.inc|0)+(st.count|0), cold:!(st.cache|0)&&!(st.snap|0),
+      n:_blN, exp:Timestamp.fromMillis(now+14*86400000) };
+    if(rec) d.rec = rec;
+    await setDoc(doc(ref,'bootlog',_blSid), d, { merge:true });
+    console.log('[bootlog] 已寫 reads '+d.reads+'（全量 '+d.full+'／增量 '+d.inc+'）n'+_blN);
+    if(!_blTimer) _blTimer = setInterval(function(){ window._dfBootLog(); }, 60*60*1000);
+    return { ok:true, n:_blN, reads:d.reads };
+  }catch(e){ console.warn('[bootlog] 寫入失敗（不影響使用）', (e&&e.code)||e); return 'fail'; }
+};
 // 來源＝_dfInit 現在手上的 baseMap（底稿 ∪ 增量）；先寫各 _pN、最後才寫 meta ⇒ 讀的人以 meta 為準，
 // 寫到一半斷線最多是「meta 還是舊的」＝下次開機讀到舊快照，不會讀到半套新的。
 // opts：{ maxAgeMs:上次寫入超過這麼久才重寫（預設 20 小時）, force:不看時間直接寫 }
@@ -1697,7 +1730,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0922-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V0922-03</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -27164,4 +27197,4 @@ try{
 </body>
 </html>
 
-<!-- V0922-02 index -->
+<!-- V0922-03 index -->
