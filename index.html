@@ -598,7 +598,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 419;  // V1020-01 交屋行事曆展開面板「取消紀錄」徽章修正（2026-10-20 使用者回報 B8-18 點不開）：顯示條件看本輪 _cxnArrOf(ek,cancelHO／cancelRe／cancel)，內文卻寫死讀初驗 hu.cancelHistory ⇒ 本輪有取消紀錄、初驗沒有的戶 renderHCal 丟 TypeError、整格展不開（線上實查 6 戶：交屋 A3-11／A3-30／B8-18／A6-7、複驗 A5-13／B7-11）；內文改用同一支 _cxnArrOf＝顯示條件與內文同源。手機抽屜 _hmDetail 不讀此欄＝不受影響｜V1013-01 複驗歷史 hu.reHist（2026-10-13 線上查證：複驗日每戶只存一個值，主任在複驗交屋追蹤表把 28 戶排到 11/01 ⇒ 10 戶 10/12、10/13 的複驗日被蓋掉、行事曆那兩天空了；又手動排回 10/12 ⇒ 11/01 遺失；解散複驗批也清掉過去的複驗日）：①新增 _reHuKeyOf／_reHistArchive(key,新日期)＝舊日期存在且 ≤今天且 ≠新日期才把 {date,slot,round(行事曆 calN 複N),at,by,src 改期/清除} 存進戶物件 reHist（同日只留一筆、後到只補空時段；戶內欄位走逐戶 _mt 同步·不改白名單·不新增頂層鍵·不動規則），掛在 _riWriteRecheck／_riClearRecheck／批次面板 _bslApplyOne 約定複驗 set/clear／_usSetRecheck／_ulqBookApply／_ulqZoneDissolve／_reApptSet（涵蓋手機改日期·缺失彈窗·未來完成日轉約定）；兩個還原快照路徑與只改時段 _reSegSetSlot 不存 ②_reHistOn(ds)＝同 tick 索引，只回今天含以前：reHist ∪ inspections 複驗完成紀錄，同戶同日一次、本體已在這天的跳過、同日有複驗取消/未到紀錄的 reHist 不重畫（殘影卡已畫） ③交屋行事曆桌機：歷史章走同一支 _calChip(第五參數 hist)＝外觀一樣、輪次用當時的、點開唯讀小窗 _reHistInfo、不展開改期面板；weekHasActivity／格頭戶數／★委外／統計列（恆等式不變）都算歷史；新增「時段未記錄」列（兩週內有無時段歷史才出現） ④手機 _hmRUnits 含歷史、_hmDayHTML 歷史列進對應時段組＋最後一組「時段未記錄」（無左側色條） ⑤資料健檢新增「下一次複驗日被蓋掉」_reLostScan（變更紀錄＋一次性種子 _REHIST_SEED_1013）＋一鍵還原 _dchkReLostFix（唯讀擋·confirm 列每戶·先下載備份·按下當下重驗·舊日期先進歷史）。不接進缺口預警／自動排接待／報表；_reBookedRaw 原封。煙測 smoke_g95_rehist｜V1001-01 meta 拆文件收尾⑥：_META_SPLIT2 併入 _SPLIT_CORE＋_SPLIT2＝停止雙寫、meta 文件瘦身；_mergeFieldsToState 保留 meta 回退相容
+const CODE_VERSION = 420;  // V1027-01 回報兆璞（業主兆璞要求每天驗屋後用他們的 Google 表單回報·示意圖 v1）：①交屋行事曆展開面板按鈕列最前面加「回報兆璞」鈕（手機詳情抽屜 _hmDetail 同步加）②確認小視窗 _zpOpen（回報類型／結果／日期／填表人／說明可改·打開表單＝window.open 預填網址＋記已回報·複製文字＝網址太長的退路）③預填 _zpUrl 帶辦理類型、填表人、戶別、屋主與該類型的日期／時段／結果／說明，預約編號留空、查閱行程確認不預填，提交一律人員自己按 ④日期標頭「待回報兆璞 N」徽章 _zpBadgeHTML（只算 ZP_START 2026-10-27～今天、當天格子裡初驗／複驗／交屋／殘影還沒有記號的戶·不含歷史章·N=0 不出現·手機日檢視同一支）點開清單小視窗 _zpList（已回報可取消記號）⑤預選 _zpPreset 每輪各看各的旗標：已取消→取消預約、未到→未到場／未執行、交屋輪已交屋→交屋完成回報、有未完成缺失→尚有缺失待改善、其他→待安排交屋 ⑥戶別 _zpUnitFmt（全形轉半形、去樓層 F、不是英文加數字-數字就原樣）。記號存 hu.zpRpt（戶物件內＝逐戶 _mt 同步·寫法照抄 toggleNoShow）；填表人中文名存本機 localStorage g95_zpName_登入email；唯讀模式可開表單、複製但不寫記號｜V1020-01 交屋行事曆展開面板「取消紀錄」徽章修正（2026-10-20 使用者回報 B8-18 點不開）：顯示條件看本輪 _cxnArrOf(ek,cancelHO／cancelRe／cancel)，內文卻寫死讀初驗 hu.cancelHistory ⇒ 本輪有取消紀錄、初驗沒有的戶 renderHCal 丟 TypeError、整格展不開（線上實查 6 戶：交屋 A3-11／A3-30／B8-18／A6-7、複驗 A5-13／B7-11）；內文改用同一支 _cxnArrOf＝顯示條件與內文同源。手機抽屜 _hmDetail 不讀此欄＝不受影響｜V1013-01 複驗歷史 hu.reHist（2026-10-13 線上查證：複驗日每戶只存一個值，主任在複驗交屋追蹤表把 28 戶排到 11/01 ⇒ 10 戶 10/12、10/13 的複驗日被蓋掉、行事曆那兩天空了；又手動排回 10/12 ⇒ 11/01 遺失；解散複驗批也清掉過去的複驗日）：①新增 _reHuKeyOf／_reHistArchive(key,新日期)＝舊日期存在且 ≤今天且 ≠新日期才把 {date,slot,round(行事曆 calN 複N),at,by,src 改期/清除} 存進戶物件 reHist（同日只留一筆、後到只補空時段；戶內欄位走逐戶 _mt 同步·不改白名單·不新增頂層鍵·不動規則），掛在 _riWriteRecheck／_riClearRecheck／批次面板 _bslApplyOne 約定複驗 set/clear／_usSetRecheck／_ulqBookApply／_ulqZoneDissolve／_reApptSet（涵蓋手機改日期·缺失彈窗·未來完成日轉約定）；兩個還原快照路徑與只改時段 _reSegSetSlot 不存 ②_reHistOn(ds)＝同 tick 索引，只回今天含以前：reHist ∪ inspections 複驗完成紀錄，同戶同日一次、本體已在這天的跳過、同日有複驗取消/未到紀錄的 reHist 不重畫（殘影卡已畫） ③交屋行事曆桌機：歷史章走同一支 _calChip(第五參數 hist)＝外觀一樣、輪次用當時的、點開唯讀小窗 _reHistInfo、不展開改期面板；weekHasActivity／格頭戶數／★委外／統計列（恆等式不變）都算歷史；新增「時段未記錄」列（兩週內有無時段歷史才出現） ④手機 _hmRUnits 含歷史、_hmDayHTML 歷史列進對應時段組＋最後一組「時段未記錄」（無左側色條） ⑤資料健檢新增「下一次複驗日被蓋掉」_reLostScan（變更紀錄＋一次性種子 _REHIST_SEED_1013）＋一鍵還原 _dchkReLostFix（唯讀擋·confirm 列每戶·先下載備份·按下當下重驗·舊日期先進歷史）。不接進缺口預警／自動排接待／報表；_reBookedRaw 原封。煙測 smoke_g95_rehist
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1730,7 +1730,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V1020-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V1027-01</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -15540,6 +15540,271 @@ function toggleCancel(key,round){
   }
   save();renderHCal();
 }
+// ══ V1027-01：回報兆璞（業主 Google 表單預填·示意圖 v1 ①～⑥）══════════════════════
+// 業主兆璞要求營造廠每天驗屋後用他們的 Google 表單回報（當天回報·18:00 對帳）。
+// 🔴 系統只做「預填網址＋打開表單／複製文字」，提交一律由人員自己在表單上按＝系統絕不代送。
+// 🔴 選項值必須跟表單逐字一致（全形「｜」「，」「／」與時段的 – ＝U+2013，跟 HCAL_SLOTS 同一個字元）；
+//    兆璞改表單選項／entry ID ⇒ 只改下面這組常數。預約編號三題（427952240／619969207／1464071028）刻意留空。
+//    「新增預約」「改期」兩類這版不做；「查閱行程確認」(352300866) 不預填＝要人員自己勾。
+// 🔴 已回報記號＝hu.zpRpt{'<round>|<YYYY-MM-DD>':{at:ISO時間,by:填表人中文名}}：放戶物件內＝走逐戶 _mt＋10 分盾自動同步
+//    （save→_stampMetaTouch 蓋 _mt）⇒ 不改 applyRemote 白名單、不改 Firestore 規則、舊資料零遷移；
+//    寫入流程照抄 toggleNoShow（_huGate→改 hu→logChange→save→renderHCal）。唯讀模式（_VIEW_ONLY／_readonly）
+//    可以打開表單、複製文字，但不寫記號（取消記號鈕灰化）。
+// 🔴 填表人中文名：系統沒有 email→中文名對照（LOGIN_ALLOW 只有 email、presence 的 displayName 在 module 段）
+//    ⇒ 存本機 localStorage g95_zpName_<登入email>（裝置本地·第一次空白要填·之後預帶·小視窗可改）。
+// 效能：徽章只讀 zpRpt（不呼叫 getDefectRows）；當天戶名單走同 tick 索引 _zpIdx（setTimeout(clear,0) 失效），
+//    而且只收 ZP_START～今天的日期（未來日期直接回空陣列）。
+const ZP_START='2026-10-27';   // 上線日：這天以前的日期一律不掛「待回報兆璞」徽章（避免舊日子全部掛著）
+const ZP_FORM='https://docs.google.com/forms/d/e/1FAIpQLSfCoHZLWTD-u-qOeP-BOiLSXeBl6JmTEoZLFA8tfkfEmBjO0A/viewform';
+const ZP_E={type:'224501178',name:'1422734545',unit:'734867994',owner:'947320614',
+  cxDate:'1893294367',cxSlot:'747015993',cxWhy:'975615409',
+  irDate:'469248787',irRes:'822057062',irNote:'752885495',
+  hoDate:'1370483974',hoOk:'569258909',hoNote:'1322698430'};
+const ZP_T_CX='取消預約',ZP_T_IR='驗屋結果回報',ZP_T_HO='交屋完成回報';
+const ZP_TYPES=[ZP_T_CX,ZP_T_IR,ZP_T_HO];
+const ZP_RES=['已驗屋，尚有缺失待改善','已驗屋，待安排下一次戶驗','已驗屋，待安排交屋','未到場／未執行','其他，請於說明補充'];
+const ZP_SLOT_OPT=['上午1｜09:00–10:20','上午2｜10:30–11:50','下午1｜14:00–15:20','下午2｜15:30–16:50'];   // 與 HCAL_SLOTS 依序一一對應
+const ZP_SLOT_SP='特殊時間，請於原因說明';
+const ZP_HO_OK='確認本次已實際完成交屋，請統籌者核對結案';
+const ZP_ICO='<svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 3 10 14"/><path d="M21 3 14.5 21l-4.5-7-7-4.5z"/></svg>';
+const ZP_ICO_X='<svg class="g95ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+var _zpCur=null;
+function _zpRo(){ return !!(window._VIEW_ONLY||window._readonly); }
+function _zpScope(ds){ return !!ds&&ds>=ZP_START&&ds<=todayISO(); }
+// 戶別 key → 兆璞表單格式（A1-30＝A棟1戶30樓）。G95 的 handoverUnits key 本身就是「欄-樓層」（G95_RAW_A/B：'A1-30'；
+//   店鋪 G95_SHOP_KEYS：'A1-1'…'C1-2'），舊資料可能帶「地／業」字首（unitDisplayName 拿掉）。
+//   這裡只多做三件確定安全的事：全形英數轉半形、小寫轉大寫、樓層尾巴的 F 拿掉（A5-24F → A5-24）。
+//   轉完不是「英文字母＋數字-數字」（公設、店A18、A1(地)-6F 之類）＝不硬猜，原樣送出。
+function _zpUnitFmt(key){
+  var d=String(unitDisplayName(String(key==null?'':key))||'').trim();
+  var t=d.replace(/[Ａ-Ｚａ-ｚ０-９－]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).toUpperCase().replace(/^([A-Z]\d+-\d+)F$/,'$1');
+  return /^[A-Z]\d+-\d+$/.test(t)?t:d;
+}
+function _zpNameKey(){ return 'g95_zpName_'+String(window._authEmail||'').toLowerCase(); }
+function _zpNameGet(){ try{ return localStorage.getItem(_zpNameKey())||''; }catch(e){ return ''; } }
+function _zpNameSet(v){ try{ v=String(v||'').trim(); if(v)localStorage.setItem(_zpNameKey(),v); }catch(e){} }
+function _zpMMDD(d){ var m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})/); return m?(m[1]+'/'+m[2]):String(d||''); }
+function _zpHM(at){ var d=new Date(at); if(isNaN(d.getTime()))return ''; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function _zpMarkOf(key,round,ds){ var h=(S.handoverUnits||{})[key]||{}; var z=h.zpRpt; return (z&&typeof z==='object'&&z[_rrOf(round)+'|'+ds])||null; }
+// 當天格子裡的戶（判斷基準＝行事曆落格同一套：初驗 planDate＋slot＝getUnitsForDateSlot；複驗 _reBooked＝_reIdx；
+//   交屋 _hoBooked＝_hoIdx；未到／取消殘影 _hcalGhosts（getUnitsForDateSlot 也把它帶進格子）；不含 _reHistOn 歷史章）。
+//   renderHCal 裡那幾支是區域函式、外面叫不到 ⇒ 這裡用同一組頂層判準重寫一次索引；桌機日期標頭、手機日檢視、清單小視窗三處共用這一支。
+var _zpIdxC=null;
+function _zpIdx(){
+  if(_zpIdxC)return _zpIdxC;
+  var m={},HU=S.handoverUnits||{},t=todayISO();
+  var ok=function(d){ return !!d&&d>=ZP_START&&d<=t; };
+  var add=function(d,o){ (m[d]=m[d]||[]).push(o); };
+  Object.keys(HU).forEach(function(k){
+    var h=HU[k]||{};
+    if(ok(h.planDate)&&HCAL_SLOTS.indexOf(h.slot)>=0)add(h.planDate,{key:k,round:'init',slot:h.slot});
+    var b=null; try{ b=_reBooked(k); }catch(e){} if(b&&ok(b.date))add(b.date,{key:k,round:'re',slot:b.slot});
+    var b2=null; try{ b2=_hoBooked(k); }catch(e){} if(b2&&ok(b2.date))add(b2.date,{key:k,round:'ho',slot:b2.slot});
+  });
+  _zpIdxC=m; setTimeout(function(){ _zpIdxC=null; },0);
+  return m;
+}
+function _zpDayItems(ds){
+  if(!_zpScope(ds))return [];
+  var out=(_zpIdx()[ds]||[]).slice(),seen={};
+  out.forEach(function(o){ seen[o.round+'|'+o.key]=1; });
+  try{ HCAL_SLOTS.forEach(function(sl){ _hcalGhosts(ds,sl).forEach(function(g){
+    var r=_rrOf(g.ground); if(seen[r+'|'+g.key])return; seen[r+'|'+g.key]=1;
+    out.push({key:g.key,round:r,slot:g.gslot||sl,ghost:true,gtype:g.gtype||''}); }); }); }catch(e){}
+  var ri={init:0,re:1,ho:2};
+  out.sort(function(a,b){ return (HCAL_SLOTS.indexOf(a.slot)-HCAL_SLOTS.indexOf(b.slot))||(ri[a.round]-ri[b.round])
+    ||String(unitDisplayName(a.key)).localeCompare(String(unitDisplayName(b.key)),'zh-Hant',{numeric:true}); });
+  return out;
+}
+function _zpDayCount(ds){ return _zpDayItems(ds).filter(function(o){ return !_zpMarkOf(o.key,o.round,ds); }).length; }
+// ④ 日期標頭徽章（N=0 不顯示）；桌機 dateHdrs 與手機 _hmDayHTML 共用
+function _zpBadgeHTML(ds){
+  var n=0; try{ n=_zpDayCount(ds); }catch(e){ n=0; }
+  if(!n)return '';
+  return '<span class="zp-bdg no-print" data-zp-ds="'+ds+'" onclick="event.stopPropagation();_zpList(\''+ds+'\')" title="這天還有 '+n+' 戶沒按過「回報兆璞」（兆璞 18:00 對帳）。點一下看清單" '
+    +'style="display:inline-block;max-width:100%;box-sizing:border-box;white-space:normal;background:#EAF4FC;color:#185FA5;border:1px solid #9CC3E6;border-radius:0;padding:0 5px;font-size:10px;font-weight:800;line-height:16px;cursor:pointer">待回報兆璞 <span style="white-space:nowrap">'+n+'</span></span>';   // 欄很窄（手機完整版）時字可以折行、數字不拆、不蓋到隔壁欄
+}
+// ⑤ 預選規則（每輪各看各的旗標：_huFlag(key,round,…)；殘影用它自己的 gtype）
+function _zpDefNote(rows){
+  return rows.slice().sort(function(a,b){ return String(a.vendor||'').localeCompare(String(b.vendor||''),'zh-TW'); }).map(function(x,i){
+    var p=[String(x.floor||'').trim(),String(x.issue||'').trim(),String(x.vendor||'').trim(),x.planDone?('預計 '+_zpMMDD(x.planDone)):''].filter(Boolean);
+    return (i+1)+'. '+p.join('｜');
+  }).join('\n');
+}
+function _zpPreset(key,round,ds,gtype){
+  var r=_rrOf(round),h=(S.handoverUnits||{})[key]||{};
+  var cx=gtype?_cxnIsCancel(gtype):_huFlag(key,r,'cancelled');
+  var ns=gtype?!_cxnIsCancel(gtype):_huFlag(key,r,'noShow');
+  var why=function(base){ var a=_cxnArrOf(key,base+(r==='re'?'Re':(r==='ho'?'HO':'')));
+    for(var i=a.length-1;i>=0;i--){ if(a[i]&&a[i].date===ds)return String(a[i].reason||''); } return ''; };
+  if(cx)return {type:ZP_T_CX,res:'',note:why('cancel'),rule:'5-1'};
+  if(ns)return {type:ZP_T_IR,res:ZP_RES[3],note:why('noShow'),rule:'5-2'};
+  if(r==='ho'&&h.delivered)return {type:ZP_T_HO,res:'',note:'',rule:'5-5'};
+  var pend=[]; try{ pend=getDefectRows(key).filter(function(x){ return x.compId==null; }); }catch(e){}
+  if(pend.length)return {type:ZP_T_IR,res:ZP_RES[0],note:_zpDefNote(pend),rule:'5-3'};
+  return {type:ZP_T_IR,res:ZP_RES[2],note:'',rule:'5-4'};
+}
+function _zpSlotOpt(sl){ var i=HCAL_SLOTS.indexOf(sl); if(i>=0&&ZP_SLOT_OPT[i]&&ZP_SLOT_OPT[i].indexOf(sl)>0)return ZP_SLOT_OPT[i]; return sl?ZP_SLOT_SP:''; }
+// ③ 預填網址：usp=pp_url＋entry.<ID>=<urlencoded 值>（空值不帶）
+function _zpUrl(o){
+  var q=[['usp','pp_url']];
+  var e=function(id,v){ if(v!=null&&String(v)!=='')q.push(['entry.'+id,String(v)]); };
+  e(ZP_E.type,o.type); e(ZP_E.name,o.name); e(ZP_E.unit,o.unit); e(ZP_E.owner,o.owner);
+  if(o.type===ZP_T_CX){ e(ZP_E.cxDate,o.date); e(ZP_E.cxSlot,_zpSlotOpt(o.slot)); e(ZP_E.cxWhy,o.note); }
+  else if(o.type===ZP_T_IR){ e(ZP_E.irDate,o.date); e(ZP_E.irRes,o.res); e(ZP_E.irNote,o.note); }
+  else if(o.type===ZP_T_HO){ e(ZP_E.hoDate,o.date); e(ZP_E.hoOk,ZP_HO_OK); e(ZP_E.hoNote,o.note); }
+  return ZP_FORM+'?'+q.map(function(p){ return p[0]+'='+encodeURIComponent(p[1]); }).join('&');
+}
+function _zpText(o){
+  var L=['兆璞驗屋回報','這次要辦理什麼：'+o.type,'填表人姓名：'+o.name,'戶別：'+o.unit,'屋主姓名：'+(o.owner||'')];
+  if(o.type===ZP_T_CX){ L.push('要取消哪一天：'+o.date,'要取消哪個時段：'+_zpSlotOpt(o.slot),'取消原因：'+(o.note?('\n'+o.note):'')); }
+  else if(o.type===ZP_T_IR){ L.push('實際驗屋日期：'+o.date,'結果：'+o.res,'缺失或需協助事項：'+(o.note?('\n'+o.note):'')); }
+  else if(o.type===ZP_T_HO){ L.push('實際交屋日期：'+o.date,ZP_HO_OK,'補充說明：'+(o.note?('\n'+o.note):'')); }
+  L.push('表單：'+ZP_FORM);
+  return L.join('\n');
+}
+function _zpClose(){ var x=document.getElementById('zp-ov'); if(x)x.remove(); }
+function _zpListClose(){ var x=document.getElementById('zp-lst'); if(x)x.remove(); }
+// ② 確認小視窗
+function _zpOpen(key,round,ds,slot,gtype,from){
+  if(_huKeyBad(key))return;
+  var r=_rrOf(round);
+  ds=ds||_huDate(key,r)||todayISO(); slot=slot||_huSlot(key,r)||'';
+  var p=_zpPreset(key,r,ds,gtype||'');
+  _zpCur={key:key,round:r,ds:ds,slot:slot,gtype:gtype||'',from:from||''};
+  _zpClose();
+  var nm=_zpNameGet(),mk=_zpMarkOf(key,r,ds),ro=_zpRo(),unit=_zpUnitFmt(key),owner=_ownerOf(key);
+  var opt=function(arr,sel){ return arr.map(function(v){ return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(v)+'</option>'; }).join(''); };
+  var lab='font-size:13px;color:#5F5E5A;font-weight:700;align-self:center';
+  var ctl='width:100%;box-sizing:border-box;height:36px;font-size:14px;padding:4px 8px;border:1px solid var(--pborder);border-radius:0;background:#fff;font-family:var(--font);margin:0';
+  var kj=esc(_riEscJs(key));
+  var ov=document.createElement('div'); ov.id='zp-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
+  ov.innerHTML='<div style="background:#fff;max-width:460px;width:100%;max-height:92vh;overflow:auto;box-sizing:border-box;border:1px solid rgba(0,0,0,.25);border-radius:0;box-shadow:0 8px 30px rgba(0,0,0,.25)">'
+    +'<div style="background:#185FA5;color:#fff;padding:9px 13px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:4px">'
+      +ZP_ICO+'<span>回報兆璞</span><span style="margin-left:8px">'+esc(unit)+'</span><span style="margin-left:8px;font-weight:600">'+_recepRoundLabel(r)+'</span>'
+      +'<span style="flex:1"></span><span onclick="_zpClose()" title="關閉" style="cursor:pointer;padding:0 2px;display:inline-flex">'+ZP_ICO_X+'</span></div>'
+    +'<div style="padding:12px 15px;font-size:13.5px">'
+      +'<div style="color:var(--text2);margin-bottom:10px;line-height:1.7">屋主 <b>'+esc(owner||'—')+'</b><span style="margin-left:10px;white-space:nowrap">'+esc(ds)+'</span><span style="margin-left:6px;white-space:nowrap">'+esc(slot)+'</span>'+(gtype?'<span style="margin-left:6px;color:#8A8783">（'+(_cxnIsCancel(gtype)?'取消':'未到')+'紀錄）</span>':'')+'</div>'
+      +'<div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px 10px">'
+        +'<label style="'+lab+'">回報類型</label><select id="zp-type" class="view-allow" onchange="_zpSync()" style="'+ctl+'">'+opt(ZP_TYPES,p.type)+'</select>'
+        +'<label id="zp-res-l" style="'+lab+'">結果</label><select id="zp-res" class="view-allow" style="'+ctl+'">'+opt(ZP_RES,p.res||ZP_RES[2])+'</select>'
+        +'<label id="zp-ho-l" style="'+lab+'">確認</label><div id="zp-ho" style="font-size:12.5px;color:#3B6D11;align-self:center;line-height:1.5">表單會勾「'+esc(ZP_HO_OK)+'」</div>'
+        +'<label id="zp-date-l" style="'+lab+'">日期</label><input id="zp-date" class="view-allow" type="date" value="'+esc(ds)+'" style="'+ctl+'">'
+        +'<label style="'+lab+'">填表人</label><input id="zp-name" class="view-allow" type="text" value="'+esc(nm)+'" placeholder="中文姓名（第一次要填，之後自動帶）" style="'+ctl+'">'
+        +'<label id="zp-note-l" style="'+lab+';align-self:start;padding-top:8px">說明</label><textarea id="zp-note" class="view-allow" rows="6" style="'+ctl+';height:auto;min-height:120px;line-height:1.5;resize:vertical">'+esc(p.note)+'</textarea>'
+      +'</div>'
+      +(mk?('<div id="zp-mk" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#3B6D11"><span>這一輪 '+_zpMMDD(ds)+' 已回報 '+_zpHM(mk.at)+' '+esc(mk.by||'')+'</span>'
+          +(ro?'<button class="btn btn-sm" disabled title="唯讀模式不能改">取消記號</button>'
+              :'<button class="btn btn-sm" onclick="_zpUnmark(\''+kj+'\',\''+r+'\',\''+ds+'\',\'modal\')">取消記號</button>')+'</div>'):'')
+      +'<div style="margin-top:10px;font-size:12px;color:#8A8783;line-height:1.6">「打開表單」只會把內容帶進兆璞的表單，送出要你自己在表單上按「提交」，系統不會代送。'+(ro?'唯讀模式：可以打開表單、複製文字，但不記錄「已回報」。':'')+'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px">'
+        +'<button class="btn btn-p" id="zp-go" onclick="_zpGo()">'+ZP_ICO+'打開表單</button>'
+        +'<button class="btn" id="zp-cp" onclick="_zpCopy()">複製文字</button>'
+        +'<button class="btn" onclick="_zpClose()">取消</button>'
+      +'</div>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  _zpSync();
+  // 唯讀模式的 MutationObserver 會把新出現的 select 一律 disabled ⇒ 這個視窗的下拉是 view-allow（只影響帶進表單的值、不寫資料），下一輪解鎖
+  if(window._VIEW_ONLY)setTimeout(function(){ try{ ov.querySelectorAll('select.view-allow').forEach(function(el){ el.removeAttribute('disabled'); el.style.pointerEvents=''; }); }catch(e){} },0);
+}
+function _zpSync(){
+  var t=(document.getElementById('zp-type')||{}).value||'';
+  var show=function(id,on){ var el=document.getElementById(id); if(el)el.style.display=on?'':'none'; };
+  show('zp-res-l',t===ZP_T_IR); show('zp-res',t===ZP_T_IR); show('zp-ho-l',t===ZP_T_HO); show('zp-ho',t===ZP_T_HO);
+  var dl=document.getElementById('zp-date-l'); if(dl)dl.textContent=t===ZP_T_CX?'取消哪天':(t===ZP_T_HO?'交屋日期':'驗屋日期');
+  var nl=document.getElementById('zp-note-l'); if(nl)nl.textContent=t===ZP_T_CX?'取消原因':(t===ZP_T_HO?'補充說明':'缺失說明');
+}
+function _zpCollect(){
+  var c=_zpCur; if(!c)return null;
+  var g=function(id){ return String((document.getElementById(id)||{}).value||''); };
+  var o={type:g('zp-type'),res:g('zp-res'),date:g('zp-date'),name:g('zp-name').trim(),note:g('zp-note'),
+         unit:_zpUnitFmt(c.key),owner:_ownerOf(c.key),slot:c.slot};
+  if(!o.name){ try{ toast('請先填寫填表人中文姓名（只要填一次，之後自動帶入）',''); }catch(e){} try{ document.getElementById('zp-name').focus(); }catch(e){} return null; }
+  return o;
+}
+function _zpGo(){
+  var o=_zpCollect(); if(!o)return;
+  var c=_zpCur;
+  try{ window.open(_zpUrl(o),'_blank'); }catch(e){}
+  _zpNameSet(o.name);
+  _zpClose();
+  if(_zpRo()){ try{ toast('唯讀模式：已打開表單，不記錄「已回報」',''); }catch(e){} }
+  else _zpMark(c.key,c.round,c.ds,o.name);
+  if(c.from==='list')_zpList(c.ds);
+}
+function _zpCopy(){
+  var o=_zpCollect(); if(!o)return;
+  _zpNameSet(o.name);
+  var txt=_zpText(o);
+  var done=function(){ try{ toast('已複製回報文字（表單網址太長時改用這份）',''); }catch(e){} };
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,function(){ _rptCopyFallback(txt,done); });
+  else _rptCopyFallback(txt,done);
+}
+// 已回報記號：寫法照抄 toggleNoShow（_huGate＝只准動既有戶；save 時 _stampMetaTouch 蓋 _mt）
+function _zpMark(key,round,ds,by){
+  if(_zpRo())return;
+  var r=_rrOf(round);
+  var hu=_huGate(key,'_zpMark');
+  if(!hu)return;
+  if(!hu.zpRpt||typeof hu.zpRpt!=='object'||Array.isArray(hu.zpRpt))hu.zpRpt={};
+  hu.zpRpt[r+'|'+ds]={at:new Date().toISOString(),by:String(by||'')};
+  logChange('📆 交屋/行事曆','回報兆璞 '+_recepRoundLabel(r)+' '+unitDisplayName(key)+' '+ds);
+  save();renderHCal();
+}
+function _zpUnmark(key,round,ds,from){
+  if(_zpRo()){ try{ _voWarn&&_voWarn(); }catch(e){} return; }
+  var r=_rrOf(round);
+  var hu=_huGate(key,'_zpUnmark');
+  if(!hu)return;
+  var k=r+'|'+ds;
+  if(!hu.zpRpt||!hu.zpRpt[k])return;
+  delete hu.zpRpt[k];
+  logChange('📆 交屋/行事曆','取消回報兆璞記號 '+_recepRoundLabel(r)+' '+unitDisplayName(key)+' '+ds);
+  save();renderHCal();
+  if(from==='list')_zpList(ds);
+  else if(from==='modal'&&_zpCur&&_zpCur.key===key)_zpOpen(key,r,ds,_zpCur.slot,_zpCur.gtype,_zpCur.from);
+}
+// ④ 點徽章開的清單小視窗：當天每一戶一列（表格 fixed＋colgroup）
+function _zpList(ds){
+  _zpListClose();
+  var it=_zpDayItems(ds),ro=_zpRo(),nUn=0;
+  var td='padding:6px 6px;border-bottom:1px solid var(--border2);vertical-align:middle;overflow-wrap:anywhere';
+  var rows=it.map(function(o){
+    var mk=_zpMarkOf(o.key,o.round,ds); if(!mk)nUn++;
+    var kj=esc(_riEscJs(o.key));
+    var st=mk?('<span style="color:#3B6D11;font-weight:700">已回報</span> <span style="white-space:nowrap">'+_zpHM(mk.at)+'</span> '+esc(mk.by||''))
+             :'<span style="color:#A32D2D;font-weight:700">未回報</span>';
+    var go='<button class="btn btn-sm" style="width:100%" onclick="_zpOpen(\''+kj+'\',\''+o.round+'\',\''+ds+'\',\''+esc(o.slot)+'\',\''+esc(o.gtype||'')+'\',\'list\')">'+ZP_ICO+'回報兆璞</button>';
+    var un=!mk?'':(ro?'<button class="btn btn-sm" disabled title="唯讀模式不能改" style="width:100%;margin-top:3px">取消記號</button>'
+                    :'<button class="btn btn-sm" style="width:100%;margin-top:3px" onclick="_zpUnmark(\''+kj+'\',\''+o.round+'\',\''+ds+'\',\'list\')">取消記號</button>');
+    return '<tr data-zp-row="'+(mk?'done':'todo')+'" data-zp-key="'+esc(o.key)+'" data-zp-round="'+o.round+'">'
+      +'<td style="'+td+';font-weight:700">'+esc(unitDisplayName(o.key))+'</td>'
+      +'<td style="'+td+'">'+_recepRoundLabel(o.round)+(o.ghost?'<div style="font-size:10.5px;color:#8A8783">'+(_cxnIsCancel(o.gtype)?'取消紀錄':'未到紀錄')+'</div>':'')+'</td>'
+      +'<td style="'+td+';font-size:11.5px">'+esc(o.slot)+'</td>'
+      +'<td style="'+td+';font-size:12px">'+st+'</td>'
+      +'<td style="'+td+'">'+go+un+'</td></tr>';
+  }).join('');
+  if(!it.length)rows='<tr data-zp-empty="1"><td colspan="5" style="'+td+';text-align:center;color:var(--text3)">這天沒有要回報的戶</td></tr>';
+  var d=new Date(ds+'T00:00:00');
+  var ov=document.createElement('div'); ov.id='zp-lst';
+  ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
+  ov.innerHTML='<div style="background:#fff;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-sizing:border-box;border:1px solid rgba(0,0,0,.25);border-radius:0;box-shadow:0 8px 30px rgba(0,0,0,.25)">'
+    +'<div style="background:#185FA5;color:#fff;padding:9px 13px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
+      +ZP_ICO+'<span>回報兆璞</span><span style="margin-left:8px;white-space:nowrap">'+_zpMMDD(ds)+'（'+['日','一','二','三','四','五','六'][d.getDay()]+'）</span>'
+      +'<span style="margin-left:8px;font-weight:600;white-space:nowrap" id="zp-lst-sum">待回報 '+nUn+'／共 '+it.length+' 戶</span>'
+      +'<span style="flex:1"></span><span onclick="_zpListClose()" title="關閉" style="cursor:pointer;padding:0 2px;display:inline-flex">'+ZP_ICO_X+'</span></div>'
+    +'<div style="padding:10px 12px">'
+      +'<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px"><colgroup><col style="width:21%"><col style="width:13%"><col style="width:20%"><col><col style="width:92px"></colgroup>'
+      +'<thead><tr style="background:#E9E9E9"><th style="'+td+';text-align:left">戶別</th><th style="'+td+';text-align:left">輪次</th><th style="'+td+';text-align:left">時段</th><th style="'+td+';text-align:left">狀態</th><th style="'+td+'"></th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table>'
+      +'<div style="margin-top:8px;font-size:12px;color:#8A8783;line-height:1.6">兆璞要求當天回報、18:00 對帳。「已回報」＝有人在系統按過「打開表單」，表單有沒有真的送出要以兆璞那邊為準。</div>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn" onclick="_zpListClose()">關閉</button></div>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+try{ window._zpOpen=_zpOpen; window._zpList=_zpList; window._zpDayItems=_zpDayItems; window._zpDayCount=_zpDayCount; window._zpUrl=_zpUrl; window._zpPreset=_zpPreset; window._zpUnitFmt=_zpUnitFmt; }catch(e){}
 // ── V0707-09：取消／未到 紀錄看板（cancelHistory＋noShowHistory 彙整、可搜尋、改期保留、原因可補改）──
 function _cxnWho(){return String(window._authEmail||'').replace(/@gmail\.com$/,'')||'';}
 // ── V0820-02 原因欄通行碼防呆 ─────────────────────────────────────────────
@@ -18960,7 +19225,7 @@ function _hmDayHTML(ds){
  var com=vs.filter(function(k){return _comOkR(k,'init');}).length+rsLive.filter(function(k){return _comOkR(k,'re');}).length+hs.filter(function(k){return _comOkR(k,'ho');}).length
    +rh.filter(function(o){return ((((S.handoverUnits||{})[o.key]||{}).inspTypes)||[]).indexOf('委外代驗')>=0;}).length;
  var d=new Date(ds+'T00:00:00');
- var h='<div style="font-size:14px;color:var(--text2);font-weight:600;margin:12px 0 4px">'+ds.slice(5).replace('-','/')+'（'+DOW[d.getDay()]+'）驗收 '+vs.length+' 戶'+(rs.length?' · 複驗 '+rs.length+' 戶':'')+(hs.length?' · 交屋 '+hs.length+' 戶':'')+' · 清潔 '+cs.length+' 戶'+(com?' · <span style="color:#B08900">★委外 '+com+'</span>':'')+'</div>';
+ var h='<div style="font-size:14px;color:var(--text2);font-weight:600;margin:12px 0 4px">'+ds.slice(5).replace('-','/')+'（'+DOW[d.getDay()]+'）驗收 '+vs.length+' 戶'+(rs.length?' · 複驗 '+rs.length+' 戶':'')+(hs.length?' · 交屋 '+hs.length+' 戶':'')+' · 清潔 '+cs.length+' 戶'+(com?' · <span style="color:#B08900">★委外 '+com+'</span>':'')+((typeof _zpBadgeHTML==='function'&&_zpBadgeHTML(ds))?' <span style="font-size:12px">'+_zpBadgeHTML(ds)+'</span>':'')+'</div>';   // V1027-01 ④：手機日檢視同一個徽章
  var bySlot={'':{init:[],re:[],ho:[],rh:[]}};HCAL_SLOTS.forEach(function(s){bySlot[s]={init:[],re:[],ho:[],rh:[]};});
  vs.forEach(function(k){var s=(S.handoverUnits[k]||{}).slot;bySlot[HCAL_SLOTS.indexOf(s)>=0?s:''].init.push(k);});
  rsLive.forEach(function(k){var b=null;try{b=_reBooked(k);}catch(e){}var s=(b&&b.slot)||'';bySlot[HCAL_SLOTS.indexOf(s)>=0?s:''].re.push(k);});
@@ -19103,7 +19368,8 @@ function _hmDetail(k,round){
     +'<span style="flex-basis:100%;font-size:11px;color:var(--text3)">'+((_rr==='re'||_rr==='ho')?'沒填時段＝還沒跟屋主敲定，行事曆不會排進去':'改過去的日期會要求認證碼（照舊）')+'</span></div>'
   +'<div style="display:flex;gap:8px;padding:13px 6px;border-top:1px solid var(--border2)">'
     +'<button class="btn btn-sm" onclick="toggleCancel(\''+esc(k)+'\',\''+_rr+'\');_hmRefresh()" style="font-size:14px">'+(_cxl?('恢復'+_rlbl):'標記取消')+'</button>'
-    +'<button class="btn btn-sm" onclick="toggleNoShow(\''+esc(k)+'\',\''+_rr+'\');_hmRefresh()" style="font-size:14px">'+(_nsh?'取消未到':'標記未到')+'</button></div>';
+    +'<button class="btn btn-sm" onclick="toggleNoShow(\''+esc(k)+'\',\''+_rr+'\');_hmRefresh()" style="font-size:14px">'+(_nsh?'取消未到':'標記未到')+'</button>'
+    +'<button class="btn btn-sm" data-zp-btn="1" onclick="_hmClose();_zpOpen(\''+esc(_riEscJs(k))+'\',\''+_rr+'\',\''+esc(_dt||'')+'\',\''+esc(_sl||'')+'\',\'\',\'mob\')" style="font-size:14px">'+ZP_ICO+'回報兆璞</button></div>';   // V1027-01：手機詳情抽屜也要能回報（桌機改完手機是另一支）
  document.body.appendChild(bg);document.body.appendChild(sh);
 }
 function renderHCal(){
@@ -19237,9 +19503,10 @@ function renderHCal(){
       const isPastH=ds<todayStr;
       const bg=isToday?'#F0EEFF':isPastH?'#E9E9E9':isWeekend(d)?'#F5F3EE':'var(--surface)';
       const color=isToday?'var(--purple)':diff<0?'var(--text3)':diff<=3?'var(--red)':'var(--text2)';
+      const _zpB=(typeof _zpBadgeHTML==='function')?_zpBadgeHTML(ds):'';   // V1027-01 ④：待回報兆璞 N（只算 ZP_START～今天·N=0 不出現）
       return`<th style="padding:5px 4px;text-align:center;border:1px solid var(--border);${isToday?'border-left:3px dashed var(--purple);':''}font-size:12px;min-width:100px;background:${bg};${isPastH?'opacity:.9;':''}">
         ${fmtDate(d)}&nbsp;<span style="font-size:10px;color:var(--text3)">週${fmtDay(d)}</span><br>
-        <span style="font-size:10px;color:${color}">${diffLabel}</span>
+        <span style="font-size:10px;color:${color}">${diffLabel}</span>${_zpB?'<div style="margin-top:2px">'+_zpB+'</div>':''}
       </th>`;
     }).join('');
 
@@ -19430,7 +19697,8 @@ function renderHCal(){
                 ${hu.planDate?`<span style="font-size:12px;color:var(--text2)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="4" width="18" height="18"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${hu.planDate}</span>`:''}
                 ${hu.slot?`<span style="font-size:12px;color:var(--text2)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>${hu.slot}</span>`:''}
                 ${(_cxnArrOf(ek,_hcalExpRound==='re'?'cancelRe':(_hcalExpRound==='ho'?'cancelHO':'cancel')).length)?`<span style="font-size:11px;color:#A35200;background:#FBEFD0;border:1px solid #E0C98A;border-radius:0;padding:1px 8px" title="過去被標記已取消的排程（改期不遺失）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6 18.4 18.4"/></svg>取消紀錄 ${_cxnArrOf(ek,_hcalExpRound==='re'?'cancelRe':(_hcalExpRound==='ho'?'cancelHO':'cancel')).length}：${_cxnArrOf(ek,_hcalExpRound==='re'?'cancelRe':(_hcalExpRound==='ho'?'cancelHO':'cancel')).map(c=>esc((c.date||'(未排日期)')+(c.slot?' '+c.slot:''))).join('、')}</span>`:''}
-                <button class="btn btn-sm" onclick="toggleCancel('${esc(ek)}','${_hcalExpRound}')" style="margin-left:auto;${_huFlag(ek,_hcalExpRound,'cancelled')?'background:#FBEFD0;color:#7A5A12;border-color:#E0C98A;':''}">${_huFlag(ek,_hcalExpRound,'cancelled')?'↺ 取消「已取消」':'🚫 標記'+(_hcalExpRound==='re'?'複驗':'')+'已取消'}</button>
+                <button class="btn btn-sm" data-zp-btn="1" onclick="_zpOpen('${esc(_riEscJs(ek))}','${_hcalExpRound}','${esc(_huDate(ek,_hcalExpRound)||'')}','${esc(_huSlot(ek,_hcalExpRound)||'')}','','exp')" title="用兆璞的 Google 表單回報（預填好內容，送出要自己在表單上按）" style="margin-left:auto">${ZP_ICO}回報兆璞</button>
+                <button class="btn btn-sm" onclick="toggleCancel('${esc(ek)}','${_hcalExpRound}')" style="${_huFlag(ek,_hcalExpRound,'cancelled')?'background:#FBEFD0;color:#7A5A12;border-color:#E0C98A;':''}">${_huFlag(ek,_hcalExpRound,'cancelled')?'↺ 取消「已取消」':'🚫 標記'+(_hcalExpRound==='re'?'複驗':'')+'已取消'}</button>
                 <button class="btn btn-sm" onclick="clearSchedule('${esc(ek)}','${_hcalExpRound}')" title="${_hcalExpRound==='re'?'清除這戶的約定複驗日與時段（缺失與驗收日保留）':'清除驗收日期與時段（接待人員與缺失保留，戶別移出行事曆）'}"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg>清除排程</button>
                 <button class="btn btn-sm" onclick="toggleNoShow('${esc(ek)}','${_hcalExpRound}')" style="${_huFlag(ek,_hcalExpRound,'noShow')?'background:#FCEBEB;color:#A32D2D;border-color:#E2A6A6;':''}">${_huFlag(ek,_hcalExpRound,'noShow')?'✓ 取消未到':'✗ 標記客戶'+(_hcalExpRound==='re'?'複驗':'')+'未到'}</button>
                 <button class="btn btn-sm" onclick="_hcalExpanded=null;renderHCal()">✕ 收合</button>
@@ -27609,4 +27877,4 @@ try{
 </body>
 </html>
 
-<!-- V1020-01 index -->
+<!-- V1027-01 index -->
