@@ -13221,8 +13221,8 @@ function _plWkGroups(X){
   if(f==='dly')return [['dly','延後',X.dly]];
   if(f==='od')return [['od','逾期',X.od]];
   if(f==='nod')return [['nod','未填日期',X.nod]];
-  if(f==='plan')return [['od','逾期',inB(X.od)],['due','本週到期',inB(X.due)],['done','已完成待通知',inB(X.done)],['dly','延後',inB(X.dly)],['later','延到下週以後（沒有延後紀錄）',X.later]];
-  return [['od','逾期',X.od],['due','本週到期',X.due],['done','已完成待通知',X.done]];
+  if(f==='plan')return [['od','逾期',inB(X.od)],['due','本週進行中',inB(X.due)],['done','已完成待通知',inB(X.done)],['dly','延後',inB(X.dly)],['later','延到下週以後（沒有延後紀錄）',X.later]];
+  return [['od','逾期',X.od],['due','本週進行中',X.due],['done','已完成待通知',X.done]];
 }
 function _plWkHTML(mob){
   var X=_plWkData(), ld=_bdLoading(), bat=_plWkBat();
