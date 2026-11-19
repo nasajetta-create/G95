@@ -703,7 +703,7 @@ const FIREBASE_CONFIG = {
   appId:             "1:518379622669:web:1deb196d0c5d57872e6044"
 };
 const DB_DOC = 'projects/main';
-const CODE_VERSION = 430;  // V1110-02 撥款看板「本週預計完成（自動）」清單每戶加可點的缺失數字（使用者 2026-11-10 定案·不在任何批次的戶也能勾不影響交屋）：①桌機加一欄「剩餘筆數」（colgroup 80px·表格 fixed·分組列 colspan 6→7）、手機卡片加一行「剩餘 N」；數字＝剩餘未完成（同 _plWkU＝compId==null 且非 hoFree＝u.rows），有勾 hoFree 加既有「不擋」小標 ②點開＝既有 _plDefOpen(k)（不另寫視窗）；查證：_plDefOpen 只靠 _plInfo(k,_bdData())，_plInfo 讀 D.st[k]（沒有就退 _riStat）、不讀批次 ⇒ 非批次戶原本就能開 ③_plDefCell 加選用欄 I.all（全部未完成·有給就用它決定可不可點＝全是不擋的戶也能點開取消勾）與 I.lb（手機字首）；舊呼叫點不給＝行為不變；新增 _plWkDefI(u,D) ④_plDefSave 存檔後先 _plWkMemo=null 再 renderPayList＝本週清單一定拿新值重算（hoFree 讓戶掉出名單或改類別） ⑤唯讀照舊能點開看、視窗內灰化 ⑥煙測 paylist ㉒ 區段｜V1110-01 撥款看板「本週預計完成（自動）」統計格改法＋刪除空批次（使用者 2026-11-10 定案示意圖 本週預計完成_統計格改法_20261110）：①第一列 5 格＝預計＝已完成＋本週進行中＋延後＋逾期（格間顯示＝／＋·運算子在格子外的間隙裡·格子一樣大）；本週進行中＝_plWkData 的 due（最晚預計完成日在本週、未修完、未過期）·可點篩選（_plWkSetF(due)·_plWkGroups 加 due 分支）②未填日期移到第二列單獨一格（虛線淡灰框）＋小字「另列：缺失沒填預計完成日，不算在預計戶數裡」③預計是週一鎖定的基準戶數、四格是即時數＝可能不相等；不硬湊，不相等時第一列下方照實寫「四格合計 N 戶，與預計差 M 戶」④手機同一支 _plWkHTML(mob)：第一列 3 欄兩列排、左側留運算子位⑤新增「刪除這批」：批次 meta 列「清空這批」旁；只有空的批次（units 0）可按、第一批／第二批（b1/b2）不顯示、還有戶＝灰字提示先清空、唯讀灰化；唯一寫入口 _plDelBatch（confirm 寫批次名稱＋刪了就不能還原·按下當下再驗一次空＋非 b1/b2·從 S.payList.batches 移除＋刪 snaps[該 id]·logChange·save()·目前選中這批＝切回第一批）；空批次沒更新日期時 meta 列也出現（才放得下刪除鈕）⑥煙測 paylist ㉑ 區段；⑳「五個統計格子」改成六格新順序｜V1109-01 撥款看板本週預計完成（自動）＋逾期提醒＋延後原因（待辦0h·使用者 2026-11-09 定案）＋撥款回報用詞（待辦0g）：①0g _plEta 改回 {d,txt,k}：第1組沒約今天以後複驗日＝已完成待通知（只剩 hoFree 逾期也算）、約了寫複驗日、未初驗＝尚無日期；第2組有任一預計完成日寫最晚（過今天加「已過」）、全沒填＝尚無日期；不再出現「待定」；_plReportData 結論句已交／可交拆開、其餘拆預計 MM/DD 前可交屋／已完成待通知／尚無日期三段（0 的段不寫）；第2組最晚日仍含 hoFree（0f 未定案）②0h 新 S 頂層鍵 S.payWeek＝{週一:{base,end}}（_fields/meta 文件·全員共用·保留 52 週）；寫入口只有 _plWkTick（資料就緒 _dfActive 且非 partial/stale、非唯讀、非 demo 才寫·同週已有基準不寫·過週六補存結算·無 once 旗標每輪重判）；applyRemote 新增 _plWkMerge（本機∪遠端·同週基準留較早·遠端漏帶就留本機並把快照設回遠端值＝下一次 save 補回）③判定唯一出處 _plWkData（讀 _bdData().st·剩餘＝compId==null 且非 hoFree·最晚 planDone·逾期＝最晚日<今天·本週到期＝今天~週六·未填日期另列·基準戶修完＝已完成待通知·延後＝delayLog at 在本週且新日期>週六）；結算 _plWkSettle 用日期判定④缺失列新欄 delayLog:[{from,to,why,note,by,at}]，寫入口只有 _plDlyRec；延後原因視窗 _plDlyAsk 共用（缺料／廠商人力不足／等其他工項／屋主因素／其他要寫說明·誰改的＝_zpNameGet 退 _plWho）；七入口改晚才問：onPlanDoneChange、upd（含 _mmEdit／_riSetPlanDone／_ulqSetPlanDone／_usSetDate）、_ulqBookApply、_plDateSave、applyBulk、applyBulkDates（批次選一次套全部）；取消＝日期退回原值不存（_plDlyRestore）；Excel 匯入不問⑤撥款看板自動批次「本週預計完成（自動）」（_plCurId 'wk'·不存 batches）＝五格可點篩選＋B/C/D 一行＋逾期→本週到期→已完成待通知＋每週結算表；桌機表格 fixed＋colgroup、手機一戶一卡同一支 _plWkHTML(mob)⑥逾期紅色提醒 _plOdBanner（資料就緒後頂部·看明細＝切撥款看板篩逾期·知道了＝localStorage g95_plOdAck 當天）·煙測 paylist ⑲⑳ 共 99 項
+const CODE_VERSION = 432;  // V1119-02 撥貸梯次改讀批次名稱（preview 真資料對帳發現：線上批次陣列是 第一批、第二批、11/14預計完成、第三批、第四批、第五批，用陣列順序會把第四批寫成 5）：_bdXlBatchNum 取「第N批」的 N（中文或數字），名稱不是第N批的批次不算梯次；_bdXlBatchNo 改用它、去重後由小到大｜V1119-01 階段改名＋關係戶第三類＋一鍵更正 28 戶＋報告看板 Excel 撥貸梯次（使用者 2026-11-19 定案）：①階段顯示名稱單一出處 _stgName(stage,pend,rr,forXlsx)：reinsp pend0＝可複驗、pend≥1＝可複驗(尚有缺失)；re_next 畫面＝可複驗N+1（Excel 不帶輪次）；內部 stage 代號與 _riStat 判定一律不動；報告看板第 5 格改名「可複驗（第2輪起）」照舊只收 re_next；已約／未約複驗徽章維持；撥款名單「約複驗N」是動作用語、驗屋階段摘要「安排複驗N+1」是摘要句＝不改 ②關係戶＝客戶清單類型第三個合法值；g95KindOf 多回「關」、新增 g95TypeOf 三類單一出處；isOwnerUnit 語意不變；地主／自購兩類的計數與標示改三類（撥款名單桌機手機每日回報 Excel、交屋狀態統計表與 PDF、戶況統計、客戶清單桌機手機、驗屋階段摘要已交屋小列、驗收修繕進度類型徽章、各類型下拉與篩選）；50 戶建議維持地主 30＋自購 20、關係戶不挑入 ③客戶清單一鍵更正「28 戶改關係戶」（_relFixPlan／_relFixRun·戶別用 _bdNameMap＋_bdNormTok 執行期對·唯讀灰化·confirm 列動誰留誰·先下載備份·changelog·save·當下再驗·做完顯示已完成）；空殼判定排除關係戶 ④報告看板下載 Excel：自購戶追蹤改「自購戶及關係戶追蹤」、各戶別頁備註後加「撥貸梯次」（_bdXlBatchNo＝S.payList.batches 陣列順序第幾批）、階段統計欄＝地主戶 自購戶 關係戶 未填 合計、末列總計、候選排序可交屋→可複驗→可複驗(尚有缺失)｜V1110-02 撥款看板「本週預計完成（自動）」清單每戶加可點的缺失數字（使用者 2026-11-10 定案·不在任何批次的戶也能勾不影響交屋）：①桌機加一欄「剩餘筆數」（colgroup 80px·表格 fixed·分組列 colspan 6→7）、手機卡片加一行「剩餘 N」；數字＝剩餘未完成（同 _plWkU＝compId==null 且非 hoFree＝u.rows），有勾 hoFree 加既有「不擋」小標 ②點開＝既有 _plDefOpen(k)（不另寫視窗）；查證：_plDefOpen 只靠 _plInfo(k,_bdData())，_plInfo 讀 D.st[k]（沒有就退 _riStat）、不讀批次 ⇒ 非批次戶原本就能開 ③_plDefCell 加選用欄 I.all（全部未完成·有給就用它決定可不可點＝全是不擋的戶也能點開取消勾）與 I.lb（手機字首）；舊呼叫點不給＝行為不變；新增 _plWkDefI(u,D) ④_plDefSave 存檔後先 _plWkMemo=null 再 renderPayList＝本週清單一定拿新值重算（hoFree 讓戶掉出名單或改類別） ⑤唯讀照舊能點開看、視窗內灰化 ⑥煙測 paylist ㉒ 區段
 window._CODE_VERSION = CODE_VERSION;  // V0701-43：曝露給 classic script 用（module 作用域隔離）
 window._PREVIEW = /preview\.html$/i.test(location.pathname||'');  // 檔名為 preview.html＝預覽模式：不寫版本號、不影響正式版
 
@@ -1835,7 +1835,7 @@ if(window._LOGIN_GATE){
 <div id="mnav" class="no-print"></div><!-- V0717-07 手機底部五格導覽（renderTabBar→_mnavSync 渲染） -->
 <div class="shell">
   <div class="page-hdr"><span id="app-title" class="mob-hdr-hide">工程缺失追蹤系統</span><button class="hdr-icon-btn no-print mob-hdr-hide" onclick="renameApp()" title="改系統名稱"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button> <span class="mob-hdr-hide">多人協作 · 即時同步</span>
-    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V1110-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
+    <span class="hdr-seg"><span style="font-weight:600" id="hdr-ver">V1119-02</span><span id="sync-indicator" style="cursor:pointer" onclick="manualSave()" title="點擊立即儲存"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>連線中…</span><span id="user-count" style="display:none" title="目前開啟此系統的使用人數"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>1 人</span><span id="df-cnt" title="此裝置目前載入的缺失筆數（未完成＋已完成）。兩台數字不同＝資料未同步，請點「重抓」" style="font-size:12px;opacity:.9"></span><span onclick="g95ForceResync()" style="cursor:pointer" title="強制重抓雲端資料：清掉這台的離線快取後重新整理。畫面和別人對不上、怎麼重整都不一致時用（不會刪雲端、不會登出）"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重抓</span></span><!-- V0717-08：狀態合併一框（使用者：不要很多按鈕、合併成大框再分割） -->
     <span class="hdr-seg no-print" style="margin-left:auto">
       <button class="m-hide" onclick="window.open('intro.html','_blank')" title="開啟系統介紹說明（新分頁）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg> 介紹</button><button class="m-hide" onclick="window.open('manual/','_blank')" title="開啟使用說明書（新分頁）：操作步驟、狀況排除、可搜尋可發問"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-2.5"/></svg> 說明</button><button class="m-hide" onclick="g95FullBackup()" title="匯出完整備份 JSON（含缺失／交屋／設定／使照進度，建議每週一次、結案必做）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> 匯出備份</button><button class="m-hide" onclick="document.getElementById('g95RestoreInp').click()" title="用完整備份 JSON 覆蓋雲端目前全部資料（重大操作，需 MONGA＋二次確認）"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> 還原備份</button><input type="file" id="g95RestoreInp" accept=".json,application/json" style="display:none" onchange="g95FullRestore(this.files[0]);this.value=''"><button id="logout-btn" onclick="_doLogout()" style="display:none">登出</button><button class="m-only mob-hdr-hide" id="tab-menu-btn" onclick="g95TabMenu()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> 看板</button><button id="tab-cancel-btn" onclick="cancelTabEditMode()" style="display:none">✕ 取消</button><button id="tab-edit-btn" class="mob-hdr-hide" onclick="toggleTabEditMode()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="11" width="16" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 編輯排序</button><button id="theme-toggle" class="m-hide" onclick="toggleTheme()"><svg class="g95ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg> 深色</button>
     </span>
@@ -8305,7 +8305,7 @@ function renderHandover(){
     if(hf2.planDate==='d7'){if(!huF.planDate)return`<div style="background:transparent;min-height:64px"></div>`;const dl2=Math.ceil((new Date(huF.planDate)-todayMs)/86400000);if(dl2<0||dl2>7)return`<div style="background:transparent;min-height:64px"></div>`;}
     if(hf2.planDate==='overdue'){if(!huF.planDate)return`<div style="background:transparent;min-height:64px"></div>`;const dl2=Math.ceil((new Date(huF.planDate)-todayMs)/86400000);if(dl2>=0)return`<div style="background:transparent;min-height:64px"></div>`;}
     if(hf2.dateExact&&huF.planDate!==hf2.dateExact)return`<div style="background:transparent;min-height:64px"></div>`;
-    if(hf2.type&&(isOwnerUnit(key)?'地主戶':'自購戶')!==_typeNorm(hf2.type))return`<div style="background:transparent;min-height:64px"></div>`;
+    if(hf2.type&&g95TypeOf(key)!==_typeNorm(hf2.type))return`<div style="background:transparent;min-height:64px"></div>`;   // V1119-01 三類
     if(_hovTierSet&&!_hovTierSet.has(key))return`<div style="background:transparent;min-height:64px"></div>`;
     const pct=hoUnitPct(unitDisplayName(key))||hoUnitPct(key)||0;
     const grade=hoGrade(pct);
@@ -8656,6 +8656,7 @@ function renderHandover(){
         <option value="" ${hf.type===''?'selected':''}>類別</option>
         <option value="地主戶" ${hf.type==='地主戶'?'selected':''}>地主戶</option>
         <option value="自購戶" ${_typeNorm(hf.type)==='自購戶'?'selected':''}>自購戶</option>
+        <option value="關係戶" ${_typeNorm(hf.type)==='關係戶'?'selected':''}>關係戶</option>
       </select>
       <span style="font-size:11px;color:var(--text2);margin-left:6px">棟別：</span>
       ${['all','A','B','shop'].map(b=>{
@@ -8752,7 +8753,7 @@ function _riBlockOf(key){
   var d=unitDisplayName(key);var c=(d.charAt(0)||'').toUpperCase();
   return c==='B'?'B':'A';
 }
-function _riTypeLabel(key){return isOwnerUnit(key)?'地主戶':'自購戶';}   // V1102-01：業主戶併入自購戶
+function _riTypeLabel(key){return g95TypeOf(key);}   // V1119-01：三類（地主戶／自購戶／關係戶）走 g95TypeOf   // V1102-01：業主戶併入自購戶
 function _riOwnerName(key){var c=(S.clientData&&S.clientData[key])||{};return c.name||'';}
 function _riInsp1Date(hu){
   // V0720-10：改與驗屋日報「累計完成」同一把尺＝取「初驗紀錄」實際完成日（type=初驗、有日期、≤今天）最早一筆；
@@ -8835,6 +8836,18 @@ function _riStat(key){
   var sp=(insp1&&pend>0)?_riSpan(insp1,todayISO()):{cal:0,rest:0,work:0};
   return {hu:hu,inspected:inspected,hasReDone:hasReDone,reRound:reRound,lastReDate:lastReDate,roundDefects:roundDefects,delivered:delivered,outsource:outsource,tot:tot,pend:pend,pendRows:pendRows,pendFree:pendFree,pendHard:pendHard,insp1:insp1,stage:stage,dr:dr,lastDone:lastDone,workComplete:workComplete,calDays:sp.cal,restDays:sp.rest,dateAnomaly:!!(insp1&&lastDone&&lastDone<insp1)};  // V0720-14：完成日早於初驗日＝資料異常
 }
+// V1119-01 階段顯示名稱＝唯一出處（內部 stage 代號、_riStat 判定一律不動；只換給人看的字）
+//   reinsp（初驗後）：剩餘缺失 pend＝0 →「可複驗」；≥1（剩下的都勾了不影響交屋）→「可複驗(尚有缺失)」
+//   re_next（複驗後待再驗）：畫面「可複驗N+1」（N＝reRound，例：可複驗2）；Excel（forXlsx）不帶輪次＝「可複驗」；pend≥1 一樣加「(尚有缺失)」
+//   pend＝_riStat(key).pend（全部未完成，含勾了 hoFree 的）
+//   其餘五種回空字串＝呼叫端沿用原本各自的字樣（規格：不變）
+//   🔴 已約／未約複驗徽章（reinsp）維持原樣，不走這支
+function _stgName(stage,pend,rr,forXlsx){
+  if(stage!=='reinsp'&&stage!=='re_next')return '';
+  var b='可複驗'; if(stage==='re_next'&&!forXlsx)b+=String((+rr||1)+1);
+  return b+((+pend||0)>0?'(尚有缺失)':'');
+}
+window._stgName=_stgName;
 function _riCardBrk(c){
   if(_riBrk==='off')return '';        // V0804-05 ②：預設不出細分
   if(_riBrk==='B'){
@@ -8882,7 +8895,7 @@ function _riRowHTML(s,ownerCnt,isAction,actWord,idx,isRe){
   var bcol=s.block==='B'?'#0A6640':s.block==='店'?'#B08900':'#185FA5';
   var blab=s.block==='店'?'店':s.block;
   var star=s.outsource?'<span style="color:#B08900;font-size:13px;font-weight:800;margin-left:4px" title="委外代驗">★</span>':'';
-  var tpc=s.type==='地主戶'?['#5B4F9E','#AFA9EC','#F3F1FB']:['#556','#ccc','#F7F7F5'];
+  var tpc=s.type==='地主戶'?['#5B4F9E','#AFA9EC','#F3F1FB']:(s.type==='關係戶'?['#8A5A00','#E3C98A','#FFF4E0']:['#556','#ccc','#F7F7F5']);   // V1119-01 關係戶
   var typeTag='<span style="font-size:11px;font-weight:700;padding:1px 6px;border:1px solid '+tpc[1]+';color:'+tpc[0]+';background:'+tpc[2]+'">'+s.type+'</span>';
   var clu=(s.owner&&ownerCnt[s.owner]>=2)?'<span style="display:inline-block;background:#F1E7FB;color:#6D3BA6;border:1px solid #B98FE0;font-size:10px;font-weight:700;padding:1px 5px;margin-left:6px">同屋主·'+ownerCnt[s.owner]+'戶</span>':'';
   var dateShow=s.insp1?s.insp1.slice(5):'—';
@@ -12153,7 +12166,7 @@ var _BDSEG=[
   {id:'re0', no:2, name:'未約複驗',           card:1, tone:'hot'},
   {id:'ins0',no:3, name:'未約初驗',           card:1, tone:'hot'},
   {id:'del', no:4, name:'待交屋',             card:1, tone:''},
-  {id:'re2', no:5, name:'待下一輪複驗',       card:1, tone:''},   /* V0917-01：改收 stage 're_next'（複驗有抓到缺失、已全部修繕，待下一輪複驗）；原本收 re_repair＝名實不符 */
+  {id:'re2', no:5, name:'可複驗（第2輪起）',  card:1, tone:''},   /* V1119-01：格名改（原「待下一輪複驗」）；照舊只收 re_next；每戶徽章帶實際輪次＝_stgName */   /* V0917-01：改收 stage 're_next'（複驗有抓到缺失、已全部修繕，待下一輪複驗）；原本收 re_repair＝名實不符 */
   {id:'done',no:6, name:'已交屋',             card:1, tone:'ok'},
   {id:'req', no:7, name:'提前交屋_借屋裝修(可以交屋)', cn:'提前交屋(可以交屋)', card:1, tone:'ok'},    /* V0828-07 ⑮ 名單自動分流；V0828-08 ⑲ 進卡片區（cn＝卡片短標） */
   {id:'gap', no:8, name:'提前交屋_借屋裝修(尚有缺失)', cn:'提前交屋(尚有缺失)', card:1, tone:'hot'},   /* V0828-07 ⑮ 名單其餘；V0828-08 ⑲ 進卡片區 */
@@ -12269,7 +12282,7 @@ function _bdOwnStageTxt(k,s){
   if(s.stage==='reinsp'){var re='';try{re=(S.reCheckUF||{})[_riUsKey(k)]||'';}catch(e){}
     return re?('已約複驗 '+_bdMD(re)):'未約複驗';}                 /* 1 已約複驗／2 未約複驗 */
   if(s.stage==='re_next'){var rn='';try{rn=(S.reCheckUF||{})[_riUsKey(k)]||'';}catch(e){} if(rn&&s.lastReDate&&rn<=s.lastReDate)rn='';   /* V0917-01：5 待下一輪複驗（抽屜裡的日期不晚於上一輪＝那是舊的，不算已約） */
-    return '待複驗'+((s.reRound||1)+1)+(rn?('（已約 '+_bdMD(rn)+'）'):'（未約）');}
+    return _stgName('re_next',s.pend,s.reRound)+(rn?('（已約 '+_bdMD(rn)+'）'):'（未約）');}   /* V1119-01：名稱走 _stgName（原「待複驗N」） */
   if(s.stage==='re_repair')return '複驗後修繕中 '+(s.pend||0);        /* V0917-01：10 複驗後修繕中（原寫「待複驗2」名實不符） */
   if(s.stage==='repair')return '修繕中 '+(s.pend||0);
   if(s.stage==='none')return hu.planDate?('已排初驗 '+_bdMD(hu.planDate)):'未約初驗';   /* 3 未約初驗＝沒有 planDate */
@@ -12283,10 +12296,10 @@ function _bdRow(k,D){
   return {key:k,unit:unitDisplayName(k),name:cd.name||'',dd:(hu.deliveredDate||''),kind:(typeof _clmTypeOf==='function'?_clmTypeOf(k):(_bdOwn(k)?'地主戶':'自購戶')),
           stage:s.stage||'',rr:s.reRound||0,pend:s.pend||0,insp1:s.insp1||'',wait:wait,re:re,slot:(hu.hoSlot||''),ho:(hu.hoDate||''),host:''};
 }
-function _bdStageTag(stage,re,rr){
+function _bdStageTag(stage,re,rr,pend){   /* V1119-01：加 pend（re_next 名稱帶「(尚有缺失)」用） */
   var t={reinsp:(re?['已約複驗','#EAF5EA','#2F7D2A','#A9CFA6']:['未約複驗','#FFF7E6','#8A5A00','#E3C98A']),
          repair:['修繕中','#FDECEA','#B3261E','#E39B9B'],re_repair:['複驗後修繕中','#FDECEA','#B3261E','#E39B9B'],   /* V0917-01 */
-         re_next:['待複驗'+((rr||1)+1),'#FFF7E6','#8A5A00','#E3C98A'],                                               /* V0917-01 */
+         re_next:[_stgName('re_next',pend,rr),'#FFF7E6','#8A5A00','#E3C98A'],                                               /* V0917-01 */
          deliverable:['待交屋','#EAF5EA','#2F7D2A','#A9CFA6'],delivered:['已交屋','#EAF5EA','#2F7D2A','#A9CFA6'],
          none:['未初驗','#EFEDE9','#5F5E5A','#C8C5BF']}[stage]||['—','#EFEDE9','#5F5E5A','#C8C5BF'];
   return '<span style="display:inline-flex;align-items:center;justify-content:center;height:19px;padding:0 7px;font-size:11px;font-weight:700;background:'+t[1]+';color:'+t[2]+';border:1px solid '+t[3]+';border-radius:0">'+esc(t[0])+'</span>';
@@ -12365,7 +12378,7 @@ function _bdListHTML(id,D){
     if(mergeFlr){ if(flrLeft===0){var n1=spanOf(i,_bdFlrLbl);flrLeft=n1;h+='<td class="bdfl" rowspan="'+n1+'">'+esc(_bdFlrLbl(k))+'</td>';} flrLeft--; }
     else h+='<td class="bdfl">'+esc(_bdFlrLbl(k))+'</td>';
     h+=_bdUnitTd(k)+'<td class="l">'+esc(r.name||'—')+'</td><td>'+esc(r.kind)+'</td>'
-      +'<td>'+_bdStageTag(r.stage,r.re,r.rr)+'</td>'
+      +'<td>'+_bdStageTag(r.stage,r.re,r.rr,r.pend)+'</td>'
       +(id==='gap'?('<td'+(r.pend>0?' style="font-weight:800;color:#B3261E"':'')+'>'+(r.pend>0?('<span onclick="_bdGoPWO(\''+_jsq(k)+'\')" style="cursor:pointer;text-decoration:underline">'+r.pend+'</span>'):'0')+'</td>'):'')
       +(id==='done'?('<td style="font-weight:700;color:#2F7D2A">'+(r.dd?_bdMD(r.dd):'<span style="color:#B3261E;font-weight:400">未填</span>')+'</td>'):'')
       +'<td style="color:#185FA5">'+_bdMD(r.insp1)+'</td>'
@@ -12626,14 +12639,14 @@ function _bdStageData(D){
     rounds.push({n:n,tot:ok.length+nx.length+rp.length,ok:ok,nx:nx,nxA:nxA,nxB:nxB,rp:rp,bOk:_bdBrk(ok),bNx:_bdBrk(nx),bRp:_bdBrk(rp)});
     reAll+=ok.length+nx.length+rp.length;
   }
-  var kind=function(k){ var t=''; try{ t=(typeof _clmTypeOf==='function')?_clmTypeOf(k):''; }catch(e){ t=''; } return (_typeNorm(t)==='地主戶')?'地主戶':'自購戶'; };
-  var dSelf=done.filter(function(k){return kind(k)==='自購戶';}), dOwn=done.filter(function(k){return kind(k)==='地主戶';});
+  var kind=function(k){ var t=''; try{ t=(typeof _clmTypeOf==='function')?_clmTypeOf(k):''; }catch(e){ t=''; } t=_typeNorm(t); return (t==='地主戶')?'地主戶':(t==='關係戶'?'關係戶':'自購戶'); };   // V1119-01 三類
+  var dSelf=done.filter(function(k){return kind(k)==='自購戶';}), dOwn=done.filter(function(k){return kind(k)==='地主戶';}), dRel=done.filter(function(k){return kind(k)==='關係戶';});
   var sumParts=rep.length+r3.length+reAll+done.length;
   return {all:(D.keys||[]).slice(),ins:ins,uninsp:uninsp,anom:anom,
-          rep:rep,r3:r3,r3a:r3a,r3b:r3b,rounds:rounds,reAll:reAll,done:done,dSelf:dSelf,dOwn:dOwn,
+          rep:rep,r3:r3,r3a:r3a,r3b:r3b,rounds:rounds,reAll:reAll,done:done,dSelf:dSelf,dOwn:dOwn,dRel:dRel,
           ok:(sumParts===ins.length),sumParts:sumParts,
           bAll:_bdBrk(D.keys||[]),bIns:_bdBrk(ins),bUn:_bdBrk(uninsp),bRep:_bdBrk(rep),b3:_bdBrk(r3),bDone:_bdBrk(done),
-          bSelf:_bdBrk(dSelf),bOwn:_bdBrk(dOwn)};
+          bSelf:_bdBrk(dSelf),bOwn:_bdBrk(dOwn),bRel:_bdBrk(dRel)};
 }
 var _BD_CN=['一','二','三','四','五','六','七','八','九','十'];
 function _bdCn(i){ return _BD_CN[i]||String(i+1); }
@@ -12679,6 +12692,7 @@ function _bdStageHTML(D,ld){
   h+=_bdStageRow(_bdCn(i++),'已交屋（含借屋裝潢）',G.done.length,G.bDone,'',{hd:1,fg:GR})
     +_bdStageRow('','自購戶',G.dSelf.length,G.bSelf,'',{ind:1})
     +_bdStageRow('','地主戶',G.dOwn.length,G.bOwn,'',{ind:1})
+    +_bdStageRow('','關係戶',G.dRel.length,G.bRel,'',{ind:1})   /* V1119-01 */
     +'</tbody></table></div>'
     +'<div id="bd-stage-ft" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:12.5px;color:#8A8783">'
     +'<span>'+_bdNw('已完成初驗 '+G.ins.length)+' ＝ '+_bdNw('一的兩小列')+' ＋ '+_bdNw('各複驗段')+' ＋ '+_bdNw('已交屋')+' '+(G.ok?'✓':('⚠（加總 '+G.sumParts+'）'))+'</span>'
@@ -12703,6 +12717,7 @@ function _bdStageLines(D){
   L.push(_bdCn(i++)+'、已交屋（含借屋裝潢）'+G.done.length+' 戶（'+b(G.bDone)+'）');
   L.push('　自購戶 '+G.dSelf.length+' 戶');
   L.push('　地主戶 '+G.dOwn.length+' 戶');
+  L.push('　關係戶 '+G.dRel.length+' 戶');   // V1119-01
   L.push('已完成初驗 '+G.ins.length+' ＝ 一的兩小列 ＋ 各複驗段 ＋ 已交屋 '+(G.ok?'✓':'⚠'));
   L.push('資料來源：G95 工程缺失追蹤系統');
   return L;
@@ -12721,12 +12736,29 @@ function _bdStageShot(){if(_bdLdBlock())return;try{_capEl(document.getElementByI
       _bdXlsxDownload() 只負責組工作表＋XLSX.writeFile。
    🔴 算法一律走既有函式：_riAllKeys／_riStat（含 dr/tot/pend/stage）／_riInsp1Date／
       inspTypeOf／_riUsKey／unitDisplayName，這裡不自己重算判定。 */
-var _BDXL_STAGE={repair:'修繕中',reinsp:'可複驗',re_repair:'複驗後修繕中',re_next:'待下輪複驗',deliverable:'可交屋',delivered:'已交屋',none:'未初驗'};
-var _BDXL_STAGES=['已交屋','可交屋','待下輪複驗','可複驗','複驗後修繕中','修繕中','未初驗'];
-var _BDXL_TIP={'可交屋':'可直接排交屋','待下輪複驗':'排一次複驗、過了就交屋','可複驗':'先排複驗'};
-var _BDXL_CAND={'可交屋':0,'待下輪複驗':1,'可複驗':2};
-var _BDXL_COLS=['戶別','類型','客戶姓名','初驗日','排定複驗日','已複驗','階段','剩餘缺失','總缺失','最後修繕日','交屋日','備註'];
-var _BDXL_W=[13,8,14,11,11,22,13,9,9,11,15,18];
+/* V1119-01：reinsp／re_next 的名稱一律走 _stgName(stage,pend,rr,true)（可複驗／可複驗(尚有缺失)）；下面這張只剩其餘五種在用 */
+var _BDXL_STAGE={repair:'修繕中',reinsp:'可複驗',re_repair:'複驗後修繕中',re_next:'可複驗',deliverable:'可交屋',delivered:'已交屋',none:'未初驗'};
+var _BDXL_STAGES=['已交屋','可交屋','可複驗','可複驗(尚有缺失)','複驗後修繕中','修繕中','未初驗'];
+var _BDXL_TIP={'可交屋':'可直接排交屋','可複驗':'先排複驗','可複驗(尚有缺失)':'先排複驗（剩下的缺失已勾不影響交屋）'};
+var _BDXL_CAND={'可交屋':0,'可複驗':1,'可複驗(尚有缺失)':2};
+var _BDXL_COLS=['戶別','類型','客戶姓名','初驗日','排定複驗日','已複驗','階段','剩餘缺失','總缺失','最後修繕日','交屋日','備註','撥貸梯次'];   /* V1119-01：備註後加「撥貸梯次」 */
+var _BDXL_W=[13,8,14,11,11,22,17,9,9,11,15,18,10];
+/* V1119-01 撥貸梯次＝唯一出處：該戶在撥款名單 S.payList.batches 的第幾批（陣列順序，第一個＝1；在多批用「、」接；不在任何批＝空白）。
+   比對＝撥款名單本身的做法：批次 units 存的就是系統戶別鍵（貼名單時 _plLookup＝_bdNameMap＋_bdNormTok 轉好），_plUnitsOf／_plIsPrio／Excel bnOf 都是 units.indexOf(key)，這裡同一把尺 */
+function _bdXlBatchNum(name){   /* V1119-02：梯次＝批次名稱「第N批」的 N（中文或數字）；名稱不是第N批的批次（例：11/14預計完成）不算梯次＝回空字串 */
+  var m=String(name==null?'':name).match(/第\s*([0-9]+|[一二三四五六七八九十]+)\s*批/); if(!m)return '';
+  if(/^[0-9]+$/.test(m[1]))return String(parseInt(m[1],10));
+  var C='一二三四五六七八九', t=m[1], p=t.indexOf('十'), n=0;
+  if(p<0){ n=C.indexOf(t)+1; }
+  else{ n=(p===0?1:(C.indexOf(t.charAt(0))+1))*10+(p===t.length-1?0:(C.indexOf(t.charAt(t.length-1))+1)); }
+  return n>0?String(n):'';
+}
+function _bdXlBatchNo(key){
+  var a=[]; try{ _plData0().batches.forEach(function(b){ if((b.units||[]).indexOf(key)<0)return; var n=_bdXlBatchNum(b.name); if(n&&a.indexOf(n)<0)a.push(n); }); }catch(e){ a=[]; }
+  a.sort(function(x,y){ return (+x)-(+y); });
+  return a.join('、');
+}
+window._bdXlBatchNum=_bdXlBatchNum;
 var _BDXL_FAR='9999-99-99';   /* 沒排定的排最後 */
 function _bdXlRoc(iso){ var p=String(iso==null?'':iso).split('-'); if(p.length<3||!p[0])return ''; var y=parseInt(p[0],10); if(!y)return ''; return (y-1911)+'/'+p[1]+'/'+p[2]; }
 function _bdXlsxData(){
@@ -12739,19 +12771,19 @@ function _bdXlsxData(){
     re.sort();
     var rp=''; try{ rp=(S.reCheckUF&&S.reCheckUF[_riUsKey(key)])||''; }catch(e){ rp=''; }
     return { key:key, unit:unitDisplayName(key), type:_typeNorm(c.type||''), name:c.name||'',   // V1102-01：業主戶計入自購戶
-      insp1:_riInsp1Date(hu)||'', rePlan:rp, reDone:re, stage:_BDXL_STAGE[st.stage]||'',
+      insp1:_riInsp1Date(hu)||'', rePlan:rp, reDone:re, stage:(_stgName(st.stage,st.pend,st.reRound,true)||_BDXL_STAGE[st.stage]||''),   /* V1119-01 */
       pend:st.pend, tot:st.tot, lastFix:lastFix,
       hoDate:(st.delivered?(hu.deliveredDate||''):(hu.hoDate||'')), hoPre:(!st.delivered&&!!hu.hoDate),
-      note:c.note||'' };
+      note:c.note||'', batch:_bdXlBatchNo(key) };   /* V1119-01 撥貸梯次 */
   }).sort(function(a,b){ return a.unit<b.unit?-1:a.unit>b.unit?1:0; });
-  /* 可交屋候選：可交屋→待下輪複驗→可複驗，同階段依戶別 */
+  /* 可交屋候選：可交屋→可複驗→可複驗(尚有缺失)，同階段依戶別（V1119-01 改名歸位：原「待下輪複驗」的戶依 pend 歸可複驗／可複驗(尚有缺失)） */
   var cand=rows.filter(function(r){ return _BDXL_CAND[r.stage]!==undefined; })
     .sort(function(a,b){ return (_BDXL_CAND[a.stage]-_BDXL_CAND[b.stage])||(a.unit<b.unit?-1:a.unit>b.unit?1:0); })
     .map(function(r){ var o={}; for(var k in r){ if(Object.prototype.hasOwnProperty.call(r,k))o[k]=r[k]; } o.tip=_BDXL_TIP[r.stage]||''; return o; });
-  /* 50 戶建議：可交屋→待下輪複驗→可複驗；可複驗內依排定複驗日早者優先（沒排定的最後），再依最後修繕日早者 */
+  /* 50 戶建議：可交屋→可複驗→可複驗(尚有缺失)；兩個可複驗組內各依排定複驗日早者優先（沒排定的最後），再依最後修繕日早者（V1119-01） */
   var srt=cand.slice().sort(function(a,b){
     var d=_BDXL_CAND[a.stage]-_BDXL_CAND[b.stage]; if(d)return d;
-    if(a.stage==='可複驗'){
+    if(String(a.stage).indexOf('可複驗')===0){
       var x=a.rePlan||_BDXL_FAR, y=b.rePlan||_BDXL_FAR; if(x!==y)return x<y?-1:1;
       var p=a.lastFix||_BDXL_FAR, q=b.lastFix||_BDXL_FAR; if(p!==q)return p<q?-1:1;
     }
@@ -12761,14 +12793,14 @@ function _bdXlsxData(){
   var top50=srt.filter(function(r){
     if(r.type==='地主戶')return (nO++)<30;
     if(r.type==='自購戶')return (nS++)<20;
-    return false;
+    return false;   /* V1119-01：關係戶不挑入（維持地主 30＋自購 20） */
   });
-  /* 階段統計：七階段 ×（地主戶／自購戶／未填／合計），最後一列合計（V1102-01 業主戶欄拿掉＝已計入自購戶） */
-  var idx={}, stat=_BDXL_STAGES.map(function(sg,i){ idx[sg]=i; return {stage:sg,owner:0,self:0,none:0,total:0}; });
-  var sum={stage:'合計',owner:0,self:0,none:0,total:0};
+  /* 階段統計：七階段 ×（地主戶／自購戶／關係戶／未填／合計），最後一列總計（V1102-01 業主戶欄拿掉＝已計入自購戶；V1119-01 加關係戶欄、末列改名總計） */
+  var idx={}, stat=_BDXL_STAGES.map(function(sg,i){ idx[sg]=i; return {stage:sg,owner:0,self:0,rel:0,none:0,total:0}; });
+  var sum={stage:'總計',owner:0,self:0,rel:0,none:0,total:0};
   rows.forEach(function(r){
     var o=stat[idx[r.stage]]; if(!o)return;
-    var f=(r.type==='地主戶')?'owner':(r.type==='自購戶')?'self':'none';
+    var f=(r.type==='地主戶')?'owner':(r.type==='自購戶')?'self':(r.type==='關係戶')?'rel':'none';
     o[f]++; o.total++; sum[f]++; sum.total++;
   });
   stat.push(sum);
@@ -12779,7 +12811,7 @@ function _bdXlUnitRow(r,withTip){
   var a=[r.unit,r.type,r.name,_bdXlRoc(r.insp1),_bdXlRoc(r.rePlan),
     (r.reDone||[]).map(function(d){ return _bdXlRoc(d); }).join('、'),
     r.stage,r.pend,r.tot,_bdXlRoc(r.lastFix),
-    (r.hoDate?((r.hoPre?'預定 ':'')+_bdXlRoc(r.hoDate)):''),r.note];
+    (r.hoDate?((r.hoPre?'預定 ':'')+_bdXlRoc(r.hoDate)):''),r.note,(r.batch||'')];   /* V1119-01：備註後＝撥貸梯次 */
   if(withTip)a.push(r.tip||'');
   return a;
 }
@@ -12801,17 +12833,17 @@ function _bdXlsxDownload(){
     var CT=_BDXL_COLS.concat(['建議']), WT=_BDXL_W.concat([20]);
     var wb=XLSX.utils.book_new();
     _bdXlAdd(wb,'50戶建議','建議先交屋 50 戶（地主戶 30＋自購戶 20）　資料日期 '+roc,
-      '挑法：可交屋 → 待下輪複驗 → 可複驗（可複驗內依排定複驗日早者優先，再依最後修繕日早者）',
+      '挑法：可交屋 → 可複驗 → 可複驗(尚有缺失)（兩個可複驗組內各依排定複驗日早者優先，再依最後修繕日早者）；關係戶不挑入',
       CT,WT,D.top50.map(function(r){ return _bdXlUnitRow(r,1); }));
-    _bdXlAdd(wb,'可交屋候選','可交屋候選名單　資料日期 '+roc+'　排序：可交屋 → 待下輪複驗 → 可複驗','',
+    _bdXlAdd(wb,'可交屋候選','可交屋候選名單　資料日期 '+roc+'　排序：可交屋 → 可複驗 → 可複驗(尚有缺失)','',
       CT,WT,D.cand.map(function(r){ return _bdXlUnitRow(r,1); }));
     _bdXlAdd(wb,'地主戶追蹤','地主戶追蹤　資料日期 '+roc,'',_BDXL_COLS,_BDXL_W,
       D.rows.filter(function(r){ return r.type==='地主戶'; }).map(function(r){ return _bdXlUnitRow(r,0); }));
-    _bdXlAdd(wb,'自購戶追蹤','自購戶追蹤　資料日期 '+roc,'',_BDXL_COLS,_BDXL_W,
-      D.rows.filter(function(r){ return r.type==='自購戶'; }).map(function(r){ return _bdXlUnitRow(r,0); }));
+    _bdXlAdd(wb,'自購戶及關係戶追蹤','自購戶及關係戶追蹤　資料日期 '+roc,'',_BDXL_COLS,_BDXL_W,   /* V1119-01：收自購戶＋關係戶，類型欄照實寫 */
+      D.rows.filter(function(r){ return r.type==='自購戶'||r.type==='關係戶'; }).map(function(r){ return _bdXlUnitRow(r,0); }));
     _bdXlAdd(wb,'階段統計','階段統計　資料日期 '+roc,'',
-      ['階段','地主戶','自購戶','未填','合計'],[14,10,10,10,10],
-      D.stat.map(function(r){ return [r.stage,r.owner,r.self,r.none,r.total]; }));
+      ['階段','地主戶','自購戶','關係戶','未填','合計'],[17,10,10,10,10,10],
+      D.stat.map(function(r){ return [r.stage,r.owner,r.self,r.rel,r.none,r.total]; }));
     XLSX.writeFile(wb,'開禧_交屋追蹤總表_'+String(t).replace(/-/g,'')+'.xlsx');
     try{ toast('已下載 Excel ✓','📥'); }catch(e){}
   }catch(e){ try{ toast('下載失敗：'+((e&&e.message)||e),'⚠️'); }catch(_e){} }
@@ -12894,7 +12926,7 @@ function renderBoard(){
   h+='</div>';
   h+='<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.8">'
     +'已約／未約複驗＝初驗後缺失已全數完成，差在有沒有約到複驗日；未約初驗＝還沒初驗、也還沒排初驗日；'
-    +'待交屋＋待下一輪複驗＋複驗後修繕中＝「複驗做完、還沒交屋」的全部（那一輪 0 缺失→待交屋；抓到缺失已修完→待下一輪複驗；還沒修完→複驗後修繕中）。A棟＋B棟＋店鋪＝位置合計；地主戶＝身分，是其中幾戶、不另外加。</div>';   /* V0828-05 ⑥：刪開頭那句與「店鋪＝業主戶」（位置與身分是兩個維度） */
+    +'待交屋＋可複驗（第2輪起）＋複驗後修繕中＝「複驗做完、還沒交屋」的全部（那一輪 0 缺失→待交屋；抓到缺失已修完→可複驗（第2輪起）；還沒修完→複驗後修繕中）。A棟＋B棟＋店鋪＝位置合計；地主戶＝身分，是其中幾戶、不另外加。</div>';   /* V0828-05 ⑥：刪開頭那句與「店鋪＝業主戶」（位置與身分是兩個維度） */
   h+='</div>';
   el.innerHTML=h;
 }
@@ -12986,7 +13018,7 @@ function _plInfo(k,D){
   var I0={re:re,g:g,rows:rows}, ro=_plReOverTxt(I0); if(ro)next=ro;
   var free=_plFreeTxt(I0), nFree=rows.filter(function(r){return !!r.hoFree;}).length;
   var note=[ro,free].filter(Boolean).join('；');   /* V1104-02：備註＝複驗日已過＋不影響交屋那句（看板／手機／Excel 逐戶頁都讀這一格） */
-  return {reOver:!!ro,k:k,unit:_plFmt(k),own:_bdOwn(k),blk:_bdBlk(k),g:g,s:s,hu:hu,rows:rows,n:rows.length,re:re,pIn:pIn,pDone:pDone,
+  return {reOver:!!ro,k:k,unit:_plFmt(k),own:_bdOwn(k),typ:_plTypS(k),blk:_bdBlk(k),g:g,s:s,hu:hu,rows:rows,n:rows.length,re:re,pIn:pIn,pDone:pDone,
           noDone:noDone,notified:notified,od:od,tv:tv,date:date,next:next,note:note,free:free,nFree:nFree};
 }
 /* V1104-02 不影響交屋那一句＝唯一出處（看板備註／_plStuck 第 3、4 組／每日回報第 2 張／Excel 逐戶頁備註都只呼叫這支）
@@ -13353,8 +13385,10 @@ function _plData(id){
   [1,2,3,4].forEach(function(g){ G[g].sort(_plCmp); });
   return {id:id,list:list,G:G,D:D};
 }
-function _plOwnOk(I){ if(_plPrioOnly&&!I.prio)return false; return _plOwnF==='all'||(_plOwnF==='own'?I.own:!I.own); }   /* V1103-02：身分＋只看優先同一支 */
-function _plCnt(arr){ var o={n:arr.length,A:0,B:0,S:0,own:0,self:0,def:0,od:0}; arr.forEach(function(I){ o[I.blk]++; if(I.own)o.own++; else o.self++; o.def+=I.n; o.od+=I.od.length; }); return o; }
+/* V1119-01 身分短字（地主／自購／關係）＝g95TypeOf 去「戶」；看板、手機、每日回報、Excel 都讀 I.typ */
+function _plTypS(k){ var t='自購戶'; try{ t=g95TypeOf(k); }catch(e){} return String(t).replace(/戶$/,''); }
+function _plOwnOk(I){ if(_plPrioOnly&&!I.prio)return false; if(_plOwnF==='all')return true; if(_plOwnF==='own')return !!I.own; if(_plOwnF==='rel')return I.typ==='關係'; return !I.own&&I.typ!=='關係'; }   /* V1119-01：身分 all／own／self／rel */   /* V1103-02：身分＋只看優先同一支 */
+function _plCnt(arr){ var o={n:arr.length,A:0,B:0,S:0,own:0,self:0,rel:0,def:0,od:0}; arr.forEach(function(I){ o[I.blk]++; if(I.own)o.own++; else if(I.typ==='關係')o.rel++; else o.self++; o.def+=I.n; o.od+=I.od.length; }); return o; }
 function _plRo(){ return window._VIEW_ONLY?' disabled title="檢視模式不能修改"':''; }
 // ═══ 看板 render ═══
 function renderPayList(){
@@ -13384,13 +13418,13 @@ function renderPayList(){
   [1,2,3,4].forEach(function(g){ var c=_plCnt(X.G[g]);
     h+='<div class="pl-card" id="pl-card-'+g+'" onclick="_plGoGrp('+g+')"><div class="t"><span class="ufno">'+g+'</span>'+_PL_GRP[g].name+'</div>'
       +'<div class="v"><b>'+c.n+'</b> 戶<span class="sp">|</span>缺失 '+c.def+'</div>'
-      +'<div class="o">地主 '+c.own+'<span class="sp">|</span>自購 '+c.self+'</div></div>'; });
+      +'<div class="o">地主 '+c.own+'<span class="sp">|</span>自購 '+c.self+'<span class="sp">|</span>關係 '+c.rel+'</div></div>'; });
   h+='</div>';
   // ③ 工具列
   var tb='<div class="eqrow pl-tool no-print">'
     +'<span class="pl-b'+(_plView==='unit'?' on':'')+'" onclick="_plSet(\'view\',\'unit\')">依戶別</span><span class="pl-b'+(_plView==='vendor'?' on':'')+'" onclick="_plSet(\'view\',\'vendor\')">依廠商</span>'
     +'<span class="pl-lb">身分</span>'
-    +['all','own','self'].map(function(v){ return '<span class="pl-b'+(_plOwnF===v?' on':'')+'" onclick="_plSet(\'own\',\''+v+'\')">'+({all:'全部',own:'地主',self:'自購'})[v]+'</span>'; }).join('')
+    +['all','own','self','rel'].map(function(v){ return '<span class="pl-b'+(_plOwnF===v?' on':'')+'" data-own="'+v+'" onclick="_plSet(\'own\',\''+v+'\')">'+({all:'全部',own:'地主',self:'自購',rel:'關係'})[v]+'</span>'; }).join('')
     +'<span class="pl-b'+(_plPrioOnly?' on':'')+'" id="pl-prio-only" onclick="_plPrioOnly=!_plPrioOnly;renderPayList()">只看優先</span>'
     +'<span style="flex:1"></span>'
     +'<button class="pl-b"'+ro+' onclick="_plNotifyOpen()">'+_icoSVG('bell',14)+' 通知廠商登記</button>'
@@ -13454,12 +13488,12 @@ function _plUnitHTML(X){
       arr.forEach(function(I){ no++;
         h+='<tr><td>'+no+'</td><td class="bdu'+I.blk+'" style="font-weight:700">'+esc(I.unit)+(I.prio?'<span class="pl-pr">優先</span>':'')+'</td>'
           +'<td style="text-align:center"><input type="checkbox" class="pl-ck pl-prck" data-k="'+esc(I.k)+'"'+(I.prio?' checked':'')+(ro?' disabled title="檢視模式不能修改"':'')+' onchange="_plPrioTog(\''+_riEscJs(I.k)+'\',this.checked)"></td>'
-          +'<td'+(I.own?' class="pl-own"':'')+'>'+(I.own?'地主':'自購')+'</td>'+_plDefCell(I,'td')
+          +'<td'+(I.own?' class="pl-own"':'')+'>'+(I.typ)+'</td>'+_plDefCell(I,'td')
           +'<td>'+_plDt(I,I.date)+'</td><td>'+_plDt(I,I.pIn)+'</td>'
           +'<td'+(I.pDone&&I.pDone<t?' class="pl-r"':'')+'>'+_plDt(I,I.pDone)+'</td>'
           +'<td'+(I.n&&I.notified<I.n?' class="pl-r"':'')+'>'+(I.n?_plNtTxt(I):'—')+'</td>'
           +'<td'+(I.reOver?' class="pl-r"':'')+'>'+esc(I.next)+'</td><td class="pl-wr'+(I.reOver?' pl-r':'')+'">'+esc(I.note)+'</td></tr>'; });
-      h+='<tr class="pl-st"><td></td><td>小計</td><td></td><td></td><td>'+c.def+'</td><td colspan="6">'+c.n+' 戶<span class="sp">|</span>A棟 '+c.A+'<span class="sp">|</span>B棟 '+c.B+(c.S?('<span class="sp">|</span>店鋪 '+c.S):'')+'<span class="sp">|</span>地主 '+c.own+'<span class="sp">|</span>自購 '+c.self+'</td></tr>';
+      h+='<tr class="pl-st"><td></td><td>小計</td><td></td><td></td><td>'+c.def+'</td><td colspan="6">'+c.n+' 戶<span class="sp">|</span>A棟 '+c.A+'<span class="sp">|</span>B棟 '+c.B+(c.S?('<span class="sp">|</span>店鋪 '+c.S):'')+'<span class="sp">|</span>地主 '+c.own+'<span class="sp">|</span>自購 '+c.self+'<span class="sp">|</span>關係 '+c.rel+'</td></tr>';
     });
   });
   return h+'</tbody></table>';
@@ -13480,7 +13514,7 @@ function _plVendorHTML(X){
   var last='';
   R.forEach(function(o,i){ var first=o.v!==last; last=o.v; var r=o.r;
     h+='<tr'+(first?' class="pl-vf"':'')+'><td>'+(i+1)+'</td><td'+(first?' style="font-weight:700"':'')+'>'+(first?esc(o.v)+' '+o.vn:'')+'</td>'
-      +'<td class="bdu'+o.I.blk+'">'+esc(o.I.unit)+'</td><td'+(o.I.own?' class="pl-own"':'')+'>'+(o.I.own?'地主':'自購')+'</td>'
+      +'<td class="bdu'+o.I.blk+'">'+esc(o.I.unit)+'</td><td'+(o.I.own?' class="pl-own"':'')+'>'+(o.I.typ)+'</td>'
       +'<td>'+esc(r.round||'初驗')+'</td><td class="pl-wr">'+esc(r.issue||'')+'</td><td>'+_plDt(o.I,r.planIn,o.v)+'</td>'
       +'<td'+(r.planDone&&r.planDone<t?' class="pl-r"':'')+'>'+_plDt(o.I,r.planDone,o.v)+'</td>'
       +'<td'+(r.notifyDate?'':' class="pl-r"')+'>'+(r.notifyDate?_plMD(r.notifyDate):'未通知')+'</td><td>'+esc(r.notifyWay||'—')+'</td></tr>'; });
@@ -13495,12 +13529,12 @@ function _plUnitMob(X){
       h+='<div class="pl-mgh"'+gid+' data-g="'+g+'" onclick="_plTog('+g+(sg.id?(',\''+_riEscJs(sg.id)+'\''):'')+')">'+(open?'▾ ':'▸ ')+g+' '+_PL_GRP[g].name+'（'+c.n+' 戶｜缺失 '+c.def+'）</div>';
       if(!open)return;
       arr.forEach(function(I){
-        h+='<div class="pl-mc"><div><label style="float:right;font-size:12.5px"><input type="checkbox" class="pl-ck pl-prck" data-k="'+esc(I.k)+'"'+(I.prio?' checked':'')+(window._VIEW_ONLY?' disabled':'')+' onchange="_plPrioTog(\''+_riEscJs(I.k)+'\',this.checked)"> 優先</label><b>'+esc(I.unit)+'</b>'+(I.prio?'<span class="pl-pr">優先</span>':'')+'｜<span'+(I.own?' class="pl-own"':'')+'>'+(I.own?'地主':'自購')+'</span>｜'+_plDefCell(I,'span')
+        h+='<div class="pl-mc"><div><label style="float:right;font-size:12.5px"><input type="checkbox" class="pl-ck pl-prck" data-k="'+esc(I.k)+'"'+(I.prio?' checked':'')+(window._VIEW_ONLY?' disabled':'')+' onchange="_plPrioTog(\''+_riEscJs(I.k)+'\',this.checked)"> 優先</label><b>'+esc(I.unit)+'</b>'+(I.prio?'<span class="pl-pr">優先</span>':'')+'｜<span'+(I.own?' class="pl-own"':'')+'>'+(I.typ)+'</span>｜'+_plDefCell(I,'span')
           +(I.n?'｜已通知 <span'+(I.notified<I.n?' class="pl-r"':'')+'>'+_plNtTxt(I)+'</span>':'')+'</div>'
           +'<div'+(I.reOver?' class="pl-r"':'')+'>下一步：'+esc(I.next)+'</div>'
           +'<div class="pl-ms">複驗/交屋 '+_plMD(I.date)+'｜預計完成 <span'+(I.pDone&&I.pDone<t?' class="pl-r"':'')+'>'+_plMD(I.pDone)+'</span>'+(I.reOver?(I.free?('｜'+esc(I.free)):''):(I.note?('｜'+esc(I.note)):''))+'</div>'
           +(_plDtOk(I)?'<div style="margin-top:4px"><button class="pl-b pl-mdt" onclick="_plDateOpen(\''+_riEscJs(I.k)+'\')">填日期</button></div>':'')+'</div>'; });
-      h+='<div class="pl-ms" style="padding:4px 2px 10px">小計 '+c.n+' 戶｜A棟 '+c.A+'｜B棟 '+c.B+'｜地主 '+c.own+'｜自購 '+c.self+'</div>';
+      h+='<div class="pl-ms" style="padding:4px 2px 10px">小計 '+c.n+' 戶｜A棟 '+c.A+'｜B棟 '+c.B+'｜地主 '+c.own+'｜自購 '+c.self+'｜關係 '+c.rel+'</div>';
     });
   });
   return h;
@@ -13509,7 +13543,7 @@ function _plVendorMob(X){
   var t=todayISO(), R=_plDefRows(X,true), h='', last='';
   if(!R.length)return '<div class="pl-ms" style="padding:14px">沒有未完成缺失</div>';
   R.forEach(function(o){ var r=o.r; if(o.v!==last){ last=o.v; h+='<div class="pl-mgh">'+esc(o.v)+' '+o.vn+' 筆</div>'; }
-    h+='<div class="pl-mc"><div><b>'+esc(o.I.unit)+'</b>｜'+(o.I.own?'地主':'自購')+'｜'+esc(r.round||'初驗')+'</div><div>'+esc(r.issue||'')+'</div>'
+    h+='<div class="pl-mc"><div><b>'+esc(o.I.unit)+'</b>｜'+(o.I.typ)+'｜'+esc(r.round||'初驗')+'</div><div>'+esc(r.issue||'')+'</div>'
       +'<div class="pl-ms">預計完成 <span'+(r.planDone&&r.planDone<t?' class="pl-r"':'')+'>'+_plDt(o.I,r.planDone,o.v)+'</span>｜'+(r.notifyDate?('通知 '+_plMD(r.notifyDate)+' '+esc(r.notifyWay||'')):'<span class="pl-r">未通知</span>')+'</div></div>'; });
   return h;
 }
@@ -13730,7 +13764,7 @@ function _plPasteRender(){
       var ob=CK.oth[i]||[], bo=!!CK.both[i];
       h+='<tr'+(r.key?'':' class="pl-bad"')+'><td>'+(i+1)+'</td><td>'+esc(r.raw)+'</td>'
         +'<td>'+(r.key?esc(_plFmt(r.key)):'<input class="pl-in" value="'+esc(r.raw)+'" onchange="_plCandFix('+i+',this.value)" style="border-color:#B3261E">')+'</td>'
-        +'<td'+(r.key&&_bdOwn(r.key)?' class="pl-own"':'')+'>'+(r.key?(_bdOwn(r.key)?'地主':'自購'):'')+'</td>'
+        +'<td'+(r.key&&_bdOwn(r.key)?' class="pl-own"':'')+'>'+(r.key?_plTypS(r.key):'')+'</td>'
         +'<td>'+esc((_plBatchOf(r.b)||{}).name||'')+'</td>'
         +'<td class="pl-oth">'+(bo?'<span class="pl-r">兩批都有</span>':(ob.length?('<span class="pl-ok">已在'+esc(ob.map(function(b){return b.name;}).join('、'))+'</span>'):''))+'</td>'
         +'<td>'+(r.key?esc(st):'系統找不到，請修正')+'</td>'
@@ -14002,14 +14036,14 @@ function _plNotifyRender(){
       +'<thead><tr><th><input type="checkbox" class="pl-ck"'+(allOn?' checked':'')+' onchange="_plNSRead();_plNSAll(this.checked)"></th><th>編號</th><th>戶別</th><th>身分</th><th>批次</th><th>輪次</th><th>缺失內容</th><th>預計完成</th><th>上次通知</th></tr></thead><tbody>';
     L.forEach(function(o,i){ var r=o.r;
       h+='<tr><td><input type="checkbox" class="pl-ck"'+(N.sel[o.k]?' checked':'')+' onchange="_plNSRead();_plNSTog(\''+_riEscJs(o.k)+'\',this.checked)"></td><td>'+(i+1)+'</td><td class="bdu'+o.I.blk+'">'+esc(o.I.unit)+'</td>'
-        +'<td'+(o.I.own?' class="pl-own"':'')+'>'+(o.I.own?'地主':'自購')+'</td><td>'+esc(bn(o))+'</td><td>'+esc(r.round||'初驗')+'</td><td class="pl-wr">'+esc(r.issue||'')+'</td>'
+        +'<td'+(o.I.own?' class="pl-own"':'')+'>'+(o.I.typ)+'</td><td>'+esc(bn(o))+'</td><td>'+esc(r.round||'初驗')+'</td><td class="pl-wr">'+esc(r.issue||'')+'</td>'
         +'<td'+(r.planDone&&r.planDone<t?' class="pl-r"':'')+'>'+_plMD(r.planDone)+'</td><td'+(r.notifyDate?'':' class="pl-r"')+'>'+(r.notifyDate?(_plMD(r.notifyDate)+' '+esc(r.notifyWay||'')):'未通知')+'</td></tr>'; });
     h+='</tbody></table>';
   }else{
     h+='<div class="pl-dr"><label><input type="checkbox" class="pl-ck"'+(allOn?' checked':'')+' onchange="_plNSRead();_plNSAll(this.checked)"> 全選</label></div>';
     L.forEach(function(o){ var r=o.r;
       h+='<label class="pl-mc" style="display:flex;gap:8px"><input type="checkbox" class="pl-ck"'+(N.sel[o.k]?' checked':'')+' onchange="_plNSRead();_plNSTog(\''+_riEscJs(o.k)+'\',this.checked)">'
-        +'<span style="min-width:0"><b>'+esc(o.I.unit)+'</b>｜'+(o.I.own?'地主':'自購')+'｜'+esc(bn(o))+'｜'+esc(r.round||'初驗')+'<br>'+esc(r.issue||'')
+        +'<span style="min-width:0"><b>'+esc(o.I.unit)+'</b>｜'+(o.I.typ)+'｜'+esc(bn(o))+'｜'+esc(r.round||'初驗')+'<br>'+esc(r.issue||'')
         +'<br><span class="pl-ms">預計完成 '+_plMD(r.planDone)+'｜</span>'+(r.notifyDate?('<span class="pl-ms">通知 '+_plMD(r.notifyDate)+'</span>'):'<span class="pl-r">未通知</span>')+'</span></label>'; });
   }
   var names=[]; try{ (S.managers||[]).forEach(function(m){ var x=String((m&&m.name)||m||'').trim(); if(x&&names.indexOf(x)<0)names.push(x); }); }catch(e){}
@@ -14119,7 +14153,7 @@ function _plRptCard1(R,pg){
   var cell=function(lbl,n,sub){ return '<div><div>'+lbl+'</div><b>'+String(n)+'</b><span>'+sub+'</span></div>'; };
   return '<div class="pl-rpt"><div class="pl-rh"><span class="t">撥款戶進度｜'+esc(R.name)+' '+R.n+' 戶</span><span>'+_plMD(t)+'（'+wd+'）'+pg+'</span></div>'
     +'<div class="pl-rl">'+esc(R.line)+'</div>'
-    +'<div class="pl-rg">'+cell('已交屋',R.c[4].n,'地主 '+R.c[4].own+'｜自購 '+R.c[4].self)+cell('可排交屋',R.c[3].n,'地主 '+R.c[3].own+'｜自購 '+R.c[3].self)
+    +'<div class="pl-rg">'+cell('已交屋',R.c[4].n,'地主 '+R.c[4].own+'｜自購 '+R.c[4].self+'｜關係 '+R.c[4].rel)+cell('可排交屋',R.c[3].n,'地主 '+R.c[3].own+'｜自購 '+R.c[3].self+'｜關係 '+R.c[3].rel)
       +cell('修繕中',R.c[2].n,'剩 '+R.c[2].def+' 筆缺失')+cell('待約複驗',R.c[1].n,'剩 '+R.c[1].def+' 筆缺失')+'</div>'
     +'<div class="pl-rn">'+esc(R.cmp)+'；逾期 '+R.od+' 筆（明細見第 2 張）</div></div>';
 }
@@ -14132,7 +14166,7 @@ function _plRptCard2(R,pg){
     h+='<tr class="pl-gh"><td colspan="8">'+_PL_GRP[g].rn+' '+arr.length+' 戶</td></tr>';
     arr.forEach(function(I){ no++; var e=R.eta[I.k]||_plEta(I), st=_plStuck(I), odr=I.od.length>0;
       var i1=I.s.insp1||'', rd=I.s.lastReDate||'';
-      h+='<tr><td>'+no+'</td><td>'+esc(I.unit)+'</td><td'+(I.own?' class="pl-own"':'')+'>'+(I.own?'地主':'自購')+'</td>'
+      h+='<tr><td>'+no+'</td><td>'+esc(I.unit)+'</td><td'+(I.own?' class="pl-own"':'')+'>'+(I.typ)+'</td>'
         +'<td'+(i1?' class="pl-ok"':' class="pl-r"')+'>'+(i1?(_icoSVG('check',12)+' '+_plMD(i1)):'未初驗')+'</td>'
         +'<td'+(rd?' class="pl-ok"':(I.re?'':' class="pl-r"'))+'>'+(rd&&!I.re?(_icoSVG('check',12)+' '+_plMD(rd)):(I.re?_plMD(I.re):(I.s.stage==='none'?'—':'未約')))+'</td>'
         +'<td'+(odr?' class="pl-r"':'')+'>'+String(I.n)+'</td><td class="pl-wr'+((odr||I.reOver)?' pl-r':'')+'">'+esc(st)+'</td><td'+((e.k==='nod'||(e.k==='date'&&e.d<t))?' class="pl-r"':(e.k==='wait'?' class="pl-wkdone"':''))+'>'+esc(e.txt)+'</td></tr>'; }); });   /* V1109-01 0g：紅＝尚無日期或已過；已完成待通知＝深藍 */
@@ -14292,9 +14326,9 @@ function _plXlsxData(id){
   var ownS=function(I){ return I.own?S_.own:null; };
   /* 1 摘要統計（不凍結·不做表格） */
   var s1rows=[1,2,3,4].map(function(g){ var c=_plCnt(X.G[g]);
-    return {c:[g,_PL_GRP[g].name,c.A,c.B,c.n,c.own,c.self,c.def,X.G[g].map(function(I){return I.unit;}).join('、')]}; });
-  var tc=_plCnt(X.list); s1rows.push({c:['','合計',tc.A,tc.B,tc.n,tc.own,tc.self,tc.def,''],s:[S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold]});
-  var sh1={name:'摘要統計',cols:[{h:'編號',w:6},{h:'分組',w:14},{h:'A棟',w:7},{h:'B棟',w:7},{h:'合計',w:7},{h:'地主',w:7},{h:'自購',w:7},{h:'未完成缺失',w:11},{h:'戶別',w:60,wrap:1}],
+    return {c:[g,_PL_GRP[g].name,c.A,c.B,c.n,c.own,c.self,c.rel,c.def,X.G[g].map(function(I){return I.unit;}).join('、')]}; });   /* V1119-01 加關係 */
+  var tc=_plCnt(X.list); s1rows.push({c:['','合計',tc.A,tc.B,tc.n,tc.own,tc.self,tc.rel,tc.def,''],s:[S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold,S_.bold]});
+  var sh1={name:'摘要統計',cols:[{h:'編號',w:6},{h:'分組',w:14},{h:'A棟',w:7},{h:'B棟',w:7},{h:'合計',w:7},{h:'地主',w:7},{h:'自購',w:7},{h:'關係',w:7},{h:'未完成缺失',w:11},{h:'戶別',w:60,wrap:1}],
     pre:[[X.list.length?(_plBatchName(id)+' 撥款戶交屋進度　資料日期 '+t):''],['分組依系統狀態（與 G95 報告看板同一套判定），業主表的狀態欄不採用。']],rows:s1rows,table:null,
     post:[['1 要約複驗＝缺失已修完、要約（下一輪）複驗；還沒初驗的也列這組，下一步寫「約初驗」。'],['2 催廠商修繕＝還有未完成缺失；下一步寫缺失最多的廠商。'],['3 可排交屋＝系統判定可交屋，直接排交屋日。'],['4 已交屋＝已交屋；若還有未完成缺失，下一步寫要催的廠商。']]};
   /* 2 逐戶比對 */
@@ -14303,8 +14337,8 @@ function _plXlsxData(id){
     arr.forEach(function(I){ no++;
       var st=[null,null,null,ownS(I),null,null,null,null,null,(I.n&&I.notified<I.n)?S_.redtxt:null,I.reOver?S_.redwrap:null,I.reOver?S_.redwrap:null];
       var nd=''; I.rows.forEach(function(r){ if(r.notifyDate&&r.notifyDate>nd)nd=r.notifyDate; });
-      s2rows.push({c:[no,g+' '+_PL_GRP[g].name,I.unit,I.own?'地主':'自購',I.n,I.date,I.pIn,I.pDone,nd,I.n?(I.notified+'/'+I.n):'',I.next,I.note],s:st}); });
-    if(arr.length)s2rows.push({c:['',g+' 小計','','','','','','','','','','小計 '+c.n+' 戶｜A棟 '+c.A+'｜B棟 '+c.B+'｜地主 '+c.own+'｜自購 '+c.self+'｜缺失 '+c.def+' 筆'],s:[S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub]}); });
+      s2rows.push({c:[no,g+' '+_PL_GRP[g].name,I.unit,I.typ,I.n,I.date,I.pIn,I.pDone,nd,I.n?(I.notified+'/'+I.n):'',I.next,I.note],s:st}); });
+    if(arr.length)s2rows.push({c:['',g+' 小計','','','','','','','','','','小計 '+c.n+' 戶｜A棟 '+c.A+'｜B棟 '+c.B+'｜地主 '+c.own+'｜自購 '+c.self+'｜關係 '+c.rel+'｜缺失 '+c.def+' 筆'],s:[S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub,S_.sub]}); });
   var sh2={name:'逐戶比對',split:1,redCol:['預計完成'],cols:[{h:'編號',w:6},{h:'分組',w:14},{h:'戶別',w:10},{h:'身分',w:7},{h:'未完成缺失',w:11},{h:'複驗或交屋日',w:13,date:1},{h:'預計進場',w:10,date:1},{h:'預計完成',w:10,date:1},{h:'通知廠商日期',w:13,date:1},{h:'已通知',w:9},{h:'下一步',w:22,wrap:1},{h:'備註',w:40,wrap:1}],
     pre:[[_plBatchName(id)+' 逐戶比對　資料日期 '+t]],rows:s2rows,table:{name:'T_unit',count:['戶別'],sum:['未完成缺失']}};
   /* 3／4 缺失明細（withB＝多一欄「批次」·給優先戶頁用）·沒有資料＝不建表格、寫一列說明（空表格 Excel 會跳修復） */
@@ -14315,7 +14349,7 @@ function _plXlsxData(id){
     var ci=function(h){ for(var i=0;i<cols.length;i++)if(cols[i].h===h)return i; return -1; };
     R.forEach(function(o,i){ var r=o.r, first=o.v!==last; last=o.v;
       var b=first?S_.vtop:S_.cell;
-      var c=[i+1,o.v,o.vn,o.I.unit].concat(withB?[bnOf(o.I.k)]:[]).concat([o.I.blk==='S'?'店鋪':(o.I.blk+'棟'),o.I.own?'地主':'自購',o.I.g+' '+_PL_GRP[o.I.g].name,r.round||'初驗',r.issue||'',r.planIn||'',r.planDone||'',r.notifyDate||'',r.notifyWay||'',r.notifyBy||'']);
+      var c=[i+1,o.v,o.vn,o.I.unit].concat(withB?[bnOf(o.I.k)]:[]).concat([o.I.blk==='S'?'店鋪':(o.I.blk+'棟'),o.I.typ,o.I.g+' '+_PL_GRP[o.I.g].name,r.round||'初驗',r.issue||'',r.planIn||'',r.planDone||'',r.notifyDate||'',r.notifyWay||'',r.notifyBy||'']);
       var st=c.map(function(){ return b; });
       st[ci('廠商')]=first?S_.vtopb:S_.cell; st[ci('身分')]=o.I.own?S_.own:b;
       st[ci('預計進場')]=S_.yeldate; st[ci('通知日期')]=S_.yeldate; st[ci('通知方式')]=S_.yel; st[ci('通知人')]=S_.yel;
@@ -16538,8 +16572,12 @@ const G95_KIND={'A1-1':'地','A1-6':'地','A1-10':'地','A1-15':'地','A1-23':'�
 //   _typeNorm＝全檔唯一的身分正規化（'業主戶'→'自購戶'），所有讀身分的地方都走它；G95_KIND 已拿掉 4 筆「業」。
 //   客戶清單裡還存著「業主戶」的戶，只在畫面上當自購戶看；要真的改資料＝客戶清單的「業主戶 N 戶轉自購戶」按鈕（_bizConv*）。
 function _typeNorm(t){ return t==='業主戶'?'自購戶':(t||''); }
-function g95KindOf(key){ if(!key)return ''; var k=String(key).replace(/^(地|業)/,''); var raw=(S.clientData&&S.clientData[k]&&S.clientData[k].type)||''; var t=_typeNorm(raw); if(t==='地主戶')return '地'; if(raw==='業主戶')return ''; return G95_KIND[k]==='地'?'地':''; }   // 客戶清單填業主戶＝明確「不是地主戶」（同改版前語意）、現在算自購戶
+function g95KindOf(key){ if(!key)return ''; var k=String(key).replace(/^(地|業)/,''); var raw=(S.clientData&&S.clientData[k]&&S.clientData[k].type)||''; var t=_typeNorm(raw); if(t==='地主戶')return '地'; if(t==='關係戶')return '關'; if(raw==='業主戶')return ''; return G95_KIND[k]==='地'?'地':''; }   // 客戶清單填業主戶＝明確「不是地主戶」（同改版前語意）、現在算自購戶
 function isOwnerUnit(key){ return g95KindOf(key)==='地'; }
+// V1119-01 類型判定單一出處（三類）：'地主戶'｜'自購戶'｜'關係戶'。isOwnerUnit 語意不變（只有地主戶為 true）；關係戶不是地主戶、也不算自購戶
+//   g95KindOf 回 '地'（地主）｜'關'（關係戶·客戶清單類型明寫）｜''（自購）；客戶清單寫了關係戶就以它為準（對照表 G95_KIND 不蓋過它）
+function g95TypeOf(key){ var c=g95KindOf(key); return c==='地'?'地主戶':(c==='關'?'關係戶':'自購戶'); }
+window.g95TypeOf=g95TypeOf;
 function isBizUnit(key){ return false; }   // V1102-01：業主戶已併入自購戶＝恆為 false（留著只為防舊呼叫點／外部頁噴 is not defined）
 function unitDisplayName(key){
   if(!key)return'';
@@ -16548,6 +16586,7 @@ function unitDisplayName(key){
 function cellBg(key){
   if(!key)return'';
   if(isOwnerUnit(key))return'background:#EEEDFE;color:#5B9BD5;border-color:#AFA9EC';
+  if(g95KindOf(key)==='關')return'background:#FFF4E0;color:#8A5A00;border-color:#E3C98A';   // V1119-01 關係戶
   return'background:var(--surface);color:var(--text2)';
 }
 
@@ -16575,6 +16614,7 @@ function _hoSummaryTableHTML(){
   if(!S.handoverUnits)S.handoverUnits={};
   const isOwnerK=k=>!!k&&g95KindOf(k)==='地';   // V0726-05：戶別代碼不再帶地／業，改看客戶清單 type／身分對照表
   const isNormalK=k=>!!k&&!g95KindOf(k);        // V1102-01：業主戶併入自購戶＝表格只剩 地主／自購 兩欄
+  const isRelK=k=>!!k&&g95KindOf(k)==='關';     // V1119-01：關係戶＝第三欄（地主｜自購｜關係）
   const shopKeys=['A1-1','A2-1','A3-1','A5-1','A6-1','A7-1','A8-1','A9-1','A10-1','A11-1','A12-1','A15-1','A16-1','A17-1','A18-1','A19-1','A20-1','A21-1','A22-1','A23-1','A25-1','A26-1','A27-1','A28-1','A29-1','A30-1','C2-1','C1-2'];
   function countUnits(rawData,typeCheck){let total=0,delivered=0;Object.values(rawData).forEach(colObj=>{Object.values(colObj).forEach(key=>{if(!key||!typeCheck(key))return;total++;if(S.handoverUnits[key]&&S.handoverUnits[key].delivered)delivered++;});});return{total,delivered,remain:total-delivered};}
   function shopCount(typeCheck){let total=0,delivered=0;shopKeys.forEach(k=>{if(!typeCheck(k))return;total++;if(S.handoverUnits[k]&&S.handoverUnits[k].delivered)delivered++;});return{total,delivered,remain:total-delivered};}
@@ -16587,9 +16627,9 @@ function _hoSummaryTableHTML(){
     const rowColor=ri===1?'color:var(--green);font-weight:600':ri===2?'color:var(--red)':'';
     return`<tr style="${rowColor}">
       <td style="padding:5px 8px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid var(--border)">${rowLabel}</td>
-      ${sections.map(s=>[isOwnerK,isNormalK].map(fn=>cell(getVal(s.rd,fn))).join('')).join('')}
-      ${[isOwnerK,isNormalK].map(fn=>cell(shopGetVal(fn))).join('')}
-      ${[isOwnerK,isNormalK].map(fn=>cell(totalGetVal(fn),true)).join('')}
+      ${sections.map(s=>[isOwnerK,isNormalK,isRelK].map(fn=>cell(getVal(s.rd,fn))).join('')).join('')}
+      ${[isOwnerK,isNormalK,isRelK].map(fn=>cell(shopGetVal(fn))).join('')}
+      ${[isOwnerK,isNormalK,isRelK].map(fn=>cell(totalGetVal(fn),true)).join('')}
     </tr>`;
   }).join('');
   const open=window._hoSummaryOpen!==false;
@@ -16606,16 +16646,17 @@ function _hoSummaryTableHTML(){
         <thead>
           <tr style="background:var(--surface)">
             <th style="padding:5px 8px;text-align:left;border:1px solid var(--border);font-size:11px">　</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">A 棟</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">B 棟</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">店鋪</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:11px;font-weight:600;color:var(--purple)">全案合計</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">A 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">B 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">店鋪</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:11px;font-weight:600;color:var(--purple)">全案合計</th>
           </tr>
           <tr style="background:var(--surface)">
             <th style="padding:4px 8px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:400;color:var(--text2)">　</th>
-            ${['A棟','B棟','店鋪'].map(()=>`<th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">地主</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">自購</th>`).join('')}
+            ${['A棟','B棟','店鋪'].map(()=>`<th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">地主</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">自購</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">關係</th>`).join('')}
             <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:10px;color:var(--purple)">地主</th>
             <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">自購</th>
+            <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">關係</th>
           </tr>
         </thead>
         <tbody>${tableRows}</tbody>
@@ -18646,6 +18687,7 @@ function renderHStats(){
 
   const isOwnerK=k=>!!k&&g95KindOf(k)==='地';   // V0726-05：戶別代碼不再帶地／業，改看客戶清單 type／身分對照表
   const isNormalK=k=>!!k&&!g95KindOf(k);        // V1102-01：業主戶併入自購戶＝只剩 地主／自購 兩欄
+  const isRelK=k=>!!k&&g95KindOf(k)==='關';     // V1119-01：關係戶＝第三欄
   const sections=[
     {label:'A棟',rd:G95_RAW_A},
     {label:'B棟',rd:G95_RAW_B},
@@ -18659,9 +18701,9 @@ function renderHStats(){
     const rowColor=ri===1?'color:var(--green);font-weight:600':ri===2?'color:var(--red)':'';
     return`<tr style="${rowColor}">
       <td style="padding:5px 8px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid var(--border)">${rowLabel}</td>
-      ${sections.map(s=>[isOwnerK,isNormalK].map(fn=>cell(getVal(s.rd,fn))).join('')).join('')}
-      ${[isOwnerK,isNormalK].map(fn=>cell(shopGetVal(fn))).join('')}
-      ${[isOwnerK,isNormalK].map(fn=>cell(totalGetVal(fn),true)).join('')}
+      ${sections.map(s=>[isOwnerK,isNormalK,isRelK].map(fn=>cell(getVal(s.rd,fn))).join('')).join('')}
+      ${[isOwnerK,isNormalK,isRelK].map(fn=>cell(shopGetVal(fn))).join('')}
+      ${[isOwnerK,isNormalK,isRelK].map(fn=>cell(totalGetVal(fn),true)).join('')}
     </tr>`;
   }).join('');
 
@@ -18678,16 +18720,17 @@ function renderHStats(){
         <thead>
           <tr style="background:var(--surface)">
             <th style="padding:5px 8px;text-align:left;border:1px solid var(--border);font-size:11px">　</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">A 棟</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">B 棟</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">店鋪</th>
-            <th colspan="2" style="padding:5px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:11px;font-weight:600;color:var(--purple)">全案合計</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">A 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">B 棟</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);font-size:11px;font-weight:600">店鋪</th>
+            <th colspan="3" style="padding:5px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:11px;font-weight:600;color:var(--purple)">全案合計</th>
           </tr>
           <tr style="background:var(--surface)">
             <th style="padding:4px 8px;text-align:left;border:1px solid var(--border);font-size:10px;font-weight:400;color:var(--text2)">　</th>
-            ${['A棟','B棟','店鋪'].map((_,bi)=>`<th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">地主</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">自購</th>`).join('')}
+            ${['A棟','B棟','店鋪'].map((_,bi)=>`<th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">地主</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">自購</th><th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--text3)">關係</th>`).join('')}
             <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);border-left:2px solid var(--purple);font-size:10px;color:var(--purple)">地主</th>
             <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">自購</th>
+            <th style="padding:4px 8px;text-align:center;border:1px solid var(--border);font-size:10px;color:var(--purple)">關係</th>
           </tr>
         </thead>
         <tbody>${tableRows}</tbody>
@@ -18716,7 +18759,7 @@ function renderHStats(){
     if(fFloors.size>0&&!fFloors.has(flStr))return'';
     if(fBlock.size>0&&blockId&&!fBlock.has(blockId))return'';
     if(fUnitCols.size>0&&colId&&!fUnitCols.has(colId))return'';
-    const uType=isOwnerK(key)?'地主戶':'自購戶';
+    const uType=g95TypeOf(key);   // V1119-01 三類
     if(fType&&uType!==_typeNorm(fType))return'';
     // 預定驗收日篩選
     if(fPlanDate){
@@ -18826,7 +18869,7 @@ function renderHStats(){
         <input type="checkbox" ${chk?'checked':''} onclick="event.stopPropagation()" onchange="toggleHStatsSel('${esc(key)}',this.checked)">
         <span style="font-size:12px;font-weight:600">${esc(displayName)}${((S.handoverUnits[key]||{}).inspTypes||[]).includes('委外代驗')?'<span style="color:#D4A900;font-size:11px"> ★</span>':''}</span>
         <span style="font-size:11px;color:var(--text3)">${floor}F</span>
-        ${isOwner?`<span style="font-size:10px;padding:1px 6px;border-radius:0;background:#EEEDFE;color:#5B9BD5">地主</span>`:''}
+        ${isOwner?`<span style="font-size:10px;padding:1px 6px;border-radius:0;background:#EEEDFE;color:#5B9BD5">地主</span>`:''}${g95KindOf(key)==='關'?`<span style="font-size:10px;padding:1px 6px;border-radius:0;background:#FFF4E0;color:#8A5A00">關係</span>`:''}
         ${cl.name?`<span style="font-size:10px;color:var(--text2)">${esc(cl.name)}</span>`:''}
         <div style="flex:1;display:flex;align-items:center;gap:6px;justify-content:flex-end">
           <div style="width:80px;height:6px;background:#E7E7E7;border-radius:0;overflow:hidden;flex-shrink:0">
@@ -18849,7 +18892,7 @@ function renderHStats(){
     // 篩選
     if(fFloors.size>0&&!fFloors.has(String(fl)))return`<div style="background:transparent;min-height:64px"></div>`;
     if(fUnitCols.size>0&&col&&!fUnitCols.has(col))return`<div style="background:transparent;min-height:64px"></div>`;
-    if(fType&&(isOwnerK(key)?'地主戶':'自購戶')!==_typeNorm(fType))return`<div style="background:transparent;min-height:64px"></div>`;
+    if(fType&&g95TypeOf(key)!==_typeNorm(fType))return`<div style="background:transparent;min-height:64px"></div>`;   // V1119-01 三類
     if(fPlanDate==='has'&&!hu.planDate)return`<div style="background:transparent;min-height:64px"></div>`;
     if(fPlanDate==='none'&&hu.planDate)return`<div style="background:transparent;min-height:64px"></div>`;
     if(fDateExact&&hu.planDate!==fDateExact)return`<div style="background:transparent;min-height:64px"></div>`;
@@ -19020,6 +19063,7 @@ function renderHStats(){
         <option value="" ${fType===''?'selected':''}>類別</option>
         <option value="地主戶" ${fType==='地主戶'?'selected':''}>地主戶</option>
         <option value="自購戶" ${_typeNorm(fType)==='自購戶'?'selected':''}>自購戶</option>
+        <option value="關係戶" ${_typeNorm(fType)==='關係戶'?'selected':''}>關係戶</option>
       </select>
 
       <button class="btn btn-p btn-sm" onclick="renderHStats()" style="font-size:11px">✓ 確認套用</button>
@@ -19028,6 +19072,7 @@ function renderHStats(){
       <div style="display:flex;gap:5px;flex-wrap:wrap;font-size:11px;margin-left:4px">
         <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;background:#EEEDFE;border:0.5px solid #AFA9EC;border-radius:0;display:inline-block"></span>地主</span>
         <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;background:var(--surface);border-radius:0;display:inline-block"></span>自購</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;background:#FFF4E0;border:0.5px solid #E3C98A;border-radius:0;display:inline-block"></span>關係</span>
       </div>
       <button class="btn btn-pdf btn-sm no-print" onclick="printHStatsPdf()" style="margin-left:auto"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="15" width="10" height="6"/></svg>PDF</button>
     </div>
@@ -19056,6 +19101,7 @@ function renderHStats(){
           <option value="" ${!window._bchTypeVal?'selected':''}>類別（不變更）</option>
           <option value="地主戶" ${window._bchTypeVal==='地主戶'?'selected':''}>地主戶</option>
           <option value="自購戶" ${_typeNorm(window._bchTypeVal)==='自購戶'?'selected':''}>自購戶</option>
+          <option value="關係戶" ${_typeNorm(window._bchTypeVal)==='關係戶'?'selected':''}>關係戶</option>
         </select>
         <button class="btn btn-p btn-sm" onclick="confirmBatchHStats()" style="font-size:11px">✓ 確認修改</button>
         <button class="btn btn-sm btn-d" onclick="confirmBatchHStatsClear('planDate')" style="font-size:11px" title="批次清除選取戶的驗收日期">✕ 清除日期</button>
@@ -19519,7 +19565,7 @@ function buildExpandedUnit(key){
   if(!S.handoverUnits)S.handoverUnits={};
   if(!S.clientData)S.clientData={};
   const hu=S.handoverUnits[key]||{};
-  const cl=S.clientData[key]||{name:'',tel:'',type:isOwnerUnit(key)?'地主戶':'自購戶',parkings:[],note:''};
+  const cl=S.clientData[key]||{name:'',tel:'',type:g95TypeOf(key),parkings:[],note:''};   // V1119-01 三類
   const staticPark=G95_PARKING[key]||[];
   const savedPark=cl.parkings||[];
   const allPark=[...new Set([...staticPark,...savedPark])];
@@ -19540,7 +19586,7 @@ function buildExpandedUnit(key){
   return`<div style="background:var(--card);border:2px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;animation:tIn .15s ease">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span style="font-size:13px;font-weight:600">${esc(key)}</span>
-      <span style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:${isOwnerUnit(key)?'#EEEDFE':'var(--surface)'};color:${isOwnerUnit(key)?'#5B9BD5':'var(--text2)'}">${isOwnerUnit(key)?'🏛 地主戶':'🏠 自購'}</span>
+      <span style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:${isOwnerUnit(key)?'#EEEDFE':(g95KindOf(key)==='關'?'#FFF4E0':'var(--surface)')};color:${isOwnerUnit(key)?'#5B9BD5':(g95KindOf(key)==='關'?'#8A5A00':'var(--text2)')}">${isOwnerUnit(key)?'🏛 地主戶':(g95KindOf(key)==='關'?'關係戶':'🏠 自購')}</span>
       ${hu.delivered?'<span style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:#EAF3DE;color:#3B6D11">✓ 已交屋</span>':''}
       ${defectBadge}
       <button class="btn btn-sm" onclick="_expandedUnit=null;renderHStats()">✕ 關閉</button>
@@ -19555,6 +19601,7 @@ function buildExpandedUnit(key){
         <select onchange="setCl('${key}','type',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
           <option ${cl.type==='地主戶'?'selected':''}>地主戶</option>
           <option ${_typeNorm(cl.type)==='自購戶'?'selected':''}>自購戶</option>
+          <option ${_typeNorm(cl.type)==='關係戶'?'selected':''}>關係戶</option>
         </select></div>
     </div>
     <div style="margin-bottom:10px">
@@ -21640,23 +21687,24 @@ function printSummaryTablePdf(){
   if(!S.handoverUnits)S.handoverUnits={};
   const isOwnerK=k=>!!k&&g95KindOf(k)==='地';   // V0726-05：戶別代碼不再帶地／業，改看客戶清單 type／身分對照表
   const isNormalK=k=>!!k&&!g95KindOf(k);        // V1102-01：業主戶併入自購戶＝PDF 只剩 地主／自購（12→8 欄＋列名）
+  const isRelK=k=>!!k&&g95KindOf(k)==='關';     // V1119-01：加關係戶（8→12 欄＋列名）
   function countU(rawData,fn){let t=0,d=0;Object.values(rawData).forEach(col=>Object.values(col).forEach(k=>{if(!k||!fn(k))return;t++;if(S.handoverUnits[k]&&S.handoverUnits[k].delivered)d++;}));return{t,d,r:t-d};}
   const shopKeys=['A1-1','A2-1','A3-1','A5-1','A6-1','A7-1','A8-1','A9-1','A10-1','A11-1','A12-1','A15-1','A16-1','A17-1','A18-1','A19-1','A20-1','A21-1','A22-1','A23-1','A25-1','A26-1','A27-1','A28-1','A29-1','A30-1','C2-1','C1-2'];
   function countS(fn){let t=0,d=0;shopKeys.forEach(k=>{if(!fn(k))return;t++;if(S.handoverUnits[k]&&S.handoverUnits[k].delivered)d++;});return{t,d,r:t-d};}
-  const rows=[['','A棟 地主','A棟 自購','B棟 地主','B棟 自購','店鋪 地主','店鋪 自購','全案 地主','全案 自購']];
+  const rows=[['','A棟 地主','A棟 自購','A棟 關係','B棟 地主','B棟 自購','B棟 關係','店鋪 地主','店鋪 自購','店鋪 關係','全案 地主','全案 自購','全案 關係']];
   ['總戶數','交屋完成','剩餘戶數'].forEach((label,ri)=>{
     const v=(obj)=>ri===0?obj.t:ri===1?obj.d:obj.r;
-    const a=[isOwnerK,isNormalK].map(fn=>v(countU(G95_RAW_A,fn)));
-    const b=[isOwnerK,isNormalK].map(fn=>v(countU(G95_RAW_B,fn)));
-    const s=[isOwnerK,isNormalK].map(fn=>v(countS(fn)));
-    const tot=[0,1].map(i=>a[i]+b[i]+s[i]);
+    const a=[isOwnerK,isNormalK,isRelK].map(fn=>v(countU(G95_RAW_A,fn)));
+    const b=[isOwnerK,isNormalK,isRelK].map(fn=>v(countU(G95_RAW_B,fn)));
+    const s=[isOwnerK,isNormalK,isRelK].map(fn=>v(countS(fn)));
+    const tot=[0,1,2].map(i=>a[i]+b[i]+s[i]);
     rows.push([label,...a,...b,...s,...tot]);
   });
   const thead=`<tr>${rows[0].map((h,i)=>
-    `<th style="padding:5px 6px;text-align:center;border:1px solid #ccc;font-size:10px;font-weight:600;background:#E9E9E9;${i>=7?'color:#5B9BD5':''}">${h}</th>`).join('')}</tr>`;
+    `<th style="padding:5px 6px;text-align:center;border:1px solid #ccc;font-size:10px;font-weight:600;background:#E9E9E9;${i>=10?'color:#5B9BD5':''}">${h}</th>`).join('')}</tr>`;
   const tbodyRows=rows.slice(1).map((row,ri)=>{
     const color=ri===1?'color:#2E6B26':ri===2?'color:#A32D2D':'';
-    return`<tr style="${color}">${row.map((v,ci)=>`<td style="padding:5px 6px;text-align:${ci===0?'left':'center'};border:1px solid #ccc;font-size:11px;${ci>=7?'font-weight:600;color:inherit':''}">${v}</td>`).join('')}</tr>`;
+    return`<tr style="${color}">${row.map((v,ci)=>`<td style="padding:5px 6px;text-align:${ci===0?'left':'center'};border:1px solid #ccc;font-size:11px;${ci>=10?'font-weight:600;color:inherit':''}">${v}</td>`).join('')}</tr>`;
   }).join('');
   printSection('交屋狀態統計表',`<table style="width:100%;border-collapse:collapse"><thead>${thead}</thead><tbody>${tbodyRows}</tbody></table>`);
 }
@@ -21707,6 +21755,7 @@ function _clIsShell(k){
     if(!_clHuReady()) return false;
     var c=(S.clientData||{})[k]; if(!c||typeof c!=='object') return false;
     if(Object.prototype.hasOwnProperty.call(S.handoverUnits,k)) return false;
+    if(_typeNorm(c.type)==='關係戶') return false;   // V1119-01：類型＝關係戶本身就是資料（一鍵更正會為沒有客戶資料的戶建一筆），不當空殼刪
     return Object.keys(c).every(function(f){ return f==='type'||f==='_mt'||_clEmptyV(c[f]); });   // 只剩類型＝空殼
   }catch(e){ return false; }
 }
@@ -21749,12 +21798,74 @@ function _clFixBtnHTML(id,fn,ic,label,col,mob){
 }
 function _clFixBarHTML(mob){
   var biz=_bizConvList(), J=_clJunkList();
-  if(!biz.length&&!J.n) return '';
-  var h='';
+  var h=_relFixBtnHTML(mob);   /* V1119-01：28 戶改關係戶＝常駐（做完顯示「已完成」不可再按） */
   if(biz.length) h+=_clFixBtnHTML('clfix-biz','_bizConvRun',_CLFIX_IC_CONV,'業主戶 '+biz.length+' 戶轉自購戶','#185FA5',mob);
   if(J.n) h+=_clFixBtnHTML('clfix-junk','_clJunkRun',_CLFIX_IC_DEL,'清除多餘客戶資料 '+J.n+' 筆','#B3261E',mob);
   return '<div class="eqrow clfix-bar" style="display:flex;align-items:stretch;gap:8px;flex-wrap:'+(mob?'nowrap':'wrap')+';margin-bottom:'+(mob?'10':'12')+'px">'+h+'</div>';
 }
+/* ══ V1119-01 一鍵更正：28 戶改成關係戶（使用者 2026-11-19 定案名單·照 _dchkFixBtn／_bizConvRun 規格）══
+   名單＝Excel 顯示寫法（戶別-樓層）；系統戶別鍵在執行期用撥款名單同一支 _plLookup（_bdNameMap＋_bdNormTok）對，對不到的不猜、列在 confirm 裡。
+   只改客戶清單 clientData[key].type＝'關係戶'（沒有客戶資料的戶＝建一筆 {name:'',tel:'',type:'關係戶',parkings:[],note:''}，同 setCl 預設）；其他欄位一字不動。
+   已經是關係戶＝略過；全部改完＝按鈕顯示「已完成」、灰化不可按。唯讀模式、交屋戶資料還沒載到（_clHuReady）一律不給按。 */
+var _REL28=['A1-16','A1-30','A1-5','A2-1','A2-11','A2-18','A2-6','A28-1','A3-1','A3-15','A3-18','A30-1','A5-1','A5-29','A6-14','A8-27','B1-31','B2-30','B5-18','B6-14','B6-29','B6-31','B7-22','B8-10','B8-22','B8-27','B8-29','C2-1'];
+function _relFixPlan(){
+  var hit=[], done=[], miss=[], seen={}, m={};
+  try{ m=_bdNameMap(); }catch(e){ m={}; }   /* 等同 _plLookup（同一張 _bdNameMap＋_bdNormTok），只是 28 戶共用一次建表 */
+  _REL28.forEach(function(t){
+    var k=null; try{ k=m[_bdNormTok(t)]||null; }catch(e){ k=null; }
+    if(!k){ miss.push(t); return; }
+    if(seen[k]) return; seen[k]=1;
+    var c=(S.clientData||{})[k];
+    var cur=(c&&c.type)?_typeNorm(c.type):'';
+    if(cur==='關係戶') done.push({t:t,k:k});
+    else hit.push({t:t,k:k,cur:(cur||(typeof _clmTypeOf==='function'?_clmTypeOf(k):'')||'未填'),name:(c&&c.name)||''});
+  });
+  return {hit:hit,done:done,miss:miss};
+}
+window._relFixPlan=_relFixPlan;
+function _relFixBtnHTML(mob){
+  var P=_relFixPlan(), ready=_clHuReady();
+  if(ready&&!P.hit.length){
+    var st='height:'+(mob?'40':'32')+'px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;font-size:'+(mob?'13':'12')+'px;font-weight:700;border-radius:0;font-family:var(--font);'
+      +(mob?'flex:1;min-width:0;':'')+'border:1px solid #D3D1CC;background:#F1F0ED;color:#9A9896;cursor:not-allowed;';
+    return '<button id="clfix-rel" type="button" disabled data-done="1" title="'+esc('28 戶都已經是關係戶'+(P.miss.length?('；名單對不到系統戶別：'+P.miss.join('、')):''))+'" style="'+st+'">'+_CLFIX_IC_CONV+'<span style="white-space:nowrap">28 戶改關係戶　已完成</span></button>';
+  }
+  if(!ready){
+    var st2='height:'+(mob?'40':'32')+'px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;font-size:'+(mob?'13':'12')+'px;font-weight:700;border-radius:0;font-family:var(--font);'
+      +(mob?'flex:1;min-width:0;':'')+'border:1px solid #D3D1CC;background:#F1F0ED;color:#9A9896;cursor:not-allowed;';
+    return '<button id="clfix-rel" type="button" disabled title="交屋戶資料還在載入中" style="'+st2+'">'+_CLFIX_IC_CONV+'<span style="white-space:nowrap">28 戶改關係戶（資料載入中）</span></button>';
+  }
+  return _clFixBtnHTML('clfix-rel','_relFixRun',_CLFIX_IC_CONV,'28 戶改關係戶（待改 '+P.hit.length+' 戶）','#8A5A00',mob);
+}
+function _relFixRun(){
+  if(window._VIEW_ONLY){ try{toast('唯讀模式不能改資料','🔒');}catch(e){} return; }
+  if(!_clHuReady()){ try{toast('交屋戶資料還在載入中，請稍候再按','⏳');}catch(e){} return; }
+  var P=_relFixPlan();
+  if(!P.hit.length){ try{toast('28 戶都已經是關係戶','✓');}catch(e){} try{ renderClients(); }catch(e){} return; }
+  var txt='【會改成關係戶】'+P.hit.length+' 戶\n'+P.hit.map(function(o){ return '· '+unitDisplayName(o.k)+'（原 '+o.cur+'）'+(o.name?'　'+o.name:''); }).join('\n');
+  if(P.done.length) txt+='\n\n【不動：已經是關係戶】'+P.done.length+' 戶\n'+P.done.map(function(o){ return '· '+unitDisplayName(o.k); }).join('、');
+  if(P.miss.length) txt+='\n\n【不動：名單對不到系統戶別】'+P.miss.length+' 戶\n'+P.miss.map(function(t){ return '· '+t; }).join('、');
+  if(!confirm('要把這 '+P.hit.length+' 戶的類型改成「關係戶」嗎？\n\n'+txt
+    +'\n\n· 只改客戶清單「類型」一欄，姓名／電話／車位／備註一個字都不動\n· 關係戶不算地主戶、也不算自購戶；各統計會多一欄「關係」\n· 按確定後會先下載一份改動前的備份檔，變更紀錄也查得到')) return;
+  if(!S.clientData) S.clientData={};
+  var snap=P.hit.map(function(o){ var c=null; try{ c=JSON.parse(JSON.stringify(S.clientData[o.k]||null)); }catch(e){} return {名單寫法:o.t, 戶別鍵:o.k, 原內容:c}; });
+  if(!_clDownloadBak('G95_28戶改關係戶_改動前備份',{筆數:snap.length, 說明:'clientData[key].type → 關係戶；沒有客戶資料的戶新建一筆（原內容＝null）；其他欄位未動', 明細:snap})) return;
+  var n=0, nNew=0, sample=[], now=Date.now();
+  P.hit.forEach(function(o){
+    var k=null; try{ k=_plLookup(o.t); }catch(e){ k=null; }
+    if(!k||k!==o.k) return;                                     // 按下去的當下再驗一次：鍵還對得到同一戶
+    var c=S.clientData[k];
+    if(c&&typeof c==='object'&&_typeNorm(c.type)==='關係戶') return;   // 當下已經是關係戶＝略過
+    if(!c||typeof c!=='object'){ S.clientData[k]={name:'',tel:'',type:'關係戶',parkings:[],note:'',_mt:now}; nNew++; }
+    else { c.type='關係戶'; c._mt=now; }
+    n++; if(sample.length<30) sample.push(unitDisplayName(k));
+  });
+  try{ logChange('✏️ 改關係戶','客戶清單 '+n+' 戶類型改成關係戶（使用者 2026-11-19 定案 28 戶名單；只改類型'+(nNew?('；新建客戶資料 '+nNew+' 筆'):'')+'）',{count:n, created:nNew, field:'clientData.type', rule:'→ 關係戶', sample:sample, miss:P.miss}); }catch(e){}
+  save();
+  try{ toast('已把 '+n+' 戶改成關係戶，備份已下載','✏️'); }catch(e){}
+  try{ renderClients(); }catch(e){}
+}
+window._relFixRun=_relFixRun;
 function _bizConvRun(){
   if(window._VIEW_ONLY){ try{toast('唯讀模式不能改資料','🔒');}catch(e){} return; }
   var L=_bizConvList();
@@ -21825,7 +21936,7 @@ function _clmEditHTML(key){
   return '<div onclick="event.stopPropagation()" style="border:1px solid #185FA5;border-top:none;background:#F7FAFE;padding:12px 12px;margin:-6px 0 8px">'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:13px"><span style="color:#5B6B85;font-weight:700;min-width:56px">客戶名</span><input value="'+esc(cl.name||'')+'" onchange="setCl(\''+esc(key)+'\',\'name\',this.value)" style="flex:1;background:#fff;border:1px solid #cdd9ea;padding:7px 9px;font-size:13px;font-family:var(--font)"></div>'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:13px"><span style="color:#5B6B85;font-weight:700;min-width:56px">電話</span><input value="'+esc(cl.tel||'')+'" onchange="setCl(\''+esc(key)+'\',\'tel\',this.value)" style="flex:1;background:#fff;border:1px solid #cdd9ea;padding:7px 9px;font-size:13px;font-family:var(--font)"></div>'
-    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:13px"><span style="color:#5B6B85;font-weight:700;min-width:56px">類型</span><select onchange="setCl(\''+esc(key)+'\',\'type\',this.value);renderClients()" style="flex:1;background:#fff;border:1px solid #cdd9ea;padding:7px 9px;font-size:13px;font-family:var(--font)"><option value="地主戶"'+(type==='地主戶'?' selected':'')+'>地主戶</option><option value="自購戶"'+(type==='自購戶'?' selected':'')+'>自購戶</option></select></div>'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:13px"><span style="color:#5B6B85;font-weight:700;min-width:56px">類型</span><select onchange="setCl(\''+esc(key)+'\',\'type\',this.value);renderClients()" style="flex:1;background:#fff;border:1px solid #cdd9ea;padding:7px 9px;font-size:13px;font-family:var(--font)"><option value="地主戶"'+(type==='地主戶'?' selected':'')+'>地主戶</option><option value="自購戶"'+(type==='自購戶'?' selected':'')+'>自購戶</option><option value="關係戶"'+(type==='關係戶'?' selected':'')+'>關係戶</option></select></div>'
     +(allPark.length?'<div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:9px;font-size:13px"><span style="color:#5B6B85;font-weight:700;min-width:56px">車位</span><span style="flex:1;color:#0C447C"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M5 17 6.4 10a2 2 0 0 1 2-1.6h7.2a2 2 0 0 1 2 1.6L19 17"/><path d="M4 17h16v3h-3v-1H7v1H4Z"/><circle cx="7.5" cy="17" r="1"/><circle cx="16.5" cy="17" r="1"/></svg>'+allPark.map(esc).join('、')+'</span></div>':'')
     +'<div style="display:flex;gap:7px;margin-top:4px"><button onclick="_clientExpanded=null;renderClients()" style="flex:1;border:1px solid #5B9BD5;border-radius:0;background:#5B9BD5;color:#fff;font-size:13px;font-weight:800;padding:8px 0;font-family:var(--font)">完成</button>'+(window._VIEW_ONLY?'':'<button onclick="clientDelUnit(\''+esc(key)+'\')" style="border:1px solid #E4B9B9;border-radius:0;background:#fff;color:#B03636;font-size:13px;font-weight:700;padding:8px 14px;font-family:var(--font)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg>刪除</button>')+'</div></div>';
 }
@@ -21842,8 +21953,8 @@ function _clmGrpFull(g){_ufStSet('g95_clm','f_'+g,!_ufSt('g95_clm')['f_'+g]);_cl
 function _clmRowHTML(key){
   var cl=S.clientData[key]||{};var type=_clmTypeOf(key);
   // V0726-05：使用者明訂不要左側色條；V0903-01 ⑤：整列改 .ufrow（白底），身分只用徽章區分
-  var tb=type==='地主戶'?'background:#EAF1FB;color:#185FA5;border-color:#B9D0EC':'background:#F1F0ED;color:#6b6a66;border-color:#D3D1CC';   // V1102-01：只剩地主／自購
-  var tl=type==='地主戶'?'地主':'自購';
+  var tb=type==='地主戶'?'background:#EAF1FB;color:#185FA5;border-color:#B9D0EC':(type==='關係戶'?'background:#FFF4E0;color:#8A5A00;border-color:#E3C98A':'background:#F1F0ED;color:#6b6a66;border-color:#D3D1CC');   // V1119-01：三類
+  var tl=type==='地主戶'?'地主':(type==='關係戶'?'關係':'自購');
   var pct=null;try{pct=hoUnitPct(key)||hoUnitPct(unitDisplayName(key));}catch(e){}
   var exp=(_clientExpanded===key);
   var row='<div class="ufrow" onclick="_clmToggle(\''+esc(key)+'\')" style="cursor:pointer">'
@@ -21884,16 +21995,16 @@ function _clmListHTML(){
 function _clmRepaintList(){var l=document.getElementById('clm-list');if(l)l.innerHTML=_clmListHTML();}
 function _clmRender(el){
   var all=_clmAllKeys();
-  var cnt={'地主戶':{A:0,B:0,S:0},'自購戶':{A:0,B:0,S:0}};   // V1102-01：業主戶併入自購戶（_clmTypeOf 已正規化）
+  var cnt={'地主戶':{A:0,B:0,S:0},'自購戶':{A:0,B:0,S:0},'關係戶':{A:0,B:0,S:0}};   // V1119-01 加關係戶   // V1102-01：業主戶併入自購戶（_clmTypeOf 已正規化）
   all.forEach(function(k){var t=_clmTypeOf(k),b=_clmBlockOf(k);if(cnt[t])cnt[t][b==='店'?'S':b]++;});
   var stat=function(lbl,t,c){var o=cnt[t]||{A:0,B:0,S:0};return '<div style="flex:1;border:1px solid #cdd9ea;padding:8px 8px;background:#fff"><div style="font-size:12px;font-weight:700;color:'+c+'">'+lbl+'</div><div style="font-size:20px;font-weight:800;color:'+c+';margin-top:2px">'+(o.A+o.B+o.S)+'</div><div style="font-size:12px;color:#9a958c;margin-top:1px">A'+o.A+'/B'+o.B+'/店'+o.S+'</div></div>';};
   var h='<div style="display:flex;align-items:center;gap:7px;font-size:17px;font-weight:800;margin-bottom:10px"><svg class="g95ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="18" cy="9" r="2.6"/><path d="M16.5 20a6 6 0 0 1 5.5-6"/></svg>客戶清單</div>';
   var _clmIc=function(p){return '<svg class="g95ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px">'+p+'</svg>';};
-  h+='<div style="display:flex;gap:7px;margin-bottom:10px">'+stat(_clmIc('<path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/><path d="M12 2 3 8h18Z"/>')+'地主戶','地主戶','#185FA5')+stat(_clmIc('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>')+'自購戶','自購戶','#5F5E5A')+'</div>';
+  h+='<div style="display:flex;gap:7px;margin-bottom:10px">'+stat(_clmIc('<path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/><path d="M12 2 3 8h18Z"/>')+'地主戶','地主戶','#185FA5')+stat(_clmIc('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>')+'自購戶','自購戶','#5F5E5A')+stat(_clmIc('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20a6 6 0 0 1 12 0"/><path d="M10 20a6 6 0 0 1 12 0"/>')+'關係戶','關係戶','#8A5A00')+'</div>';   /* V1119-01 */
   h+=_clFixBarHTML(true);   // V1102-01 ⑤⑫ 一鍵更正（N>0 才出現）
   /* V0903-01 ②：搜尋框 40px；placeholder 的 🔍 拿掉，改在框左側放線條 SVG 放大鏡 */
   h+='<div style="position:relative;margin-bottom:8px"><svg class="g95ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8fa2bd" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>'+'<input value="'+esc(_clm.q)+'" oninput="_clm.q=this.value;_clmRepaintList()" placeholder="搜尋 戶別／客戶名／車位…" style="width:100%;box-sizing:border-box;height:40px;border:1px solid #cdd9ea;padding:0 11px 0 34px;font-size:13px;font-family:var(--font)"></div>';
-  h+='<div style="margin-bottom:6px">'+_clmSeg(_clm.type,[['','全部'],['地主戶','地主'],['自購戶','自購']],'_clmSetType')+'</div>';
+  h+='<div style="margin-bottom:6px">'+_clmSeg(_clm.type,[['','全部'],['地主戶','地主'],['自購戶','自購'],['關係戶','關係']],'_clmSetType')+'</div>';
   h+='<div style="margin-bottom:6px">'+_clmSeg(_clm.block,[['','全棟'],['A','A'],['B','B'],['店','店']],'_clmSetBlock')+'</div>';
   var flabel=(_clm.frange&&_clm.frange[0]&&_clm.frange[1])?(_clm.frange[0]+'F～'+_clm.frange[1]+'F'):(_clm.floors.length?_clm.floors.length+' 層':'全部');
   h+='<div style="margin-bottom:12px"><div onclick="_clmFloorOpen()" class="ufrow" style="cursor:pointer"><span style="font-size:12px;color:#5B6B85">樓層</span><span style="flex:1;font-weight:700;color:'+(flabel==='全部'?'#26305A':'#185FA5')+'">'+flabel+'</span>'+((_clm.floors.length||_clm.frange)?'<span onclick="event.stopPropagation();_clmFloorClear()" style="font-size:12px;color:#B03636;font-weight:700">清除</span>':'')+'<span style="color:#8fa2bd">'+(_clm.fopen?'▴':'▾')+'</span></div>';
@@ -21930,13 +22041,15 @@ function renderClients(){
   const cntBOwner=countBlockByType(G95_RAW_B,'地主戶'),cntBNorm=countBlockByType(G95_RAW_B,'自購戶');
   const cntShopOwner=shopKeys.filter(k=>getUnitType(k)==='地主戶').length;
   const cntShopNorm=shopKeys.filter(k=>getUnitType(k)==='自購戶').length;
-  const totalA=cntAOwner+cntANorm,totalB=cntBOwner+cntBNorm,totalShop=cntShopOwner+cntShopNorm;   // V1102-01：統計卡 3→2（業主戶算進自購戶）
+  const cntARel=countBlockByType(G95_RAW_A,'關係戶'),cntBRel=countBlockByType(G95_RAW_B,'關係戶'),cntShopRel=shopKeys.filter(k=>getUnitType(k)==='關係戶').length;   // V1119-01
+  const totalA=cntAOwner+cntANorm+cntARel,totalB=cntBOwner+cntBNorm+cntBRel,totalShop=cntShopOwner+cntShopNorm+cntShopRel;   // V1119-01：合計含關係戶（合計不變）   // V1102-01：統計卡 3→2（業主戶算進自購戶）
   const total=totalA+totalB+totalShop;
   const statCard=(label,bg,color,detail)=>`<div style="background:${bg};border-radius:var(--r);padding:8px 12px;flex:1;min-width:140px"><div style="font-size:11px;font-weight:600;color:${color};margin-bottom:4px">${label}</div><div style="font-size:18px;font-weight:700;color:${color}">${detail.total}</div><div style="font-size:10px;color:${color};opacity:.75;margin-top:2px">A棟 ${detail.a} ／ B棟 ${detail.b} ／ 店鋪 ${detail.s}</div></div>`;
   const statsBar=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <div style="background:var(--surface);border-radius:var(--r);padding:8px 12px;flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--text2)"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg> 總戶數</div><div style="font-size:22px;font-weight:700;color:var(--text)">${total}</div><div style="font-size:10px;color:var(--text3)">A棟 ${totalA} ／ B棟 ${totalB} ／ 店鋪 ${totalShop}</div></div>
     ${statCard(_icoSVG('bank',14)+' 地主戶','#EEEDFE','#5B9BD5',{total:cntAOwner+cntBOwner+cntShopOwner,a:cntAOwner,b:cntBOwner,s:cntShopOwner})}
     ${statCard(_icoSVG('home',14)+' 自購戶','var(--surface)','var(--text2)',{total:cntANorm+cntBNorm+cntShopNorm,a:cntANorm,b:cntBNorm,s:cntShopNorm})}
+    ${statCard(_icoSVG('users',14)+' 關係戶','#FFF4E0','#8A5A00',{total:cntARel+cntBRel+cntShopRel,a:cntARel,b:cntBRel,s:cntShopRel})}
   </div>`+_clFixBarHTML(false);   // V1102-01 ⑤⑫ 一鍵更正（N>0 才出現）
 
   const search=((document.getElementById('cl-search')||{}).value||'').trim().toLowerCase();
@@ -22008,7 +22121,7 @@ function renderClients(){
       <input id="cl-search" class="view-allow" type="text" placeholder="搜尋戶別 / 姓名 / 車位…" value="${esc(search)}" onkeydown="if(event.key==='Enter')renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);width:200px">
       <button class="btn btn-sm" onclick="renderClients()">確認</button>
       <select id="cl-type" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
-        <option value="">全部類型</option><option value="地主戶">地主戶</option><option value="自購戶">自購戶</option>
+        <option value="">全部類型</option><option value="地主戶">地主戶</option><option value="自購戶">自購戶</option><option value="關係戶">關係戶</option>
       </select>
       <select id="cl-block" onchange="renderClients()" style="font-size:12px;padding:5px 9px;border:1px solid var(--pborder);border-radius:var(--rs);background:var(--card);color:var(--text);font-family:var(--font)">
         <option value="">全部棟別</option><option value="A">A棟</option><option value="B">B棟</option>
@@ -22019,6 +22132,7 @@ function renderClients(){
       <div style="display:flex;gap:5px;font-size:11px;flex-wrap:wrap;margin-left:4px">
         <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;border-radius:0;background:#EEEDFE;border:0.5px solid #AFA9EC;display:inline-block"></span>地主戶</span>
         <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;border-radius:0;background:var(--surface);display:inline-block"></span>自購戶</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:9px;height:9px;border-radius:0;background:#FFF4E0;border:0.5px solid #E3C98A;display:inline-block"></span>關係戶</span>
       </div>
       <button class="btn btn-pdf btn-sm no-print" onclick="printClients()" style="margin-left:auto"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="15" width="10" height="6"/></svg>PDF</button>
     </div>
@@ -22121,7 +22235,7 @@ function buildClientDetailInline(key){
   return`<div data-cl-key="${esc(key)}" style="background:#F7F5FF;border:2px solid var(--purple);border-radius:var(--r);padding:12px 14px;margin:4px 0 6px;animation:tIn .15s ease">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span style="font-size:13px;font-weight:600">${esc(key)}</span>
-      <span id="cl-type-badge-${key}" style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:${type==='地主戶'?'#EEEDFE':'var(--surface)'};color:${type==='地主戶'?'#5B9BD5':'var(--text2)'}">${type==='地主戶'?'🏛 地主戶':'🏠 自購'}</span>
+      <span id="cl-type-badge-${key}" style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:${type==='地主戶'?'#EEEDFE':(type==='關係戶'?'#FFF4E0':'var(--surface)')};color:${type==='地主戶'?'#5B9BD5':(type==='關係戶'?'#8A5A00':'var(--text2)')}">${type==='地主戶'?'🏛 地主戶':(type==='關係戶'?'關係戶':'🏠 自購')}</span>
       ${pct!=null?`<span style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:${grade.bg};color:${grade.color}">${pct}% ${grade.label}</span>`:''}
       ${delivered?'<span style="padding:2px 8px;border-radius:0;font-size:10px;font-weight:600;background:#EAF3DE;color:#3B6D11"><svg class="g95ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>已交屋</span>':''}
       <button class="btn btn-sm" onclick="_clientExpanded=null;renderClients()">✕ 關閉</button>
@@ -22150,6 +22264,7 @@ function buildClientDetailInline(key){
         <select class="cl-inp-type" onchange="setCl('${esc(key)}','type',this.value);clUpdateTypeBadge('${key}',this.value)" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font);margin-top:3px">
           <option value="地主戶" ${type==='地主戶'?'selected':''}>地主戶</option>
           <option value="自購戶" ${type==='自購戶'?'selected':''}>自購戶</option>
+          <option value="關係戶" ${type==='關係戶'?'selected':''}>關係戶</option>
         </select></div>
     </div>
     <div style="margin-bottom:10px">
@@ -22208,7 +22323,7 @@ function clUpdateTypeBadge(key,val){
   clBufSet(key,'type',val);
   const badge=document.getElementById('cl-type-badge-'+key);
   if(!badge)return;
-  const MAP={'地主戶':{bg:'#EEEDFE',color:'#5B9BD5',label:'🏛 地主戶'},'自購戶':{bg:'var(--surface)',color:'var(--text2)',label:'🏠 自購'}};   // V1102-01：業主戶拿掉
+  const MAP={'地主戶':{bg:'#EEEDFE',color:'#5B9BD5',label:'🏛 地主戶'},'自購戶':{bg:'var(--surface)',color:'var(--text2)',label:'🏠 自購'},'關係戶':{bg:'#FFF4E0',color:'#8A5A00',label:'關係戶'}};   // V1119-01   // V1102-01：業主戶拿掉
   const m=MAP[_typeNorm(val)]||MAP['自購戶'];
   badge.style.background=m.bg;badge.style.color=m.color;badge.textContent=m.label;
 }
@@ -22252,7 +22367,7 @@ function showBatchClientEdit(){
       <label style="display:flex;align-items:center;gap:8px;font-size:12px">
         <input type="checkbox" id="bcl-type-chk"> 戶別類型
         <select id="bcl-type-val" style="font-size:12px;padding:3px 7px;border:1px solid var(--pborder);border-radius:var(--rs);font-family:var(--font)">
-          <option>地主戶</option><option>自購戶</option>
+          <option>地主戶</option><option>自購戶</option><option>關係戶</option>
         </select>
       </label>
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">
@@ -24197,7 +24312,7 @@ var _ULQ_STAGE={
   repair:     {label:'修繕中',   bg:'#FCEBEB',bd:'#E2A6A6',fg:'#A32D2D'},
   reinsp:     {label:'可複驗',   bg:'#E1F5EE',bd:'#7FC4AC',fg:'#085041'},
   re_repair:  {label:'複驗後修繕',bg:'#FBEFCB',bd:'#E0B84B',fg:'#7a4a08'},
-  re_next:    {label:'待下一輪複驗',bg:'#FFF7E6',bd:'#E3C98A',fg:'#8A5A00'},   // V0917-01：複驗抓到缺失、已修完、待再驗（不是可交屋）
+  re_next:    {label:'可複驗',bg:'#FFF7E6',bd:'#E3C98A',fg:'#8A5A00'},   // V1119-01：實際顯示走 _stgName（可複驗N+1／(尚有缺失)）；原「待下一輪複驗」   // V0917-01：複驗抓到缺失、已修完、待再驗（不是可交屋）
   deliverable:{label:'可交屋',   bg:'#EAF6E0',bd:'#A9C48F',fg:'#3B6D11'},
   delivered:  {label:'已交屋',   bg:'#EAF4FC',bd:'#A9CBE8',fg:'#185FA5'}
 };
@@ -24208,7 +24323,8 @@ function _ulqStageInfo(key,st){
   var extra='';
   if(hu.earlyHO)extra='提前交屋';                                   // ⑮ 借屋裝修／提前交屋
   else if(k==='reinsp'&&!hu.reCheckOK)extra='只差主任確認';
-  return {k:k,label:d.label,bg:d.bg,bd:d.bd,fg:d.fg,extra:extra};
+  var nm=''; try{ nm=_stgName(k,st&&st.pend,st&&st.reRound); }catch(e){ nm=''; }   // V1119-01：reinsp／re_next 名稱單一出處
+  return {k:k,label:(nm||d.label),bg:d.bg,bd:d.bd,fg:d.fg,extra:extra};
 }
 function _ulqBadge(si){
   var h='<span style="display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;background:'+si.bg+';border:1px solid '+si.bd+';color:'+si.fg+'">'+esc(si.label)+'</span>';
@@ -26238,7 +26354,7 @@ function unitSetCell(block,col,floor,newKey,prefix){
   // V0726-05：下拉選的地主／一般 → 寫進客戶清單的「類型」（原本是黏在代碼前面）·V1102-01 拿掉「業主」選項、舊值「業」一律存成自購戶
   if(fullKey){
     if(!S.clientData)S.clientData={};
-    const _t=(prefix==='地')?'地主戶':'自購戶';
+    const _t=(prefix==='地')?'地主戶':(prefix==='關'?'關係戶':'自購戶');   // V1119-01：選關係戶＝寫關係戶（原本會被存回自購戶）
     if(!S.clientData[fullKey])S.clientData[fullKey]={name:'',tel:'',type:_t,parkings:[],note:''};
     else S.clientData[fullKey].type=_t;
   }
@@ -26360,6 +26476,7 @@ function renderUnits(){
         const sel=`<select id="upfx-${esc(block)}-${esc(col)}-${fl}" style="font-size:10px;border:none;background:transparent;color:var(--text3);font-family:var(--font)">
           <option value="" ${!prefix?'selected':''}>一般</option>
           <option value="地" ${prefix==='地'?'selected':''}>地主(地)</option>
+          <option value="關" ${prefix==='關'?'selected':''}>關係戶</option>
         </select>`;
         return`<td style="background:${bg};border:1px solid var(--border2);padding:2px 4px;text-align:center;vertical-align:middle">
           <div style="display:flex;flex-direction:column;gap:1px;align-items:center">
@@ -29578,4 +29695,4 @@ try{
 </body>
 </html>
 
-<!-- v1110-02 index -->
+<!-- v1119-02 index -->
